@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spirallens"
+version = "0.1.0"
+description = "Auditable loop, transport, and winding-candidate instrumentation for transformer representations."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+  { name = "SpiralReality" },
+]
+keywords = [
+  "interpretability",
+  "transformers",
+  "holonomy",
+  "representation-geometry",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+models = [
+  "torch>=2.2",
+  "transformers>=4.40",
+  "safetensors>=0.4",
+]
+dev = [
+  "pytest>=8",
+  "ruff>=0.9",
+]
+
+[project.scripts]
+spirallens = "spirallens.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/RyoSpiralArchitect/SpiralLens"
+Repository = "https://github.com/RyoSpiralArchitect/SpiralLens"
+Issues = "https://github.com/RyoSpiralArchitect/SpiralLens/issues"
+Roadmap = "https://github.com/RyoSpiralArchitect/SpiralLens/blob/main/docs/ROADMAP.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
