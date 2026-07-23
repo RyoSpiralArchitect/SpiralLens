@@ -26,7 +26,8 @@ held-out prediction and causal intervention succeed.
 
 1. Validate the instrument on analytic rotation, winding, stretch, radial, and
    shear phantoms.
-2. Stream a fixed-context Pythia token-ID atlas to memory-mapped arrays.
+2. Stream a fixed-context Pythia model-input-row activation atlas to
+   memory-mapped arrays.
 3. Separate radial/norm effects from angular and layer-drift effects.
 4. Emit a schema-validated, provenance-bound candidate ledger without semantic
    labels.
@@ -74,8 +75,24 @@ spirallens calibrate \
   --output runs/calibration/analytic-v0.1.json
 ```
 
+Validate the tracked public context-bank example before capture:
+
+```bash
+spirallens context-bank validate \
+  --path protocols/context_bank_example_v0_1.yaml \
+  --allow-role example
+```
+
+The example bank contains only project-authored synthetic engineering fixtures.
+Every entry has `role=example` and `claim_eligible=false`. The current M1 slice
+validates its identity and provenance; binding it into capture and replay is the
+next integration step. Scientific discovery and held-out banks are separate
+frozen artifacts beginning in M2.
+
 Capture a bounded Pythia-70M plumbing atlas. `context-ids` declares the fixed
-sequence and `position` is the slot replaced by each swept token ID:
+sequence. `position` is the observed residual position and, by default, also
+the slot replaced by each swept model input row. Use `--sweep-position`
+explicitly when those two positions differ:
 
 ```bash
 spirallens atlas \
@@ -87,6 +104,11 @@ spirallens atlas \
   --batch-size 8 \
   --device auto
 ```
+
+This produces a fixed-context model-input-row activation atlas. It is not a
+language-space or semantic atlas: a row ID is an address in the model input
+embedding table, and SpiralLens attaches no decoded meaning or expected outcome
+to it during discovery.
 
 Then apply the tracked, semantics-free structural gates:
 
@@ -111,12 +133,14 @@ to become a general library.
 - **Now — instrument foundation (`0.1.x`):** analytic phantoms, Pythia
   activation atlases, structural candidate ledgers, versioned provenance, and
   fail-closed storage.
-- **Next — candidate-to-loop system:** context banks, audited full-vocabulary
-  neighbor search within each declared context/position slice, cycle
-  construction, relative holonomy, and architecture/null accounting on
-  Pythia-70M.
-- **First scientific protocol:** freeze the integrated instrument and run the
-  same preregistered design on Pythia-160M without tuning on the result.
+- **Next — candidate-to-loop system:** a public synthetic engineering context
+  bank, audited full-vocabulary neighbor search within each declared
+  context/position slice, cycle construction, relative holonomy, and
+  architecture/null accounting on Pythia-70M.
+- **First scientific protocol:** create separate frozen discovery and held-out
+  context-bank artifacts, freeze the integrated instrument, and run the same
+  preregistered design on Pythia-160M without tuning on either held-out results
+  or Pythia-70M outcomes.
 - **Research validation:** test whether surviving relational structure is lost
   by SAE reconstruction and whether held-out, norm-preserving interventions
   change downstream behavior selectively.

@@ -174,6 +174,7 @@ def _run_atlas(args: argparse.Namespace) -> int:
                 else tuple(args.attention_mask)
             ),
             resume=args.resume,
+            sweep_position=args.sweep_position,
         ),
     )
     _print_json(
@@ -185,6 +186,48 @@ def _run_atlas(args: argparse.Namespace) -> int:
             "device": device,
             "rows": manifest["progress"],
             "manifest": str((args.output / "manifest.json").resolve()),
+        }
+    )
+    return 0
+
+
+def _run_context_bank_validate(args: argparse.Namespace) -> int:
+    from spirallens.contexts import load_context_bank
+
+    loaded = load_context_bank(
+        args.path,
+        allowed_roles=set(args.allow_role),
+        expected_source_sha256=args.expected_source_sha256,
+        expected_canonical_sha256=args.expected_canonical_sha256,
+    )
+    bank = loaded.bank
+    _print_json(
+        {
+            "command": "context-bank validate",
+            "status": "valid",
+            "schema_version": bank.to_dict()["schema_version"],
+            "bank_id": bank.bank_id,
+            "bank_status": bank.status.value,
+            "role": bank.role.value,
+            "claim_eligible": bank.claim_eligible,
+            "contexts": len(bank.contexts),
+            "source_path": str(loaded.source_path),
+            "source_sha256": loaded.source_sha256,
+            "canonical_sha256": loaded.canonical_sha256,
+            "model": {
+                "id": bank.model.model_id,
+                "resolved_revision": bank.model.resolved_revision,
+                "vocab_size": bank.model.vocab_size,
+            },
+            "tokenizer": {
+                "id": bank.tokenizer.tokenizer_id,
+                "resolved_revision": bank.tokenizer.resolved_revision,
+                "addressable_size": bank.tokenizer.addressable_size,
+                "provenance_sha256": bank.tokenizer.sha256,
+            },
+            "sweep_domain": bank.sweep_domain.value,
+            "language_space_atlas": False,
+            "semantic_unit": False,
         }
     )
     return 0
@@ -338,9 +381,22 @@ def _add_atlas_parser(subparsers: Any) -> None:
         nargs="+",
         required=True,
         metavar="ID",
-        help="fixed token IDs; the ID at --position is replaced during the sweep",
+        help=(
+            "fixed token IDs; the ID at --sweep-position is replaced during "
+            "the sweep"
+        ),
     )
-    parser.add_argument("--position", type=int, required=True)
+    parser.add_argument(
+        "--position",
+        type=int,
+        required=True,
+        help="residual observation position (also the sweep position by default)",
+    )
+    parser.add_argument(
+        "--sweep-position",
+        type=int,
+        help="slot replaced during the sweep; defaults to --position",
+    )
     parser.add_argument("--attention-mask", type=int, nargs="+", metavar="BIT")
     parser.add_argument("--subset", type=int, nargs="+", metavar="ID")
     parser.add_argument("--max-tokens", type=int)
@@ -367,6 +423,35 @@ def _add_atlas_parser(subparsers: Any) -> None:
         help="resume a matching interrupted atlas",
     )
     parser.set_defaults(handler=_run_atlas)
+
+
+def _add_context_bank_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "context-bank",
+        help="inspect strict, semantics-free context-bank artifacts",
+    )
+    commands = parser.add_subparsers(
+        dest="context_bank_command",
+        required=True,
+    )
+    validate = commands.add_parser(
+        "validate",
+        help="validate schema, roles, provenance, and canonical identity",
+    )
+    validate.add_argument("--path", type=Path, required=True)
+    validate.add_argument(
+        "--allow-role",
+        action="append",
+        choices=("example", "discovery", "held_out"),
+        required=True,
+        help=(
+            "explicitly allowed bank role; repeat to allow more than one "
+            "(bank contents still cannot mix roles)"
+        ),
+    )
+    validate.add_argument("--expected-source-sha256")
+    validate.add_argument("--expected-canonical-sha256")
+    validate.set_defaults(handler=_run_context_bank_validate)
 
 
 def _add_candidates_parser(subparsers: Any) -> None:
@@ -423,6 +508,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_calibrate_parser(subparsers)
+    _add_context_bank_parser(subparsers)
     _add_atlas_parser(subparsers)
     _add_candidates_parser(subparsers)
     return parser

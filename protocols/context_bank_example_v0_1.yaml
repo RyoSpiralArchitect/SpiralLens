@@ -1,0 +1,103 @@
+# Public engineering fixture for context-bank loading and validation; capture
+# and replay binding follows in the next M1 integration slice. Token IDs are
+# synthetic addresses with no semantic labels or expected outcomes.
+schema_version: spirallens.context-bank.v1
+bank_id: pythia70-project-synthetic-example-v0.1
+status: example
+license: Apache-2.0
+claim_eligible: false
+sweep_domain: model_embedding_rows
+source:
+  kind: project_authored_synthetic
+  source_id: spirallens-m1-example-bank
+model:
+  id: EleutherAI/pythia-70m
+  requested_revision: main
+  resolved_revision: a39f36b100fe8a5377810d56c3f4789b9c53ac42
+  vocab_size: 50304
+tokenizer:
+  id: EleutherAI/pythia-70m
+  requested_revision: main
+  resolved_revision: a39f36b100fe8a5377810d56c3f4789b9c53ac42
+  tokenizer_class: GPTNeoXTokenizerFast
+  implementation: fast
+  transformers_version: 4.57.6
+  tokenizers_version: 0.22.2
+  addressable_size: 50277
+  add_special_tokens: false
+  files:
+    tokenizer.json: c24618a1b3e6a38167beff1c72cffd126c3a66254347304b50547d12c5f25624
+    tokenizer_config.json: 70e38394e494931c6f773ba41e19460dd4436526b852207367f04341b4066d3f
+    special_tokens_map.json: 6f50ab5a5a509a1c309d6171f339b196a900dc9c99ad0408ff23bb615fdae7ad
+contexts:
+  - context_id: synthetic-slot-only-001
+    role: example
+    family_id: slot-only
+    source_id: project-synthetic-a
+    template_id: slot-only
+    template_ids: [null]
+    attention_mask: [1]
+    observation_position: 0
+
+  - context_id: synthetic-prefix-one-001
+    role: example
+    family_id: prefix-one
+    source_id: project-synthetic-a
+    template_id: prefix-one
+    template_ids: [0, null]
+    attention_mask: [1, 1]
+    observation_position: 1
+
+  - context_id: synthetic-prefix-one-002
+    role: example
+    family_id: prefix-one
+    source_id: project-synthetic-a
+    template_id: prefix-one
+    template_ids: [1, null]
+    attention_mask: [1, 1]
+    observation_position: 1
+
+  - context_id: synthetic-suffix-one-001
+    role: example
+    family_id: suffix-one
+    source_id: project-synthetic-a
+    template_id: suffix-one
+    template_ids: [null, 0]
+    attention_mask: [1, 1]
+    observation_position: 0
+
+  - context_id: synthetic-bracketed-001
+    role: example
+    family_id: bracketed
+    source_id: project-synthetic-b
+    template_id: bracketed-one-each
+    template_ids: [0, null, 1]
+    attention_mask: [1, 1, 1]
+    observation_position: 1
+
+  - context_id: synthetic-bracketed-002
+    role: example
+    family_id: bracketed
+    source_id: project-synthetic-b
+    template_id: bracketed-one-each
+    template_ids: [2, null, 3]
+    attention_mask: [1, 1, 1]
+    observation_position: 2
+
+  - context_id: synthetic-prefix-two-001
+    role: example
+    family_id: prefix-two
+    source_id: project-synthetic-b
+    template_id: prefix-two
+    template_ids: [0, 1, null]
+    attention_mask: [1, 1, 1]
+    observation_position: 2
+
+  - context_id: synthetic-suffix-two-001
+    role: example
+    family_id: suffix-two
+    source_id: project-synthetic-b
+    template_id: suffix-two
+    template_ids: [null, 4, 5]
+    attention_mask: [1, 1, 1]
+    observation_position: 2

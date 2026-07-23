@@ -4,6 +4,7 @@ import json
 
 import numpy as np
 import pytest
+import torch
 
 from spirallens.adapters import PythiaAdapter
 from spirallens.atlas import (
@@ -56,6 +57,124 @@ def test_bounded_prefix_is_not_labeled_as_full_vocabulary(tmp_path) -> None:
 
     assert manifest["request"]["selection"]["kind"] == "vocabulary_prefix"
     assert manifest["request"]["num_tokens"] == 2
+
+
+def test_sweep_position_defaults_to_observation_position_without_breaking_positionals(
+    tmp_path,
+) -> None:
+    config = SweepConfig(tmp_path / "atlas", (0, 1), 1, 8)
+
+    assert config.position == 1
+    assert config.batch_size == 8
+    assert config.sweep_position is None
+    assert config.effective_sweep_position == 1
+
+    manifest = run_id_sweep(
+        _adapter(),
+        SweepConfig(
+            output_dir=tmp_path / "default-atlas",
+            context_ids=(0, 1),
+            position=1,
+            subset=(2,),
+        ),
+    )
+    assert manifest["request"]["position"] == 1
+    assert manifest["request"]["observation_position"] == 1
+    assert manifest["request"]["sweep_position"] == 1
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error", "message"),
+    (
+        ("position", True, TypeError, "position must be an integer"),
+        ("position", 2, ValueError, r"position must be in \[0, 1\]"),
+        ("sweep_position", True, TypeError, "sweep_position must be an integer"),
+        (
+            "sweep_position",
+            2,
+            ValueError,
+            r"sweep_position must be in \[0, 1\]",
+        ),
+    ),
+)
+def test_sweep_and_observation_positions_are_validated_independently(
+    tmp_path,
+    field,
+    value,
+    error,
+    message,
+) -> None:
+    kwargs = {
+        "output_dir": tmp_path / "atlas",
+        "context_ids": (0, 1),
+        "position": 0,
+        "sweep_position": 1,
+    }
+    kwargs[field] = value
+
+    with pytest.raises(error, match=message):
+        SweepConfig(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("attention_mask", "message"),
+    (
+        ((1, 1, 0), "observation position must be attended"),
+        ((0, 1, 1), "sweep position must be attended"),
+    ),
+)
+def test_sweep_and_observation_positions_must_be_attended(
+    tmp_path,
+    attention_mask,
+    message,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        SweepConfig(
+            output_dir=tmp_path / "atlas",
+            context_ids=(0, 1, 2),
+            position=2,
+            sweep_position=0,
+            attention_mask=attention_mask,
+        )
+
+
+def test_distinct_sweep_and_observation_positions_are_applied_and_persisted(
+    tmp_path,
+) -> None:
+    output_dir = tmp_path / "split-position-atlas"
+    model = FakePythiaForCausalLM()
+    seen_input_ids: list[torch.Tensor] = []
+
+    def capture_input_ids(_module, _args, kwargs) -> None:
+        seen_input_ids.append(kwargs["input_ids"].detach().cpu().clone())
+
+    handle = model.register_forward_pre_hook(capture_input_ids, with_kwargs=True)
+    try:
+        manifest = run_id_sweep(
+            _adapter(model),
+            SweepConfig(
+                output_dir=output_dir,
+                context_ids=(1, 2, 3),
+                position=2,
+                sweep_position=0,
+                subset=(4, 7),
+                batch_size=2,
+            ),
+        )
+    finally:
+        handle.remove()
+
+    assert len(seen_input_ids) == 1
+    torch.testing.assert_close(
+        seen_input_ids[0],
+        torch.tensor(((4, 2, 3), (7, 2, 3)), dtype=torch.long),
+    )
+    assert manifest["request"]["position"] == 2
+    assert manifest["request"]["observation_position"] == 2
+    assert manifest["request"]["sweep_position"] == 0
+
+    resid_pre = np.load(output_dir / "resid_pre.npy", mmap_mode="r")
+    np.testing.assert_array_equal(resid_pre[0], resid_pre[1])
 
 
 def test_sweep_writes_row_aligned_memmaps_and_complete_manifest(tmp_path) -> None:

@@ -54,6 +54,9 @@ These rules apply to every milestone and release:
 - The scientific observation unit is at least
   `model × revision × token/context × position × layer`; token ID alone is not
   treated as meaning.
+- A swept ID denotes a model input embedding row. Even when that row is
+  tokenizer-addressable, a fixed-context model-input-row activation atlas is
+  not described as a language-space or semantic atlas.
 - Zero-candidate and null results are valid completed outcomes.
 - Pythia-70M is plumbing and integration validation. Pythia-160M is the first
   intended claim-bearing model.
@@ -163,31 +166,47 @@ Deliverables:
 
 1. `ObservationKey` and `ContextBank` contracts that make model revision,
    context, token position, layer, and capture stage explicit.
-2. A neighbor-search protocol suitable for the full 50,304-token Pythia
-   vocabulary.
-3. An exact reference backend for bounded datasets and an audited approximate
+2. A tracked public context bank containing 6–12 project-authored synthetic
+   engineering fixtures. Every context has `role=example` and
+   `claim_eligible=false`; the bank tests loading, validation, capture, and
+   replay only.
+3. Discovery and held-out roles are rejected from that public engineering
+   bank. Scientific discovery and held-out banks begin in M2 as separate frozen
+   artifacts.
+4. Atlas requests bind the bank's source and canonical digests, selected role,
+   ordered context IDs, sweep/observation positions, and sweep domain. Resume
+   rejects any mismatch.
+5. Atlas manifests persist `language_space_atlas=false`,
+   `semantic_unit=false`; decoded strings, when present downstream, are
+   display-only sidecars rather than observation identity.
+6. A neighbor-search protocol suitable for the full 50,304-row Pythia model
+   input embedding table.
+7. An exact reference backend for bounded datasets and an audited approximate
    backend for full-vocabulary discovery.
-4. Recall and determinism evaluation of the approximate backend against exact
+8. Recall and determinism evaluation of the approximate backend against exact
    subsets; the initial recall target is at least 0.99 at the preregistered
    candidate boundary.
-5. Approximate search is used only for retrieval; every persisted candidate is
+9. Approximate search is used only for retrieval; every persisted candidate is
    reranked and gated with the exact metric.
-6. A semantics-free candidate graph and deterministic cycle-construction
+10. A semantics-free candidate graph and deterministic cycle-construction
    procedure.
-7. Local transport estimation using declared JVP, pullback metric, whitening,
+11. Local transport estimation using declared JVP, pullback metric, whitening,
    and/or Procrustes choices.
-8. Relative holonomy rather than raw endpoint drift.
-9. RoPE, LayerNorm, attention value, attention routing, MLP, basis, orientation,
-   radius, and sampling-density controls wired into one run artifact.
-10. Each required gate is persisted as `pass`, `fail`, `insufficient`, or
+12. Relative holonomy rather than raw endpoint drift.
+13. RoPE, LayerNorm, attention value, attention routing, MLP, basis,
+    orientation, radius, and sampling-density controls wired into one run
+    artifact.
+14. Each required gate is persisted as `pass`, `fail`, `insufficient`, or
     `not_run`; incomplete gates cannot silently pass.
-11. A versioned loop/candidate artifact linking every result back to atlas rows
-   and protocol hashes.
+15. A versioned loop/candidate artifact linking every result back to atlas rows
+    and protocol hashes.
 
 Exit criteria:
 
 - a full-vocabulary Pythia-70M atlas completes for every declared fixed
   context/position slice under a recorded resource budget;
+- the tracked public example bank validates with all roles equal to `example`
+  and with claim eligibility disabled;
 - approximate discovery meets its preregistered recall target on exact subsets;
 - loop construction is deterministic from the frozen protocol and run ID;
 - injected-rotation positives survive while pure-gauge/stretch/shear negatives
@@ -205,10 +224,17 @@ Exit criteria:
 
 Deliverables:
 
-- a frozen context bank with discovery and held-out partitions;
+- separate frozen discovery and held-out context-bank artifacts; a loader or
+  run cannot silently mix their roles;
+- split assignment grouped by `family_id`, `source_id`, and `template_id`, so
+  exact or near-copy templates cannot cross discovery and held-out boundaries;
+- any learned preprocessing is fit on analytic calibration and discovery data
+  only, then frozen before held-out observation;
 - immutable Pythia-160M model revision and capture contract;
-- thresholds fixed from analytic controls and Pythia-70M plumbing, not tuned on
-  Pythia-160M outcomes;
+- thresholds fixed from analytic controls, not tuned on Pythia-160M outcomes;
+- Pythia-70M outcomes may qualify plumbing but cannot select or tune
+  Pythia-160M confirmatory contexts, split membership, thresholds, exclusions,
+  or learned preprocessing;
 - a preregistered resource budget, null family, stopping rule, and claim ceiling;
 - complete offline replay artifacts;
 - a concise result report that treats positive, zero, and null outcomes equally.
@@ -378,6 +404,17 @@ Generated model weights, credentials, private prompts, and large activation
 arrays are not committed to Git. Small synthetic fixtures may be committed when
 their provenance and license are clear.
 
+Context banks have an additional leakage boundary:
+
+- public M1 fixtures remain `role=example` and `claim_eligible=false`;
+- discovery and held-out contexts live in separate frozen M2 artifacts;
+- split assignment groups related items by family, source, and template rather
+  than assigning individual rows independently;
+- learned transforms are fit only on calibration/discovery data and are frozen
+  before held-out evaluation;
+- results observed on Pythia-70M cannot be used to tune the Pythia-160M
+  confirmatory bank.
+
 ## 9. Contribution and decision model
 
 During the research phase, decisions that alter persisted meaning should be
@@ -407,7 +444,7 @@ explicitly stated otherwise.
 | Backend differences create false candidates | Bind backend/runtime and test repeatability before promotion |
 | Resume blesses corrupted partial data | Verify committed batch hashes before writing a new attempt |
 | Semantic labels leak into discovery | Separate modules, artifacts, and dataset splits |
-| Interesting Pythia-70M result drives threshold tuning | Keep 70M as plumbing and freeze before 160M |
+| Interesting Pythia-70M result drives confirmatory-bank tuning | Keep 70M as plumbing; freeze 160M contexts, splits, thresholds, and preprocessing independently of its outcomes |
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
 
@@ -416,13 +453,19 @@ explicitly stated otherwise.
 The next implementation sequence after the initial public repository push is:
 
 1. define `ObservationKey`, `ContextSpec`, and `ContextBank` contracts;
-2. create a small, reviewed context bank with explicit discovery/held-out roles;
-3. define a neighbor-backend interface and retain exact blockwise search as the
+2. validate a public 6–12-context synthetic engineering bank with only
+   `role=example` and `claim_eligible=false`;
+3. bind the bank's exact role, entry order, positions, sweep domain, and both
+   digests into atlas capture and resume;
+4. define a neighbor-backend interface and retain exact blockwise search as the
    reference implementation;
-4. implement an audited full-vocabulary candidate index with recall measurement;
-5. construct a deterministic semantics-free candidate graph and closed cycles;
-6. connect cycles to local transport, relative holonomy, and the full null suite;
-7. run the integrated Pythia-70M pilot and freeze the Pythia-160M protocol.
+5. implement an audited full-vocabulary candidate index with recall measurement;
+6. construct a deterministic semantics-free candidate graph and closed cycles;
+7. connect cycles to local transport, relative holonomy, and the full null suite;
+8. run the integrated Pythia-70M pilot;
+9. create separate frozen M2 discovery and held-out banks without using 70M
+   outcomes to tune the 160M confirmatory bank, then freeze the Pythia-160M
+   protocol.
 
 The immediate deliverable is not “find a semantic vortex.” It is a replayable
 candidate-to-loop artifact whose promotion gates are explicit before the

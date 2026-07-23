@@ -18,7 +18,12 @@ from .store import ATLAS_SCHEMA_VERSION, AtlasStore, token_ids_sha256
 
 @dataclass(frozen=True)
 class SweepConfig:
-    """Configuration for a deterministic token-ID activation sweep."""
+    """Configuration for a deterministic token-ID activation sweep.
+
+    ``position`` remains the observation position for backward compatibility.
+    ``sweep_position`` selects the context slot replaced by each token ID and
+    defaults to ``position`` when omitted.
+    """
 
     output_dir: str | Path
     context_ids: tuple[int, ...] | list[int]
@@ -28,6 +33,7 @@ class SweepConfig:
     max_tokens: int | None = None
     attention_mask: tuple[int, ...] | list[int] | None = None
     resume: bool = False
+    sweep_position: int | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "output_dir", Path(self.output_dir))
@@ -53,6 +59,20 @@ class SweepConfig:
             raise ValueError(
                 f"position must be in [0, {len(self.context_ids) - 1}]"
             )
+        if self.sweep_position is not None:
+            if not isinstance(self.sweep_position, int) or isinstance(
+                self.sweep_position, bool
+            ):
+                raise TypeError("sweep_position must be an integer")
+            if not 0 <= self.sweep_position < len(self.context_ids):
+                raise ValueError(
+                    f"sweep_position must be in [0, {len(self.context_ids) - 1}]"
+                )
+        if self.attention_mask is not None:
+            if self.attention_mask[self.position] != 1:
+                raise ValueError("the observation position must be attended")
+            if self.attention_mask[self.effective_sweep_position] != 1:
+                raise ValueError("the sweep position must be attended")
         if not isinstance(self.batch_size, int) or isinstance(self.batch_size, bool):
             raise TypeError("batch_size must be an integer")
         if self.batch_size <= 0:
@@ -64,6 +84,12 @@ class SweepConfig:
                 raise TypeError("max_tokens must be an integer")
             if self.max_tokens <= 0:
                 raise ValueError("max_tokens must be positive")
+
+    @property
+    def effective_sweep_position(self) -> int:
+        """Return the context position replaced during the token-ID sweep."""
+
+        return self.position if self.sweep_position is None else self.sweep_position
 
 
 def _integer_tuple(values: Iterable[int], *, label: str) -> tuple[int, ...]:
@@ -170,6 +196,8 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
             else [1] * len(config.context_ids)
         ),
         "position": config.position,
+        "observation_position": config.position,
+        "sweep_position": config.effective_sweep_position,
         "selection": {
             "kind": selection_kind,
             "subset_size_before_limit": (
@@ -196,6 +224,8 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
         "context_ids": request["context_ids"],
         "attention_mask": request["attention_mask"],
         "position": config.position,
+        "observation_position": config.position,
+        "sweep_position": config.effective_sweep_position,
         "token_ids_sha256": request["token_ids_sha256"],
         "capture_dtype": request["capture_dtype"],
         "capture": capture_metadata,
@@ -225,7 +255,7 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
             end = min(start + config.batch_size, len(token_ids))
             batch_token_ids = torch.from_numpy(token_ids[start:end].copy())
             input_ids = context.unsqueeze(0).repeat(end - start, 1)
-            input_ids[:, config.position] = batch_token_ids
+            input_ids[:, config.effective_sweep_position] = batch_token_ids
             attention_mask = base_mask.unsqueeze(0).repeat(end - start, 1)
             observation = adapter.observe_batch(
                 input_ids,
