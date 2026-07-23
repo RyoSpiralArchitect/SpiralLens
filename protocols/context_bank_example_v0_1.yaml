@@ -1,6 +1,6 @@
-# Public engineering fixture for context-bank loading and validation; capture
-# and replay binding follows in the next M1 integration slice. Token IDs are
-# synthetic addresses with no semantic labels or expected outcomes.
+# Public engineering fixture for context-bank validation and bound
+# capture/replay plumbing. Token IDs are synthetic addresses with no semantic
+# labels or expected outcomes.
 schema_version: spirallens.context-bank.v1
 bank_id: pythia70-project-synthetic-example-v0.1
 status: example

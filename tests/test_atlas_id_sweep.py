@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 
 import numpy as np
@@ -8,16 +9,56 @@ import torch
 
 from spirallens.adapters import PythiaAdapter
 from spirallens.atlas import (
+    ATLAS_CONTEXT_BINDING_SCHEMA_VERSION,
     ATLAS_SCHEMA_VERSION,
     AtlasIntegrityError,
     AtlasStateError,
+    ContextBankBinding,
     SweepConfig,
     load_manifest,
     run_id_sweep,
     select_token_ids,
 )
+from spirallens.contexts import (
+    BankStatus,
+    ContextBank,
+    ContextRole,
+    ContextSpec,
+    LoadedContextBank,
+    ModelBinding,
+    SourceBinding,
+    SweepDomain,
+    TokenizerBinding,
+)
 
 from fake_pythia import FakePythiaForCausalLM
+
+
+def _canonical_sha256(value) -> str:
+    encoded = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _refresh_bound_request_digests(
+    request,
+    *,
+    refresh_binding: bool = True,
+) -> None:
+    if refresh_binding:
+        request["context_bank_binding_sha256"] = _canonical_sha256(
+            request["context_bank_binding"]
+        )
+    identity = dict(request)
+    identity.pop("batch_size_initial", None)
+    identity.pop("batch_size_latest", None)
+    identity.pop("request_identity_sha256", None)
+    request["request_identity_sha256"] = _canonical_sha256(identity)
 
 
 def _adapter(model: FakePythiaForCausalLM | None = None) -> PythiaAdapter:
@@ -25,6 +66,75 @@ def _adapter(model: FakePythiaForCausalLM | None = None) -> PythiaAdapter:
         model or FakePythiaForCausalLM(),
         model_id="offline/fake-pythia",
         revision="fixed-test-weights",
+    )
+
+
+def _bound_adapter(
+    model: FakePythiaForCausalLM | None = None,
+) -> PythiaAdapter:
+    return PythiaAdapter(
+        model or FakePythiaForCausalLM(),
+        model_id="offline/fake-pythia",
+        revision="a" * 40,
+    )
+
+
+def _context_binding(
+    tmp_path,
+    *,
+    sweep_domain: SweepDomain = SweepDomain.MODEL_EMBEDDING_ROWS,
+    source_sha256: str = "9" * 64,
+) -> ContextBankBinding:
+    context = ContextSpec(
+        context_id="synthetic-bound",
+        role=ContextRole.EXAMPLE,
+        family_id="mechanical-family",
+        source_id="project-synthetic",
+        template_id="interior-slot",
+        template_ids=(1, None, 2),
+        attention_mask=(1, 1, 1),
+        observation_position=2,
+    )
+    bank = ContextBank(
+        bank_id="offline-example-v1",
+        status=BankStatus.EXAMPLE,
+        license="Apache-2.0",
+        claim_eligible=False,
+        source=SourceBinding(
+            kind="project_authored_synthetic",
+            source_id="offline-fixture",
+        ),
+        model=ModelBinding(
+            model_id="offline/fake-pythia",
+            requested_revision="test",
+            resolved_revision="a" * 40,
+            vocab_size=11,
+        ),
+        tokenizer=TokenizerBinding(
+            tokenizer_id="offline/fake-tokenizer",
+            requested_revision="test",
+            resolved_revision="b" * 40,
+            addressable_size=9,
+            tokenizer_class="FakeTokenizer",
+            implementation="fast",
+            transformers_version="test",
+            tokenizers_version="test",
+            add_special_tokens=False,
+            file_sha256=(("tokenizer.json", "8" * 64),),
+        ),
+        sweep_domain=sweep_domain,
+        contexts=(context,),
+    )
+    loaded = LoadedContextBank(
+        bank=bank,
+        source_path=tmp_path / "context-bank.yaml",
+        source_sha256=source_sha256,
+        canonical_sha256=bank.sha256,
+    )
+    return ContextBankBinding(
+        loaded=loaded,
+        context_id=context.context_id,
+        role=ContextRole.EXAMPLE,
     )
 
 
@@ -57,6 +167,363 @@ def test_bounded_prefix_is_not_labeled_as_full_vocabulary(tmp_path) -> None:
 
     assert manifest["request"]["selection"]["kind"] == "vocabulary_prefix"
     assert manifest["request"]["num_tokens"] == 2
+    assert set(manifest["request"]) == {
+        "model_id",
+        "requested_model_revision",
+        "resolved_model_revision",
+        "context_ids",
+        "attention_mask",
+        "position",
+        "selection",
+        "num_tokens",
+        "token_ids_sha256",
+        "batch_size_initial",
+        "batch_size_latest",
+        "capture_dtype",
+        "capture_fingerprint",
+        "config_sha256",
+    }
+    assert "context_bank_binding" not in manifest["request"]
+    assert "context_bank_binding_sha256" not in manifest["request"]
+    assert "token_domain" not in manifest["request"]
+    assert "language_space_atlas" not in manifest["request"]
+    assert "semantic_unit" not in manifest["request"]
+
+
+def test_context_bank_binding_is_complete_and_load_validated(tmp_path) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / "bound-atlas"
+
+    manifest = run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3, 4),
+            context_bank_binding=binding,
+        ),
+    )
+
+    request = manifest["request"]
+    persisted = request["context_bank_binding"]
+    assert persisted["schema_version"] == ATLAS_CONTEXT_BINDING_SCHEMA_VERSION
+    assert request["context_bank_binding_sha256"] == binding.sha256
+    assert persisted["bank"]["source_sha256"] == "9" * 64
+    assert persisted["bank"]["canonical_sha256"] == binding.loaded.bank.sha256
+    assert persisted["bank"]["content"] == binding.loaded.bank.to_dict()
+    assert persisted["selected_context"] == {
+        "context_id": "synthetic-bound",
+        "role": "example",
+        "entry_order_index": 0,
+        "context_spec_sha256": binding.context.sha256,
+        "context_input_sha256": binding.context.input_sha256,
+        "sweep_position": 1,
+        "observation_position": 2,
+    }
+    assert (
+        persisted["tokenizer_provenance_sha256"]
+        == binding.loaded.bank.tokenizer.sha256
+    )
+    assert persisted["interpretation_contract"] == {
+        "language_space_atlas": False,
+        "semantic_unit": False,
+        "decoded_strings_used_for_selection": False,
+        "semantic_annotation_used": False,
+        "sae_annotation_used": False,
+        "projection_used": False,
+    }
+    assert request["context_ids"] == [1, 0, 2]
+    assert request["sweep_position"] == 1
+    assert request["observation_position"] == 2
+    assert request["token_domain"] == {
+        "kind": "model_embedding_rows",
+        "size": 11,
+        "model_vocab_size": 11,
+        "tokenizer_addressable_size": 9,
+    }
+    assert request["language_space_atlas"] is False
+    assert request["semantic_unit"] is False
+    assert len(request["request_identity_sha256"]) == 64
+    assert load_manifest(output_dir) == manifest
+
+    resumed = run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3, 4),
+            batch_size=1,
+            context_bank_binding=binding,
+            resume=True,
+        ),
+    )
+    assert resumed["run_id"] == manifest["run_id"]
+    assert len(resumed["attempts"]) == 1
+
+
+def test_interrupted_bound_sweep_resumes_with_only_batch_size_changed(
+    tmp_path,
+) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / "bound-resumable"
+    model = FakePythiaForCausalLM()
+    model.fail_on_token = 5
+    adapter = _bound_adapter(model)
+
+    with pytest.raises(RuntimeError, match="intentional failure"):
+        run_id_sweep(
+            adapter,
+            SweepConfig(
+                output_dir=output_dir,
+                context_ids=binding.materialized_context_ids,
+                position=binding.context.observation_position,
+                subset=(3, 4, 5, 6),
+                batch_size=2,
+                context_bank_binding=binding,
+            ),
+        )
+    failed = load_manifest(output_dir)
+    assert failed["status"] == "failed"
+    assert failed["progress"]["completed_rows"] == 2
+
+    model.fail_on_token = None
+    completed = run_id_sweep(
+        adapter,
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3, 4, 5, 6),
+            batch_size=1,
+            context_bank_binding=binding,
+            resume=True,
+        ),
+    )
+
+    assert completed["status"] == "complete"
+    assert completed["progress"]["completed_rows"] == 4
+    assert completed["request"]["batch_size_initial"] == 2
+    assert completed["request"]["batch_size_latest"] == 1
+    assert completed["attempts"][-1]["resume_from_row"] == 2
+    assert load_manifest(output_dir) == completed
+
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    (
+        ({"context_ids": (0, 0, 0)}, "context_ids do not match"),
+        ({"position": 1}, "observation position"),
+        ({"sweep_position": 0}, "ContextSpec slot"),
+        ({"attention_mask": (0, 1, 1)}, "attention_mask"),
+    ),
+)
+def test_sweep_config_rejects_context_bank_override(
+    tmp_path,
+    override,
+    message,
+) -> None:
+    binding = _context_binding(tmp_path)
+    kwargs = {
+        "output_dir": tmp_path / "atlas",
+        "context_ids": binding.materialized_context_ids,
+        "position": binding.context.observation_position,
+        "context_bank_binding": binding,
+    }
+    kwargs.update(override)
+
+    with pytest.raises(ValueError, match=message):
+        SweepConfig(**kwargs)
+
+
+def test_bound_sweep_rejects_model_and_token_domain_mismatch(tmp_path) -> None:
+    binding = _context_binding(
+        tmp_path,
+        sweep_domain=SweepDomain.TOKENIZER_ADDRESSABLE,
+    )
+    config = SweepConfig(
+        output_dir=tmp_path / "atlas",
+        context_ids=binding.materialized_context_ids,
+        position=binding.context.observation_position,
+        subset=(9,),
+        context_bank_binding=binding,
+    )
+
+    wrong_model = PythiaAdapter(
+        FakePythiaForCausalLM(),
+        model_id="offline/other-pythia",
+        revision="a" * 40,
+    )
+    with pytest.raises(ValueError, match="adapter model ID"):
+        run_id_sweep(wrong_model, config)
+    with pytest.raises(ValueError, match="out-of-range"):
+        run_id_sweep(_bound_adapter(), config)
+
+
+def test_resume_rejects_changed_context_bank_source_digest(tmp_path) -> None:
+    output_dir = tmp_path / "atlas"
+    original = _context_binding(tmp_path, source_sha256="1" * 64)
+    run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=original.materialized_context_ids,
+            position=original.context.observation_position,
+            subset=(3,),
+            context_bank_binding=original,
+        ),
+    )
+    changed = _context_binding(tmp_path, source_sha256="2" * 64)
+
+    with pytest.raises(AtlasStateError, match="fingerprint"):
+        run_id_sweep(
+            _bound_adapter(),
+            SweepConfig(
+                output_dir=output_dir,
+                context_ids=changed.materialized_context_ids,
+                position=changed.context.observation_position,
+                subset=(3,),
+                context_bank_binding=changed,
+                resume=True,
+            ),
+        )
+    persisted = json.loads(
+        (output_dir / "manifest.json").read_text(encoding="utf-8")
+    )
+    assert len(persisted["attempts"]) == 1
+
+
+def test_load_rejects_tampered_context_bank_binding(tmp_path) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / "atlas"
+    run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3,),
+            context_bank_binding=binding,
+        ),
+    )
+    manifest_path = output_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["request"]["context_bank_binding"]["bank"]["content"]["contexts"][0][
+        "role"
+    ] = "held_out"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(AtlasIntegrityError, match="binding digest mismatch"):
+        load_manifest(output_dir)
+
+
+def test_load_rejects_context_binding_downgrade_to_legacy(tmp_path) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / "atlas"
+    run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3,),
+            context_bank_binding=binding,
+        ),
+    )
+    manifest_path = output_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["request"]["context_bank_binding"]
+    del manifest["request"]["context_bank_binding_sha256"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(AtlasIntegrityError, match="context-bank-only"):
+        load_manifest(output_dir)
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "language_space_atlas",
+        "semantic_unit",
+        "decoded_strings_used_for_selection",
+        "semantic_annotation_used",
+        "sae_annotation_used",
+        "projection_used",
+    ),
+)
+def test_load_rejects_relaxed_interpretation_contract(
+    tmp_path,
+    field,
+) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / field
+    run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3,),
+            context_bank_binding=binding,
+        ),
+    )
+    manifest_path = output_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    request = manifest["request"]
+    request["context_bank_binding"]["interpretation_contract"][field] = True
+    _refresh_bound_request_digests(request)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(AtlasIntegrityError, match="interpretation flags"):
+        load_manifest(output_dir)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("bank_content", "bank canonical digest"),
+        ("tokenizer", "tokenizer provenance digest"),
+        ("selected_spec", "ContextSpec digest"),
+        ("token_domain", "model or token domain"),
+    ),
+)
+def test_load_recomputes_bound_content_digests(
+    tmp_path,
+    mutation,
+    message,
+) -> None:
+    binding = _context_binding(tmp_path)
+    output_dir = tmp_path / mutation
+    run_id_sweep(
+        _bound_adapter(),
+        SweepConfig(
+            output_dir=output_dir,
+            context_ids=binding.materialized_context_ids,
+            position=binding.context.observation_position,
+            subset=(3,),
+            context_bank_binding=binding,
+        ),
+    )
+    manifest_path = output_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    request = manifest["request"]
+    persisted_binding = request["context_bank_binding"]
+    bank = persisted_binding["bank"]
+    if mutation == "bank_content":
+        bank["content"]["license"] = "CC0-1.0"
+    elif mutation == "tokenizer":
+        bank["content"]["tokenizer"]["files"]["tokenizer.json"] = "7" * 64
+        bank["canonical_sha256"] = _canonical_sha256(bank["content"])
+    elif mutation == "selected_spec":
+        persisted_binding["selected_context"]["context_spec_sha256"] = "7" * 64
+    else:
+        request["token_domain"]["size"] = 10
+    _refresh_bound_request_digests(request)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(AtlasIntegrityError, match=message):
+        load_manifest(output_dir)
 
 
 def test_sweep_position_defaults_to_observation_position_without_breaking_positionals(
@@ -79,8 +546,8 @@ def test_sweep_position_defaults_to_observation_position_without_breaking_positi
         ),
     )
     assert manifest["request"]["position"] == 1
-    assert manifest["request"]["observation_position"] == 1
-    assert manifest["request"]["sweep_position"] == 1
+    assert "observation_position" not in manifest["request"]
+    assert "sweep_position" not in manifest["request"]
 
 
 @pytest.mark.parametrize(

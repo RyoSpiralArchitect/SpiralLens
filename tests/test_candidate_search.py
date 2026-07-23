@@ -7,6 +7,18 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from spirallens.atlas import ContextBankBinding
+from spirallens.contexts import (
+    BankStatus,
+    ContextBank,
+    ContextRole,
+    ContextSpec,
+    LoadedContextBank,
+    ModelBinding,
+    SourceBinding,
+    SweepDomain,
+    TokenizerBinding,
+)
 from spirallens.metrics import (
     CandidateSearchConfig,
     decompose_difference,
@@ -211,6 +223,93 @@ def _write_atlas(tmp_path: Path, *, status: str = "complete") -> Path:
     return manifest_path
 
 
+def _write_bound_atlas(tmp_path: Path) -> Path:
+    manifest_path = _write_atlas(tmp_path)
+    context = ContextSpec(
+        context_id="bound-candidate-context",
+        role=ContextRole.EXAMPLE,
+        family_id="candidate-family",
+        source_id="candidate-source",
+        template_id="candidate-template",
+        template_ids=(0, None),
+        attention_mask=(1, 1),
+        observation_position=1,
+    )
+    bank = ContextBank(
+        bank_id="bound-candidate-bank",
+        status=BankStatus.EXAMPLE,
+        license="Apache-2.0",
+        claim_eligible=False,
+        source=SourceBinding(
+            kind="project_authored_synthetic",
+            source_id="candidate-fixture",
+        ),
+        model=ModelBinding(
+            model_id="test/pythia",
+            requested_revision="test",
+            resolved_revision="a" * 40,
+            vocab_size=100,
+        ),
+        tokenizer=TokenizerBinding(
+            tokenizer_id="test/tokenizer",
+            requested_revision="test",
+            resolved_revision="b" * 40,
+            addressable_size=12,
+            tokenizer_class="TestTokenizer",
+            implementation="fast",
+            transformers_version="test",
+            tokenizers_version="test",
+            add_special_tokens=False,
+            file_sha256=(("tokenizer.json", "8" * 64),),
+        ),
+        sweep_domain=SweepDomain.MODEL_EMBEDDING_ROWS,
+        contexts=(context,),
+    )
+    binding = ContextBankBinding(
+        loaded=LoadedContextBank(
+            bank=bank,
+            source_path=tmp_path / "bound-context-bank.yaml",
+            source_sha256="9" * 64,
+            canonical_sha256=bank.sha256,
+        ),
+        context_id=context.context_id,
+        role=ContextRole.EXAMPLE,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    request = manifest["request"]
+    request.update(
+        {
+            "requested_model_revision": "a" * 40,
+            "resolved_model_revision": "a" * 40,
+            "context_ids": [0, 0],
+            "observation_position": 1,
+            "sweep_position": 1,
+            "context_bank_binding": binding.to_dict(),
+            "context_bank_binding_sha256": binding.sha256,
+            "token_domain": {
+                "kind": "model_embedding_rows",
+                "size": 100,
+                "model_vocab_size": 100,
+                "tokenizer_addressable_size": 12,
+            },
+            "language_space_atlas": False,
+            "semantic_unit": False,
+        }
+    )
+    request_identity = dict(request)
+    request_identity.pop("batch_size_initial", None)
+    request_identity.pop("batch_size_latest", None)
+    request["request_identity_sha256"] = _json_sha256(request_identity)
+    manifest["model"].update(
+        {
+            "model_id": "test/pythia",
+            "resolved_revision": "a" * 40,
+        }
+    )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest_path
+
+
 def test_norm_decomposition_reconstructs_euclidean_distance() -> None:
     left = np.array([2.0, 0.0])
     right = np.array([0.0, 3.0])
@@ -307,6 +406,40 @@ def test_manifest_extraction_writes_complete_auditable_ledger(tmp_path: Path) ->
     assert candidates[0]["left"]["layer_index"] == 0
     assert candidates[0]["left"]["token_id"] == 11
     assert candidates[0]["right"]["token_id"] == 12
+
+
+def test_bound_candidate_references_keep_context_identity_and_domain(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_bound_atlas(tmp_path)
+    ledger_path = tmp_path / "bound-candidates.jsonl"
+    config = CandidateSearchConfig(
+        cosine_min=0.999,
+        relative_norm_gap_max=0.05,
+        drift_relative_divergence_min=1.5,
+        block_size=1,
+    )
+
+    summary = extract_candidates_from_manifest(
+        manifest_path,
+        ledger_path,
+        config=config,
+    )
+    candidate = list(read_candidate_records(ledger_path))[0]
+
+    assert summary.candidate_count == 1
+    assert candidate["left"]["context_id"] == "bound-candidate-context"
+    assert candidate["left"]["context_role"] == "example"
+    assert candidate["left"]["context_entry_order_index"] == 0
+    assert candidate["left"]["context_template_ids"] == [0, None]
+    assert candidate["left"]["context_bank_sha256"]
+    assert candidate["left"]["context_spec_sha256"]
+    assert candidate["left"]["observation_position"] == 1
+    assert candidate["left"]["sweep_position"] == 1
+    assert candidate["left"]["sweep_domain"] == "model_embedding_rows"
+    assert candidate["left"]["tokenizer_addressable"] is True
+    assert candidate["right"]["token_id"] == 12
+    assert candidate["right"]["tokenizer_addressable"] is False
 
 
 def test_manifest_extraction_rejects_incomplete_atlas(tmp_path: Path) -> None:

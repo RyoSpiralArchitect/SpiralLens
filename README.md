@@ -84,26 +84,36 @@ spirallens context-bank validate \
 ```
 
 The example bank contains only project-authored synthetic engineering fixtures.
-Every entry has `role=example` and `claim_eligible=false`. The current M1 slice
-validates its identity and provenance; binding it into capture and replay is the
-next integration step. Scientific discovery and held-out banks are separate
-frozen artifacts beginning in M2.
+Every entry has `role=example` and `claim_eligible=false`. Scientific discovery
+and held-out banks are separate frozen artifacts beginning in M2.
 
-Capture a bounded Pythia-70M plumbing atlas. `context-ids` declares the fixed
-sequence. `position` is the observed residual position and, by default, also
-the slot replaced by each swept model input row. Use `--sweep-position`
-explicitly when those two positions differ:
+Capture a bounded, bank-bound Pythia-70M plumbing atlas:
 
 ```bash
 spirallens atlas \
-  --model EleutherAI/pythia-70m \
   --output runs/pythia70-smoke \
-  --context-ids 0 \
-  --position 0 \
+  --context-bank protocols/context_bank_example_v0_1.yaml \
+  --context-id synthetic-slot-only-001 \
+  --allow-role example \
+  --expected-context-bank-source-sha256 \
+    db9df614ad68bd20646da29740354624b8be075719e7ef4ca2ad8023d4dcef4f \
+  --expected-context-bank-canonical-sha256 \
+    46c23fb8f1c0f2136537bab5717473c2cc8b03a9121d89db267a29b89ef0a438 \
   --max-tokens 32 \
   --batch-size 8 \
   --device auto
 ```
+
+The bank selects the exact model revision, structured slot, attention mask,
+sweep position, and observation position. Its raw and canonical SHA-256
+digests, ordered entries, role, tokenizer fingerprint, and token domain are
+bound into the run fingerprint; resume rejects a mismatch before appending an
+attempt.
+
+Low-level capture can still use `--context-ids` and `--position` directly.
+`--position` is the observed residual position and, by default, also the slot
+replaced by each swept row; pass `--sweep-position` when they differ. This raw
+mode is an engineering escape hatch and carries no ContextBank identity.
 
 This produces a fixed-context model-input-row activation atlas. It is not a
 language-space or semantic atlas: a row ID is an address in the model input
@@ -119,7 +129,8 @@ spirallens candidates \
   --protocol protocols/pythia_v0_1.yaml
 ```
 
-`--full-vocabulary` is required to authorize an unbounded atlas explicitly.
+`--full-vocabulary` is required to authorize every ID in the declared sweep
+domain explicitly.
 Atlas arrays are memory-mapped, manifests are written atomically, completed
 files are checksummed, and a resume request must match the original capture
 fingerprint.

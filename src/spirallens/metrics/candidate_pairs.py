@@ -719,21 +719,107 @@ def extract_candidates_from_manifest(
         raise ValueError(f"requested layer_indices exceed atlas layer count {num_layers}")
 
     token_values = np.asarray(token_ids, dtype=np.int64)
-    position = request.get("position")
+    position = request.get(
+        "observation_position",
+        request.get("position"),
+    )
     context_ids = request.get("context_ids")
+    context_binding = request.get("context_bank_binding")
+    bound_reference: dict[str, Any] | None = None
+    tokenizer_addressable_size: int | None = None
+    if isinstance(context_binding, Mapping):
+        bank_binding = context_binding.get("bank")
+        selected_context = context_binding.get("selected_context")
+        bank_content = (
+            bank_binding.get("content")
+            if isinstance(bank_binding, Mapping)
+            else None
+        )
+        tokenizer = (
+            bank_content.get("tokenizer")
+            if isinstance(bank_content, Mapping)
+            else None
+        )
+        contexts = (
+            bank_content.get("contexts")
+            if isinstance(bank_content, Mapping)
+            else None
+        )
+        entry_index = selected_context.get("entry_order_index")
+        selected_content = (
+            contexts[entry_index]
+            if (
+                isinstance(contexts, list)
+                and isinstance(entry_index, int)
+                and not isinstance(entry_index, bool)
+                and 0 <= entry_index < len(contexts)
+            )
+            else None
+        )
+        token_domain = request.get("token_domain")
+        if (
+            not isinstance(bank_binding, Mapping)
+            or not isinstance(selected_context, Mapping)
+            or not isinstance(bank_content, Mapping)
+            or not isinstance(tokenizer, Mapping)
+            or not isinstance(selected_content, Mapping)
+            or not isinstance(token_domain, Mapping)
+        ):
+            raise ValueError("atlas context-bank binding is incomplete")
+        addressable_value = tokenizer.get("addressable_size")
+        if (
+            isinstance(addressable_value, bool)
+            or not isinstance(addressable_value, int)
+        ):
+            raise ValueError(
+                "atlas tokenizer addressable size is invalid"
+            )
+        tokenizer_addressable_size = addressable_value
+        bound_reference = {
+            "context_bank_sha256": bank_binding.get("canonical_sha256"),
+            "context_bank_source_sha256": bank_binding.get("source_sha256"),
+            "context_bank_binding_sha256": request.get(
+                "context_bank_binding_sha256"
+            ),
+            "context_id": selected_context.get("context_id"),
+            "context_role": selected_context.get("role"),
+            "context_spec_sha256": selected_context.get(
+                "context_spec_sha256"
+            ),
+            "context_input_sha256": selected_context.get(
+                "context_input_sha256"
+            ),
+            "context_entry_order_index": entry_index,
+            "context_template_ids": selected_content.get("template_ids"),
+            "observation_position": selected_context.get(
+                "observation_position"
+            ),
+            "sweep_position": selected_context.get("sweep_position"),
+            "sweep_domain": token_domain.get("kind"),
+            "observation_key_schema_version": context_binding.get(
+                "observation_key_schema_version"
+            ),
+        }
 
     def all_candidates() -> Iterator[dict[str, Any]]:
         for layer_index in layers:
-            references = [
-                {
+            references = []
+            for row_index in range(token_values.size):
+                reference = {
                     "row_index": row_index,
                     "token_id": int(token_values[row_index]),
                     "layer_index": layer_index,
                     "token_position": position,
                     "context_ids": context_ids,
                 }
-                for row_index in range(token_values.size)
-            ]
+                if bound_reference is not None:
+                    assert tokenizer_addressable_size is not None
+                    reference.update(bound_reference)
+                    reference["tokenizer_addressable"] = (
+                        int(token_values[row_index])
+                        < tokenizer_addressable_size
+                    )
+                references.append(reference)
             states = resid_pre[:, layer_index, :]
             drifts = _DifferenceRows(
                 resid_post[:, layer_index, :],

@@ -175,10 +175,14 @@ Deliverables:
    artifacts.
 4. Atlas requests bind the bank's source and canonical digests, selected role,
    ordered context IDs, sweep/observation positions, and sweep domain. Resume
-   rejects any mismatch.
+   rejects any mismatch before appending an attempt. The binding embeds
+   canonical bank content so load/replay can recompute bank, selected-context,
+   tokenizer, and request-identity digests independently.
 5. Atlas manifests persist `language_space_atlas=false`,
    `semantic_unit=false`; decoded strings, when present downstream, are
-   display-only sidecars rather than observation identity.
+   display-only sidecars rather than observation identity. Candidate references
+   carry the bound bank/context/spec identities and tokenizer-addressability
+   flag rather than aggregating by decoded text.
 6. A neighbor-search protocol suitable for the full 50,304-row Pythia model
    input embedding table.
 7. An exact reference backend for bounded datasets and an audited approximate
@@ -466,6 +470,9 @@ The next implementation sequence after the initial public repository push is:
 9. create separate frozen M2 discovery and held-out banks without using 70M
    outcomes to tune the 160M confirmatory bank, then freeze the Pythia-160M
    protocol.
+
+The current implementation covers steps 1–3. The next engineering target is
+the neighbor-backend interface and exact-reference contract in step 4.
 
 The immediate deliverable is not “find a semantic vortex.” It is a replayable
 candidate-to-loop artifact whose promotion gates are explicit before the

@@ -332,6 +332,12 @@ def _parse_bank(document: object) -> ContextBank:
     )
 
 
+def context_bank_from_dict(document: Mapping[str, object]) -> ContextBank:
+    """Validate canonical JSON-like bank content without reading YAML."""
+
+    return _parse_bank(document)
+
+
 def _coerce_allowed_roles(
     values: Collection[ContextRole | str],
 ) -> frozenset[ContextRole]:
@@ -353,6 +359,10 @@ def _coerce_allowed_roles(
         raise TypeError("allowed_roles values must be ContextRole or str")
     if not roles:
         raise ContextBankSchemaError("allowed_roles must not be empty")
+    if len(roles) != 1:
+        raise ContextBankSchemaError(
+            "allowed_roles must select exactly one experimental role"
+        )
     return frozenset(roles)
 
 
@@ -390,7 +400,7 @@ def load_context_bank(
         raise
     except yaml.YAMLError as exc:
         raise ContextBankSchemaError(f"invalid context-bank YAML: {exc}") from exc
-    bank = _parse_bank(document)
+    bank = context_bank_from_dict(document)
     canonical_sha256 = bank.sha256
     if (
         expected_canonical_sha256 is not None

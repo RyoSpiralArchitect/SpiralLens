@@ -125,7 +125,8 @@ def _run_atlas(args: argparse.Namespace) -> int:
     import torch
 
     from spirallens.adapters import PythiaAdapter
-    from spirallens.atlas import SweepConfig, run_id_sweep
+    from spirallens.atlas import ContextBankBinding, SweepConfig, run_id_sweep
+    from spirallens.contexts import load_context_bank
 
     if args.full_vocabulary and (
         args.subset is not None or args.max_tokens is not None
@@ -143,6 +144,76 @@ def _run_atlas(args: argparse.Namespace) -> int:
             "--full-vocabulary"
         )
 
+    context_binding = None
+    if args.context_bank is not None:
+        if args.context_ids is not None:
+            raise ValueError(
+                "--context-bank cannot be combined with --context-ids"
+            )
+        if args.position is not None or args.sweep_position is not None:
+            raise ValueError(
+                "bank-bound positions come from ContextSpec; do not pass "
+                "--position or --sweep-position"
+            )
+        if args.attention_mask is not None:
+            raise ValueError(
+                "bank-bound attention masks come from ContextSpec"
+            )
+        if args.context_id is None or not args.allow_role:
+            raise ValueError(
+                "--context-bank requires --context-id and explicit --allow-role"
+            )
+        loaded = load_context_bank(
+            args.context_bank,
+            allowed_roles=set(args.allow_role),
+            expected_source_sha256=(
+                args.expected_context_bank_source_sha256
+            ),
+            expected_canonical_sha256=(
+                args.expected_context_bank_canonical_sha256
+            ),
+        )
+        context_binding = ContextBankBinding(
+            loaded=loaded,
+            context_id=args.context_id,
+            role=loaded.bank.role,
+        )
+        context_ids = context_binding.materialized_context_ids
+        position = context_binding.context.observation_position
+        attention_mask = None
+        sweep_position = None
+        model_id = loaded.bank.model.model_id
+        revision = loaded.bank.model.resolved_revision
+        if args.model is not None and args.model != model_id:
+            raise ValueError("--model does not match the bound context bank")
+        if args.revision is not None and args.revision != revision:
+            raise ValueError("--revision does not match the bound context bank")
+    else:
+        bank_only_values = (
+            args.context_id,
+            args.allow_role,
+            args.expected_context_bank_source_sha256,
+            args.expected_context_bank_canonical_sha256,
+        )
+        if any(value is not None for value in bank_only_values):
+            raise ValueError(
+                "context-bank selection options require --context-bank"
+            )
+        if args.context_ids is None or args.position is None:
+            raise ValueError(
+                "raw atlas capture requires --context-ids and --position"
+            )
+        context_ids = tuple(args.context_ids)
+        position = args.position
+        attention_mask = (
+            None
+            if args.attention_mask is None
+            else tuple(args.attention_mask)
+        )
+        sweep_position = args.sweep_position
+        model_id = args.model or "EleutherAI/pythia-70m"
+        revision = args.revision
+
     device = _automatic_device(torch) if args.device == "auto" else args.device
     model_kwargs: dict[str, Any] = {}
     if args.dtype != "auto":
@@ -153,8 +224,8 @@ def _run_atlas(args: argparse.Namespace) -> int:
         }[args.dtype]
 
     adapter = PythiaAdapter.from_pretrained(
-        args.model,
-        revision=args.revision,
+        model_id,
+        revision=revision,
         device=device,
         local_files_only=args.local_files_only,
         **model_kwargs,
@@ -163,18 +234,15 @@ def _run_atlas(args: argparse.Namespace) -> int:
         adapter,
         SweepConfig(
             output_dir=args.output,
-            context_ids=tuple(args.context_ids),
-            position=args.position,
+            context_ids=context_ids,
+            position=position,
             batch_size=args.batch_size,
             subset=None if args.subset is None else tuple(args.subset),
             max_tokens=args.max_tokens,
-            attention_mask=(
-                None
-                if args.attention_mask is None
-                else tuple(args.attention_mask)
-            ),
+            attention_mask=attention_mask,
             resume=args.resume,
-            sweep_position=args.sweep_position,
+            sweep_position=sweep_position,
+            context_bank_binding=context_binding,
         ),
     )
     _print_json(
@@ -185,6 +253,9 @@ def _run_atlas(args: argparse.Namespace) -> int:
             "model": manifest["model"]["model_id"],
             "device": device,
             "rows": manifest["progress"],
+            "context_bank_binding_sha256": manifest["request"].get(
+                "context_bank_binding_sha256"
+            ),
             "manifest": str((args.output / "manifest.json").resolve()),
         }
     )
@@ -370,8 +441,10 @@ def _add_atlas_parser(subparsers: Any) -> None:
     )
     parser.add_argument(
         "--model",
-        default="EleutherAI/pythia-70m",
-        help="Hugging Face model ID",
+        help=(
+            "Hugging Face model ID; defaults to Pythia-70M for raw capture "
+            "and is derived from --context-bank for bound capture"
+        ),
     )
     parser.add_argument("--revision")
     parser.add_argument("--output", type=Path, required=True)
@@ -379,7 +452,6 @@ def _add_atlas_parser(subparsers: Any) -> None:
         "--context-ids",
         type=int,
         nargs="+",
-        required=True,
         metavar="ID",
         help=(
             "fixed token IDs; the ID at --sweep-position is replaced during "
@@ -389,7 +461,6 @@ def _add_atlas_parser(subparsers: Any) -> None:
     parser.add_argument(
         "--position",
         type=int,
-        required=True,
         help="residual observation position (also the sweep position by default)",
     )
     parser.add_argument(
@@ -398,12 +469,32 @@ def _add_atlas_parser(subparsers: Any) -> None:
         help="slot replaced during the sweep; defaults to --position",
     )
     parser.add_argument("--attention-mask", type=int, nargs="+", metavar="BIT")
+    parser.add_argument(
+        "--context-bank",
+        type=Path,
+        help="strict context-bank YAML to bind into capture and resume",
+    )
+    parser.add_argument(
+        "--context-id",
+        help="entry selected from --context-bank",
+    )
+    parser.add_argument(
+        "--allow-role",
+        action="append",
+        choices=("example", "discovery", "held_out"),
+        help=(
+            "explicitly allowed bank role; pass exactly once with "
+            "--context-bank"
+        ),
+    )
+    parser.add_argument("--expected-context-bank-source-sha256")
+    parser.add_argument("--expected-context-bank-canonical-sha256")
     parser.add_argument("--subset", type=int, nargs="+", metavar="ID")
     parser.add_argument("--max-tokens", type=int)
     parser.add_argument(
         "--full-vocabulary",
         action="store_true",
-        help="explicitly authorize all model token IDs",
+        help="explicitly authorize every ID in the declared sweep domain",
     )
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--device", default="auto")
@@ -445,8 +536,7 @@ def _add_context_bank_parser(subparsers: Any) -> None:
         choices=("example", "discovery", "held_out"),
         required=True,
         help=(
-            "explicitly allowed bank role; repeat to allow more than one "
-            "(bank contents still cannot mix roles)"
+            "explicitly allowed bank role; pass exactly once"
         ),
     )
     validate.add_argument("--expected-source-sha256")

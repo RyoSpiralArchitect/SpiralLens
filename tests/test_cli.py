@@ -112,6 +112,91 @@ def test_context_bank_cli_rejects_role_mismatch(capsys) -> None:
     assert "not in explicitly allowed roles" in capsys.readouterr().err
 
 
+def test_atlas_cli_binds_context_bank_without_model_download(
+    tmp_path,
+    capsys,
+    monkeypatch,
+) -> None:
+    import spirallens.adapters
+    import spirallens.atlas
+
+    repository_root = Path(__file__).resolve().parents[1]
+    bank_path = repository_root / "protocols/context_bank_example_v0_1.yaml"
+    captured = {}
+
+    class FakeAdapter:
+        pass
+
+    def fake_from_pretrained(model_id, **kwargs):
+        captured["model_id"] = model_id
+        captured["model_kwargs"] = kwargs
+        return FakeAdapter()
+
+    def fake_run_id_sweep(adapter, config):
+        captured["adapter"] = adapter
+        captured["config"] = config
+        return {
+            "status": "complete",
+            "run_id": "bound-test-run",
+            "model": {"model_id": captured["model_id"]},
+            "progress": {
+                "completed_rows": 1,
+                "total_rows": 1,
+                "committed_batches": 1,
+            },
+            "request": {
+                "context_bank_binding_sha256": (
+                    config.context_bank_binding.sha256
+                )
+            },
+        }
+
+    monkeypatch.setattr(
+        spirallens.adapters.PythiaAdapter,
+        "from_pretrained",
+        staticmethod(fake_from_pretrained),
+    )
+    monkeypatch.setattr(
+        spirallens.atlas,
+        "run_id_sweep",
+        fake_run_id_sweep,
+    )
+
+    exit_code = main(
+        [
+            "atlas",
+            "--output",
+            str(tmp_path / "atlas"),
+            "--context-bank",
+            str(bank_path),
+            "--context-id",
+            "synthetic-bracketed-002",
+            "--allow-role",
+            "example",
+            "--max-tokens",
+            "1",
+            "--local-files-only",
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["model_id"] == "EleutherAI/pythia-70m"
+    assert captured["model_kwargs"]["revision"] == (
+        "a39f36b100fe8a5377810d56c3f4789b9c53ac42"
+    )
+    config = captured["config"]
+    assert config.context_ids == (2, 0, 3)
+    assert config.position == 2
+    assert config.effective_sweep_position == 1
+    assert config.attention_mask == (1, 1, 1)
+    assert config.context_bank_binding.context_id == "synthetic-bracketed-002"
+    summary = json.loads(capsys.readouterr().out)
+    assert (
+        summary["context_bank_binding_sha256"]
+        == config.context_bank_binding.sha256
+    )
+
+
 def test_candidates_cli_binds_protocol_and_propagates_overwrite(
     tmp_path,
     capsys,

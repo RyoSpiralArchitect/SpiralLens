@@ -18,6 +18,7 @@ from numpy.lib.format import open_memmap
 import torch
 
 from spirallens.adapters import LOGIT_SUMMARY_COLUMNS, BatchObservation
+from spirallens.contexts import ContextContractError, context_bank_from_dict
 
 
 ATLAS_SCHEMA_VERSION = "spirallens.activation_atlas.v2"
@@ -83,6 +84,345 @@ def _canonical_sha256(payload: Mapping[str, Any]) -> str:
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _request_resume_identity(request: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the immutable request fields; batch size may change on resume."""
+
+    identity = deepcopy(dict(request))
+    identity.pop("batch_size_initial", None)
+    identity.pop("batch_size_latest", None)
+    return identity
+
+
+def _require_sha256(value: object, *, label: str) -> str:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise AtlasIntegrityError(f"{label} must be a lowercase SHA-256 digest")
+    return value
+
+
+def _verify_context_bank_binding(
+    request: Mapping[str, Any],
+    *,
+    manifest_model: object,
+) -> None:
+    """Recompute an optional v1 bank binding from its canonical content."""
+
+    binding = request.get("context_bank_binding")
+    binding_sha256 = request.get("context_bank_binding_sha256")
+    if binding is None:
+        bound_only_fields = {
+            "context_bank_binding_sha256",
+            "request_identity_sha256",
+            "token_domain",
+            "language_space_atlas",
+            "semantic_unit",
+        }
+        unexpected = sorted(bound_only_fields.intersection(request))
+        if unexpected:
+            raise AtlasIntegrityError(
+                "unbound request retains context-bank-only fields: "
+                + ", ".join(unexpected)
+            )
+        return
+    if not isinstance(binding, Mapping):
+        raise AtlasIntegrityError("context_bank_binding must be an object")
+    expected_binding_sha256 = _require_sha256(
+        binding_sha256,
+        label="context_bank_binding_sha256",
+    )
+    if _canonical_sha256(binding) != expected_binding_sha256:
+        raise AtlasIntegrityError("context-bank binding digest mismatch")
+    if binding.get("schema_version") != "spirallens.atlas-context-binding.v1":
+        raise AtlasIntegrityError("unsupported context-bank binding schema")
+    expected_binding_fields = {
+        "schema_version",
+        "bank",
+        "selected_context",
+        "tokenizer_provenance_sha256",
+        "observation_key_schema_version",
+        "interpretation_contract",
+    }
+    if set(binding) != expected_binding_fields:
+        raise AtlasIntegrityError(
+            "context-bank binding fields differ from the v1 contract"
+        )
+    interpretation = binding.get("interpretation_contract")
+    expected_interpretation = {
+        "language_space_atlas": False,
+        "semantic_unit": False,
+        "decoded_strings_used_for_selection": False,
+        "semantic_annotation_used": False,
+        "sae_annotation_used": False,
+        "projection_used": False,
+    }
+    if (
+        interpretation != expected_interpretation
+        or binding.get("observation_key_schema_version")
+        != "spirallens.observation-key.v1"
+        or request.get("language_space_atlas") is not False
+        or request.get("semantic_unit") is not False
+    ):
+        raise AtlasIntegrityError(
+            "context-bank interpretation flags violate the v1 contract"
+        )
+    request_identity_sha256 = _require_sha256(
+        request.get("request_identity_sha256"),
+        label="request_identity_sha256",
+    )
+    request_identity = _request_resume_identity(request)
+    request_identity.pop("request_identity_sha256", None)
+    if _canonical_sha256(request_identity) != request_identity_sha256:
+        raise AtlasIntegrityError("bound request identity digest mismatch")
+
+    bank = binding.get("bank")
+    selected = binding.get("selected_context")
+    token_domain = request.get("token_domain")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (bank, selected, token_domain, manifest_model)
+    ):
+        raise AtlasIntegrityError(
+            "context-bank binding is missing structured provenance"
+        )
+    assert isinstance(bank, Mapping)
+    assert isinstance(selected, Mapping)
+    assert isinstance(token_domain, Mapping)
+    assert isinstance(manifest_model, Mapping)
+
+    if set(bank) != {"source_sha256", "canonical_sha256", "content"}:
+        raise AtlasIntegrityError("bound bank fields differ from the v1 contract")
+    _require_sha256(bank.get("source_sha256"), label="bank.source_sha256")
+    bank_canonical_sha256 = _require_sha256(
+        bank.get("canonical_sha256"), label="bank.canonical_sha256"
+    )
+    bank_content = bank.get("content")
+    if not isinstance(bank_content, Mapping):
+        raise AtlasIntegrityError("bank.content must be an object")
+    if _canonical_sha256(bank_content) != bank_canonical_sha256:
+        raise AtlasIntegrityError("bound bank canonical digest mismatch")
+    try:
+        validated_bank = context_bank_from_dict(bank_content)
+    except (ContextContractError, TypeError, KeyError) as exc:
+        raise AtlasIntegrityError(
+            f"bound bank content violates its schema: {exc}"
+        ) from exc
+    if validated_bank.sha256 != bank_canonical_sha256:
+        raise AtlasIntegrityError("validated bank canonical digest mismatch")
+    expected_bank_fields = {
+        "schema_version",
+        "bank_id",
+        "status",
+        "license",
+        "claim_eligible",
+        "source",
+        "model",
+        "tokenizer",
+        "sweep_domain",
+        "contexts",
+    }
+    if (
+        set(bank_content) != expected_bank_fields
+        or bank_content.get("schema_version") != "spirallens.context-bank.v1"
+    ):
+        raise AtlasIntegrityError(
+            "bound bank content differs from the context-bank v1 schema"
+        )
+    model = bank_content.get("model")
+    tokenizer = bank_content.get("tokenizer")
+    source = bank_content.get("source")
+    contexts = bank_content.get("contexts")
+    expected_model_fields = {
+        "id",
+        "requested_revision",
+        "resolved_revision",
+        "vocab_size",
+    }
+    expected_tokenizer_fields = {
+        "id",
+        "requested_revision",
+        "resolved_revision",
+        "addressable_size",
+        "tokenizer_class",
+        "implementation",
+        "transformers_version",
+        "tokenizers_version",
+        "add_special_tokens",
+        "files",
+    }
+    if (
+        not isinstance(model, Mapping)
+        or not isinstance(tokenizer, Mapping)
+        or not isinstance(source, Mapping)
+        or set(model) != expected_model_fields
+        or set(tokenizer) != expected_tokenizer_fields
+        or set(source) != {"kind", "source_id"}
+        or not isinstance(contexts, list)
+        or not contexts
+        or any(not isinstance(value, Mapping) for value in contexts)
+    ):
+        raise AtlasIntegrityError("bound bank content is structurally invalid")
+    tokenizer_provenance_sha256 = _require_sha256(
+        binding.get("tokenizer_provenance_sha256"),
+        label="tokenizer_provenance_sha256",
+    )
+    if _canonical_sha256(tokenizer) != tokenizer_provenance_sha256:
+        raise AtlasIntegrityError("bound tokenizer provenance digest mismatch")
+
+    expected_selected_fields = {
+        "context_id",
+        "role",
+        "entry_order_index",
+        "context_spec_sha256",
+        "context_input_sha256",
+        "sweep_position",
+        "observation_position",
+    }
+    if set(selected) != expected_selected_fields:
+        raise AtlasIntegrityError(
+            "selected-context fields differ from the v1 contract"
+        )
+    selected_spec_sha256 = _require_sha256(
+        selected.get("context_spec_sha256"),
+        label="selected_context.context_spec_sha256",
+    )
+    selected_input_sha256 = _require_sha256(
+        selected.get("context_input_sha256"),
+        label="selected_context.context_input_sha256",
+    )
+    entry_index = selected.get("entry_order_index")
+    context_id = selected.get("context_id")
+    if (
+        isinstance(entry_index, bool)
+        or not isinstance(entry_index, int)
+        or not 0 <= entry_index < len(contexts)
+    ):
+        raise AtlasIntegrityError(
+            "selected context does not match the bound bank entry order"
+        )
+    context_content = contexts[entry_index]
+    assert isinstance(context_content, Mapping)
+    context_ids_in_order = [value.get("context_id") for value in contexts]
+    expected_context_fields = {
+        "context_id",
+        "role",
+        "family_id",
+        "source_id",
+        "template_id",
+        "template_ids",
+        "attention_mask",
+        "observation_position",
+    }
+    if (
+        any(not isinstance(value, str) for value in context_ids_in_order)
+        or len(context_ids_in_order) != len(set(context_ids_in_order))
+        or any(set(value) != expected_context_fields for value in contexts)
+        or context_ids_in_order[entry_index] != context_id
+        or context_content.get("role") != selected.get("role")
+        or any(
+            value.get("role") != selected.get("role")
+            for value in contexts
+        )
+    ):
+        raise AtlasIntegrityError(
+            "selected context identity does not match the bank entry order"
+        )
+
+    template_ids = context_content.get("template_ids")
+    attention_mask = context_content.get("attention_mask")
+    context_ids = request.get("context_ids")
+    sweep_position = selected.get("sweep_position")
+    observation_position = selected.get("observation_position")
+    if (
+        not isinstance(template_ids, list)
+        or template_ids.count(None) != 1
+        or not isinstance(attention_mask, list)
+        or len(attention_mask) != len(template_ids)
+        or not isinstance(context_ids, list)
+        or len(context_ids) != len(template_ids)
+        or isinstance(sweep_position, bool)
+        or not isinstance(sweep_position, int)
+        or not 0 <= sweep_position < len(template_ids)
+        or template_ids[sweep_position] is not None
+        or isinstance(observation_position, bool)
+        or not isinstance(observation_position, int)
+        or not 0 <= observation_position < len(template_ids)
+        or context_content.get("observation_position")
+        != observation_position
+    ):
+        raise AtlasIntegrityError(
+            "bound context template, mask, or positions are invalid"
+        )
+    input_payload = {
+        "schema_version": "spirallens.context-spec.v1",
+        "template_ids": template_ids,
+        "attention_mask": attention_mask,
+        "sweep_position": sweep_position,
+        "observation_position": observation_position,
+    }
+    spec_payload = {
+        "schema_version": "spirallens.context-spec.v1",
+        **dict(context_content),
+        "sweep_position": sweep_position,
+    }
+    if (
+        _canonical_sha256(input_payload) != selected_input_sha256
+        or _canonical_sha256(spec_payload) != selected_spec_sha256
+    ):
+        raise AtlasIntegrityError("selected ContextSpec digest mismatch")
+    expected_context_ids = [
+        0 if value is None else value for value in template_ids
+    ]
+    if (
+        context_ids != expected_context_ids
+        or request.get("attention_mask") != attention_mask
+        or request.get("sweep_position") != sweep_position
+        or request.get("observation_position") != observation_position
+        or request.get("position") != observation_position
+    ):
+        raise AtlasIntegrityError(
+            "atlas request does not match its bound ContextSpec"
+        )
+    model_vocab_size = model.get("vocab_size")
+    tokenizer_addressable_size = tokenizer.get("addressable_size")
+    sweep_domain = bank_content.get("sweep_domain")
+    if (
+        isinstance(model_vocab_size, bool)
+        or not isinstance(model_vocab_size, int)
+        or model_vocab_size <= 0
+        or isinstance(tokenizer_addressable_size, bool)
+        or not isinstance(tokenizer_addressable_size, int)
+        or not 0 < tokenizer_addressable_size <= model_vocab_size
+        or sweep_domain
+        not in {"model_embedding_rows", "tokenizer_addressable"}
+    ):
+        raise AtlasIntegrityError("bound model/tokenizer domain is invalid")
+    expected_domain_size = (
+        model_vocab_size
+        if sweep_domain == "model_embedding_rows"
+        else tokenizer_addressable_size
+    )
+    if (
+        request.get("model_id") != model.get("id")
+        or request.get("resolved_model_revision")
+        != model.get("resolved_revision")
+        or token_domain.get("kind") != sweep_domain
+        or token_domain.get("size") != expected_domain_size
+        or token_domain.get("model_vocab_size") != model_vocab_size
+        or token_domain.get("tokenizer_addressable_size")
+        != tokenizer_addressable_size
+        or manifest_model.get("model_id") != model.get("id")
+        or manifest_model.get("resolved_revision")
+        != model.get("resolved_revision")
+        or manifest_model.get("vocab_size") != model_vocab_size
+    ):
+        raise AtlasIntegrityError(
+            "atlas model or token domain does not match its context bank"
+        )
 
 
 def token_ids_sha256(token_ids: np.ndarray) -> str:
@@ -362,6 +702,10 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
         raise AtlasIntegrityError(
             "request capture fingerprint does not match manifest"
         )
+    _verify_context_bank_binding(
+        request,
+        manifest_model=manifest.get("model"),
+    )
 
     attempts = manifest.get("attempts")
     if not isinstance(attempts, list) or not attempts:
@@ -452,6 +796,24 @@ def load_manifest(
             raise AtlasIntegrityError(
                 "token_ids data digest does not match request"
             )
+        request = manifest.get("request", {})
+        if request.get("context_bank_binding") is not None:
+            token_domain = request.get("token_domain")
+            if not isinstance(token_domain, Mapping):
+                raise AtlasIntegrityError(
+                    "bound atlas is missing its token domain"
+                )
+            domain_size = token_domain.get("size")
+            if (
+                isinstance(domain_size, bool)
+                or not isinstance(domain_size, int)
+                or domain_size <= 0
+                or np.any(arrays["token_ids"] < 0)
+                or np.any(arrays["token_ids"] >= domain_size)
+            ):
+                raise AtlasIntegrityError(
+                    "token_ids data exceeds the bound sweep domain"
+                )
         # Partial atlases do not yet have whole-file checksums, so their batch
         # journal is the authoritative integrity boundary.  For complete
         # atlases, whole-file checksums cover the same bytes more efficiently.
@@ -523,6 +885,15 @@ class AtlasStore:
             if manifest.get("run_fingerprint") != fingerprint:
                 raise AtlasStateError(
                     "resume request does not match the persisted run fingerprint"
+                )
+            persisted_request = manifest.get("request")
+            if (
+                not isinstance(persisted_request, Mapping)
+                or _request_resume_identity(persisted_request)
+                != _request_resume_identity(request)
+            ):
+                raise AtlasStateError(
+                    "resume request fields do not match the persisted request"
                 )
             if (
                 manifest.get("capture") != capture_metadata

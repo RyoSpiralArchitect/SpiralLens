@@ -23,6 +23,7 @@ from .loader import (
     ContextBankIntegrityError,
     ContextBankSchemaError,
     LoadedContextBank,
+    context_bank_from_dict,
     load_context_bank,
 )
 
@@ -45,5 +46,6 @@ __all__ = [
     "SourceBinding",
     "SweepDomain",
     "TokenizerBinding",
+    "context_bank_from_dict",
     "load_context_bank",
 ]

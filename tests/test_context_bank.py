@@ -17,6 +17,7 @@ from spirallens.contexts import (
     ContextRole,
     ObservationKey,
     SweepDomain,
+    context_bank_from_dict,
     load_context_bank,
 )
 
@@ -113,6 +114,7 @@ def test_tracked_example_bank_is_claim_ineligible_and_provenance_bound() -> None
         EXAMPLE_BANK.read_bytes()
     ).hexdigest()
     assert loaded.canonical_sha256 == bank.sha256
+    assert context_bank_from_dict(bank.to_dict()) == bank
     assert len(bank.tokenizer.sha256) == 64
     assert (
         bank.contexts[1].template_id
@@ -413,13 +415,18 @@ def test_roles_are_explicit_single_artifact_and_never_implicitly_filtered(
         load_context_bank(path, allowed_roles={"discovery"})
     with pytest.raises(ContextBankSchemaError, match="unknown allowed role"):
         load_context_bank(path, allowed_roles={"training"})
+    with pytest.raises(ContextBankSchemaError, match="exactly one"):
+        load_context_bank(
+            path,
+            allowed_roles={"example", "held_out"},
+        )
 
     mixed = _document()
     mixed["contexts"][1]["role"] = "held_out"  # type: ignore[index]
     with pytest.raises(ContextContractError, match="exactly one role"):
         load_context_bank(
             _write_document(tmp_path, mixed, name="mixed.yaml"),
-            allowed_roles={"example", "held_out"},
+            allowed_roles={"example"},
         )
 
 
