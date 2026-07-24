@@ -13,7 +13,6 @@ import yaml
 
 from spirallens.neighbors import (
     FAISS_HNSW_BACKEND_ID,
-    FAISS_HNSW_BACKEND_VERSION,
     NeighborBackendDescriptor,
     NeighborIndexBuildReceipt,
     NeighborQuery,
@@ -40,6 +39,13 @@ NEIGHBOR_AUDIT_RECEIPT_SCHEMA_VERSION = (
 NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
     "spirallens.neighbor-audit-protocol.v0.2"
 )
+QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
+    "spirallens.neighbor-audit-protocol.v0.3"
+)
+SUPPORTED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS = {
+    NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+    QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+}
 REQUIRED_COVERAGE_GATES = (
     "aggregate",
     "query_local",
@@ -48,6 +54,28 @@ REQUIRED_COVERAGE_GATES = (
     "determinism",
 )
 _VERIFIED_RECEIPT_TOKEN = object()
+
+
+def _expected_promotion_readiness(
+    *,
+    qualified_protocol: bool,
+    frozen: bool,
+) -> dict[str, bool]:
+    readiness = {
+        "receipt_mechanism_implemented": True,
+        "full_index_subset_query_audit_implemented": True,
+        "frozen_recall_gate_methodology_available": True,
+        "query_local_worst_case_recall_gate_implemented": True,
+    }
+    if qualified_protocol:
+        readiness["production_shape_subprocess_qualified"] = frozen
+    readiness.update(
+        {
+            "atlas_execution_bindings_frozen": frozen,
+            "tracked_protocol_can_issue_persistence_receipt": frozen,
+        }
+    )
+    return readiness
 
 
 class _UniqueKeySafeLoader(yaml.SafeLoader):
@@ -523,6 +551,11 @@ def validate_neighbor_protocol_static_contract(
 ) -> None:
     """Reject ambiguous or contradictory neighbor protocol declarations."""
 
+    schema_version = protocol.get("schema_version")
+    qualified_protocol = (
+        schema_version
+        == QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+    )
     expected_top_level = {
         "schema_version",
         "protocol_id",
@@ -541,11 +574,13 @@ def validate_neighbor_protocol_static_contract(
         "promotion_readiness",
         "deviations",
     }
+    if qualified_protocol:
+        expected_top_level.add("backend_qualification")
     status = protocol.get("status")
     if (
         set(protocol) != expected_top_level
-        or protocol.get("schema_version")
-        != NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+        or schema_version
+        not in SUPPORTED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS
         or not isinstance(protocol.get("protocol_id"), str)
         or not protocol["protocol_id"]
         or status not in {"preregistered-draft", "frozen"}
@@ -622,6 +657,23 @@ def validate_neighbor_protocol_static_contract(
         )
 
     subject = protocol.get("subject_backend")
+    expected_backend_version = "0.2" if qualified_protocol else "0.1"
+    expected_required_provenance = [
+        "backend_id",
+        "backend_version",
+        "backend_config",
+        "runtime_versions",
+        "seed",
+        "thread_count",
+        "index_digest",
+    ]
+    if qualified_protocol:
+        expected_required_provenance.extend(
+            [
+                "qualification_receipt_digest",
+                "qualification_fixture_digest",
+            ]
+        )
     expected_subject_fields = {
         "status",
         "backend_id",
@@ -641,7 +693,7 @@ def validate_neighbor_protocol_static_contract(
         != "implementation_selected_unpromoted"
         or subject.get("backend_id") != FAISS_HNSW_BACKEND_ID
         or str(subject.get("backend_version"))
-        != FAISS_HNSW_BACKEND_VERSION
+        != expected_backend_version
         or subject.get("distribution") != "faiss-cpu"
         or str(subject.get("distribution_version")) != "1.14.3"
         or subject.get("kind_required_for_full_vocabulary")
@@ -651,15 +703,7 @@ def validate_neighbor_protocol_static_contract(
         != "forbidden"
         or not isinstance(subject.get("config"), Mapping)
         or subject.get("required_provenance")
-        != [
-            "backend_id",
-            "backend_version",
-            "backend_config",
-            "runtime_versions",
-            "seed",
-            "thread_count",
-            "index_digest",
-        ]
+        != expected_required_provenance
     ):
         raise ValueError(
             "neighbor protocol subject declaration is invalid"
@@ -678,12 +722,6 @@ def validate_neighbor_protocol_static_contract(
     assert isinstance(scope, Mapping)
     assert isinstance(sampling, Mapping)
     assert isinstance(readiness, Mapping)
-    common_readiness = {
-        "receipt_mechanism_implemented": True,
-        "full_index_subset_query_audit_implemented": True,
-        "frozen_recall_gate_methodology_available": True,
-        "query_local_worst_case_recall_gate_implemented": True,
-    }
     if status == "preregistered-draft":
         expected_scope = {
             "comparison_group": None,
@@ -702,11 +740,10 @@ def validate_neighbor_protocol_static_contract(
             or sampling.get("binding_rule")
             != "must_be_filled_before_status_frozen"
             or dict(readiness)
-            != {
-                **common_readiness,
-                "atlas_execution_bindings_frozen": False,
-                "tracked_protocol_can_issue_persistence_receipt": False,
-            }
+            != _expected_promotion_readiness(
+                qualified_protocol=qualified_protocol,
+                frozen=False,
+            )
         ):
             raise ValueError(
                 "draft neighbor protocol binding is invalid"
@@ -731,14 +768,56 @@ def validate_neighbor_protocol_static_contract(
                 str,
             )
             or dict(readiness)
-            != {
-                **common_readiness,
-                "atlas_execution_bindings_frozen": True,
-                "tracked_protocol_can_issue_persistence_receipt": True,
-            }
+            != _expected_promotion_readiness(
+                qualified_protocol=qualified_protocol,
+                frozen=True,
+            )
         ):
             raise ValueError(
                 "frozen neighbor protocol binding is invalid"
+            )
+    if qualified_protocol:
+        qualification = protocol.get("backend_qualification")
+        if not isinstance(qualification, Mapping):
+            raise ValueError(
+                "neighbor protocol backend qualification is invalid"
+            )
+        if status == "preregistered-draft":
+            expected_qualification = {
+                "schema_version": (
+                    "spirallens.faiss-hnsw-range-qualification.v0.1"
+                ),
+                "path": None,
+                "sha256": None,
+                "fixture_sha256": None,
+                "binding_rule": "must_be_filled_before_status_frozen",
+            }
+        else:
+            expected_qualification = {
+                "schema_version": (
+                    "spirallens.faiss-hnsw-range-qualification.v0.1"
+                ),
+                "path": qualification.get("path"),
+                "sha256": qualification.get("sha256"),
+                "fixture_sha256": qualification.get(
+                    "fixture_sha256"
+                ),
+            }
+            if (
+                not isinstance(qualification.get("path"), str)
+                or not qualification["path"]
+            ):
+                raise ValueError(
+                    "frozen backend qualification path is invalid"
+                )
+            for field_name in ("sha256", "fixture_sha256"):
+                _require_sha256(
+                    qualification.get(field_name),
+                    label=f"backend_qualification.{field_name}",
+                )
+        if dict(qualification) != expected_qualification:
+            raise ValueError(
+                "neighbor protocol backend qualification is invalid"
             )
     if (
         dict(scope) != expected_scope
@@ -765,6 +844,13 @@ def _validate_promotion_protocol(
     """Match every promotion-bearing protocol field to the audit."""
 
     validate_neighbor_protocol_static_contract(protocol)
+    qualified_protocol = (
+        protocol.get("schema_version")
+        == QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+    )
+    expected_subject_backend_version = (
+        "0.2" if qualified_protocol else "0.1"
+    )
     if (
         protocol.get("protocol_id")
         != result.protocol_binding.protocol_id
@@ -962,6 +1048,22 @@ def _validate_promotion_protocol(
     subject = protocol.get("subject_backend")
     subject_parameters = dict(result.subject_backend.parameters)
     subject_runtime = dict(result.subject_backend.runtime)
+    expected_required_provenance = [
+        "backend_id",
+        "backend_version",
+        "backend_config",
+        "runtime_versions",
+        "seed",
+        "thread_count",
+        "index_digest",
+    ]
+    if qualified_protocol:
+        expected_required_provenance.extend(
+            [
+                "qualification_receipt_digest",
+                "qualification_fixture_digest",
+            ]
+        )
     expected_subject_fields = {
         "status",
         "backend_id",
@@ -982,7 +1084,7 @@ def _validate_promotion_protocol(
         or result.subject_backend.backend_id
         != FAISS_HNSW_BACKEND_ID
         or result.subject_backend.backend_version
-        != FAISS_HNSW_BACKEND_VERSION
+        != expected_subject_backend_version
         or subject.get("backend_id")
         != result.subject_backend.backend_id
         or str(subject.get("backend_version"))
@@ -993,15 +1095,7 @@ def _validate_promotion_protocol(
         or subject.get("candidate_persistence_without_audit_receipt")
         != "forbidden"
         or subject.get("required_provenance")
-        != [
-            "backend_id",
-            "backend_version",
-            "backend_config",
-            "runtime_versions",
-            "seed",
-            "thread_count",
-            "index_digest",
-        ]
+        != expected_required_provenance
         or not isinstance(subject.get("config"), Mapping)
         or any(
             subject_parameters.get(key) != value
@@ -1043,6 +1137,43 @@ def _validate_promotion_protocol(
             raise ValueError(
                 "Faiss distribution/runtime differs from frozen "
                 "protocol"
+            )
+    if qualified_protocol:
+        from spirallens.neighbors.faiss_qualification import (
+            load_faiss_hnsw_qualification_receipt,
+        )
+
+        qualification = protocol.get("backend_qualification")
+        if not isinstance(qualification, Mapping):
+            raise ValueError(
+                "frozen protocol lacks backend qualification"
+            )
+        qualification_path = _resolve_protocol_reference(
+            protocol_path,
+            qualification.get("path"),
+        )
+        receipt = load_faiss_hnsw_qualification_receipt(
+            qualification_path,
+            expected_sha256=qualification.get("sha256"),
+        )
+        if (
+            receipt.fixture_sha256
+            != qualification.get("fixture_sha256")
+            or subject_parameters.get(
+                "qualification_receipt_sha256"
+            )
+            != receipt.sha256
+            or subject_parameters.get(
+                "qualification_fixture_sha256"
+            )
+            != receipt.fixture_sha256
+            or subject_parameters.get("range_call_batch_size") != 1
+            or subject_runtime.get("faiss_native_sha256")
+            != receipt.runtime["faiss_native_sha256"]
+        ):
+            raise ValueError(
+                "subject backend qualification differs from the "
+                "frozen protocol, receipt, or runtime"
             )
 
     retrieval = protocol.get("retrieval_contract")
@@ -1102,14 +1233,10 @@ def _validate_promotion_protocol(
             "claim boundary differs from frozen protocol"
         )
     promotion_readiness = protocol.get("promotion_readiness")
-    expected_promotion_readiness = {
-        "receipt_mechanism_implemented": True,
-        "full_index_subset_query_audit_implemented": True,
-        "frozen_recall_gate_methodology_available": True,
-        "query_local_worst_case_recall_gate_implemented": True,
-        "atlas_execution_bindings_frozen": True,
-        "tracked_protocol_can_issue_persistence_receipt": True,
-    }
+    expected_promotion_readiness = _expected_promotion_readiness(
+        qualified_protocol=qualified_protocol,
+        frozen=True,
+    )
     if (
         not isinstance(promotion_readiness, Mapping)
         or dict(promotion_readiness) != expected_promotion_readiness

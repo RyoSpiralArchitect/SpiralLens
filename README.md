@@ -150,10 +150,12 @@ The reusable measurement and support rules are frozen in
 They require `>= 0.99` aggregate, query-local, density-macro, and
 density-by-cosine-boundary recall across deterministic cold rebuilds. Empty or
 under-supported required cells are `insufficient`, never an automatic pass.
-The atlas-specific execution declaration remains
-[`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml);
-it binds the frozen methodology by SHA-256 but is still
-`preregistered-draft`.
+The atlas-specific v0.2 declaration remains preserved at
+[`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml).
+The versioned native-call remediation is separately preregistered in
+[`protocols/pythia_neighbor_v0_3.yaml`](protocols/pythia_neighbor_v0_3.yaml);
+it keeps the outer query artifact batch at 512 while bounding each native
+Faiss range-search call to one query.
 Receipt-gated approximate persistence uses the separate typed candidate
 declaration
 [`protocols/pythia_candidate_v0_2.yaml`](protocols/pythia_candidate_v0_2.yaml);
@@ -165,9 +167,12 @@ synthetic example bank, Pythia-70M, and `layer_index=0`:
 [`protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml`](protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml)
 and
 [`protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml`](protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml).
-Those files do not upgrade the run into semantic or scientific evidence. The
-bank is `claim_eligible: false`, and a pass establishes approximate-retrieval
-coverage only.
+The v0.2 subject attempt ended in a native infrastructure error before any
+`pass`, `fail`, or `insufficient` outcome and is terminal under its one-shot
+contract. Its reservation marker is retained as a tombstone. Those files do
+not upgrade the run into semantic or scientific evidence. The bank is
+`claim_eligible: false`, and even a future pass establishes
+approximate-retrieval coverage only.
 
 Index bytes, full states, row order, layer group, runtime, candidate protocol,
 query contract, and exact rerank contract are bound into the audit identity.
@@ -176,21 +181,26 @@ the ContextBank/model revision, position, and token domain. Raw manifest bytes
 and run UUIDs remain audit provenance but cannot change the query sample.
 Every subject audit also requires an out-of-band-hashed execution-freeze
 record that verifies the exact pushed source tree, interpreter, installed
-NumPy/Faiss content, import root, paths, and argv. Its digest is persisted in
-the audit identity. The final pathname is exclusively reserved before any
-outcome computation, and a complete fsynced recovery sidecar is staged before
-the reservation marker can be replaced.
+NumPy/Faiss content, import root, paths, and argv. For backend v0.2 it also
+binds a canonical, production-shape synthetic qualification receipt generated
+by two fresh subprocesses, including the fixture, native binary, config, and
+range-call limit digests plus the clean, live-pushed preflight commit and
+`src/spirallens` tree. Its digest is persisted in the audit identity. The
+final pathname is exclusively reserved before any outcome computation, and a
+complete fsynced recovery sidecar is staged before the reservation marker can
+be replaced.
 Approximate candidate persistence accepts only the built-in Faiss backend and
 a receipt loaded from persisted audit/protocol files against out-of-band
 SHA-256 digests. The audit query subset may expand to all query rows at
 persistence; no other target field may change.
 
-The tracked neighbor protocol deliberately has
-`issue_persistence_receipt_on_verified_pass: false`. Aggregate recall
-can hide a query-local collapse, but freezing that measurement rule does not
-freeze a Pythia run. Its atlas row identity and layer group are still null, and
-no passing full-vocabulary audit has been observed. Therefore no tracked
-full-vocabulary Pythia audit or approximate candidate ledger is claimed yet.
+The tracked v0.3 draft deliberately has
+`issue_persistence_receipt_on_verified_pass: false` until its synthetic
+qualification receipt and atlas bindings are frozen. Aggregate recall can hide
+a query-local collapse, but freezing that measurement rule does not freeze a
+Pythia run. No passing full-vocabulary audit has been observed. Therefore no
+tracked full-vocabulary Pythia audit or approximate candidate ledger is
+claimed yet.
 
 To obtain the atlas-specific bindings without running the ANN or observing an
 audit outcome:
@@ -199,8 +209,19 @@ audit outcome:
 spirallens neighbor-audit \
   --manifest runs/pythia70-full/manifest.json \
   --layer 0 \
-  --protocol protocols/pythia_neighbor_v0_2.yaml \
+  --protocol protocols/pythia_neighbor_v0_3.yaml \
   --prepare-only
+```
+
+The v0.3 native path must first pass the separate subject-independent
+production-shape qualification. It accepts no atlas, token, drift, decoded
+string, or semantic input:
+
+```bash
+spirallens faiss-range-preflight \
+  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --expected-protocol-sha256 "<trusted draft SHA-256>" \
+  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_1.json
 ```
 
 The complete freeze, audit, receipt, and persistence contract is documented in

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -20,13 +21,55 @@ from spirallens.metrics import (
     load_neighbor_audit_receipt,
     write_neighbor_audit,
 )
+from spirallens.metrics.neighbor_receipt import (
+    _expected_promotion_readiness,
+    validate_neighbor_protocol_static_contract,
+)
 from spirallens.neighbors import (
     FaissHNSWBackend,
     FaissHNSWConfig,
+    NeighborBackendDescriptor,
     NeighborQuery,
     canonical_json_sha256,
     state_matrix_sha256,
 )
+
+
+def test_v03_draft_protocol_declares_pending_native_qualification() -> None:
+    protocol_path = (
+        Path(__file__).resolve().parents[1]
+        / "protocols"
+        / "pythia_neighbor_v0_3.yaml"
+    )
+    protocol = yaml.safe_load(protocol_path.read_bytes())
+
+    validate_neighbor_protocol_static_contract(protocol)
+
+    assert protocol["subject_backend"]["backend_version"] == "0.2"
+    assert protocol["subject_backend"]["config"][
+        "range_call_batch_size"
+    ] == 1
+    assert protocol["backend_qualification"][
+        "binding_rule"
+    ] == "must_be_filled_before_status_frozen"
+    assert protocol["promotion_readiness"][
+        "production_shape_subprocess_qualified"
+    ] is False
+
+
+def test_v03_frozen_readiness_includes_production_qualification() -> None:
+    assert _expected_promotion_readiness(
+        qualified_protocol=True,
+        frozen=True,
+    ) == {
+        "receipt_mechanism_implemented": True,
+        "full_index_subset_query_audit_implemented": True,
+        "frozen_recall_gate_methodology_available": True,
+        "query_local_worst_case_recall_gate_implemented": True,
+        "production_shape_subprocess_qualified": True,
+        "atlas_execution_bindings_frozen": True,
+        "tracked_protocol_can_issue_persistence_receipt": True,
+    }
 
 
 def _fixture() -> tuple[np.ndarray, np.ndarray]:
@@ -535,6 +578,146 @@ def test_receipt_authorizes_only_identical_full_input_index_group(
     noncanonical["row_count"] = float(noncanonical["row_count"])
     with pytest.raises(TypeError, match="row_count must be an integer"):
         NeighborAuditReceipt.from_dict(noncanonical)
+
+
+def test_v03_pass_loads_positive_qualification_and_issues_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (
+        result,
+        states,
+        drifts,
+        row_identity,
+        manifest_sha,
+        protocol_path,
+    ) = _frozen_result(tmp_path)
+    protocol = yaml.safe_load(protocol_path.read_bytes())
+    qualification_path = tmp_path / "qualification.json"
+    qualification_bytes = b"{}"
+    qualification_path.write_bytes(qualification_bytes)
+    qualification_sha256 = hashlib.sha256(
+        qualification_bytes
+    ).hexdigest()
+    fixture_sha256 = "f" * 64
+    runtime = dict(result.subject_backend.runtime)
+    native_sha256 = runtime["faiss_native_sha256"]
+    fake_qualification = SimpleNamespace(
+        sha256=qualification_sha256,
+        fixture_sha256=fixture_sha256,
+        runtime={"faiss_native_sha256": native_sha256},
+    )
+    import spirallens.neighbors.faiss_qualification as qualification_module
+
+    monkeypatch.setattr(
+        qualification_module,
+        "load_faiss_hnsw_qualification_receipt",
+        lambda path, expected_sha256: fake_qualification,
+    )
+    protocol["schema_version"] = (
+        "spirallens.neighbor-audit-protocol.v0.3"
+    )
+    protocol["backend_qualification"] = {
+        "schema_version": (
+            "spirallens.faiss-hnsw-range-qualification.v0.1"
+        ),
+        "path": qualification_path.name,
+        "sha256": qualification_sha256,
+        "fixture_sha256": fixture_sha256,
+    }
+    protocol["subject_backend"]["backend_version"] = "0.2"
+    protocol["subject_backend"]["config"][
+        "range_call_batch_size"
+    ] = 1
+    protocol["subject_backend"]["required_provenance"].extend(
+        [
+            "qualification_receipt_digest",
+            "qualification_fixture_digest",
+        ]
+    )
+    protocol["promotion_readiness"][
+        "production_shape_subprocess_qualified"
+    ] = True
+    protocol_path.write_text(
+        yaml.safe_dump(protocol, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    parameters = dict(result.subject_backend.parameters)
+    parameters.update(
+        {
+            "range_call_batch_size": 1,
+            "max_native_call_hits": result.row_count,
+            "qualification_receipt_sha256": (
+                qualification_sha256
+            ),
+            "qualification_fixture_sha256": fixture_sha256,
+        }
+    )
+    qualified_result = replace(
+        result,
+        subject_backend=NeighborBackendDescriptor(
+            backend_id=result.subject_backend.backend_id,
+            backend_version="0.2",
+            kind=result.subject_backend.kind,
+            deterministic=result.subject_backend.deterministic,
+            parameters=tuple(parameters.items()),
+            runtime=result.subject_backend.runtime,
+        ),
+        protocol_binding=replace(
+            result.protocol_binding,
+            source_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        ),
+    )
+    audit_path = tmp_path / "qualified-audit.json"
+    _write_atlas_audit(qualified_result, audit_path)
+
+    receipt = load_neighbor_audit_receipt(
+        audit_path,
+        protocol_path=protocol_path,
+        expected_audit_sha256=qualified_result.sha256,
+        expected_protocol_sha256=hashlib.sha256(
+            protocol_path.read_bytes()
+        ).hexdigest(),
+    )
+
+    assert receipt.subject_backend.backend_version == "0.2"
+    assert dict(receipt.subject_backend.parameters)[
+        "qualification_receipt_sha256"
+    ] == qualification_sha256
+    target = NeighborPersistenceTarget(
+        backend=receipt.subject_backend,
+        build_receipt=receipt.subject_build_receipt,
+        candidate_config=qualified_result.candidate_config,
+        candidate_protocol_id=receipt.candidate_protocol_id,
+        candidate_protocol_sha256=(
+            receipt.candidate_protocol_sha256
+        ),
+        query=NeighborQuery(
+            cosine_min=qualified_result.query.cosine_min,
+            relative_norm_gap_max=(
+                qualified_result.query.relative_norm_gap_max
+            ),
+            min_state_norm=qualified_result.query.min_state_norm,
+            epsilon=qualified_result.query.epsilon,
+        ),
+        atlas_manifest_sha256=manifest_sha,
+        atlas_run_id="atlas-run-1",
+        global_row_key_sha256=row_identity,
+        source_run_id="atlas-run-1",
+        comparison_group="layer_index=0",
+        states_sha256=state_matrix_sha256(states),
+        drifts_sha256=state_matrix_sha256(drifts),
+        row_count=int(states.shape[0]),
+        hidden_size=int(states.shape[1]),
+        states_dtype=str(states.dtype),
+        drifts_dtype=str(drifts.dtype),
+    )
+
+    assert receipt.verified is True
+    receipt.validate_target(target)
 
 
 def test_audit_result_rejects_query_selection_rewrite(

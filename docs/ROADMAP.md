@@ -146,8 +146,11 @@ Delivered:
   worst-case recall methodology, separate from any Pythia audit outcome;
 - a pinned, selected-but-unpromoted Faiss HNSW range-search backend with
   full-index/subset-query audit receipts and strict ledger replay;
+- a versioned one-query native range-call path and the mechanism for a
+  subject-independent, production-shape, two-cold-process qualification
+  receipt (production preflight and receipt still pending);
 - CLI commands for calibration, atlas capture, neighbor-audit preparation and
-  execution, and candidate extraction.
+  execution, native range preflight, and candidate extraction.
 
 Exit criteria:
 

@@ -1116,7 +1116,8 @@ class NeighborAuditResult:
             and (
                 self.subject_backend.backend_id
                 != "spirallens.faiss-hnsw-range"
-                or self.subject_backend.backend_version != "0.1"
+                or self.subject_backend.backend_version
+                not in {"0.1", "0.2"}
             )
         ):
             raise ValueError(

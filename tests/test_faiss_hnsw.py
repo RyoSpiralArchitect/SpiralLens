@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -18,6 +20,10 @@ from spirallens.metrics import (  # noqa: E402
 from spirallens.execution_freeze import (  # noqa: E402
     current_worker_runtime_contract,
 )
+from spirallens.neighbors._faiss_worker import (  # noqa: E402
+    _range_search_in_calls,
+    _run_preflight,
+)
 from spirallens.neighbors import (  # noqa: E402
     FaissHNSWBackend,
     FaissHNSWConfig,
@@ -25,6 +31,10 @@ from spirallens.neighbors import (  # noqa: E402
     canonical_json_sha256,
     validate_prepared_backend,
 )
+from spirallens.neighbors.faiss_hnsw import (  # noqa: E402
+    FAISS_HNSW_RANGE_CALL_BACKEND_VERSION,
+)
+from spirallens.neighbors import faiss_hnsw as faiss_hnsw_module  # noqa: E402
 
 
 def _row_identity() -> str:
@@ -296,3 +306,209 @@ def test_frozen_audit_rejects_overridden_faiss_search() -> None:
 def test_faiss_hnsw_requires_single_thread() -> None:
     with pytest.raises(ValueError, match="thread_count must be 1"):
         FaissHNSWConfig(thread_count=2)
+
+
+def test_explicit_range_call_batch_selects_v0_2_without_mutating_v0_1() -> None:
+    legacy = FaissHNSWConfig(query_batch_size=512)
+    qualified = FaissHNSWConfig(
+        query_batch_size=512,
+        range_call_batch_size=1,
+    )
+
+    assert legacy.backend_version == "0.1"
+    assert "range_call_batch_size" not in legacy.to_dict()
+    assert legacy.effective_range_call_batch_size == 512
+    assert (
+        qualified.backend_version
+        == FAISS_HNSW_RANGE_CALL_BACKEND_VERSION
+    )
+    assert qualified.to_dict()["range_call_batch_size"] == 1
+    assert qualified.effective_range_call_batch_size == 1
+
+
+@pytest.mark.parametrize("value", [True, 0, 513])
+def test_range_call_batch_size_is_strict(value: object) -> None:
+    error = TypeError if value is True else ValueError
+    with pytest.raises(error, match="range_call_batch_size"):
+        FaissHNSWConfig(
+            query_batch_size=512,
+            range_call_batch_size=value,  # type: ignore[arg-type]
+        )
+
+
+def test_v0_2_backend_requires_qualification_before_build() -> None:
+    with pytest.raises(ValueError, match="qualification receipt"):
+        FaissHNSWBackend(
+            _states(),
+            row_identity_sha256=_row_identity(),
+            comparison_group="layer_index=0",
+            config=_config(range_call_batch_size=1),
+        )
+
+
+class _FakeRangeIndex:
+    def __init__(self, row_count: int = 5) -> None:
+        self.ntotal = row_count
+        self.call_sizes: list[int] = []
+
+    def range_search(
+        self,
+        queries: np.ndarray,
+        radius: float,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        del radius
+        self.call_sizes.append(int(queries.shape[0]))
+        labels = np.arange(queries.shape[0], dtype=np.int64)
+        return (
+            np.arange(queries.shape[0] + 1, dtype=np.int64),
+            np.ones(queries.shape[0], dtype=np.float32),
+            labels,
+        )
+
+
+def test_range_calls_are_aggregated_after_single_query_native_calls() -> None:
+    index = _FakeRangeIndex()
+    queries = np.ones((3, 2), dtype=np.float32)
+
+    limits, scores, labels = _range_search_in_calls(
+        index,
+        queries,
+        radius=0.5,
+        range_call_batch_size=1,
+        max_native_call_hits=5,
+        max_total_hits=10,
+    )
+
+    assert index.call_sizes == [1, 1, 1]
+    assert limits.tolist() == [0, 1, 2, 3]
+    assert scores.tolist() == [1.0, 1.0, 1.0]
+    assert labels.tolist() == [0, 0, 0]
+
+
+def test_native_hit_ceiling_is_checked_before_range_call() -> None:
+    index = _FakeRangeIndex(row_count=5)
+    queries = np.ones((2, 2), dtype=np.float32)
+
+    with pytest.raises(ValueError, match="prebound hit ceiling"):
+        _range_search_in_calls(
+            index,
+            queries,
+            radius=0.5,
+            range_call_batch_size=2,
+            max_native_call_hits=9,
+            max_total_hits=10,
+        )
+
+    assert index.call_sizes == []
+
+
+class _MalformedRangeIndex(_FakeRangeIndex):
+    def range_search(
+        self,
+        queries: np.ndarray,
+        radius: float,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        del queries, radius
+        return (
+            np.array([0, 1], dtype=np.int64),
+            np.array([np.nan], dtype=np.float32),
+            np.array([self.ntotal], dtype=np.int64),
+        )
+
+
+def test_native_range_result_is_validated_before_aggregation() -> None:
+    with pytest.raises(ValueError, match="malformed"):
+        _range_search_in_calls(
+            _MalformedRangeIndex(),
+            np.ones((1, 2), dtype=np.float32),
+            radius=0.5,
+            range_call_batch_size=1,
+            max_native_call_hits=5,
+            max_total_hits=5,
+        )
+
+
+def test_preflight_uses_production_build_search_and_readback(
+    tmp_path,
+) -> None:
+    output = tmp_path / "preflight.json"
+
+    assert (
+        _run_preflight(
+            SimpleNamespace(
+                output=output,
+                fixture_schema_version="test-fixture-v0.1",
+                row_count=8,
+                hidden_size=4,
+                cluster_size=2,
+                query_count=4,
+                fixture_seed=1729,
+                m=2,
+                ef_construction=20,
+                ef_search=20,
+                seed=1729,
+                query_batch_size=4,
+                range_call_batch_size=1,
+                cosine_min=0.9,
+                score_margin=0.001,
+                radius=0.899,
+                max_native_call_hits=8,
+                max_raw_hits=100,
+                runtime_contract=current_worker_runtime_contract(None),
+            )
+        )
+        == 0
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["result"]["limits_length"] == 5
+    assert payload["result"]["raw_hit_count"] > 0
+    assert payload["search"]["range_call_batch_size"] == 1
+
+
+def test_worker_subprocess_environment_is_allowlisted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["environment"] = kwargs["env"]
+        return SimpleNamespace(returncode=0, stderr="", stdout="")
+
+    monkeypatch.setenv("SPIRALLENS_FORBIDDEN_SECRET", "secret")
+    monkeypatch.setenv("PYTHONDONTWRITEBYTECODE", "1")
+    monkeypatch.setattr(
+        faiss_hnsw_module.subprocess,
+        "run",
+        fake_run,
+    )
+
+    faiss_hnsw_module._run_worker(
+        ["search"],
+        runtime_contract={"runtime": "bound"},
+    )
+
+    environment = captured["environment"]
+    assert isinstance(environment, dict)
+    assert "SPIRALLENS_FORBIDDEN_SECRET" not in environment
+    assert environment["PYTHONDONTWRITEBYTECODE"] == "1"
+    allowed = {
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TMPDIR",
+        "PYTHONPATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPYCACHEPREFIX",
+        "SPIRALLENS_FAISS_WORKER_RUNTIME_CONTRACT",
+    }
+    assert set(environment) <= allowed
+    assert {
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TMPDIR",
+        "PYTHONDONTWRITEBYTECODE",
+        "SPIRALLENS_FAISS_WORKER_RUNTIME_CONTRACT",
+    } <= set(environment)

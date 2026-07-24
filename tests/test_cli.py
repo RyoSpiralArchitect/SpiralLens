@@ -353,6 +353,73 @@ def test_neighbor_audit_prepare_only_owns_optional_output() -> None:
         parser.parse_args(["atlas", "--max-tokens", "1"])
 
 
+def test_faiss_range_preflight_requires_out_of_band_protocol_digest(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "qualification.json"
+
+    exit_code = main(
+        [
+            "faiss-range-preflight",
+            "--protocol",
+            str(root / "protocols" / "pythia_neighbor_v0_3.yaml"),
+            "--expected-protocol-sha256",
+            "0" * 64,
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert exit_code == 1
+    assert not output.exists()
+    assert "does not match" in capsys.readouterr().err
+
+
+def test_faiss_range_preflight_preserves_output_symlink_checks(
+    tmp_path: Path,
+    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = root / "protocols" / "pythia_neighbor_v0_3.yaml"
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    import spirallens.neighbors.faiss_qualification as qualification_module
+
+    monkeypatch.setattr(
+        qualification_module,
+        "_pushed_source_contract",
+        lambda *args, **kwargs: {
+            "repository": (
+                "https://github.com/RyoSpiralArchitect/SpiralLens.git"
+            ),
+            "branch": "SpiralReality/pythia70-subject-audit-v03",
+            "implementation_commit": "a" * 40,
+            "spirallens_package_tree": "b" * 40,
+        },
+    )
+
+    exit_code = main(
+        [
+            "faiss-range-preflight",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            hashlib.sha256(protocol.read_bytes()).hexdigest(),
+            "--output",
+            str(linked_parent / "qualification.json"),
+        ]
+    )
+
+    assert exit_code == 1
+    assert not (real_parent / "qualification.json").exists()
+    assert "directory chain is unsafe" in capsys.readouterr().err
+
+
 def test_frozen_neighbor_audit_refuses_overwrite(
     tmp_path: Path,
     capsys,

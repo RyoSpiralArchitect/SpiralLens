@@ -18,6 +18,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -32,9 +33,13 @@ from .contracts import (
 )
 from .scoring import conservative_dot_tolerance, finite_row_norms
 
+if TYPE_CHECKING:
+    from .faiss_qualification import FaissHNSWQualificationReceipt
+
 
 FAISS_HNSW_BACKEND_ID = "spirallens.faiss-hnsw-range"
 FAISS_HNSW_BACKEND_VERSION = "0.1"
+FAISS_HNSW_RANGE_CALL_BACKEND_VERSION = "0.2"
 FAISS_DISTRIBUTION_VERSION = "1.14.3"
 
 
@@ -61,7 +66,24 @@ def _run_worker(
     *,
     runtime_contract: Mapping[str, str],
 ) -> None:
-    environment = os.environ.copy()
+    allowed_environment = {
+        "PYTHONPATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPYCACHEPREFIX",
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TMPDIR",
+    }
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key in allowed_environment
+    }
+    environment.setdefault("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
+    environment.setdefault("LANG", "C")
+    environment.setdefault("LC_ALL", "C")
+    environment.setdefault("TMPDIR", tempfile.gettempdir())
     environment["SPIRALLENS_FAISS_WORKER_RUNTIME_CONTRACT"] = (
         json.dumps(
             dict(runtime_contract),
@@ -111,6 +133,7 @@ class FaissHNSWConfig:
     score_margin: float = 1e-4
     max_raw_hits: int = 20_000_000
     max_proposed_pairs: int = 10_000_000
+    range_call_batch_size: int | None = None
 
     def __post_init__(self) -> None:
         for field_name in (
@@ -139,6 +162,18 @@ class FaissHNSWConfig:
             )
         if self.query_batch_size <= 0:
             raise ValueError("query_batch_size must be positive")
+        if self.range_call_batch_size is not None:
+            value = self.range_call_batch_size
+            if isinstance(value, bool) or not isinstance(value, Integral):
+                raise TypeError("range_call_batch_size must be an integer or None")
+            value = int(value)
+            if value <= 0:
+                raise ValueError("range_call_batch_size must be positive")
+            if value > self.query_batch_size:
+                raise ValueError(
+                    "range_call_batch_size cannot exceed query_batch_size"
+                )
+            object.__setattr__(self, "range_call_batch_size", value)
         if self.max_raw_hits <= 0 or self.max_proposed_pairs <= 0:
             raise ValueError(
                 "max_raw_hits and max_proposed_pairs must be positive"
@@ -154,7 +189,22 @@ class FaissHNSWConfig:
         object.__setattr__(self, "score_margin", float(self.score_margin))
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        payload = asdict(self)
+        if self.range_call_batch_size is None:
+            payload.pop("range_call_batch_size")
+        return payload
+
+    @property
+    def backend_version(self) -> str:
+        if self.range_call_batch_size is None:
+            return FAISS_HNSW_BACKEND_VERSION
+        return FAISS_HNSW_RANGE_CALL_BACKEND_VERSION
+
+    @property
+    def effective_range_call_batch_size(self) -> int:
+        if self.range_call_batch_size is None:
+            return self.query_batch_size
+        return self.range_call_batch_size
 
 
 class FaissHNSWBackend:
@@ -168,6 +218,7 @@ class FaissHNSWBackend:
         comparison_group: str,
         config: FaissHNSWConfig | None = None,
         worker_runtime_contract: Mapping[str, str] | None = None,
+        qualification_receipt: FaissHNSWQualificationReceipt | None = None,
     ) -> None:
         from spirallens.execution_freeze import (
             current_worker_runtime_contract,
@@ -236,6 +287,33 @@ class FaissHNSWBackend:
         )
         if not np.all(np.isfinite(rows)):
             raise ValueError("states contain non-finite values")
+        qualification = None
+        max_native_call_hits = None
+        if settings.backend_version == FAISS_HNSW_BACKEND_VERSION:
+            if qualification_receipt is not None:
+                raise ValueError(
+                    "Faiss HNSW v0.1 cannot bind a v0.2 qualification receipt"
+                )
+        else:
+            from .faiss_qualification import (
+                FaissHNSWQualificationReceipt,
+            )
+
+            if not isinstance(
+                qualification_receipt,
+                FaissHNSWQualificationReceipt,
+            ):
+                raise ValueError(
+                    "Faiss HNSW v0.2 requires a validated qualification receipt"
+                )
+            qualification_receipt.validate_for_backend(
+                config=settings,
+                row_count=int(source_rows.shape[0]),
+                hidden_size=int(source_rows.shape[1]),
+                runtime_contract=actual_runtime,
+            )
+            qualification = qualification_receipt
+            max_native_call_hits = qualification.max_native_call_hits
 
         workdir = tempfile.TemporaryDirectory(
             prefix="spirallens-faiss-hnsw-"
@@ -293,7 +371,7 @@ class FaissHNSWBackend:
         runtime = tuple(sorted(self._worker_runtime_contract.items()))
         promotion_config = {
             "backend_id": FAISS_HNSW_BACKEND_ID,
-            "backend_version": FAISS_HNSW_BACKEND_VERSION,
+            "backend_version": settings.backend_version,
             "metric": "cosine",
             "index_type": "IndexHNSWFlat",
             "faiss_metric": "METRIC_INNER_PRODUCT",
@@ -306,7 +384,7 @@ class FaissHNSWBackend:
         promotion_config_sha256 = canonical_json_sha256(
             promotion_config
         )
-        parameters = (
+        parameters: list[tuple[str, object]] = [
             ("build_dtype", "float32"),
             ("comparison_group", comparison_group),
             ("ef_construction", settings.ef_construction),
@@ -339,13 +417,34 @@ class FaissHNSWBackend:
             ("thread_count", settings.thread_count),
             ("worker_isolation", "fresh_python_subprocess"),
             ("worker_states_sha256", worker_states_sha256),
-        )
+        ]
+        if qualification is not None:
+            parameters.extend(
+                [
+                    (
+                        "qualification_fixture_sha256",
+                        qualification.fixture_sha256,
+                    ),
+                    (
+                        "qualification_receipt_sha256",
+                        qualification.sha256,
+                    ),
+                    (
+                        "range_call_batch_size",
+                        settings.effective_range_call_batch_size,
+                    ),
+                    (
+                        "max_native_call_hits",
+                        max_native_call_hits,
+                    ),
+                ]
+            )
         descriptor = NeighborBackendDescriptor(
             backend_id=FAISS_HNSW_BACKEND_ID,
-            backend_version=FAISS_HNSW_BACKEND_VERSION,
+            backend_version=settings.backend_version,
             kind="approximate",
             deterministic=True,
-            parameters=parameters,
+            parameters=tuple(parameters),
             runtime=runtime,
         )
         receipt = NeighborIndexBuildReceipt(
@@ -369,6 +468,8 @@ class FaissHNSWBackend:
         self._states_path = states_path
         self._index_path = index_path
         self._worker_states_sha256 = worker_states_sha256
+        self._qualification_receipt = qualification
+        self._max_native_call_hits = max_native_call_hits
 
     @property
     def config(self) -> FaissHNSWConfig:
@@ -443,6 +544,12 @@ class FaissHNSWBackend:
                 np.float32(-np.inf),
             )
         )
+        if self._qualification_receipt is not None:
+            self._qualification_receipt.validate_search_radius(
+                cosine_min=query.cosine_min,
+                score_margin=self._config.score_margin,
+                radius=radius,
+            )
         proposed: dict[tuple[int, int], float] = {}
         if (
             _worker_state_bytes_sha256(self._states_path)
@@ -459,8 +566,7 @@ class FaissHNSWBackend:
             query_path = search_root / "query-indices.npy"
             manifest_path = search_root / "manifest.json"
             np.save(query_path, query_indices, allow_pickle=False)
-            _run_worker(
-                [
+            worker_arguments = [
                     "search",
                     "--states",
                     str(self._states_path),
@@ -476,11 +582,22 @@ class FaissHNSWBackend:
                     str(self._config.ef_search),
                     "--query-batch-size",
                     str(self._config.query_batch_size),
+                    "--range-call-batch-size",
+                    str(self._config.effective_range_call_batch_size),
                     "--max-raw-hits",
                     str(self._config.max_raw_hits),
                     "--radius",
                     repr(radius),
-                ],
+                ]
+            if self._max_native_call_hits is not None:
+                worker_arguments.extend(
+                    [
+                        "--max-native-call-hits",
+                        str(self._max_native_call_hits),
+                    ]
+                )
+            _run_worker(
+                worker_arguments,
                 runtime_contract=self._worker_runtime_contract,
             )
             manifest = json.loads(
@@ -491,6 +608,12 @@ class FaissHNSWBackend:
                 or manifest.get("query_count")
                 != int(query_indices.size)
                 or not isinstance(manifest.get("files"), list)
+                or manifest.get("query_batch_size")
+                != self._config.query_batch_size
+                or manifest.get("range_call_batch_size")
+                != self._config.effective_range_call_batch_size
+                or manifest.get("max_native_call_hits")
+                != self._max_native_call_hits
             ):
                 raise RuntimeError(
                     "Faiss search worker manifest is malformed"

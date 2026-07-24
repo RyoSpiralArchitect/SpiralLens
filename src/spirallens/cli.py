@@ -118,18 +118,38 @@ def _faiss_config_from_neighbor_protocol(
     )
 
     subject = document.get("subject_backend")
+    schema_version = document.get("schema_version")
+    expected_backend_version = {
+        "spirallens.neighbor-audit-protocol.v0.2": "0.1",
+        "spirallens.neighbor-audit-protocol.v0.3": "0.2",
+    }.get(schema_version)
     if (
-        not isinstance(subject, dict)
+        expected_backend_version is None
+        or not isinstance(subject, dict)
         or subject.get("backend_id") != FAISS_HNSW_BACKEND_ID
-        or subject.get("backend_version") != "0.1"
+        or str(subject.get("backend_version"))
+        != expected_backend_version
         or subject.get("distribution") != "faiss-cpu"
         or str(subject.get("distribution_version")) != "1.14.3"
         or not isinstance(subject.get("config"), dict)
     ):
         raise ValueError(
-            "neighbor protocol does not select Faiss HNSW v0.1"
+            "neighbor protocol does not select a supported Faiss HNSW "
+            "backend"
         )
-    return FaissHNSWConfig(**subject["config"])
+    config = FaissHNSWConfig(**subject["config"])
+    if (
+        expected_backend_version == "0.1"
+        and config.range_call_batch_size is not None
+    ) or (
+        expected_backend_version == "0.2"
+        and config.range_call_batch_size != 1
+    ):
+        raise ValueError(
+            "neighbor protocol backend version and native range-call "
+            "batch contract differ"
+        )
+    return config
 
 
 def _candidate_config_from_protocol_document(
@@ -293,6 +313,151 @@ def _neighbor_audit_exit_code(
         return 2
     if protocol_status == "frozen" and not promotion_eligible:
         return 2
+    return 0
+
+
+def _run_faiss_range_preflight(args: argparse.Namespace) -> int:
+    """Qualify the versioned native range-call path without subject data."""
+
+    import numpy as np
+
+    from spirallens.metrics.neighbor_receipt import (
+        _candidate_config_from_bytes,
+        validate_neighbor_protocol_static_contract,
+    )
+    from spirallens.neighbors.faiss_qualification import (
+        run_faiss_hnsw_qualification,
+    )
+
+    protocol_path = args.protocol.resolve()
+    protocol_bytes, protocol = _load_yaml_mapping(
+        protocol_path,
+        label="Faiss range preflight protocol",
+    )
+    protocol_sha256 = hashlib.sha256(protocol_bytes).hexdigest()
+    if protocol_sha256 != args.expected_protocol_sha256:
+        raise ValueError(
+            "preflight protocol does not match "
+            "--expected-protocol-sha256"
+        )
+    validate_neighbor_protocol_static_contract(protocol)
+    if (
+        protocol.get("schema_version")
+        != "spirallens.neighbor-audit-protocol.v0.3"
+        or protocol.get("status") != "preregistered-draft"
+    ):
+        raise ValueError(
+            "Faiss range preflight requires the v0.3 preregistered "
+            "draft protocol"
+        )
+    faiss_config = _faiss_config_from_neighbor_protocol(protocol)
+    expected_faiss_config = {
+        "m": 32,
+        "ef_construction": 200,
+        "ef_search": 256,
+        "seed": 1729,
+        "thread_count": 1,
+        "query_batch_size": 512,
+        "range_call_batch_size": 1,
+        "score_margin": 0.0001,
+        "max_raw_hits": 20_000_000,
+        "max_proposed_pairs": 10_000_000,
+    }
+    if faiss_config.to_dict() != expected_faiss_config:
+        raise ValueError(
+            "Faiss range preflight protocol config differs from the "
+            "fixed production-shape qualification"
+        )
+    candidate_binding = protocol.get("candidate_protocol")
+    if not isinstance(candidate_binding, dict):
+        raise ValueError(
+            "Faiss range preflight protocol lacks candidate binding"
+        )
+    candidate_path = _resolve_protocol_reference(
+        protocol_path,
+        candidate_binding.get("path"),
+    )
+    candidate_bytes = candidate_path.read_bytes()
+    if (
+        hashlib.sha256(candidate_bytes).hexdigest()
+        != candidate_binding.get("sha256")
+    ):
+        raise ValueError(
+            "Faiss range preflight candidate binding differs"
+        )
+    _, candidate_config = _candidate_config_from_bytes(
+        candidate_bytes,
+        layer_index=0,
+        require_frozen=False,
+    )
+    radius = float(
+        np.nextafter(
+            np.float32(
+                max(
+                    -1.0,
+                    candidate_config.cosine_min
+                    - faiss_config.score_margin,
+                )
+            ),
+            np.float32(-np.inf),
+        )
+    )
+    expected_radius = float(
+        np.nextafter(
+            np.float32(0.9949),
+            np.float32(-np.inf),
+        )
+    )
+    if radius != expected_radius:
+        raise ValueError(
+            "Faiss range preflight radius differs from the fixed "
+            "qualification"
+        )
+    output_path = Path(os.path.abspath(args.output))
+    receipt = run_faiss_hnsw_qualification(output_path)
+    expected_search = {
+        "m": faiss_config.m,
+        "ef_construction": faiss_config.ef_construction,
+        "ef_search": faiss_config.ef_search,
+        "seed": faiss_config.seed,
+        "thread_count": faiss_config.thread_count,
+        "query_batch_size": faiss_config.query_batch_size,
+        "range_call_batch_size": faiss_config.range_call_batch_size,
+        "cosine_min": candidate_config.cosine_min,
+        "score_margin": faiss_config.score_margin,
+        "radius": radius,
+        "max_native_call_hits": 50_304,
+        "max_raw_hits": faiss_config.max_raw_hits,
+    }
+    if dict(receipt.search) != expected_search:
+        raise ValueError(
+            "Faiss range qualification search contract differs from "
+            "the protocol"
+        )
+    if protocol_path.read_bytes() != protocol_bytes:
+        raise ValueError(
+            "Faiss range preflight protocol changed during execution"
+        )
+    if candidate_path.read_bytes() != candidate_bytes:
+        raise ValueError(
+            "Faiss range preflight candidate changed during execution"
+        )
+    _print_json(
+        {
+            "command": "faiss-range-preflight",
+            "status": receipt.status,
+            "protocol_sha256": protocol_sha256,
+            "receipt": str(output_path),
+            "receipt_sha256": receipt.sha256,
+            "fixture_sha256": receipt.fixture_sha256,
+            "backend_version": receipt.backend_version,
+            "cold_process_runs": len(receipt.cold_process_runs),
+            "implementation_commit": receipt.implementation_commit,
+            "spirallens_package_tree": (
+                receipt.spirallens_package_tree
+            ),
+        }
+    )
     return 0
 
 
@@ -678,6 +843,40 @@ def _run_candidates(args: argparse.Namespace) -> int:
         faiss_config = _faiss_config_from_neighbor_protocol(
             neighbor_document
         )
+        qualification_receipt = None
+        if (
+            neighbor_document.get("schema_version")
+            == "spirallens.neighbor-audit-protocol.v0.3"
+        ):
+            from spirallens.neighbors.faiss_qualification import (
+                load_faiss_hnsw_qualification_receipt,
+            )
+
+            qualification_binding = neighbor_document.get(
+                "backend_qualification"
+            )
+            if not isinstance(qualification_binding, dict):
+                raise ValueError(
+                    "qualified neighbor protocol lacks its preflight "
+                    "receipt binding"
+                )
+            qualification_path = _resolve_protocol_reference(
+                args.neighbor_audit_protocol.resolve(),
+                qualification_binding.get("path"),
+            )
+            qualification_receipt = (
+                load_faiss_hnsw_qualification_receipt(
+                    qualification_path,
+                    expected_sha256=qualification_binding.get("sha256"),
+                )
+            )
+            if (
+                qualification_receipt.fixture_sha256
+                != qualification_binding.get("fixture_sha256")
+            ):
+                raise ValueError(
+                    "qualified neighbor protocol fixture binding differs"
+                )
         receipt = load_neighbor_audit_receipt(
             args.neighbor_audit,
             protocol_path=args.neighbor_audit_protocol,
@@ -715,6 +914,7 @@ def _run_candidates(args: argparse.Namespace) -> int:
                 worker_runtime_contract=dict(
                     receipt.subject_backend.runtime
                 ),
+                qualification_receipt=qualification_receipt,
             )
 
         neighbor_backend_factory = build_neighbor_backend
@@ -794,9 +994,17 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         )
     protocol_id = document.get("protocol_id")
     protocol_status = document.get("status")
+    protocol_schema_version = document.get("schema_version")
+    qualified_protocol = (
+        protocol_schema_version
+        == "spirallens.neighbor-audit-protocol.v0.3"
+    )
     if (
-        document.get("schema_version")
-        != "spirallens.neighbor-audit-protocol.v0.2"
+        protocol_schema_version
+        not in {
+            "spirallens.neighbor-audit-protocol.v0.2",
+            "spirallens.neighbor-audit-protocol.v0.3",
+        }
         or not isinstance(protocol_id, str)
         or protocol_status not in {"preregistered-draft", "frozen"}
     ):
@@ -877,6 +1085,10 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         "atlas_execution_bindings_frozen",
         "tracked_protocol_can_issue_persistence_receipt",
     }
+    if qualified_protocol:
+        expected_readiness_fields.add(
+            "production_shape_subprocess_qualified"
+        )
     if (
         not isinstance(readiness, dict)
         or set(readiness) != expected_readiness_fields
@@ -893,6 +1105,14 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             "query_local_worst_case_recall_gate_implemented"
         ]
         is not True
+        or (
+            qualified_protocol
+            and protocol_status == "frozen"
+            and readiness[
+                "production_shape_subprocess_qualified"
+            ]
+            is not True
+        )
     ):
         raise ValueError(
             "neighbor protocol promotion readiness is invalid"
@@ -935,6 +1155,40 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError(
             "boundary_shell_width must equal subject score_margin"
         )
+    qualification_receipt = None
+    qualification_path = None
+    qualification_bytes = None
+    if qualified_protocol and protocol_status == "frozen":
+        from spirallens.neighbors.faiss_qualification import (
+            load_faiss_hnsw_qualification_receipt,
+        )
+
+        qualification_binding = document.get(
+            "backend_qualification"
+        )
+        if not isinstance(qualification_binding, dict):
+            raise ValueError(
+                "frozen neighbor protocol lacks backend qualification"
+            )
+        qualification_path = _resolve_protocol_reference(
+            protocol_path,
+            qualification_binding.get("path"),
+        )
+        qualification_bytes = qualification_path.read_bytes()
+        qualification_receipt = (
+            load_faiss_hnsw_qualification_receipt(
+                qualification_path,
+                expected_sha256=qualification_binding.get("sha256"),
+            )
+        )
+        if (
+            qualification_receipt.fixture_sha256
+            != qualification_binding.get("fixture_sha256")
+        ):
+            raise ValueError(
+                "backend qualification fixture differs from the "
+                "frozen neighbor protocol"
+            )
 
     requested_manifest = args.manifest.resolve()
     manifest_path = (
@@ -1038,6 +1292,14 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             raise ValueError(
                 "recall gate contract changed during binding preparation"
             )
+        if (
+            qualification_path is not None
+            and qualification_path.read_bytes()
+            != qualification_bytes
+        ):
+            raise ValueError(
+                "backend qualification changed during binding preparation"
+            )
         _print_json(
             {
                 "command": "neighbor-audit",
@@ -1063,6 +1325,16 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
                 "query_selection_sha256": selection.sha256,
                 "promotion_policy_declared": audit_values.get(
                     "issue_persistence_receipt_on_verified_pass"
+                ),
+                "backend_qualification_sha256": (
+                    None
+                    if qualification_receipt is None
+                    else qualification_receipt.sha256
+                ),
+                "backend_qualification_fixture_sha256": (
+                    None
+                    if qualification_receipt is None
+                    else qualification_receipt.fixture_sha256
                 ),
             }
         )
@@ -1133,6 +1405,7 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
                 worker_runtime_contract=(
                     execution_freeze.worker_runtime_contract()
                 ),
+                qualification_receipt=qualification_receipt,
             ),
             protocol_binding=protocol_binding,
             candidate_config=candidate_config,
@@ -1146,6 +1419,14 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             raise ValueError("candidate protocol changed during audit")
         if gate_path.read_bytes() != gate_bytes:
             raise ValueError("recall gate contract changed during audit")
+        if (
+            qualification_path is not None
+            and qualification_path.read_bytes()
+            != qualification_bytes
+        ):
+            raise ValueError(
+                "backend qualification changed during audit"
+            )
         if freeze_path.read_bytes() != freeze_bytes:
             raise ValueError(
                 "subject audit execution freeze changed during audit"
@@ -1446,6 +1727,24 @@ def _add_neighbor_audit_parser(subparsers: Any) -> None:
     parser.set_defaults(handler=_run_neighbor_audit)
 
 
+def _add_faiss_range_preflight_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "faiss-range-preflight",
+        help=(
+            "run the fixed production-shape synthetic qualification for "
+            "the versioned Faiss native range-call path"
+        ),
+    )
+    parser.add_argument("--protocol", type=Path, required=True)
+    parser.add_argument(
+        "--expected-protocol-sha256",
+        required=True,
+        help="required out-of-band digest for the v0.3 draft protocol",
+    )
+    parser.add_argument("--output", type=Path, required=True)
+    parser.set_defaults(handler=_run_faiss_range_preflight)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="spirallens",
@@ -1464,6 +1763,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_calibrate_parser(subparsers)
     _add_context_bank_parser(subparsers)
     _add_atlas_parser(subparsers)
+    _add_faiss_range_preflight_parser(subparsers)
     _add_neighbor_audit_parser(subparsers)
     _add_candidates_parser(subparsers)
     return parser

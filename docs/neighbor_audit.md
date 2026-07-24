@@ -1,7 +1,7 @@
 # Neighbor Audit and Receipt Contract
 
-- **Status:** recall methodology frozen; Pythia execution/promotion not frozen
-- **Backend:** `spirallens.faiss-hnsw-range@0.1`
+- **Status:** recall methodology frozen; v0.3 mechanism implemented, production preflight/receipt/freeze and one-shot outcome pending
+- **Backend:** legacy `spirallens.faiss-hnsw-range@0.1`; qualified native-call path `@0.2`
 - **Distribution:** `faiss-cpu==1.14.3`
 - **Artifact maturity:** experimental, pre-1.0
 
@@ -25,6 +25,13 @@ side of the API. It is not an operating-system sandbox against malicious local
 Python code or a hostile user with filesystem access. Custom Python backends
 may be audited experimentally, but current candidate persistence authorizes
 only the built-in `FaissHNSWBackend`.
+
+Backend v0.2 separates the outer `query_batch_size=512` artifact batch from
+`range_call_batch_size=1`. Before each native call, the worker proves that its
+theoretical maximum result count is no greater than the frozen
+`max_native_call_hits=50,304`; after the call it validates limits, score
+finiteness, label bounds, and the cumulative raw-hit budget before
+serialization.
 
 ## 2. Same full index, bounded exact audit
 
@@ -50,11 +57,36 @@ relative-density macro, and in every required density-by-cosine-boundary joint
 cell across both cold rebuilds. Zero denominators remain null and required
 cells below frozen support minima are `insufficient`.
 
-This does not freeze or pass the Pythia execution. The tracked Pythia protocol
-binds the methodology digest but remains `preregistered-draft`, with null atlas
-row/group bindings and promotion disabled.
+This does not freeze or pass the Pythia execution. The tracked v0.3 Pythia
+protocol binds the methodology digest but remains `preregistered-draft`, with
+null atlas row/group and qualification-receipt bindings and promotion disabled.
 
-## 3. Bound identities
+## 3. Production-shape native qualification
+
+Backend v0.2 cannot enter a subject audit without a canonical qualification
+receipt. The preflight has no atlas or subject-data argument and runs the same
+range-call helper twice in independent subprocesses over a deterministic
+synthetic fixture with 50,304 float32 rows, hidden size 512, and 512 queries.
+It binds the exact fixture and query digests, index and hit-array digests,
+Faiss native/distribution digests, search config, and both cold-run results.
+It also records the exact clean, live-pushed preflight commit and the
+`src/spirallens` Git tree. The runner revalidates that source immediately
+before replacing its exclusive reservation with the receipt. The results must
+be byte-repeatable.
+
+```bash
+DRAFT_SHA="$(shasum -a 256 protocols/pythia_neighbor_v0_3.yaml | awk '{print $1}')"
+
+spirallens faiss-range-preflight \
+  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --expected-protocol-sha256 "$DRAFT_SHA" \
+  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_1.json
+```
+
+This receipt qualifies retrieval plumbing only. It never authorizes candidate
+persistence, and it contains no subject recall observation.
+
+## 4. Bound identities
 
 The index build receipt binds:
 
@@ -66,6 +98,8 @@ The index build receipt binds:
 - HNSW construction/search settings;
 - Faiss, NumPy, Python, platform, and compile-option provenance;
 - single-thread execution and worker isolation mode.
+- for backend v0.2, the qualification receipt, fixture, native-call batch, and
+  maximum native-call hit digests.
 
 The promotion receipt additionally binds:
 
@@ -84,7 +118,7 @@ The audit uses a query subset. Persistence may change only
 backend, runtime, thresholds, drift values, candidate protocol, and rerank
 contract must remain identical.
 
-## 4. Trusted-digest workflow
+## 5. Trusted-digest workflow
 
 First compute the atlas-specific values without building an index or exposing
 audit results:
@@ -93,7 +127,7 @@ audit results:
 spirallens neighbor-audit \
   --manifest runs/pythia70-full/manifest.json \
   --layer 0 \
-  --protocol protocols/pythia_neighbor_v0_2.yaml \
+  --protocol protocols/pythia_neighbor_v0_3.yaml \
   --prepare-only
 ```
 
@@ -110,7 +144,7 @@ manifest bytes and the run UUID so harmless JSON serialization or recapture
 metadata cannot silently resample the audit queries. Manifest, run, state, and
 drift digests remain bound separately in the audit and receipt identity.
 
-The current synthetic Pythia-70M layer-0 qualification uses:
+The preserved v0.2 synthetic Pythia-70M layer-0 attempt used:
 
 - candidate protocol
   `protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml`
@@ -128,6 +162,13 @@ The environment and pre-outcome source commit are bound by the tracked freeze
 record created immediately after the implementation/protocol commit. A frozen
 audit refuses `--overwrite`; `fail` and `insufficient` are terminal observed
 outcomes, not tuning input for another run under the same qualification ID.
+
+That v0.2 worker terminated after the observed native
+`RangeSearchResult.do_allocation` exception, before any scientific outcome;
+this identifies the failure boundary, not a proven upstream root cause. Its one
+shot is consumed, its marker is retained, and it is not retried. The v0.3
+remediation must use a new backend version, qualification receipt, neighbor
+protocol, execution freeze, and output path.
 
 Once such a future protocol has been reviewed and frozen:
 
@@ -189,7 +230,7 @@ custom backend can be measured under a draft protocol, but its result carries
 an unverified runner contract and cannot be relabelled into a promotion
 receipt.
 
-## 5. Fail-closed behavior
+## 6. Fail-closed behavior
 
 Publication is rejected when any of the following changes:
 
@@ -197,6 +238,7 @@ Publication is rejected when any of the following changes:
 - atlas manifest, token-row identity, selected states, or drifts;
 - layer group, query boundary, or query sampling;
 - backend ID/version/config/runtime or index bytes;
+- qualification receipt, fixture, native binary, or native-call batch;
 - worker state cache before or during retrieval;
 - exact-rerank contract;
 - receipt verification status;
@@ -217,7 +259,7 @@ a cryptographic proof that an independently implemented evaluator would
 derive the same strata. A future independently replayable evidence sidecar is
 required before treating the receipt mechanism itself as scientific evidence.
 
-## 6. Current non-claims and next gate
+## 7. Current non-claims and next gate
 
 No tracked artifact currently says that Faiss has passed the Pythia
 full-vocabulary audit. No approximate ledger is committed as evidence.
