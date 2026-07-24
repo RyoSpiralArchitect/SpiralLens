@@ -103,6 +103,32 @@ hashed out of band. The tracked draft must not be switched to promotion-ready
 until those atlas-specific bindings, its frozen candidate protocol, and the
 complete promotion-readiness declaration have been independently reviewed.
 
+`global_row_key_sha256` is an immutable row-universe identity. It binds the
+ordered token IDs, ContextBank/model revision, observation and sweep positions,
+selection declaration, and token domain. It deliberately excludes raw
+manifest bytes and the run UUID so harmless JSON serialization or recapture
+metadata cannot silently resample the audit queries. Manifest, run, state, and
+drift digests remain bound separately in the audit and receipt identity.
+
+The current synthetic Pythia-70M layer-0 qualification uses:
+
+- candidate protocol
+  `protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml`
+  (`d6f60d38237825178f4d7c799e27da370049787d47ca999172121f07c84d212e`);
+- neighbor protocol
+  `protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml`
+  (`296609585f4f165e44a235d6a8af9416b840477313a63013414abb1ed9a55661`);
+- atlas manifest
+  `runs/pythia70-full-slot-only-001/manifest.json`
+  (`6acc23da3726b65bc6151b96a57c949892da9286b98849b300408a3820380eea`);
+- row-universe identity
+  `d39cd127bd50f564a8ea13e080f19806a3ce390b9ed4436b49d2701054409c43`.
+
+The environment and pre-outcome source commit are bound by the tracked freeze
+record created immediately after the implementation/protocol commit. A frozen
+audit refuses `--overwrite`; `fail` and `insufficient` are terminal observed
+outcomes, not tuning input for another run under the same qualification ID.
+
 Once such a future protocol has been reviewed and frozen:
 
 ```bash
@@ -127,8 +153,7 @@ AUDIT_SHA="<trusted audit_sha256 from the completed audit>"
 spirallens candidates \
   --manifest runs/pythia70-full/manifest.json \
   --output runs/pythia70-full/layer-0-candidates.jsonl \
-  --protocol protocols/pythia_candidate_v0_2.yaml \
-  --layers 0 \
+  --protocol protocols/frozen-candidate.yaml \
   --neighbor-backend faiss-hnsw \
   --neighbor-audit runs/pythia70-full/layer-0-neighbor-audit.json \
   --neighbor-audit-protocol protocols/frozen-neighbor.yaml \

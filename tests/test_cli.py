@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -345,6 +346,68 @@ def test_neighbor_audit_prepare_only_owns_optional_output() -> None:
     assert prepared.output is None
     with pytest.raises(SystemExit):
         parser.parse_args(["atlas", "--max-tokens", "1"])
+
+
+def test_frozen_neighbor_audit_refuses_overwrite(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = (
+        root
+        / "protocols"
+        / "pythia70_slot_only_001_layer0_neighbor_v0_2.yaml"
+    )
+    protocol_sha256 = hashlib.sha256(protocol.read_bytes()).hexdigest()
+
+    exit_code = main(
+        [
+            "neighbor-audit",
+            "--manifest",
+            str(tmp_path / "unused-atlas"),
+            "--layer",
+            "0",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            protocol_sha256,
+            "--output",
+            str(tmp_path / "audit.json"),
+            "--overwrite",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "cannot overwrite an audit artifact" in (
+        capsys.readouterr().err
+    )
+
+
+def test_draft_neighbor_protocol_is_prepare_only(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = root / "protocols" / "pythia_neighbor_v0_2.yaml"
+
+    exit_code = main(
+        [
+            "neighbor-audit",
+            "--manifest",
+            str(tmp_path / "unused-atlas"),
+            "--layer",
+            "0",
+            "--protocol",
+            str(protocol),
+            "--output",
+            str(tmp_path / "audit.json"),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "draft protocols are prepare-only" in (
+        capsys.readouterr().err
+    )
 
 
 def test_neighbor_protocol_loader_rejects_duplicate_keys(

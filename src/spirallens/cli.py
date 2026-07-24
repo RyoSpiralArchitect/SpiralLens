@@ -762,7 +762,10 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         load_neighbor_audit_receipt,
         write_neighbor_audit,
     )
-    from spirallens.metrics.candidate_pairs import _load_manifest_array
+    from spirallens.metrics.candidate_pairs import (
+        _load_manifest_array,
+        _validate_neighbor_audit_atlas_scope,
+    )
     from spirallens.metrics.neighbor_receipt import (
         _candidate_config_from_bytes,
         validate_neighbor_protocol_static_contract,
@@ -792,6 +795,11 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     ):
         raise ValueError("neighbor audit protocol identity is invalid")
     validate_neighbor_protocol_static_contract(document)
+    if protocol_status != "frozen" and not args.prepare_only:
+        raise ValueError(
+            "subject neighbor audits require a frozen protocol; "
+            "draft protocols are prepare-only"
+        )
     if (
         protocol_status == "frozen"
         and args.expected_protocol_sha256 is None
@@ -802,6 +810,10 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     if protocol_status == "frozen" and args.skip_checksums:
         raise ValueError(
             "frozen neighbor audits cannot skip atlas checksums"
+        )
+    if protocol_status == "frozen" and args.overwrite:
+        raise ValueError(
+            "frozen neighbor audits cannot overwrite an audit artifact"
         )
     candidate_binding = document.get("candidate_protocol")
     if not isinstance(candidate_binding, dict):
@@ -923,8 +935,13 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     if manifest_path.read_bytes() != manifest_bytes:
         raise ValueError("atlas manifest changed during audit setup")
     request = manifest.get("request")
+    model = manifest.get("model")
     run_id = manifest.get("run_id")
-    if not isinstance(request, dict) or not isinstance(run_id, str):
+    if (
+        not isinstance(request, dict)
+        or not isinstance(model, dict)
+        or not isinstance(run_id, str)
+    ):
         raise ValueError("atlas manifest audit provenance is invalid")
     token_ids = _load_manifest_array(
         manifest_path.parent,
@@ -932,10 +949,13 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         "token_ids",
         verify_checksums=not args.skip_checksums,
     )
+    _validate_neighbor_audit_atlas_scope(
+        manifest=manifest,
+        token_ids=token_ids,
+        layer_index=args.layer,
+    )
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
     row_identity_sha256 = atlas_global_row_key_sha256(
-        atlas_manifest_sha256=manifest_sha256,
-        atlas_run_id=run_id,
         token_ids=token_ids,
         request=request,
     )
@@ -965,6 +985,7 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         count=sampling.get("count"),
         global_row_key_sha256=row_identity_sha256,
     )
+    selection.select(int(token_ids.shape[0]))
     group_key = f"layer_index={args.layer}"
     audit_scope = document.get("audit_scope")
     declared_group = (
@@ -1035,6 +1056,12 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError(
             "--output is required unless --prepare-only is used"
         )
+    requested_output_path = args.output.resolve()
+    if requested_output_path.exists() and not args.overwrite:
+        raise FileExistsError(
+            "refusing to observe another audit outcome before writing "
+            f"{requested_output_path}; choose a new --output path"
+        )
     protocol_binding = NeighborAuditProtocolBinding(
         protocol_id=protocol_id,
         status=protocol_status,
@@ -1068,7 +1095,7 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError("recall gate contract changed during audit")
     output_path = write_neighbor_audit(
         result,
-        args.output,
+        requested_output_path,
         overwrite=args.overwrite,
     )
     try:

@@ -160,8 +160,20 @@ declaration
 the older v0.1 declaration remains exact-only and cannot be made
 ANN-authorizing by changing its status alone.
 
+The first tracked subject-qualification pair is separately frozen for the
+synthetic example bank, Pythia-70M, and `layer_index=0`:
+[`protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml`](protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml)
+and
+[`protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml`](protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml).
+Those files do not upgrade the run into semantic or scientific evidence. The
+bank is `claim_eligible: false`, and a pass establishes approximate-retrieval
+coverage only.
+
 Index bytes, full states, row order, layer group, runtime, candidate protocol,
 query contract, and exact rerank contract are bound into the audit identity.
+Query selection uses a canonical row-universe digest over ordered token IDs,
+the ContextBank/model revision, position, and token domain. Raw manifest bytes
+and run UUIDs remain audit provenance but cannot change the query sample.
 Approximate candidate persistence accepts only the built-in Faiss backend and
 a receipt loaded from persisted audit/protocol files against out-of-band
 SHA-256 digests. The audit query subset may expand to all query rows at

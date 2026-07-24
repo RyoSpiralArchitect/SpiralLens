@@ -142,44 +142,198 @@ class LedgerSummary:
 
 def atlas_global_row_key_sha256(
     *,
-    atlas_manifest_sha256: str,
-    atlas_run_id: str,
     token_ids: ArrayLike,
     request: Mapping[str, Any],
 ) -> str:
-    """Bind the ordered global row identity used by every layer index."""
+    """Bind the immutable ordered row universe used by every layer index."""
 
     token_values = np.asanyarray(token_ids)
     if token_values.ndim != 1:
         raise ValueError("token_ids must have shape (observations,)")
-    if (
-        not isinstance(atlas_manifest_sha256, str)
-        or len(atlas_manifest_sha256) != 64
-        or not isinstance(atlas_run_id, str)
-        or not atlas_run_id
-        or not isinstance(request, Mapping)
-    ):
+    if not isinstance(request, Mapping):
         raise ValueError("atlas row identity provenance is invalid")
     return canonical_json_sha256(
         {
-            "schema_version": "spirallens.global-row-key.v0.1",
-            "atlas_manifest_sha256": atlas_manifest_sha256,
-            "atlas_run_id": atlas_run_id,
+            "schema_version": "spirallens.global-row-key.v0.2",
             "token_ids_sha256": state_matrix_sha256(
                 token_values.reshape(-1, 1)
             ),
             "row_count": int(token_values.shape[0]),
+            "model_id": request.get("model_id"),
+            "resolved_model_revision": request.get(
+                "resolved_model_revision"
+            ),
             "context_bank_binding_sha256": request.get(
                 "context_bank_binding_sha256"
             ),
             "context_ids": request.get("context_ids"),
+            "attention_mask": request.get("attention_mask"),
+            "sweep_position": request.get("sweep_position"),
             "observation_position": request.get(
                 "observation_position",
                 request.get("position"),
             ),
             "token_domain": request.get("token_domain"),
+            "selection": request.get("selection"),
         }
     )
+
+
+def _validate_neighbor_audit_atlas_scope(
+    *,
+    manifest: Mapping[str, Any],
+    token_ids: ArrayLike,
+    layer_index: int,
+) -> None:
+    """Require one ContextBank-bound, exact model-vocabulary audit scope."""
+
+    request = manifest.get("request")
+    model = manifest.get("model")
+    if not isinstance(request, Mapping) or not isinstance(model, Mapping):
+        raise ValueError("neighbor audit atlas provenance is incomplete")
+    token_values = np.asanyarray(token_ids)
+    if token_values.ndim != 1:
+        raise ValueError(
+            "neighbor audit requires one-dimensional atlas token_ids"
+        )
+    row_count = int(token_values.shape[0])
+    if row_count <= 0:
+        raise ValueError("neighbor audit requires a non-empty atlas")
+    if token_values.dtype != np.dtype(np.int64):
+        raise ValueError("neighbor audit requires int64 atlas token_ids")
+
+    progress = manifest.get("progress")
+    arrays = manifest.get("arrays")
+    token_descriptor = (
+        arrays.get("token_ids")
+        if isinstance(arrays, Mapping)
+        else None
+    )
+    resid_pre_descriptor = (
+        arrays.get("resid_pre")
+        if isinstance(arrays, Mapping)
+        else None
+    )
+    resid_post_descriptor = (
+        arrays.get("resid_post")
+        if isinstance(arrays, Mapping)
+        else None
+    )
+    resid_pre_shape = (
+        resid_pre_descriptor.get("shape")
+        if isinstance(resid_pre_descriptor, Mapping)
+        else None
+    )
+    resid_post_shape = (
+        resid_post_descriptor.get("shape")
+        if isinstance(resid_post_descriptor, Mapping)
+        else None
+    )
+    num_layers = model.get("num_layers")
+    hidden_size = model.get("hidden_size")
+    if (
+        manifest.get("status") != "complete"
+        or not isinstance(progress, Mapping)
+        or progress.get("completed_rows") != row_count
+        or progress.get("total_rows") != row_count
+        or not isinstance(token_descriptor, Mapping)
+        or token_descriptor.get("shape") != [row_count]
+        or isinstance(num_layers, bool)
+        or not isinstance(num_layers, Integral)
+        or int(num_layers) <= 0
+        or isinstance(hidden_size, bool)
+        or not isinstance(hidden_size, Integral)
+        or int(hidden_size) <= 0
+        or resid_pre_shape
+        != [row_count, int(num_layers), int(hidden_size)]
+        or resid_post_shape != resid_pre_shape
+        or isinstance(layer_index, bool)
+        or not isinstance(layer_index, Integral)
+        or not 0 <= int(layer_index) < int(num_layers)
+    ):
+        raise ValueError(
+            "neighbor audit requires one complete, layer-compatible atlas"
+        )
+
+    context_binding = request.get("context_bank_binding")
+    context_binding_sha256 = request.get(
+        "context_bank_binding_sha256"
+    )
+    if (
+        not isinstance(context_binding, Mapping)
+        or not _is_lower_sha256(context_binding_sha256)
+    ):
+        raise ValueError(
+            "neighbor audit requires a ContextBank-bound atlas"
+        )
+
+    bank = context_binding.get("bank")
+    bank_content = (
+        bank.get("content")
+        if isinstance(bank, Mapping)
+        else None
+    )
+    if (
+        not isinstance(bank_content, Mapping)
+        or bank_content.get("sweep_domain")
+        != "model_embedding_rows"
+    ):
+        raise ValueError(
+            "neighbor audit requires a model_embedding_rows ContextBank"
+        )
+
+    selection = request.get("selection")
+    expected_selection = {
+        "kind": "full_vocabulary",
+        "subset_size_before_limit": row_count,
+        "max_tokens": None,
+    }
+    if selection != expected_selection:
+        raise ValueError(
+            "neighbor audit requires an exact full-vocabulary selection"
+        )
+
+    token_domain = request.get("token_domain")
+    model_vocab_size = model.get("vocab_size")
+    if (
+        isinstance(model_vocab_size, bool)
+        or not isinstance(model_vocab_size, Integral)
+        or int(model_vocab_size) != row_count
+        or isinstance(request.get("num_tokens"), bool)
+        or not isinstance(request.get("num_tokens"), Integral)
+        or int(request["num_tokens"]) != row_count
+        or not isinstance(token_domain, Mapping)
+        or token_domain.get("kind") != "model_embedding_rows"
+        or isinstance(token_domain.get("size"), bool)
+        or not isinstance(token_domain.get("size"), Integral)
+        or int(token_domain["size"]) != row_count
+        or isinstance(token_domain.get("model_vocab_size"), bool)
+        or not isinstance(
+            token_domain.get("model_vocab_size"),
+            Integral,
+        )
+        or int(token_domain["model_vocab_size"]) != row_count
+    ):
+        raise ValueError(
+            "neighbor audit atlas vocabulary dimensions are inconsistent"
+        )
+
+    if (
+        request.get("language_space_atlas") is not False
+        or request.get("semantic_unit") is not False
+    ):
+        raise ValueError(
+            "neighbor audit requires semantics-free atlas scope flags"
+        )
+
+    expected_token_ids = np.arange(row_count, dtype=np.int64)
+    if (
+        not np.issubdtype(token_values.dtype, np.integer)
+        or not np.array_equal(token_values, expected_token_ids)
+    ):
+        raise ValueError(
+            "neighbor audit requires ordered token_ids 0..vocab_size-1"
+        )
 
 
 def load_candidate_config_from_protocol(
@@ -2266,8 +2420,6 @@ def extract_candidates_from_manifest(
         np.asanyarray(token_ids).reshape(-1, 1)
     )
     global_row_key_sha256 = atlas_global_row_key_sha256(
-        atlas_manifest_sha256=atlas_manifest_sha256,
-        atlas_run_id=run_id,
         token_ids=token_values,
         request=request,
     )
@@ -2591,8 +2743,6 @@ def extract_candidates_from_manifest(
             )
             != token_source_sha256
             or atlas_global_row_key_sha256(
-                atlas_manifest_sha256=atlas_manifest_sha256,
-                atlas_run_id=run_id,
                 token_ids=token_values,
                 request=request,
             )
@@ -2668,6 +2818,11 @@ def audit_neighbor_backend_from_manifest(
     ):
         raise TypeError(
             "protocol_binding must be NeighborAuditProtocolBinding"
+        )
+    if protocol_binding.status != "frozen":
+        raise ValueError(
+            "manifest-backed subject neighbor audits require a frozen "
+            "protocol binding"
         )
     if (
         protocol_binding.status == "frozen"
@@ -2754,6 +2909,11 @@ def audit_neighbor_backend_from_manifest(
         or not run_id
     ):
         raise ValueError("atlas audit provenance is incomplete")
+    _validate_neighbor_audit_atlas_scope(
+        manifest=manifest,
+        token_ids=token_ids,
+        layer_index=int(layer_index),
+    )
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
     token_values = np.array(
         token_ids,
@@ -2766,8 +2926,6 @@ def audit_neighbor_backend_from_manifest(
         np.asanyarray(token_ids).reshape(-1, 1)
     )
     global_row_key_sha256 = atlas_global_row_key_sha256(
-        atlas_manifest_sha256=manifest_sha256,
-        atlas_run_id=run_id,
         token_ids=token_values,
         request=request,
     )
@@ -2835,8 +2993,6 @@ def audit_neighbor_backend_from_manifest(
         )
         != token_source_sha256
         or atlas_global_row_key_sha256(
-            atlas_manifest_sha256=manifest_sha256,
-            atlas_run_id=run_id,
             token_ids=token_values,
             request=request,
         )

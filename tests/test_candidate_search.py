@@ -36,9 +36,10 @@ from spirallens.metrics import (
     write_neighbor_audit,
     write_candidate_ledger,
 )
-from spirallens.metrics.candidate_pairs import read_candidate_records
 from spirallens.metrics.candidate_pairs import (
+    _validate_neighbor_audit_atlas_scope,
     atlas_global_row_key_sha256,
+    read_candidate_records,
 )
 from spirallens.neighbors import (
     FaissHNSWBackend,
@@ -217,7 +218,7 @@ def _write_atlas(
     recall_gate_fixture: bool = False,
 ) -> Path:
     token_ids = np.array(
-        [11, 12, 13, 14]
+        [0, 1, 2, 3]
         if recall_gate_fixture
         else [11, 12, 13],
         dtype=np.int64,
@@ -269,8 +270,8 @@ def _write_atlas(
             ),
             axis=-1,
         ).astype(np.float32),
-        "logit_summary": np.zeros((3, 6), dtype=np.float32),
-        "prediction_ids": np.zeros(3, dtype=np.int64),
+        "logit_summary": np.zeros((token_ids.shape[0], 6), dtype=np.float32),
+        "prediction_ids": np.zeros(token_ids.shape[0], dtype=np.int64),
     }
     columns = {
         "norm_summary": ["resid_pre_l2", "resid_post_l2"],
@@ -393,8 +394,30 @@ def _write_atlas(
     return manifest_path
 
 
-def _write_bound_atlas(tmp_path: Path) -> Path:
-    manifest_path = _write_atlas(tmp_path)
+def _write_bound_atlas(
+    tmp_path: Path,
+    *,
+    recall_gate_fixture: bool = False,
+    full_vocabulary: bool = False,
+) -> Path:
+    manifest_path = _write_atlas(
+        tmp_path,
+        recall_gate_fixture=recall_gate_fixture,
+    )
+    token_ids = np.load(
+        tmp_path / "token_ids.npy",
+        allow_pickle=False,
+    )
+    vocabulary_size = (
+        int(token_ids.shape[0])
+        if full_vocabulary
+        else 100
+    )
+    tokenizer_addressable_size = (
+        vocabulary_size
+        if full_vocabulary
+        else 12
+    )
     context = ContextSpec(
         context_id="bound-candidate-context",
         role=ContextRole.EXAMPLE,
@@ -418,13 +441,13 @@ def _write_bound_atlas(tmp_path: Path) -> Path:
             model_id="test/pythia",
             requested_revision="test",
             resolved_revision="a" * 40,
-            vocab_size=100,
+            vocab_size=vocabulary_size,
         ),
         tokenizer=TokenizerBinding(
             tokenizer_id="test/tokenizer",
             requested_revision="test",
             resolved_revision="b" * 40,
-            addressable_size=12,
+            addressable_size=tokenizer_addressable_size,
             tokenizer_class="TestTokenizer",
             implementation="fast",
             transformers_version="test",
@@ -458,14 +481,22 @@ def _write_bound_atlas(tmp_path: Path) -> Path:
             "context_bank_binding_sha256": binding.sha256,
             "token_domain": {
                 "kind": "model_embedding_rows",
-                "size": 100,
-                "model_vocab_size": 100,
-                "tokenizer_addressable_size": 12,
+                "size": vocabulary_size,
+                "model_vocab_size": vocabulary_size,
+                "tokenizer_addressable_size": (
+                    tokenizer_addressable_size
+                ),
             },
             "language_space_atlas": False,
             "semantic_unit": False,
         }
     )
+    if full_vocabulary:
+        request["selection"] = {
+            "kind": "full_vocabulary",
+            "subset_size_before_limit": vocabulary_size,
+            "max_tokens": None,
+        }
     request_identity = dict(request)
     request_identity.pop("batch_size_initial", None)
     request_identity.pop("batch_size_latest", None)
@@ -474,10 +505,155 @@ def _write_bound_atlas(tmp_path: Path) -> Path:
         {
             "model_id": "test/pythia",
             "resolved_revision": "a" * 40,
+            "vocab_size": vocabulary_size,
         }
     )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     return manifest_path
+
+
+def test_neighbor_audit_scope_rejects_unbound_atlas(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_atlas(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
+
+    with pytest.raises(
+        ValueError,
+        match="ContextBank-bound atlas",
+    ):
+        _validate_neighbor_audit_atlas_scope(
+            manifest=manifest,
+            token_ids=token_ids,
+            layer_index=0,
+        )
+
+
+def test_neighbor_audit_scope_requires_exact_ordered_full_vocabulary(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_bound_atlas(
+        tmp_path,
+        recall_gate_fixture=True,
+        full_vocabulary=True,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
+
+    _validate_neighbor_audit_atlas_scope(
+        manifest=manifest,
+        token_ids=token_ids,
+        layer_index=0,
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"ordered token_ids 0\.\.vocab_size-1",
+    ):
+        _validate_neighbor_audit_atlas_scope(
+            manifest=manifest,
+            token_ids=token_ids[::-1],
+            layer_index=0,
+        )
+
+
+def test_neighbor_audit_scope_rejects_partial_atlas(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_bound_atlas(
+        tmp_path,
+        recall_gate_fixture=True,
+        full_vocabulary=True,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
+    manifest["status"] = "in_progress"
+    manifest["progress"]["completed_rows"] = 2
+
+    with pytest.raises(
+        ValueError,
+        match="complete, layer-compatible atlas",
+    ):
+        _validate_neighbor_audit_atlas_scope(
+            manifest=manifest,
+            token_ids=token_ids,
+            layer_index=0,
+        )
+
+
+def test_global_row_key_ignores_capture_instance_metadata(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_bound_atlas(
+        tmp_path,
+        recall_gate_fixture=True,
+        full_vocabulary=True,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
+    original = atlas_global_row_key_sha256(
+        token_ids=token_ids,
+        request=manifest["request"],
+    )
+    recaptured_request = dict(manifest["request"])
+    recaptured_request.update(
+        {
+            "batch_size_initial": 999,
+            "batch_size_latest": 1,
+            "capture_fingerprint": "1" * 64,
+            "config_sha256": "2" * 64,
+        }
+    )
+
+    assert (
+        atlas_global_row_key_sha256(
+            token_ids=token_ids,
+            request=recaptured_request,
+        )
+        == original
+    )
+    changed_scope = dict(recaptured_request)
+    changed_scope["observation_position"] = 0
+    assert (
+        atlas_global_row_key_sha256(
+            token_ids=token_ids,
+            request=changed_scope,
+        )
+        != original
+    )
+
+
+def test_manifest_subject_audit_rejects_draft_before_backend_or_io(
+    tmp_path: Path,
+) -> None:
+    protocol = NeighborAuditProtocolBinding(
+        protocol_id="draft-test",
+        status="preregistered-draft",
+        source_sha256="a" * 64,
+        candidate_config_sha256="b" * 64,
+        audit_config_sha256="c" * 64,
+        query_selection=NeighborQuerySelectionContract(
+            seed=1,
+            count=1,
+            global_row_key_sha256="d" * 64,
+        ),
+    )
+    candidate_config = CandidateSearchConfig(layer_indices=(0,))
+
+    with pytest.raises(
+        ValueError,
+        match="require a frozen protocol binding",
+    ):
+        audit_neighbor_backend_from_manifest(
+            tmp_path / "missing-manifest.json",
+            layer_index=0,
+            subject_backend_factory=lambda _: pytest.fail(
+                "backend factory must not run"
+            ),
+            protocol_binding=protocol,
+            candidate_config=candidate_config,
+            audit_config=NeighborAuditConfig(),
+        )
 
 
 def test_norm_decomposition_reconstructs_euclidean_distance() -> None:
@@ -880,17 +1056,15 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
 ) -> None:
     if importlib.util.find_spec("faiss") is None:
         pytest.skip("faiss optional dependency is absent")
-    manifest_path = _write_atlas(
+    manifest_path = _write_bound_atlas(
         tmp_path,
         recall_gate_fixture=True,
+        full_vocabulary=True,
     )
     manifest_bytes = manifest_path.read_bytes()
     manifest = json.loads(manifest_bytes)
     token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
-    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
     row_identity_sha256 = atlas_global_row_key_sha256(
-        atlas_manifest_sha256=manifest_sha256,
-        atlas_run_id=manifest["run_id"],
         token_ids=token_ids,
         request=manifest["request"],
     )
