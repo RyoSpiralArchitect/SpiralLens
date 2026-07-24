@@ -21,9 +21,12 @@ from spirallens.neighbors import (
     ExactBlockwiseBackend,
     NeighborBackend,
     NeighborBackendDescriptor,
+    NeighborIndexBuildReceipt,
     NeighborPair,
     NeighborQuery,
+    PreparedNeighborBackend,
     canonical_json_sha256,
+    validate_prepared_backend,
     validate_neighbor_pairs,
 )
 
@@ -37,6 +40,9 @@ from .candidate_pairs import (
 NEIGHBOR_AUDIT_SCHEMA_VERSION = "spirallens.neighbor-audit.v0.1"
 NEIGHBOR_AUDIT_IDENTITY_SCHEMA_VERSION = (
     "spirallens.neighbor-audit-identity.v0.1"
+)
+QUERY_SELECTION_SCHEMA_VERSION = (
+    "spirallens.query-selection.sha256-ranked-indices.v0.1"
 )
 
 
@@ -105,6 +111,68 @@ class NeighborAuditConfig:
 
 
 @dataclass(frozen=True)
+class NeighborQuerySelectionContract:
+    """Outcome-independent query sampling bound to full row identity."""
+
+    seed: int
+    count: int
+    global_row_key_sha256: str
+    schema_version: str = QUERY_SELECTION_SCHEMA_VERSION
+
+    def __post_init__(self) -> None:
+        for field_name in ("seed", "count"):
+            value = getattr(self, field_name)
+            if isinstance(value, bool) or not isinstance(value, Integral):
+                raise TypeError(f"{field_name} must be an integer")
+            object.__setattr__(self, field_name, int(value))
+        if self.count <= 0:
+            raise ValueError("count must be positive")
+        _require_sha256(
+            self.global_row_key_sha256,
+            label="global_row_key_sha256",
+        )
+        if self.schema_version != QUERY_SELECTION_SCHEMA_VERSION:
+            raise ValueError("query selection schema is invalid")
+
+    def select(self, row_count: int) -> tuple[int, ...]:
+        if isinstance(row_count, bool) or not isinstance(
+            row_count,
+            Integral,
+        ):
+            raise TypeError("row_count must be an integer")
+        if row_count <= 0:
+            raise ValueError("row_count must be positive")
+        if self.count > row_count:
+            raise ValueError("query selection count exceeds row_count")
+        ranked = sorted(
+            range(int(row_count)),
+            key=lambda index: (
+                hashlib.sha256(
+                    (
+                        f"{self.schema_version}\0{self.seed}\0"
+                        f"{self.global_row_key_sha256}\0{index}"
+                    ).encode("utf-8")
+                ).digest(),
+                index,
+            ),
+        )
+        return tuple(sorted(ranked[: self.count]))
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "method": "sha256_ranked_global_indices",
+            "seed": self.seed,
+            "count": self.count,
+            "global_row_key_sha256": self.global_row_key_sha256,
+        }
+
+    @property
+    def sha256(self) -> str:
+        return canonical_json_sha256(self.to_dict())
+
+
+@dataclass(frozen=True)
 class NeighborAuditProtocolBinding:
     """Bind an audit to one declared protocol and its effective configs."""
 
@@ -114,6 +182,7 @@ class NeighborAuditProtocolBinding:
     candidate_config_sha256: str
     audit_config_sha256: str
     deviations: tuple[str, ...] = ()
+    query_selection: NeighborQuerySelectionContract | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.protocol_id, str) or not self.protocol_id:
@@ -137,6 +206,17 @@ class NeighborAuditProtocolBinding:
             raise TypeError("deviations must contain non-empty strings")
         if tuple(sorted(set(self.deviations))) != self.deviations:
             raise ValueError("deviations must be unique and sorted")
+        if (
+            self.query_selection is not None
+            and not isinstance(
+                self.query_selection,
+                NeighborQuerySelectionContract,
+            )
+        ):
+            raise TypeError(
+                "query_selection must be a "
+                "NeighborQuerySelectionContract or None"
+            )
 
     def validate_against(
         self,
@@ -160,6 +240,16 @@ class NeighborAuditProtocolBinding:
             "candidate_config_sha256": self.candidate_config_sha256,
             "audit_config_sha256": self.audit_config_sha256,
             "deviations": list(self.deviations),
+            "query_selection": (
+                None
+                if self.query_selection is None
+                else self.query_selection.to_dict()
+            ),
+            "query_selection_sha256": (
+                None
+                if self.query_selection is None
+                else self.query_selection.sha256
+            ),
         }
 
     @property
@@ -186,6 +276,10 @@ def _canonical_source_json(source: Mapping[str, object]) -> str:
             raise ValueError(
                 "synthetic_fixture source requires fixture_id"
             )
+        _require_sha256(
+            payload.get("row_identity_sha256"),
+            label="row_identity_sha256",
+        )
     elif kind == "atlas_subset":
         atlas_run_id = payload.get("atlas_run_id")
         if not isinstance(atlas_run_id, str) or not atlas_run_id:
@@ -276,6 +370,10 @@ def _candidate_pair_keys(
 
 def _validate_subject_descriptor(
     descriptor: NeighborBackendDescriptor,
+    *,
+    expected_states_sha256: str | None = None,
+    expected_row_identity_sha256: str | None = None,
+    expected_comparison_group: str | None = None,
 ) -> None:
     if descriptor.kind != "approximate":
         return
@@ -298,6 +396,42 @@ def _validate_subject_descriptor(
         parameters.get("index_sha256"),
         label="parameters.index_sha256",
     )
+    _require_sha256(
+        parameters.get("promotion_config_sha256"),
+        label="parameters.promotion_config_sha256",
+    )
+    _require_sha256(
+        parameters.get("states_sha256"),
+        label="parameters.states_sha256",
+    )
+    _require_sha256(
+        parameters.get("row_identity_sha256"),
+        label="parameters.row_identity_sha256",
+    )
+    if (
+        expected_states_sha256 is not None
+        and parameters.get("states_sha256")
+        != expected_states_sha256
+    ):
+        raise ValueError(
+            "approximate backend states_sha256 does not match audit input"
+        )
+    if (
+        expected_row_identity_sha256 is not None
+        and parameters.get("row_identity_sha256")
+        != expected_row_identity_sha256
+    ):
+        raise ValueError(
+            "approximate backend row identity does not match audit source"
+        )
+    if (
+        expected_comparison_group is not None
+        and parameters.get("comparison_group")
+        != expected_comparison_group
+    ):
+        raise ValueError(
+            "approximate backend comparison group does not match audit"
+        )
     if not descriptor.runtime:
         raise ValueError(
             "approximate backend descriptor requires runtime provenance"
@@ -430,7 +564,30 @@ class NeighborAuditResult:
         ):
             _require_sha256(getattr(self, field_name), label=field_name)
         _validate_reference_descriptor(self.reference_backend)
-        _validate_subject_descriptor(self.subject_backend)
+        row_identity_sha256 = (
+            source_payload["global_row_key_sha256"]
+            if source_payload["kind"] == "atlas_subset"
+            else source_payload["row_identity_sha256"]
+        )
+        selection = self.protocol_binding.query_selection
+        if selection is not None:
+            if (
+                source_payload["kind"] != "atlas_subset"
+                or selection.global_row_key_sha256
+                != row_identity_sha256
+                or self.query.query_indices
+                != selection.select(self.row_count)
+            ):
+                raise ValueError(
+                    "audit query does not match the preregistered "
+                    "selection"
+                )
+        _validate_subject_descriptor(
+            self.subject_backend,
+            expected_states_sha256=self.states_sha256,
+            expected_row_identity_sha256=row_identity_sha256,
+            expected_comparison_group=self.comparison_group,
+        )
         if not isinstance(self.cold_rebuild, bool) or not self.cold_rebuild:
             raise ValueError("audit repeats must be independent cold rebuilds")
 
@@ -574,7 +731,7 @@ class NeighborAuditResult:
         reference_backend = self.reference_backend.to_dict()
         subject_backend = self.subject_backend.to_dict()
         protocol = self.protocol_binding.to_dict()
-        return {
+        identity = {
             "schema_version": NEIGHBOR_AUDIT_IDENTITY_SCHEMA_VERSION,
             "source_identity": json.loads(self.source_identity_json),
             "source_run_id": self.source_run_id,
@@ -608,6 +765,23 @@ class NeighborAuditResult:
                 "backend_score_used_for_gates": False,
             },
         }
+        if self.subject_backend.kind == "approximate":
+            parameters = dict(self.subject_backend.parameters)
+            build_receipt = NeighborIndexBuildReceipt(
+                backend=self.subject_backend,
+                states_sha256=self.states_sha256,
+                row_identity_sha256=parameters["row_identity_sha256"],
+                index_sha256=parameters["index_sha256"],
+                comparison_group=self.comparison_group,
+                row_count=self.row_count,
+                hidden_size=self.hidden_size,
+                states_dtype=self.states_dtype,
+            )
+            identity["subject_index_build"] = build_receipt.to_dict()
+            identity["subject_index_build_sha256"] = (
+                build_receipt.sha256
+            )
+        return identity
 
     @property
     def identity_sha256(self) -> str:
@@ -746,7 +920,10 @@ def audit_neighbor_backend(
     states: ArrayLike,
     drifts: ArrayLike,
     *,
-    subject_backend_factory: Callable[[], NeighborBackend],
+    subject_backend_factory: Callable[
+        [NDArray[np.generic]],
+        NeighborBackend,
+    ],
     protocol_binding: NeighborAuditProtocolBinding,
     source_identity: Mapping[str, object],
     candidate_config: CandidateSearchConfig | None = None,
@@ -768,6 +945,7 @@ def audit_neighbor_backend(
     audit_settings = audit_config or NeighborAuditConfig()
     protocol_binding.validate_against(settings, audit_settings)
     source_json = _canonical_source_json(source_identity)
+    source_payload = json.loads(source_json)
     source_states = np.asanyarray(states)
     source_drifts = np.asanyarray(drifts)
     if source_states.ndim != 2 or source_drifts.ndim != 2:
@@ -800,6 +978,25 @@ def audit_neighbor_backend(
     drift_rows.setflags(write=False)
     states_sha256 = _array_sha256(state_rows)
     drifts_sha256 = _array_sha256(drift_rows)
+    row_identity_sha256 = (
+        source_payload["global_row_key_sha256"]
+        if source_payload["kind"] == "atlas_subset"
+        else source_payload["row_identity_sha256"]
+    )
+    selection = protocol_binding.query_selection
+    if selection is not None:
+        if source_payload["kind"] != "atlas_subset":
+            raise ValueError(
+                "query selection contracts require an atlas_subset source"
+            )
+        if (
+            selection.global_row_key_sha256
+            != row_identity_sha256
+            or query_indices != selection.select(int(state_rows.shape[0]))
+        ):
+            raise ValueError(
+                "query_indices do not match the preregistered selection"
+            )
     query = NeighborQuery(
         cosine_min=settings.cosine_min,
         relative_norm_gap_max=settings.relative_norm_gap_max,
@@ -874,7 +1071,7 @@ def audit_neighbor_backend(
     missing_by_repeat: list[set[tuple[int, int]]] = []
 
     for _ in range(audit_settings.repeats):
-        backend = subject_backend_factory()
+        backend = subject_backend_factory(state_rows)
         if not isinstance(backend, NeighborBackend):
             raise TypeError(
                 "subject_backend_factory must return a NeighborBackend"
@@ -885,6 +1082,25 @@ def audit_neighbor_backend(
                 "for every cold rebuild"
             )
         built_backends.append(backend)
+        _assert_input_snapshot_unchanged(
+            state_rows,
+            drift_rows,
+            states_sha256=states_sha256,
+            drifts_sha256=drifts_sha256,
+            stage="subject backend build",
+        )
+        prepared_receipt = None
+        if backend.descriptor.kind == "approximate":
+            if not isinstance(backend, PreparedNeighborBackend):
+                raise TypeError(
+                    "approximate audit subjects must be prepared backends"
+                )
+            prepared_receipt = validate_prepared_backend(
+                backend,
+                states=state_rows,
+                row_identity_sha256=row_identity_sha256,
+                comparison_group=group_key,
+            )
         descriptor, subject_pairs = _collect_pairs(
             backend,
             state_rows,
@@ -897,6 +1113,18 @@ def audit_neighbor_backend(
             drifts_sha256=drifts_sha256,
             stage="subject backend retrieval",
         )
+        if prepared_receipt is not None:
+            post_retrieval_receipt = validate_prepared_backend(
+                backend,
+                states=state_rows,
+                row_identity_sha256=row_identity_sha256,
+                comparison_group=group_key,
+            )
+            if post_retrieval_receipt != prepared_receipt:
+                raise ValueError(
+                    "prepared backend build receipt changed during "
+                    "retrieval"
+                )
         if subject_descriptor is None:
             subject_descriptor = descriptor
         elif descriptor != subject_descriptor:
@@ -1152,6 +1380,28 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
             None if query_indices is None else tuple(query_indices)
         ),
     )
+    selection_payload = protocol_payload.get("query_selection")
+    if selection_payload is not None and not isinstance(
+        selection_payload,
+        Mapping,
+    ):
+        raise ValueError("protocol query selection is invalid")
+    query_selection = (
+        None
+        if selection_payload is None
+        else NeighborQuerySelectionContract(
+            seed=selection_payload.get("seed"),
+            count=selection_payload.get("count"),
+            global_row_key_sha256=selection_payload.get(
+                "global_row_key_sha256"
+            ),
+            schema_version=selection_payload.get("schema_version"),
+        )
+    )
+    if protocol_payload.get("query_selection_sha256") != (
+        None if query_selection is None else query_selection.sha256
+    ):
+        raise ValueError("protocol query selection digest mismatch")
     protocol = NeighborAuditProtocolBinding(
         protocol_id=protocol_payload.get("protocol_id"),
         status=protocol_payload.get("status"),
@@ -1161,6 +1411,7 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         ),
         audit_config_sha256=protocol_payload.get("audit_config_sha256"),
         deviations=tuple(protocol_payload.get("deviations", ())),
+        query_selection=query_selection,
     )
     sample = missing.get("sample")
     if not isinstance(sample, list):
@@ -1222,12 +1473,12 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
     )
 
 
-def load_neighbor_audit(
+def _load_neighbor_audit_result(
     path: str | Path,
     *,
     expected_audit_sha256: str | None = None,
     expected_identity_sha256: str | None = None,
-) -> dict[str, object]:
+) -> tuple[NeighborAuditResult, str]:
     """Load an audit and independently revalidate every nested digest."""
 
     source = Path(path)
@@ -1257,4 +1508,36 @@ def load_neighbor_audit(
         and result.identity_sha256 != expected_identity_sha256
     ):
         raise ValueError("neighbor audit identity does not match expected digest")
-    return {**reconstructed, "audit_sha256": persisted_sha256}
+    return result, persisted_sha256
+
+
+def load_neighbor_audit_result(
+    path: str | Path,
+    *,
+    expected_audit_sha256: str | None = None,
+    expected_identity_sha256: str | None = None,
+) -> NeighborAuditResult:
+    """Load one strongly typed, fully reconstructed audit result."""
+
+    result, _ = _load_neighbor_audit_result(
+        path,
+        expected_audit_sha256=expected_audit_sha256,
+        expected_identity_sha256=expected_identity_sha256,
+    )
+    return result
+
+
+def load_neighbor_audit(
+    path: str | Path,
+    *,
+    expected_audit_sha256: str | None = None,
+    expected_identity_sha256: str | None = None,
+) -> dict[str, object]:
+    """Load one audit as its validated JSON-ready artifact."""
+
+    result, persisted_sha256 = _load_neighbor_audit_result(
+        path,
+        expected_audit_sha256=expected_audit_sha256,
+        expected_identity_sha256=expected_identity_sha256,
+    )
+    return {**result.to_dict(), "audit_sha256": persisted_sha256}

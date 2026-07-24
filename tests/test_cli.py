@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from spirallens.cli import main
+import pytest
+
+from spirallens.cli import build_parser, main
 from spirallens.metrics import LedgerSummary
 
 
@@ -249,6 +251,8 @@ def test_candidates_cli_binds_protocol_and_propagates_overwrite(
     assert captured["overwrite"] is True
     assert captured["protocol_id"] == "test-protocol"
     assert captured["protocol_claim_ceiling"] == 2
+    assert captured["neighbor_backend_factory"] is None
+    assert captured["neighbor_audit_receipts"] is None
     binding = captured["protocol_binding"]
     assert binding["declared_status"] == "preregistered-draft"
     assert binding["execution_status"] == "exploratory_override"
@@ -256,3 +260,78 @@ def test_candidates_cli_binds_protocol_and_propagates_overwrite(
     assert len(binding["sha256"]) == 64
     summary = json.loads(capsys.readouterr().out)
     assert summary["execution_status"] == "exploratory_override"
+    assert summary["neighbor_backend"] == "exact"
+
+
+def test_candidates_cli_requires_receipt_for_faiss(
+    tmp_path,
+    capsys,
+) -> None:
+    exit_code = main(
+        [
+            "candidates",
+            "--manifest",
+            str(tmp_path / "manifest.json"),
+            "--output",
+            str(tmp_path / "candidates.jsonl"),
+            "--layers",
+            "0",
+            "--neighbor-backend",
+            "faiss-hnsw",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "--expected-neighbor-protocol-sha256" in (
+        capsys.readouterr().err
+    )
+
+
+def test_neighbor_audit_cli_fails_closed_on_protocol_digest(
+    tmp_path,
+    capsys,
+) -> None:
+    protocol = tmp_path / "neighbor.yaml"
+    protocol.write_text("{}\n", encoding="utf-8")
+
+    exit_code = main(
+        [
+            "neighbor-audit",
+            "--manifest",
+            str(tmp_path / "atlas"),
+            "--layer",
+            "0",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            "0" * 64,
+            "--output",
+            str(tmp_path / "audit.json"),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "does not match --expected-protocol-sha256" in (
+        capsys.readouterr().err
+    )
+
+
+def test_neighbor_audit_prepare_only_owns_optional_output() -> None:
+    parser = build_parser()
+    prepared = parser.parse_args(
+        [
+            "neighbor-audit",
+            "--manifest",
+            "atlas",
+            "--layer",
+            "0",
+            "--protocol",
+            "neighbor.yaml",
+            "--prepare-only",
+        ]
+    )
+
+    assert prepared.prepare_only is True
+    assert prepared.output is None
+    with pytest.raises(SystemExit):
+        parser.parse_args(["atlas", "--max-tokens", "1"])

@@ -43,13 +43,15 @@ backend contract, a deterministic exact reference, and shared exact reranking.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, but are not yet wired from a Pythia candidate into a Level-2 result.
 The exact pairwise reference fails loudly above 10,000 all-pair rows. No
-approximate backend has been selected or promoted yet; a full-vocabulary atlas
-can still be captured.
+approximate backend has been promoted yet. A pinned Faiss HNSW range-search
+implementation and its receipt-gated audit path now exist, but the tracked
+protocol remains an unpromoted draft until query-local worst-case recall is
+specified and a full-vocabulary audit passes.
 
 ## Development install
 
 ```bash
-python -m pip install -e '.[models,dev]'
+python -m pip install -e '.[ann,models,dev]'
 ```
 
 The analytic calibration requires only the core dependencies:
@@ -59,11 +61,10 @@ python -m pip install -e .
 spirallens calibrate
 ```
 
-The full test suite includes the offline Pythia adapter and therefore uses both
-extras:
+The full test suite includes the offline Pythia adapter and Faiss backend:
 
 ```bash
-python -m pip install -e '.[models,dev]'
+python -m pip install -e '.[ann,models,dev]'
 pytest
 ```
 
@@ -131,24 +132,53 @@ spirallens candidates \
   --protocol protocols/pythia_v0_1.yaml
 ```
 
-Candidate ledger v0.2 separates retrieval from judgment. A backend sees only
+Candidate ledger v0.3 separates retrieval from judgment. A backend sees only
 the unprojected `resid_pre` row matrix and proposes canonical global row-index
 pairs. SpiralLens then recomputes every state and drift metric in float64 from
 the original arrays. Backend scores cannot pass a gate or enter candidate
 identity.
 
-The bounded exact implementation is the current reference backend. The current
-preregistered-draft candidate-boundary recall contract for a future approximate
-backend is declared in
+The bounded exact implementation remains the reference backend. The selected
+but unpromoted approximate implementation is `faiss-cpu==1.14.3`
+`IndexHNSWFlat` with normalized float32 inner-product range search. Build and
+search run single-threaded in fresh Python subprocesses; every proposal is
+still judged from the original atlas values by the shared float64 reranker.
+
+The preregistered-draft candidate-boundary recall contract is declared in
 [`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml):
-the initial target is `>= 0.99` across deterministic repeats. A reference set
-with zero exact candidates is `insufficient`, never an automatic pass. The
-audit API and internally validated, tamper-evident JSON artifact are
-implemented. Every audit backend receives a detached read-only state snapshot,
-with pre/post input digests checked on each cold rebuild. No real
-full-vocabulary approximate backend is yet called audited; approximate-backend
-candidate persistence remains disabled until an audit-receipt binding is
-implemented.
+the aggregate target is `>= 0.99` across deterministic cold rebuilds, with at
+least 100 exact reference candidates. A zero-candidate reference is
+`insufficient`, never an automatic pass. The backend is built on the same full
+row matrix used for discovery while exact comparison is restricted to a
+deterministically preregistered query subset.
+
+Index bytes, full states, row order, layer group, runtime, candidate protocol,
+query contract, and exact rerank contract are bound into the audit identity.
+Approximate candidate persistence accepts only the built-in Faiss backend and
+a receipt loaded from persisted audit/protocol files against out-of-band
+SHA-256 digests. The audit query subset may expand to all query rows at
+persistence; no other target field may change.
+
+The tracked neighbor protocol deliberately has
+`full_vocabulary_backend_promoted_by_this_protocol: false`. Aggregate recall
+can hide a query-local collapse, so this flag stays false until a
+query-local/worst-case coverage gate is implemented and frozen. Therefore no
+tracked full-vocabulary Pythia audit or approximate candidate ledger is claimed
+yet.
+
+To obtain the atlas-specific bindings without running the ANN or observing an
+audit outcome:
+
+```bash
+spirallens neighbor-audit \
+  --manifest runs/pythia70-full/manifest.json \
+  --layer 0 \
+  --protocol protocols/pythia_neighbor_v0_2.yaml \
+  --prepare-only
+```
+
+The complete freeze, audit, receipt, and persistence contract is documented in
+[Neighbor Audit and Receipt Contract](docs/neighbor_audit.md).
 
 `--full-vocabulary` is required to authorize every ID in the declared sweep
 domain explicitly.
@@ -164,11 +194,12 @@ to become a general library.
 
 - **Now — instrument foundation (`0.1.x`):** analytic phantoms, Pythia
   activation atlases, structural candidate ledgers, versioned provenance, and
-  fail-closed storage, plus a state-only neighbor interface and exact reference.
+  fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
+  full-index/subset-query audits, and verified receipt plumbing.
 - **Next — candidate-to-loop system:** a public synthetic engineering context
-  bank, a real approximate full-vocabulary backend that passes the frozen
-  recall audit within each declared context/position slice, cycle construction,
-  relative holonomy, and architecture/null accounting on Pythia-70M.
+  bank, query-local approximate-retrieval gates, a frozen full-vocabulary audit
+  within each declared context/position slice, cycle construction, relative
+  holonomy, and architecture/null accounting on Pythia-70M.
 - **First scientific protocol:** create separate frozen discovery and held-out
   context-bank artifacts, freeze the integrated instrument, and run the same
   preregistered design on Pythia-160M without tuning on either held-out results

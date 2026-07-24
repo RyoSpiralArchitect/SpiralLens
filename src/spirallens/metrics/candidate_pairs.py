@@ -7,15 +7,16 @@ are deliberately absent from this module.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 import hashlib
+from io import StringIO
 import json
 import os
 from pathlib import Path
 from numbers import Integral, Real
-from typing import Any
+from typing import TYPE_CHECKING, Any
 import uuid
 
 import numpy as np
@@ -26,19 +27,32 @@ from spirallens.neighbors import (
     ExactBlockwiseBackend,
     NeighborBackend,
     NeighborBackendDescriptor,
+    NeighborIndexBuildReceipt,
     NeighborPair,
     NeighborQuery,
     canonical_json_sha256,
     exact_state_pair_metrics,
     finite_row_norms,
+    state_matrix_sha256,
     state_pair_passes_query,
+    validate_prepared_backend,
     validate_neighbor_pairs,
 )
 
+if TYPE_CHECKING:
+    from .neighbor_audit import (
+        NeighborAuditConfig,
+        NeighborAuditProtocolBinding,
+        NeighborAuditResult,
+    )
 
-CANDIDATE_SCHEMA_VERSION = "spirallens.candidate.v0.2"
-LEDGER_SCHEMA_VERSION = "spirallens.candidate-ledger.v0.2"
+
+CANDIDATE_SCHEMA_VERSION = "spirallens.candidate.v0.3"
+LEDGER_SCHEMA_VERSION = "spirallens.candidate-ledger.v0.3"
 EXACT_RERANK_CONTRACT_VERSION = "spirallens.candidate-exact-rerank.v0.1"
+NEIGHBOR_RETRIEVAL_BINDING_SCHEMA_VERSION = (
+    "spirallens.neighbor-retrieval-binding.v0.1"
+)
 
 
 @dataclass(frozen=True)
@@ -126,6 +140,48 @@ class LedgerSummary:
     footer_count: int = 1
 
 
+def atlas_global_row_key_sha256(
+    *,
+    atlas_manifest_sha256: str,
+    atlas_run_id: str,
+    token_ids: ArrayLike,
+    request: Mapping[str, Any],
+) -> str:
+    """Bind the ordered global row identity used by every layer index."""
+
+    token_values = np.asanyarray(token_ids)
+    if token_values.ndim != 1:
+        raise ValueError("token_ids must have shape (observations,)")
+    if (
+        not isinstance(atlas_manifest_sha256, str)
+        or len(atlas_manifest_sha256) != 64
+        or not isinstance(atlas_run_id, str)
+        or not atlas_run_id
+        or not isinstance(request, Mapping)
+    ):
+        raise ValueError("atlas row identity provenance is invalid")
+    return canonical_json_sha256(
+        {
+            "schema_version": "spirallens.global-row-key.v0.1",
+            "atlas_manifest_sha256": atlas_manifest_sha256,
+            "atlas_run_id": atlas_run_id,
+            "token_ids_sha256": state_matrix_sha256(
+                token_values.reshape(-1, 1)
+            ),
+            "row_count": int(token_values.shape[0]),
+            "context_bank_binding_sha256": request.get(
+                "context_bank_binding_sha256"
+            ),
+            "context_ids": request.get("context_ids"),
+            "observation_position": request.get(
+                "observation_position",
+                request.get("position"),
+            ),
+            "token_domain": request.get("token_domain"),
+        }
+    )
+
+
 def load_candidate_config_from_protocol(
     protocol_path: str | Path,
     *,
@@ -189,6 +245,14 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
+def _is_lower_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def _reference_for_row(
     references: Sequence[Mapping[str, Any]] | None,
     index: int,
@@ -224,6 +288,266 @@ def _candidate_id(
     }
     encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return "cand_" + hashlib.sha256(encoded).hexdigest()[:24]
+
+
+def _finite_metric_mapping(
+    payload: object,
+    *,
+    required_fields: set[str],
+    label: str,
+) -> Mapping[str, Real]:
+    if not isinstance(payload, Mapping) or set(payload) != required_fields:
+        raise ValueError(f"candidate {label} fields are invalid")
+    for field_name, value in payload.items():
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, Real)
+            or not np.isfinite(value)
+        ):
+            raise ValueError(
+                f"candidate {label}.{field_name} must be finite"
+            )
+    return payload
+
+
+def _validate_candidate_payload_shape(
+    candidate: Mapping[str, Any],
+    *,
+    config: CandidateSearchConfig,
+    expected_source_run_id: str | None = None,
+    expected_row_count: int | None = None,
+) -> None:
+    required_fields = {
+        "schema_version",
+        "record_type",
+        "candidate_id",
+        "candidate_kind",
+        "claim_level",
+        "source_run_id",
+        "comparison_group",
+        "left",
+        "right",
+        "state_metrics",
+        "drift_metrics",
+        "retrieval",
+        "discovery",
+        "gates",
+    }
+    claim_level = candidate.get("claim_level")
+    if (
+        set(candidate) != required_fields
+        or candidate.get("schema_version") != CANDIDATE_SCHEMA_VERSION
+        or candidate.get("record_type") != "candidate"
+        or candidate.get("candidate_kind")
+        != "cosine_near_drift_divergent"
+        or isinstance(claim_level, bool)
+        or not isinstance(claim_level, Integral)
+        or int(claim_level) != 1
+    ):
+        raise ValueError("candidate record shape is invalid")
+    source_run_id = candidate.get("source_run_id")
+    group_key = candidate.get("comparison_group")
+    left = candidate.get("left")
+    right = candidate.get("right")
+    if (
+        not isinstance(source_run_id, str)
+        or not source_run_id
+        or not isinstance(group_key, str)
+        or not group_key
+        or not isinstance(left, Mapping)
+        or not isinstance(right, Mapping)
+    ):
+        raise ValueError("candidate identity fields are invalid")
+    if (
+        expected_source_run_id is not None
+        and source_run_id != expected_source_run_id
+    ):
+        raise ValueError(
+            "candidate source_run_id differs from the ledger source"
+        )
+    left_index = left.get("row_index")
+    right_index = right.get("row_index")
+    if (
+        isinstance(left_index, bool)
+        or not isinstance(left_index, Integral)
+        or isinstance(right_index, bool)
+        or not isinstance(right_index, Integral)
+        or int(left_index) < 0
+        or int(left_index) >= int(right_index)
+        or (
+            expected_row_count is not None
+            and int(right_index) >= expected_row_count
+        )
+    ):
+        raise ValueError("candidate row identity is invalid")
+    if group_key.startswith("layer_index="):
+        try:
+            expected_layer_index = int(
+                group_key.removeprefix("layer_index=")
+            )
+        except ValueError as error:
+            raise ValueError(
+                "candidate layer group is invalid"
+            ) from error
+        for reference in (left, right):
+            layer_index = reference.get("layer_index")
+            if (
+                isinstance(layer_index, bool)
+                or not isinstance(layer_index, Integral)
+                or int(layer_index) != expected_layer_index
+            ):
+                raise ValueError(
+                    "candidate reference layer differs from its group"
+                )
+    if candidate.get("candidate_id") != _candidate_id(
+        source_run_id=source_run_id,
+        group_key=group_key,
+        left_reference=left,
+        right_reference=right,
+    ):
+        raise ValueError("candidate stable identity is invalid")
+    state_metrics = _finite_metric_mapping(
+        candidate.get("state_metrics"),
+        required_fields={
+            "cosine_similarity",
+            "norm_a",
+            "norm_b",
+            "euclidean_distance",
+            "radial_distance",
+            "angular_distance",
+            "relative_norm_gap",
+            "angular_fraction_sq",
+            "unit_chord_distance",
+        },
+        label="state_metrics",
+    )
+    drift_metrics = _finite_metric_mapping(
+        candidate.get("drift_metrics"),
+        required_fields={
+            "norm_a",
+            "norm_b",
+            "cosine_similarity",
+            "divergence",
+            "relative_divergence",
+            "radial_divergence",
+            "angular_divergence",
+            "angular_fraction_sq",
+        },
+        label="drift_metrics",
+    )
+    if (
+        state_metrics["cosine_similarity"] < config.cosine_min
+        or state_metrics["relative_norm_gap"]
+        > config.relative_norm_gap_max
+        or state_metrics["norm_a"] < config.min_state_norm
+        or state_metrics["norm_b"] < config.min_state_norm
+        or drift_metrics["norm_a"] < config.min_drift_norm
+        or drift_metrics["norm_b"] < config.min_drift_norm
+        or drift_metrics["divergence"]
+        < config.drift_absolute_divergence_min
+        or drift_metrics["relative_divergence"]
+        < config.drift_relative_divergence_min
+    ):
+        raise ValueError("candidate does not satisfy its declared gates")
+    norm_a = float(state_metrics["norm_a"])
+    norm_b = float(state_metrics["norm_b"])
+    cosine = float(state_metrics["cosine_similarity"])
+    drift_norm_a = float(drift_metrics["norm_a"])
+    drift_norm_b = float(drift_metrics["norm_b"])
+    drift_cosine = float(drift_metrics["cosine_similarity"])
+    drift_divergence = float(drift_metrics["divergence"])
+    if (
+        norm_a < 0.0
+        or norm_b < 0.0
+        or not -1.0 <= cosine <= 1.0
+        or drift_norm_a < 0.0
+        or drift_norm_b < 0.0
+        or not -1.0 <= drift_cosine <= 1.0
+        or drift_divergence < 0.0
+    ):
+        raise ValueError("candidate metric domain is invalid")
+    radial = abs(norm_a - norm_b)
+    angular_sq = max(
+        0.0,
+        2.0 * norm_a * norm_b * (1.0 - cosine),
+    )
+    euclidean_sq = radial**2 + angular_sq
+    drift_radial = abs(drift_norm_a - drift_norm_b)
+    drift_angular_sq = max(
+        0.0,
+        2.0
+        * drift_norm_a
+        * drift_norm_b
+        * (1.0 - drift_cosine),
+    )
+    expected_state_metrics = {
+        "euclidean_distance": np.sqrt(euclidean_sq),
+        "radial_distance": radial,
+        "angular_distance": np.sqrt(angular_sq),
+        "relative_norm_gap": radial
+        / max(0.5 * (norm_a + norm_b), config.epsilon),
+        "angular_fraction_sq": angular_sq
+        / max(euclidean_sq, config.epsilon),
+        "unit_chord_distance": np.sqrt(
+            max(0.0, 2.0 * (1.0 - cosine))
+        ),
+    }
+    expected_drift_metrics = {
+        "relative_divergence": drift_divergence
+        / max(
+            0.5 * (drift_norm_a + drift_norm_b),
+            config.epsilon,
+        ),
+        "radial_divergence": drift_radial,
+        "angular_divergence": np.sqrt(drift_angular_sq),
+        "angular_fraction_sq": drift_angular_sq
+        / max(drift_divergence**2, config.epsilon),
+    }
+    absolute_tolerance = max(1e-12, 32.0 * config.epsilon)
+    if (
+        any(
+            not np.isclose(
+                state_metrics[field_name],
+                expected,
+                rtol=1e-9,
+                atol=absolute_tolerance,
+            )
+            for field_name, expected in expected_state_metrics.items()
+        )
+        or any(
+            not np.isclose(
+                drift_metrics[field_name],
+                expected,
+                rtol=1e-9,
+                atol=absolute_tolerance,
+            )
+            for field_name, expected in expected_drift_metrics.items()
+        )
+        or not np.isclose(
+            drift_divergence**2,
+            drift_radial**2 + drift_angular_sq,
+            rtol=1e-8,
+            atol=absolute_tolerance,
+        )
+    ):
+        raise ValueError("candidate metric identities are inconsistent")
+    if candidate.get("discovery") != {
+        "semantic_annotation_used": False,
+        "sae_annotation_used": False,
+        "projection_used": False,
+    }:
+        raise ValueError("candidate discovery contract is invalid")
+    if candidate.get("gates") != {
+        "cosine_min": config.cosine_min,
+        "relative_norm_gap_max": config.relative_norm_gap_max,
+        "drift_relative_divergence_min": (
+            config.drift_relative_divergence_min
+        ),
+        "drift_absolute_divergence_min": (
+            config.drift_absolute_divergence_min
+        ),
+    }:
+        raise ValueError("candidate gates differ from the ledger header")
 
 
 def _iter_candidate_pairs_v0_1_oracle(
@@ -497,6 +821,7 @@ def iter_exact_reranked_candidates(
     config: CandidateSearchConfig | None = None,
     source_run_id: str = "array-input",
     group_key: str = "ungrouped",
+    audit_receipt_sha256: str | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Apply canonical float64 state and drift gates to proposed pairs.
 
@@ -548,6 +873,7 @@ def iter_exact_reranked_candidates(
         "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
         "exact_reranked": True,
         "backend_score_used_for_gates": False,
+        "audit_receipt_sha256": audit_receipt_sha256,
     }
 
     for pair in validate_neighbor_pairs(iter(pairs), row_count=row_count):
@@ -699,6 +1025,7 @@ def iter_candidate_pairs(
     neighbor_backend: NeighborBackend | None = None,
     query_indices: tuple[int, ...] | None = None,
     expected_backend_descriptor: NeighborBackendDescriptor | None = None,
+    audit_receipt_sha256: str | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Retrieve state neighbors, then exact-rerank structural candidates."""
 
@@ -736,6 +1063,7 @@ def iter_candidate_pairs(
         config=settings,
         source_run_id=source_run_id,
         group_key=group_key,
+        audit_receipt_sha256=audit_receipt_sha256,
     )
     if backend.descriptor != descriptor:
         raise ValueError(
@@ -747,44 +1075,240 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _validated_neighbor_retrieval_binding(
+def _neighbor_descriptor_from_mapping(
+    payload: Mapping[str, Any],
+) -> NeighborBackendDescriptor:
+    parameters = payload.get("parameters")
+    runtime = payload.get("runtime")
+    if not isinstance(parameters, Mapping) or not isinstance(
+        runtime,
+        Mapping,
+    ):
+        raise ValueError("neighbor backend descriptor is malformed")
+    descriptor = NeighborBackendDescriptor(
+        backend_id=payload.get("backend_id"),
+        backend_version=payload.get("backend_version"),
+        kind=payload.get("kind"),
+        deterministic=payload.get("deterministic"),
+        parameters=tuple(parameters.items()),
+        runtime=tuple(runtime.items()),
+    )
+    if descriptor.to_dict() != dict(payload):
+        raise ValueError(
+            "neighbor backend descriptor fields are not canonical"
+        )
+    return descriptor
+
+
+def _neighbor_query_from_mapping(
+    payload: Mapping[str, Any],
+) -> NeighborQuery:
+    raw_indices = payload.get("query_indices")
+    query_indices = (
+        None
+        if raw_indices is None
+        else tuple(raw_indices)
+        if isinstance(raw_indices, list)
+        else raw_indices
+    )
+    query = NeighborQuery(
+        cosine_min=payload.get("cosine_min"),
+        relative_norm_gap_max=payload.get(
+            "relative_norm_gap_max"
+        ),
+        min_state_norm=payload.get("min_state_norm"),
+        epsilon=payload.get("epsilon"),
+        query_indices=query_indices,
+    )
+    if query.to_dict() != dict(payload):
+        raise ValueError(
+            "neighbor query fields are not canonical"
+        )
+    return query
+
+
+def _validated_neighbor_retrieval_bindings(
     source: Mapping[str, Any],
-) -> Mapping[str, Any] | None:
-    binding = source.get("neighbor_retrieval")
-    if binding is None:
+) -> Mapping[str, Mapping[str, Any]] | None:
+    envelope = source.get("neighbor_retrieval")
+    if envelope is None:
         return None
-    if not isinstance(binding, Mapping):
+    if not isinstance(envelope, Mapping):
         raise TypeError("source.neighbor_retrieval must be a mapping")
-    backend = binding.get("backend")
-    query = binding.get("query")
-    backend_sha256 = binding.get("backend_sha256")
-    query_sha256 = binding.get("query_sha256")
+    groups = envelope.get("groups")
     if (
-        not isinstance(backend, Mapping)
-        or not isinstance(query, Mapping)
-        or not isinstance(backend_sha256, str)
-        or len(backend_sha256) != 64
-        or not isinstance(query_sha256, str)
-        or len(query_sha256) != 64
-        or canonical_json_sha256(backend) != backend_sha256
-        or canonical_json_sha256(query) != query_sha256
-        or binding.get("exact_rerank_contract")
-        != EXACT_RERANK_CONTRACT_VERSION
-        or binding.get("exact_rerank_required") is not True
-        or binding.get("backend_score_used_for_gates") is not False
+        set(envelope) != {"schema_version", "groups"}
+        or envelope.get("schema_version")
+        != NEIGHBOR_RETRIEVAL_BINDING_SCHEMA_VERSION
+        or not isinstance(groups, Mapping)
+        or not groups
+        or tuple(groups) != tuple(sorted(groups))
     ):
         raise ValueError(
             "source.neighbor_retrieval violates its provenance contract"
         )
-    if backend.get("kind") == "approximate":
-        raise ValueError(
-            "approximate candidate persistence is disabled until an "
-            "audit-receipt binding is implemented"
+    validated: dict[str, Mapping[str, Any]] = {}
+    required_fields = {
+        "comparison_group",
+        "backend",
+        "backend_sha256",
+        "query",
+        "query_sha256",
+        "exact_rerank_contract",
+        "exact_rerank_required",
+        "backend_score_used_for_gates",
+        "audit_receipt",
+        "audit_receipt_sha256",
+    }
+    for group_key, value in groups.items():
+        if (
+            not isinstance(group_key, str)
+            or not group_key
+            or not isinstance(value, Mapping)
+            or set(value) != required_fields
+        ):
+            raise ValueError(
+                "neighbor retrieval group binding is malformed"
+            )
+        backend = value.get("backend")
+        query = value.get("query")
+        backend_sha256 = value.get("backend_sha256")
+        query_sha256 = value.get("query_sha256")
+        if (
+            value.get("comparison_group") != group_key
+            or not isinstance(backend, Mapping)
+            or not isinstance(query, Mapping)
+            or not isinstance(backend_sha256, str)
+            or len(backend_sha256) != 64
+            or not isinstance(query_sha256, str)
+            or len(query_sha256) != 64
+            or canonical_json_sha256(backend) != backend_sha256
+            or canonical_json_sha256(query) != query_sha256
+            or value.get("exact_rerank_contract")
+            != EXACT_RERANK_CONTRACT_VERSION
+            or value.get("exact_rerank_required") is not True
+            or value.get("backend_score_used_for_gates") is not False
+        ):
+            raise ValueError(
+                "neighbor retrieval group violates provenance"
+            )
+        backend_descriptor = _neighbor_descriptor_from_mapping(backend)
+        query_contract = _neighbor_query_from_mapping(query)
+        if (
+            backend_descriptor.sha256 != backend_sha256
+            or query_contract.sha256 != query_sha256
+            or query_contract.query_indices is not None
+        ):
+            raise ValueError(
+                "neighbor retrieval typed identity is invalid"
+            )
+        receipt = value.get("audit_receipt")
+        receipt_sha256 = value.get("audit_receipt_sha256")
+        if backend_descriptor.kind == "approximate":
+            from .neighbor_receipt import NeighborAuditReceipt
+
+            if (
+                not isinstance(receipt, Mapping)
+                or not isinstance(receipt_sha256, str)
+                or len(receipt_sha256) != 64
+                or canonical_json_sha256(receipt) != receipt_sha256
+                or receipt.get("comparison_group") != group_key
+                or receipt.get("subject_backend_sha256")
+                != backend_sha256
+                or receipt.get("authorized_target_query_sha256")
+                != query_sha256
+            ):
+                raise ValueError(
+                    "approximate neighbor retrieval lacks a matching "
+                    "audit receipt"
+                )
+            typed_receipt = NeighborAuditReceipt.from_dict(receipt)
+            if (
+                typed_receipt.sha256 != receipt_sha256
+                or typed_receipt.atlas_manifest_sha256
+                != source.get("atlas_manifest_sha256")
+                or typed_receipt.atlas_run_id
+                != source.get("atlas_run_id")
+                or typed_receipt.source_run_id
+                != source.get("atlas_run_id")
+                or typed_receipt.global_row_key_sha256
+                != source.get("global_row_key_sha256")
+            ):
+                raise ValueError(
+                    "approximate neighbor receipt identity is invalid"
+                )
+        elif receipt is not None or receipt_sha256 is not None:
+            raise ValueError(
+                "exact neighbor retrieval must not claim an audit receipt"
+            )
+        validated[group_key] = value
+    return validated
+
+
+def _validate_ledger_source_scope(
+    source: Mapping[str, Any],
+    *,
+    config: CandidateSearchConfig,
+    neighbor_bindings: Mapping[str, Mapping[str, Any]] | None,
+) -> tuple[str | None, int | None]:
+    atlas_run_id = source.get("atlas_run_id")
+    if atlas_run_id is None:
+        if config.layer_indices is not None:
+            raise ValueError(
+                "layer-scoped candidate config requires atlas source scope"
+            )
+        return None, None
+    if not isinstance(atlas_run_id, str) or not atlas_run_id:
+        raise ValueError("source.atlas_run_id must be a non-empty string")
+    for field_name in (
+        "atlas_manifest_sha256",
+        "global_row_key_sha256",
+    ):
+        if not _is_lower_sha256(source.get(field_name)):
+            raise ValueError(
+                f"source.{field_name} must be a lowercase SHA-256"
+            )
+    request = source.get("request")
+    layers = source.get("layers_analyzed")
+    if not isinstance(request, Mapping) or not isinstance(layers, list):
+        raise ValueError("atlas candidate source scope is incomplete")
+    row_count = request.get("num_tokens")
+    if (
+        isinstance(row_count, bool)
+        or not isinstance(row_count, Integral)
+        or row_count <= 0
+    ):
+        raise ValueError("source.request.num_tokens must be positive")
+    if (
+        any(
+            isinstance(layer, bool)
+            or not isinstance(layer, Integral)
+            or layer < 0
+            for layer in layers
         )
-    return binding
+        or len(set(layers)) != len(layers)
+    ):
+        raise ValueError("source.layers_analyzed is invalid")
+    canonical_layers = tuple(int(layer) for layer in layers)
+    if (
+        config.layer_indices is not None
+        and config.layer_indices != canonical_layers
+    ):
+        raise ValueError(
+            "candidate config layer scope differs from its source"
+        )
+    if neighbor_bindings is not None:
+        expected_groups = {
+            f"layer_index={layer}" for layer in canonical_layers
+        }
+        if expected_groups != set(neighbor_bindings):
+            raise ValueError(
+                "ledger layers do not match neighbor groups"
+            )
+    return atlas_run_id, int(row_count)
 
 
-def write_candidate_ledger(
+def _write_candidate_ledger(
     candidates: Iterable[Mapping[str, Any]],
     output_path: str | Path,
     *,
@@ -794,6 +1318,9 @@ def write_candidate_ledger(
     overwrite: bool = False,
     protocol_claim_ceiling: int = 1,
     protocol_binding: Mapping[str, Any] | None = None,
+    neighbor_audit_receipts: Mapping[str, object] | None = None,
+    _allow_receipt_authorized_approximate: bool,
+    _allow_atlas_source: bool,
 ) -> LedgerSummary:
     """Atomically write a header, candidate records, and completion footer.
 
@@ -818,7 +1345,71 @@ def write_candidate_ledger(
     safe_source = _json_safe(source)
     if not isinstance(safe_source, Mapping):
         raise TypeError("source must be a mapping")
-    neighbor_binding = _validated_neighbor_retrieval_binding(safe_source)
+    neighbor_bindings = _validated_neighbor_retrieval_bindings(safe_source)
+    (
+        expected_source_run_id,
+        expected_row_count,
+    ) = _validate_ledger_source_scope(
+        safe_source,
+        config=config,
+        neighbor_bindings=neighbor_bindings,
+    )
+    if expected_source_run_id is not None and not _allow_atlas_source:
+        raise ValueError(
+            "atlas-backed candidate publication is available only through "
+            "extract_candidates_from_manifest"
+        )
+    approximate_groups = (
+        ()
+        if neighbor_bindings is None
+        else tuple(
+            group_key
+            for group_key, binding in neighbor_bindings.items()
+            if binding["backend"].get("kind") == "approximate"
+        )
+    )
+    if (
+        approximate_groups
+        and not _allow_receipt_authorized_approximate
+    ):
+        raise ValueError(
+            "receipt-authorized approximate publication is available only "
+            "through extract_candidates_from_manifest"
+        )
+    if approximate_groups and overwrite:
+        raise ValueError(
+            "receipt-authorized approximate ledgers cannot overwrite "
+            "an existing path"
+        )
+    if approximate_groups:
+        from .neighbor_receipt import NeighborAuditReceipt
+
+        if (
+            neighbor_audit_receipts is None
+            or set(neighbor_audit_receipts) != set(approximate_groups)
+        ):
+            raise ValueError(
+                "every approximate retrieval group requires its validated "
+                "NeighborAuditReceipt object"
+            )
+        for group_key in approximate_groups:
+            receipt = neighbor_audit_receipts[group_key]
+            binding = neighbor_bindings[group_key]
+            if (
+                not isinstance(receipt, NeighborAuditReceipt)
+                or not receipt.verified
+                or receipt.to_dict() != binding["audit_receipt"]
+                or receipt.sha256
+                != binding["audit_receipt_sha256"]
+            ):
+                raise ValueError(
+                    "neighbor audit receipt object differs from ledger "
+                    f"binding for {group_key}"
+                )
+    elif neighbor_audit_receipts:
+        raise ValueError(
+            "neighbor_audit_receipts were supplied without approximate groups"
+        )
     protocol_record: dict[str, Any] = {
         "declared_id": protocol_id,
         "claim_ceiling": int(protocol_claim_ceiling),
@@ -847,6 +1438,12 @@ def write_candidate_ledger(
         f".{destination.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}"
     )
     candidate_count = 0
+    candidate_counts_by_group = {
+        group_key: 0
+        for group_key in (
+            () if neighbor_bindings is None else neighbor_bindings
+        )
+    }
     started_at = _utc_now()
     header = {
         "schema_version": LEDGER_SCHEMA_VERSION,
@@ -867,15 +1464,38 @@ def write_candidate_ledger(
             "exact_rerank_required": True,
             "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
             "backend_score_used_for_gates": False,
-            "neighbor_retrieval_bound": neighbor_binding is not None,
+            "neighbor_retrieval_bound": neighbor_bindings is not None,
+            "approximate_groups_receipt_authorized": list(
+                approximate_groups
+            ),
         },
     }
 
     try:
         with temporary.open("x", encoding="utf-8") as handle:
-            handle.write(json.dumps(header, sort_keys=True, separators=(",", ":")) + "\n")
+            content_digest = hashlib.sha256()
+            header_line = (
+                json.dumps(
+                    header,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+            handle.write(header_line)
+            content_digest.update(header_line.encode("utf-8"))
             for candidate in candidates:
                 safe_candidate = _json_safe(candidate)
+                if not isinstance(safe_candidate, Mapping):
+                    raise ValueError(
+                        "candidate iterator emitted a non-object record"
+                    )
+                _validate_candidate_payload_shape(
+                    safe_candidate,
+                    config=config,
+                    expected_source_run_id=expected_source_run_id,
+                    expected_row_count=expected_row_count,
+                )
                 if safe_candidate.get("record_type") != "candidate":
                     raise ValueError("candidate iterator emitted a non-candidate record")
                 retrieval = safe_candidate.get("retrieval")
@@ -892,6 +1512,7 @@ def write_candidate_ledger(
                         "exact_rerank_contract",
                         "exact_reranked",
                         "backend_score_used_for_gates",
+                        "audit_receipt_sha256",
                     }
                     or retrieval.get("exact_reranked") is not True
                     or retrieval.get("backend_score_used_for_gates")
@@ -902,27 +1523,43 @@ def write_candidate_ledger(
                     raise ValueError(
                         "candidate is not bound to the exact-rerank contract"
                     )
+                group_key = safe_candidate.get("comparison_group")
+                group_binding = (
+                    None
+                    if neighbor_bindings is None
+                    or not isinstance(group_key, str)
+                    else neighbor_bindings.get(group_key)
+                )
                 if (
-                    neighbor_binding is None
+                    group_binding is None
                     or retrieval.get("backend_sha256")
-                    != neighbor_binding.get("backend_sha256")
+                    != group_binding.get("backend_sha256")
                     or retrieval.get("query_sha256")
-                    != neighbor_binding.get("query_sha256")
+                    != group_binding.get("query_sha256")
                     or retrieval.get("backend_id")
-                    != neighbor_binding["backend"].get("backend_id")
+                    != group_binding["backend"].get("backend_id")
                     or retrieval.get("backend_kind")
-                    != neighbor_binding["backend"].get("kind")
+                    != group_binding["backend"].get("kind")
+                    or retrieval.get("audit_receipt_sha256")
+                    != group_binding.get("audit_receipt_sha256")
                 ):
                     raise ValueError(
                         "candidate retrieval provenance does not match "
                         "the ledger header"
                     )
-                handle.write(
-                    json.dumps(safe_candidate, sort_keys=True, separators=(",", ":"))
+                candidate_line = (
+                    json.dumps(
+                        safe_candidate,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
                     + "\n"
                 )
+                handle.write(candidate_line)
+                content_digest.update(candidate_line.encode("utf-8"))
                 candidate_count += 1
-            footer = {
+                candidate_counts_by_group[group_key] += 1
+            footer_without_digest = {
                 "schema_version": LEDGER_SCHEMA_VERSION,
                 "record_type": "ledger_footer",
                 "status": "complete",
@@ -930,8 +1567,30 @@ def write_candidate_ledger(
                 "started_at": started_at,
                 "completed_at": _utc_now(),
                 "candidate_count": candidate_count,
+                "candidate_count_by_group": candidate_counts_by_group,
             }
-            handle.write(json.dumps(footer, sort_keys=True, separators=(",", ":")) + "\n")
+            footer_identity_line = (
+                json.dumps(
+                    footer_without_digest,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+            footer_digest = content_digest.copy()
+            footer_digest.update(footer_identity_line.encode("utf-8"))
+            footer = {
+                **footer_without_digest,
+                "content_sha256": footer_digest.hexdigest(),
+            }
+            handle.write(
+                json.dumps(
+                    footer,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
             handle.flush()
             os.fsync(handle.fileno())
         if overwrite:
@@ -951,26 +1610,422 @@ def write_candidate_ledger(
     return LedgerSummary(output_path=destination, candidate_count=candidate_count)
 
 
-def read_candidate_records(ledger_path: str | Path) -> Iterator[dict[str, Any]]:
-    """Yield only candidate rows from a completed ledger."""
+def write_candidate_ledger(
+    candidates: Iterable[Mapping[str, Any]],
+    output_path: str | Path,
+    *,
+    source: Mapping[str, Any],
+    config: CandidateSearchConfig,
+    protocol_id: str,
+    overwrite: bool = False,
+    protocol_claim_ceiling: int = 1,
+    protocol_binding: Mapping[str, Any] | None = None,
+    neighbor_audit_receipts: Mapping[str, object] | None = None,
+) -> LedgerSummary:
+    """Publish an exact-backend candidate ledger.
+
+    Receipt-authorized approximate publication is intentionally owned by
+    :func:`extract_candidates_from_manifest`, which also owns the shared
+    float64 reranker and post-retrieval input checks.
+    """
+
+    return _write_candidate_ledger(
+        candidates,
+        output_path,
+        source=source,
+        config=config,
+        protocol_id=protocol_id,
+        overwrite=overwrite,
+        protocol_claim_ceiling=protocol_claim_ceiling,
+        protocol_binding=protocol_binding,
+        neighbor_audit_receipts=neighbor_audit_receipts,
+        _allow_receipt_authorized_approximate=False,
+        _allow_atlas_source=False,
+    )
+
+
+def read_candidate_records(
+    ledger_path: str | Path,
+    *,
+    expected_ledger_sha256: str | None = None,
+) -> Iterator[dict[str, Any]]:
+    """Yield candidates only after strict whole-ledger verification."""
 
     path = Path(ledger_path)
-    saw_complete_footer = False
-    with path.open("r", encoding="utf-8") as handle:
+    ledger_bytes = path.read_bytes()
+    if expected_ledger_sha256 is not None:
+        if (
+            len(expected_ledger_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in expected_ledger_sha256
+            )
+        ):
+            raise ValueError(
+                "expected_ledger_sha256 must be a lowercase SHA-256"
+            )
+        if (
+            hashlib.sha256(ledger_bytes).hexdigest()
+            != expected_ledger_sha256
+        ):
+            raise ValueError(
+                "candidate ledger does not match expected digest"
+            )
+    content_digest = hashlib.sha256()
+    header: Mapping[str, Any] | None = None
+    neighbor_bindings: Mapping[
+        str,
+        Mapping[str, Any],
+    ] | None = None
+    parsed_config: CandidateSearchConfig | None = None
+    expected_source_run_id: str | None = None
+    expected_row_count: int | None = None
+    candidates: list[dict[str, Any]] = []
+    candidate_counts_by_group: dict[str, int] = {}
+    candidate_ids: set[str] = set()
+    footer: Mapping[str, Any] | None = None
+    try:
+        ledger_text = ledger_bytes.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError(f"candidate ledger is not UTF-8: {path}") from error
+    with StringIO(ledger_text) as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
-                continue
+                raise ValueError(
+                    f"blank line is not allowed at {path}:{line_number}"
+                )
+            if footer is not None:
+                raise ValueError(
+                    f"record follows ledger footer at {path}:{line_number}"
+                )
             try:
                 record = json.loads(line)
             except json.JSONDecodeError as error:
-                raise ValueError(f"invalid JSON at {path}:{line_number}") from error
+                raise ValueError(
+                    f"invalid JSON at {path}:{line_number}"
+                ) from error
+            if not isinstance(record, dict):
+                raise ValueError(
+                    f"ledger record is not an object at {path}:{line_number}"
+                )
             record_type = record.get("record_type")
-            if record_type == "candidate":
-                yield record
+            if line_number == 1:
+                current_claim_level = record.get("current_claim_level")
+                protocol_claim_ceiling = record.get(
+                    "protocol_claim_ceiling"
+                )
+                protocol_id = record.get("protocol_id")
+                started_at = record.get("started_at")
+                if (
+                    record_type != "ledger_header"
+                    or record.get("schema_version")
+                    != LEDGER_SCHEMA_VERSION
+                    or record.get("status") != "in_progress"
+                    or set(record)
+                    != {
+                        "schema_version",
+                        "record_type",
+                        "status",
+                        "protocol_id",
+                        "current_claim_level",
+                        "protocol_claim_ceiling",
+                        "protocol",
+                        "started_at",
+                        "source",
+                        "candidate_search",
+                        "discovery_contract",
+                    }
+                    or not isinstance(protocol_id, str)
+                    or not protocol_id
+                    or not isinstance(started_at, str)
+                    or not started_at
+                    or isinstance(current_claim_level, bool)
+                    or not isinstance(current_claim_level, Integral)
+                    or int(current_claim_level) != 1
+                    or isinstance(protocol_claim_ceiling, bool)
+                    or not isinstance(protocol_claim_ceiling, Integral)
+                    or not 1 <= int(protocol_claim_ceiling) <= 3
+                ):
+                    raise ValueError("candidate ledger header is invalid")
+                source = record.get("source")
+                search = record.get("candidate_search")
+                protocol = record.get("protocol")
+                if not isinstance(source, Mapping) or not isinstance(
+                    search,
+                    Mapping,
+                ) or not isinstance(
+                    protocol,
+                    Mapping,
+                ):
+                    raise ValueError(
+                        "candidate ledger header provenance is invalid"
+                    )
+                if (
+                    protocol.get("declared_id")
+                    != protocol_id
+                    or not isinstance(
+                        protocol.get("declared_id"),
+                        str,
+                    )
+                    or isinstance(
+                        protocol.get("claim_ceiling"),
+                        bool,
+                    )
+                    or not isinstance(
+                        protocol.get("claim_ceiling"),
+                        Integral,
+                    )
+                    or protocol.get("claim_ceiling")
+                    != protocol_claim_ceiling
+                ):
+                    raise ValueError(
+                        "candidate ledger protocol identity is invalid"
+                    )
+                neighbor_bindings = (
+                    _validated_neighbor_retrieval_bindings(source)
+                )
+                config_values = dict(search)
+                if config_values.get("layer_indices") is not None:
+                    config_values["layer_indices"] = tuple(
+                        config_values["layer_indices"]
+                    )
+                parsed_config = CandidateSearchConfig(**config_values)
+                if (
+                    parsed_config.to_dict()
+                    != dict(search)
+                ):
+                    raise ValueError(
+                        "candidate search config is not canonical"
+                    )
+                (
+                    expected_source_run_id,
+                    expected_row_count,
+                ) = _validate_ledger_source_scope(
+                    source,
+                    config=parsed_config,
+                    neighbor_bindings=neighbor_bindings,
+                )
+                approximate_groups = (
+                    []
+                    if neighbor_bindings is None
+                    else [
+                        group_key
+                        for group_key, binding in (
+                            neighbor_bindings.items()
+                        )
+                        if binding["backend"].get("kind")
+                        == "approximate"
+                    ]
+                )
+                if record.get("discovery_contract") != {
+                    "structural_metrics_only": True,
+                    "semantic_annotation_used": False,
+                    "candidate_is_not_verified_vortex": True,
+                    "neighbor_backend_proposes_pairs_only": True,
+                    "exact_rerank_required": True,
+                    "exact_rerank_contract": (
+                        EXACT_RERANK_CONTRACT_VERSION
+                    ),
+                    "backend_score_used_for_gates": False,
+                    "neighbor_retrieval_bound": (
+                        neighbor_bindings is not None
+                    ),
+                    "approximate_groups_receipt_authorized": (
+                        approximate_groups
+                    ),
+                }:
+                    raise ValueError(
+                        "candidate ledger discovery contract is invalid"
+                    )
+                if neighbor_bindings is not None:
+                    from .neighbor_receipt import NeighborAuditReceipt
+
+                    candidate_config_sha256 = canonical_json_sha256(
+                        parsed_config.to_dict()
+                    )
+                    for binding in neighbor_bindings.values():
+                        if binding["backend"].get("kind") != "approximate":
+                            continue
+                        typed_receipt = NeighborAuditReceipt.from_dict(
+                            binding["audit_receipt"]
+                        )
+                        if (
+                            typed_receipt.candidate_config_sha256
+                            != candidate_config_sha256
+                            or typed_receipt.candidate_protocol_id
+                            != protocol.get("declared_id")
+                            or typed_receipt.candidate_protocol_sha256
+                            != protocol.get("sha256")
+                        ):
+                            raise ValueError(
+                                "candidate ledger header differs from its "
+                                "neighbor audit receipt"
+                            )
+                header = record
+                content_digest.update(line.encode("utf-8"))
+            elif record_type == "candidate":
+                if (
+                    header is None
+                    or parsed_config is None
+                    or record.get("schema_version")
+                    != CANDIDATE_SCHEMA_VERSION
+                ):
+                    raise ValueError("candidate ledger row is invalid")
+                _validate_candidate_payload_shape(
+                    record,
+                    config=parsed_config,
+                    expected_source_run_id=expected_source_run_id,
+                    expected_row_count=expected_row_count,
+                )
+                group_key = record.get("comparison_group")
+                if not isinstance(group_key, str) or not group_key:
+                    raise ValueError(
+                        "candidate comparison_group is invalid"
+                    )
+                retrieval = record.get("retrieval")
+                group_binding = (
+                    None
+                    if neighbor_bindings is None
+                    else neighbor_bindings.get(group_key)
+                )
+                candidate_id = record.get("candidate_id")
+                if (
+                    group_binding is None
+                    or not isinstance(retrieval, Mapping)
+                    or set(retrieval)
+                    != {
+                        "backend_id",
+                        "backend_kind",
+                        "backend_sha256",
+                        "query_sha256",
+                        "exact_rerank_contract",
+                        "exact_reranked",
+                        "backend_score_used_for_gates",
+                        "audit_receipt_sha256",
+                    }
+                    or retrieval.get("backend_sha256")
+                    != group_binding.get("backend_sha256")
+                    or retrieval.get("query_sha256")
+                    != group_binding.get("query_sha256")
+                    or retrieval.get("backend_id")
+                    != group_binding["backend"].get("backend_id")
+                    or retrieval.get("backend_kind")
+                    != group_binding["backend"].get("kind")
+                    or retrieval.get("audit_receipt_sha256")
+                    != group_binding.get("audit_receipt_sha256")
+                    or retrieval.get("exact_rerank_contract")
+                    != EXACT_RERANK_CONTRACT_VERSION
+                    or retrieval.get("exact_reranked") is not True
+                    or retrieval.get("backend_score_used_for_gates")
+                    is not False
+                    or not isinstance(candidate_id, str)
+                    or not candidate_id
+                    or candidate_id in candidate_ids
+                ):
+                    raise ValueError(
+                        "candidate retrieval provenance does not match "
+                        "the ledger header"
+                    )
+                candidate_ids.add(candidate_id)
+                candidates.append(record)
+                candidate_counts_by_group[group_key] = (
+                    candidate_counts_by_group.get(group_key, 0) + 1
+                )
+                content_digest.update(line.encode("utf-8"))
             elif record_type == "ledger_footer":
-                saw_complete_footer = record.get("status") == "complete"
-    if not saw_complete_footer:
+                footer = record
+                persisted_digest = record.get("content_sha256")
+                footer_candidate_count = record.get("candidate_count")
+                footer_group_counts = record.get(
+                    "candidate_count_by_group"
+                )
+                footer_completed_at = record.get("completed_at")
+                if (
+                    record.get("schema_version") != LEDGER_SCHEMA_VERSION
+                    or record.get("status") != "complete"
+                    or set(record)
+                    != {
+                        "schema_version",
+                        "record_type",
+                        "status",
+                        "protocol_id",
+                        "started_at",
+                        "completed_at",
+                        "candidate_count",
+                        "candidate_count_by_group",
+                        "content_sha256",
+                    }
+                    or not _is_lower_sha256(persisted_digest)
+                    or not isinstance(footer_completed_at, str)
+                    or not footer_completed_at
+                    or isinstance(footer_candidate_count, bool)
+                    or not isinstance(
+                        footer_candidate_count,
+                        Integral,
+                    )
+                    or footer_candidate_count < 0
+                    or not isinstance(footer_group_counts, Mapping)
+                    or tuple(footer_group_counts)
+                    != tuple(sorted(footer_group_counts))
+                    or any(
+                        not isinstance(group_key, str)
+                        or not group_key
+                        or isinstance(count, bool)
+                        or not isinstance(count, Integral)
+                        or count < 0
+                        for group_key, count in (
+                            footer_group_counts.items()
+                        )
+                    )
+                ):
+                    raise ValueError("candidate ledger footer is invalid")
+                footer_without_digest = dict(record)
+                footer_without_digest.pop("content_sha256")
+                footer_identity_line = (
+                    json.dumps(
+                        footer_without_digest,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                    + "\n"
+                )
+                expected_digest = content_digest.copy()
+                expected_digest.update(
+                    footer_identity_line.encode("utf-8")
+                )
+                if expected_digest.hexdigest() != persisted_digest:
+                    raise ValueError(
+                        "candidate ledger content digest mismatch"
+                    )
+            else:
+                raise ValueError(
+                    f"unexpected ledger record at {path}:{line_number}"
+                )
+    if header is None or footer is None:
         raise ValueError(f"candidate ledger is not complete: {path}")
+    declared_counts = footer.get("candidate_count_by_group")
+    expected_groups = (
+        {}
+        if neighbor_bindings is None
+        else {
+            str(group_key): 0
+            for group_key in neighbor_bindings
+        }
+    )
+    for group_key, count in candidate_counts_by_group.items():
+        if group_key not in expected_groups:
+            raise ValueError(
+                "candidate group is not declared by the ledger header"
+            )
+        expected_groups[group_key] = count
+    if (
+        footer.get("candidate_count") != len(candidates)
+        or declared_counts != expected_groups
+        or footer.get("protocol_id") != header.get("protocol_id")
+        or footer.get("started_at") != header.get("started_at")
+    ):
+        raise ValueError("candidate ledger footer counts are invalid")
+    yield from candidates
 
 
 def _sha256_file(path: Path, *, chunk_bytes: int = 8 * 1024 * 1024) -> str:
@@ -1003,16 +2058,55 @@ def _load_manifest_array(
     if not path.is_file():
         raise FileNotFoundError(path)
     expected_sha = descriptor.get("sha256")
-    if verify_checksums and expected_sha is not None:
-        if not isinstance(expected_sha, str) or len(expected_sha) != 64:
-            raise ValueError(f"arrays.{name}.sha256 is malformed")
-        actual_sha = _sha256_file(path)
-        if actual_sha != expected_sha:
-            raise ValueError(
-                f"checksum mismatch for arrays.{name}: {actual_sha} != {expected_sha}"
+    if (
+        verify_checksums
+        and expected_sha is not None
+        and (
+            not isinstance(expected_sha, str)
+            or len(expected_sha) != 64
+        )
+    ):
+        raise ValueError(f"arrays.{name}.sha256 is malformed")
+    with path.open("rb") as handle:
+        if verify_checksums and expected_sha is not None:
+            digest = hashlib.sha256()
+            while chunk := handle.read(8 * 1024 * 1024):
+                digest.update(chunk)
+            actual_sha = digest.hexdigest()
+            if actual_sha != expected_sha:
+                raise ValueError(
+                    f"checksum mismatch for arrays.{name}: "
+                    f"{actual_sha} != {expected_sha}"
+                )
+            handle.seek(0)
+        version = np.lib.format.read_magic(handle)
+        if version == (1, 0):
+            shape, fortran_order, dtype = (
+                np.lib.format.read_array_header_1_0(handle)
             )
-
-    array = np.load(path, mmap_mode="r", allow_pickle=False)
+        elif version == (2, 0):
+            shape, fortran_order, dtype = (
+                np.lib.format.read_array_header_2_0(handle)
+            )
+        else:
+            shape, fortran_order, dtype = (
+                np.lib.format._read_array_header(  # noqa: SLF001
+                    handle,
+                    version,
+                )
+            )
+        if dtype.hasobject:
+            raise ValueError(
+                f"arrays.{name} cannot use an object dtype"
+            )
+        array = np.memmap(
+            handle,
+            dtype=dtype,
+            mode="r",
+            offset=handle.tell(),
+            shape=shape,
+            order="F" if fortran_order else "C",
+        )
     expected_shape = descriptor.get("shape")
     if expected_shape is not None and tuple(expected_shape) != array.shape:
         raise ValueError(
@@ -1036,6 +2130,7 @@ class _DifferenceRows:
         self._inputs = inputs
         self.shape = outputs.shape
         self.ndim = outputs.ndim
+        self.dtype = np.result_type(outputs.dtype, inputs.dtype)
 
     def __getitem__(self, key: Any) -> NDArray[np.generic]:
         return np.asarray(self._outputs[key]) - np.asarray(self._inputs[key])
@@ -1052,6 +2147,12 @@ def extract_candidates_from_manifest(
     protocol_claim_ceiling: int = 1,
     protocol_binding: Mapping[str, Any] | None = None,
     neighbor_backend: NeighborBackend | None = None,
+    neighbor_backend_factory: Callable[
+        [NDArray[np.generic], str, str],
+        NeighborBackend,
+    ]
+    | None = None,
+    neighbor_audit_receipts: Mapping[str, object] | None = None,
 ) -> LedgerSummary:
     """Read a complete Pythia atlas and write a structural candidate ledger."""
 
@@ -1138,16 +2239,38 @@ def extract_candidates_from_manifest(
     layers = settings.layer_indices or tuple(range(num_layers))
     if any(layer >= num_layers for layer in layers):
         raise ValueError(f"requested layer_indices exceed atlas layer count {num_layers}")
-    backend = neighbor_backend or _default_exact_backend(settings)
-    backend_descriptor = backend.descriptor
-    if not isinstance(backend_descriptor, NeighborBackendDescriptor):
-        raise TypeError(
-            "neighbor_backend.descriptor must be a "
-            "NeighborBackendDescriptor"
+    if (
+        neighbor_backend is not None
+        and neighbor_backend_factory is not None
+    ):
+        raise ValueError(
+            "neighbor_backend and neighbor_backend_factory are mutually "
+            "exclusive"
+        )
+    if neighbor_backend_factory is not None and len(layers) != 1:
+        raise ValueError(
+            "prepared approximate extraction currently requires exactly "
+            "one layer per ledger"
         )
     neighbor_query = _neighbor_query_from_config(settings)
+    atlas_manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
 
-    token_values = np.asarray(token_ids, dtype=np.int64)
+    token_values = np.array(
+        token_ids,
+        dtype=np.int64,
+        order="C",
+        copy=True,
+    )
+    token_values.setflags(write=False)
+    token_source_sha256 = state_matrix_sha256(
+        np.asanyarray(token_ids).reshape(-1, 1)
+    )
+    global_row_key_sha256 = atlas_global_row_key_sha256(
+        atlas_manifest_sha256=atlas_manifest_sha256,
+        atlas_run_id=run_id,
+        token_ids=token_values,
+        request=request,
+    )
     position = request.get(
         "observation_position",
         request.get("position"),
@@ -1230,8 +2353,164 @@ def extract_candidates_from_manifest(
             ),
         }
 
+    group_backends: dict[str, NeighborBackend] = {}
+    group_descriptors: dict[str, NeighborBackendDescriptor] = {}
+    group_receipt_sha256: dict[str, str | None] = {}
+    group_bindings: dict[str, dict[str, Any]] = {}
+    group_input_digests: dict[str, tuple[str, str]] = {}
+    group_build_receipts: dict[str, NeighborIndexBuildReceipt] = {}
+    supplied_receipts = dict(neighbor_audit_receipts or {})
+    shared_backend = (
+        neighbor_backend
+        if neighbor_backend is not None
+        else (
+            None
+            if neighbor_backend_factory is not None
+            else _default_exact_backend(settings)
+        )
+    )
+    for layer_index in layers:
+        group_key = f"layer_index={layer_index}"
+        states = resid_pre[:, layer_index, :]
+        drifts = _DifferenceRows(
+            resid_post[:, layer_index, :],
+            resid_pre[:, layer_index, :],
+        )
+        states_sha256 = state_matrix_sha256(states)
+        drifts_sha256 = state_matrix_sha256(drifts)
+        group_input_digests[group_key] = (
+            states_sha256,
+            drifts_sha256,
+        )
+        if neighbor_backend_factory is not None:
+            snapshot_storage = np.array(
+                states,
+                copy=True,
+                order="C",
+                subok=False,
+            )
+            snapshot_storage.setflags(write=False)
+            snapshot = snapshot_storage.view()
+            snapshot.setflags(write=False)
+            snapshot_sha256 = state_matrix_sha256(snapshot)
+            backend = neighbor_backend_factory(
+                snapshot,
+                global_row_key_sha256,
+                group_key,
+            )
+            if state_matrix_sha256(snapshot) != snapshot_sha256:
+                raise ValueError(
+                    "neighbor backend factory changed its state snapshot"
+                )
+        else:
+            assert shared_backend is not None
+            backend = shared_backend
+        descriptor = backend.descriptor
+        if not isinstance(descriptor, NeighborBackendDescriptor):
+            raise TypeError(
+                "neighbor_backend.descriptor must be a "
+                "NeighborBackendDescriptor"
+            )
+        receipt_sha256: str | None = None
+        receipt_payload: Mapping[str, Any] | None = None
+        if descriptor.kind == "approximate":
+            from spirallens.neighbors import FaissHNSWBackend
+
+            if not verify_checksums:
+                raise ValueError(
+                    "receipt-authorized approximate persistence "
+                    "requires atlas checksum verification"
+                )
+            if type(backend) is not FaissHNSWBackend:
+                raise ValueError(
+                    "candidate persistence currently authorizes only "
+                    "the built-in Faiss HNSW backend"
+                )
+            if len(layers) != 1:
+                raise ValueError(
+                    "approximate extraction requires one layer per ledger"
+                )
+            build_receipt = validate_prepared_backend(
+                backend,
+                states=states,
+                row_identity_sha256=global_row_key_sha256,
+                comparison_group=group_key,
+            )
+            receipt = supplied_receipts.get(group_key)
+            from .neighbor_receipt import (
+                NeighborAuditReceipt,
+                NeighborPersistenceTarget,
+            )
+
+            if not isinstance(receipt, NeighborAuditReceipt):
+                raise ValueError(
+                    f"{group_key} requires a validated audit receipt"
+                )
+            if not isinstance(protocol_binding, Mapping):
+                raise ValueError(
+                    "approximate extraction requires the exact "
+                    "candidate protocol binding"
+                )
+            candidate_protocol_id = protocol_binding.get(
+                "declared_id"
+            )
+            candidate_protocol_sha256 = protocol_binding.get("sha256")
+            target = NeighborPersistenceTarget(
+                backend=descriptor,
+                build_receipt=build_receipt,
+                candidate_config=settings,
+                candidate_protocol_id=candidate_protocol_id,
+                candidate_protocol_sha256=(
+                    candidate_protocol_sha256
+                ),
+                query=neighbor_query,
+                atlas_manifest_sha256=atlas_manifest_sha256,
+                atlas_run_id=run_id,
+                global_row_key_sha256=global_row_key_sha256,
+                source_run_id=run_id,
+                comparison_group=group_key,
+                states_sha256=states_sha256,
+                drifts_sha256=drifts_sha256,
+                row_count=int(states.shape[0]),
+                hidden_size=int(states.shape[1]),
+                states_dtype=str(states.dtype),
+                drifts_dtype=str(drifts.dtype),
+            )
+            receipt.validate_target(target)
+            receipt_sha256 = receipt.sha256
+            receipt_payload = receipt.to_dict()
+            group_build_receipts[group_key] = build_receipt
+        elif group_key in supplied_receipts:
+            raise ValueError(
+                "exact retrieval group must not receive an audit receipt"
+            )
+        group_backends[group_key] = backend
+        group_descriptors[group_key] = descriptor
+        group_receipt_sha256[group_key] = receipt_sha256
+        group_bindings[group_key] = {
+            "comparison_group": group_key,
+            "backend": descriptor.to_dict(),
+            "backend_sha256": descriptor.sha256,
+            "query": neighbor_query.to_dict(),
+            "query_sha256": neighbor_query.sha256,
+            "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
+            "exact_rerank_required": True,
+            "backend_score_used_for_gates": False,
+            "audit_receipt": receipt_payload,
+            "audit_receipt_sha256": receipt_sha256,
+        }
+    if set(supplied_receipts) != {
+        group_key
+        for group_key, descriptor in group_descriptors.items()
+        if descriptor.kind == "approximate"
+    }:
+        raise ValueError(
+            "audit receipt groups must exactly match approximate layers"
+        )
+
     def all_candidates() -> Iterator[dict[str, Any]]:
         for layer_index in layers:
+            group_key = f"layer_index={layer_index}"
             references = []
             for row_index in range(token_values.size):
                 reference = {
@@ -1260,30 +2539,87 @@ def extract_candidates_from_manifest(
                 references=references,
                 config=settings,
                 source_run_id=run_id,
-                group_key=f"layer_index={layer_index}",
-                neighbor_backend=backend,
-                expected_backend_descriptor=backend_descriptor,
+                group_key=group_key,
+                neighbor_backend=group_backends[group_key],
+                expected_backend_descriptor=group_descriptors[group_key],
+                audit_receipt_sha256=group_receipt_sha256[group_key],
+            )
+            expected_states, expected_drifts = group_input_digests[
+                group_key
+            ]
+            if (
+                state_matrix_sha256(states) != expected_states
+                or state_matrix_sha256(drifts) != expected_drifts
+                or group_backends[group_key].descriptor
+                != group_descriptors[group_key]
+            ):
+                raise ValueError(
+                    "retrieval input/backend changed during "
+                    f"{group_key}"
+                )
+            if group_key in group_build_receipts:
+                post_receipt = validate_prepared_backend(
+                    group_backends[group_key],
+                    states=states,
+                    row_identity_sha256=global_row_key_sha256,
+                    comparison_group=group_key,
+                )
+                if post_receipt != group_build_receipts[group_key]:
+                    raise ValueError(
+                        "prepared backend build receipt changed during "
+                        f"{group_key}"
+                    )
+        if path.read_bytes() != manifest_bytes:
+            raise ValueError(
+                "atlas manifest changed during candidate extraction"
+            )
+        if verify_checksums:
+            for array_name in (
+                "token_ids",
+                "resid_pre",
+                "resid_post",
+            ):
+                _load_manifest_array(
+                    root,
+                    manifest,
+                    array_name,
+                    verify_checksums=True,
+                )
+        if (
+            state_matrix_sha256(
+                np.asanyarray(token_ids).reshape(-1, 1)
+            )
+            != token_source_sha256
+            or atlas_global_row_key_sha256(
+                atlas_manifest_sha256=atlas_manifest_sha256,
+                atlas_run_id=run_id,
+                token_ids=token_values,
+                request=request,
+            )
+            != global_row_key_sha256
+        ):
+            raise ValueError(
+                "atlas token rows changed during candidate extraction"
             )
 
     source = {
         "atlas_manifest_path": str(path),
-        "atlas_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "atlas_manifest_sha256": atlas_manifest_sha256,
         "atlas_schema_version": manifest.get("schema_version"),
         "atlas_run_id": run_id,
         "model": _json_safe(model),
         "request": _json_safe(request),
         "layers_analyzed": list(layers),
+        "global_row_key_sha256": global_row_key_sha256,
         "neighbor_retrieval": {
-            "backend": backend_descriptor.to_dict(),
-            "backend_sha256": backend_descriptor.sha256,
-            "query": neighbor_query.to_dict(),
-            "query_sha256": neighbor_query.sha256,
-            "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
-            "exact_rerank_required": True,
-            "backend_score_used_for_gates": False,
+            "schema_version": NEIGHBOR_RETRIEVAL_BINDING_SCHEMA_VERSION,
+            "groups": {
+                group_key: group_bindings[group_key]
+                for group_key in sorted(group_bindings)
+            },
         },
     }
-    return write_candidate_ledger(
+    return _write_candidate_ledger(
         all_candidates(),
         output_path,
         source=source,
@@ -1292,4 +2628,221 @@ def extract_candidates_from_manifest(
         overwrite=overwrite,
         protocol_claim_ceiling=protocol_claim_ceiling,
         protocol_binding=protocol_binding,
+        neighbor_audit_receipts=supplied_receipts or None,
+        _allow_receipt_authorized_approximate=True,
+        _allow_atlas_source=True,
     )
+
+
+def audit_neighbor_backend_from_manifest(
+    manifest_path: str | Path,
+    *,
+    layer_index: int,
+    subject_backend_factory: Callable[
+        [NDArray[np.generic]],
+        NeighborBackend,
+    ],
+    protocol_binding: "NeighborAuditProtocolBinding",
+    candidate_config: CandidateSearchConfig,
+    audit_config: "NeighborAuditConfig",
+    verify_checksums: bool = True,
+) -> "NeighborAuditResult":
+    """Audit one prepared full-input index on preregistered query rows."""
+
+    from spirallens.atlas import load_manifest
+
+    from .neighbor_audit import (
+        NeighborAuditProtocolBinding,
+        audit_neighbor_backend,
+    )
+
+    if (
+        isinstance(layer_index, bool)
+        or not isinstance(layer_index, Integral)
+        or layer_index < 0
+    ):
+        raise ValueError("layer_index must be a non-negative integer")
+    if not isinstance(
+        protocol_binding,
+        NeighborAuditProtocolBinding,
+    ):
+        raise TypeError(
+            "protocol_binding must be NeighborAuditProtocolBinding"
+        )
+    if (
+        protocol_binding.status == "frozen"
+        and not verify_checksums
+    ):
+        raise ValueError(
+            "frozen neighbor audits require atlas checksum verification"
+        )
+    if candidate_config.layer_indices != (int(layer_index),):
+        raise ValueError(
+            "candidate_config must bind exactly the audited layer"
+        )
+    selection = protocol_binding.query_selection
+    if selection is None:
+        raise ValueError(
+            "manifest audit requires preregistered query selection"
+        )
+    requested_path = Path(manifest_path).resolve()
+    path = (
+        requested_path / "manifest.json"
+        if requested_path.is_dir()
+        else requested_path
+    )
+    manifest_bytes_before = path.read_bytes()
+    manifest = load_manifest(
+        path.parent,
+        verify_checksums=verify_checksums,
+    )
+    manifest_bytes = path.read_bytes()
+    if manifest_bytes != manifest_bytes_before:
+        raise ValueError("atlas manifest changed during audit validation")
+    try:
+        persisted_manifest = json.loads(manifest_bytes)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "atlas manifest became invalid during audit validation"
+        ) from error
+    if persisted_manifest != manifest:
+        raise ValueError(
+            "validated atlas manifest differs from its persisted "
+            "snapshot"
+        )
+    if (
+        not isinstance(manifest, Mapping)
+        or manifest.get("status") != "complete"
+    ):
+        raise ValueError(
+            "neighbor audit requires a complete atlas manifest"
+        )
+    root = path.parent
+    token_ids = _load_manifest_array(
+        root,
+        manifest,
+        "token_ids",
+        verify_checksums=verify_checksums,
+    )
+    resid_pre = _load_manifest_array(
+        root,
+        manifest,
+        "resid_pre",
+        verify_checksums=verify_checksums,
+    )
+    resid_post = _load_manifest_array(
+        root,
+        manifest,
+        "resid_post",
+        verify_checksums=verify_checksums,
+    )
+    if (
+        token_ids.ndim != 1
+        or resid_pre.ndim != 3
+        or resid_post.shape != resid_pre.shape
+        or resid_pre.shape[0] != token_ids.shape[0]
+        or layer_index >= resid_pre.shape[1]
+    ):
+        raise ValueError("atlas arrays are incompatible with neighbor audit")
+    request = manifest.get("request")
+    model = manifest.get("model")
+    run_id = manifest.get("run_id")
+    if (
+        not isinstance(request, Mapping)
+        or not isinstance(model, Mapping)
+        or not isinstance(run_id, str)
+        or not run_id
+    ):
+        raise ValueError("atlas audit provenance is incomplete")
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    token_values = np.array(
+        token_ids,
+        dtype=np.int64,
+        order="C",
+        copy=True,
+    )
+    token_values.setflags(write=False)
+    token_source_sha256 = state_matrix_sha256(
+        np.asanyarray(token_ids).reshape(-1, 1)
+    )
+    global_row_key_sha256 = atlas_global_row_key_sha256(
+        atlas_manifest_sha256=manifest_sha256,
+        atlas_run_id=run_id,
+        token_ids=token_values,
+        request=request,
+    )
+    if (
+        selection.global_row_key_sha256
+        != global_row_key_sha256
+    ):
+        raise ValueError(
+            "query selection row identity differs from atlas"
+        )
+    group_key = f"layer_index={int(layer_index)}"
+    observation_scope_sha256 = canonical_json_sha256(
+        {
+            "schema_version": "spirallens.observation-scope.v0.1",
+            "atlas_manifest_sha256": manifest_sha256,
+            "atlas_run_id": run_id,
+            "comparison_group": group_key,
+            "model": _json_safe(model),
+            "request": _json_safe(request),
+        }
+    )
+    states = resid_pre[:, layer_index, :]
+    drift_source = _DifferenceRows(
+        resid_post[:, layer_index, :],
+        resid_pre[:, layer_index, :],
+    )
+    drifts = np.asarray(resid_post[:, layer_index, :]) - np.asarray(
+        resid_pre[:, layer_index, :]
+    )
+    states_sha256 = state_matrix_sha256(states)
+    drifts_sha256 = state_matrix_sha256(drift_source)
+    result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=subject_backend_factory,
+        protocol_binding=protocol_binding,
+        source_identity={
+            "kind": "atlas_subset",
+            "atlas_manifest_sha256": manifest_sha256,
+            "atlas_run_id": run_id,
+            "observation_scope_sha256": observation_scope_sha256,
+            "global_row_key_sha256": global_row_key_sha256,
+        },
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+        query_indices=selection.select(int(states.shape[0])),
+        source_run_id=run_id,
+        group_key=group_key,
+    )
+    if path.read_bytes() != manifest_bytes:
+        raise ValueError("atlas manifest changed during neighbor audit")
+    if verify_checksums:
+        for array_name in ("token_ids", "resid_pre", "resid_post"):
+            _load_manifest_array(
+                root,
+                manifest,
+                array_name,
+                verify_checksums=True,
+            )
+    if (
+        state_matrix_sha256(states) != states_sha256
+        or state_matrix_sha256(drift_source) != drifts_sha256
+        or state_matrix_sha256(
+            np.asanyarray(token_ids).reshape(-1, 1)
+        )
+        != token_source_sha256
+        or atlas_global_row_key_sha256(
+            atlas_manifest_sha256=manifest_sha256,
+            atlas_run_id=run_id,
+            token_ids=token_values,
+            request=request,
+        )
+        != global_row_key_sha256
+    ):
+        raise ValueError(
+            "atlas arrays changed during neighbor audit"
+        )
+    return result

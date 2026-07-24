@@ -40,6 +40,9 @@ models = [
   "transformers>=4.40",
   "safetensors>=0.4",
 ]
+ann = [
+  "faiss-cpu==1.14.3",
+]
 dev = [
   "pytest>=8",
   "ruff>=0.9",

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
+import yaml
 
 from spirallens.atlas import ContextBankBinding
 from spirallens.contexts import (
@@ -21,13 +24,27 @@ from spirallens.contexts import (
 )
 from spirallens.metrics import (
     CandidateSearchConfig,
+    NeighborAuditConfig,
+    NeighborAuditProtocolBinding,
+    NeighborQuerySelectionContract,
+    audit_neighbor_backend_from_manifest,
     decompose_difference,
     extract_candidates_from_manifest,
     iter_candidate_pairs,
     load_candidate_config_from_protocol,
+    load_neighbor_audit_receipt,
+    write_neighbor_audit,
     write_candidate_ledger,
 )
 from spirallens.metrics.candidate_pairs import read_candidate_records
+from spirallens.metrics.candidate_pairs import (
+    atlas_global_row_key_sha256,
+)
+from spirallens.neighbors import (
+    FaissHNSWBackend,
+    FaissHNSWConfig,
+    canonical_json_sha256,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -42,6 +59,68 @@ def _json_sha256(value: dict[str, object]) -> str:
         allow_nan=False,
     ).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _write_rehashed_ledger(
+    path: Path,
+    records: list[dict[str, Any]],
+) -> None:
+    body_lines = [
+        json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+        for record in records[:-1]
+    ]
+    footer = records[-1]
+    footer_without_digest = dict(footer)
+    footer_without_digest.pop("content_sha256")
+    footer_identity = (
+        json.dumps(
+            footer_without_digest,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    )
+    footer["content_sha256"] = hashlib.sha256(
+        "".join(body_lines + [footer_identity]).encode("utf-8")
+    ).hexdigest()
+    path.write_text(
+        "".join(
+            body_lines
+            + [
+                json.dumps(
+                    footer,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _refresh_candidate_id(candidate: dict[str, Any]) -> None:
+    identity = {
+        "source_run_id": candidate["source_run_id"],
+        "group_key": candidate["comparison_group"],
+        "left": candidate["left"],
+        "right": candidate["right"],
+    }
+    candidate["candidate_id"] = (
+        "cand_"
+        + hashlib.sha256(
+            json.dumps(
+                identity,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()[:24]
+    )
 
 
 def _slice_sha256(
@@ -393,15 +472,17 @@ def test_manifest_extraction_writes_complete_auditable_ledger(tmp_path: Path) ->
     assert len(candidates) == 1
     assert rows[0]["record_type"] == "ledger_header"
     assert rows[0]["schema_version"] == (
-        "spirallens.candidate-ledger.v0.2"
+        "spirallens.candidate-ledger.v0.3"
     )
     assert rows[0]["source"]["atlas_run_id"] == "atlas-test-run"
-    assert rows[0]["source"]["neighbor_retrieval"][
-        "exact_rerank_required"
-    ] is True
-    assert rows[0]["source"]["neighbor_retrieval"][
-        "backend_score_used_for_gates"
-    ] is False
+    retrieval = rows[0]["source"]["neighbor_retrieval"]
+    assert retrieval["schema_version"] == (
+        "spirallens.neighbor-retrieval-binding.v0.1"
+    )
+    group = retrieval["groups"]["layer_index=0"]
+    assert group["exact_rerank_required"] is True
+    assert group["backend_score_used_for_gates"] is False
+    assert group["audit_receipt"] is None
     assert rows[0]["current_claim_level"] == 1
     assert rows[0]["protocol_claim_ceiling"] == 1
     assert rows[0]["protocol"] == {
@@ -412,14 +493,261 @@ def test_manifest_extraction_writes_complete_auditable_ledger(tmp_path: Path) ->
     assert rows[0]["discovery_contract"]["candidate_is_not_verified_vortex"] is True
     assert rows[-1]["record_type"] == "ledger_footer"
     assert rows[-1]["status"] == "complete"
+    assert len(rows[-1]["content_sha256"]) == 64
+    assert rows[-1]["candidate_count_by_group"] == {"layer_index=0": 1}
     assert candidates[0]["left"]["layer_index"] == 0
     assert candidates[0]["left"]["token_id"] == 11
     assert candidates[0]["right"]["token_id"] == 12
-    assert candidates[0]["schema_version"] == "spirallens.candidate.v0.2"
+    assert candidates[0]["schema_version"] == "spirallens.candidate.v0.3"
     assert candidates[0]["retrieval"]["exact_reranked"] is True
     assert candidates[0]["retrieval"][
         "backend_score_used_for_gates"
     ] is False
+    wrong_run_path = tmp_path / "wrong-run.jsonl"
+    with pytest.raises(ValueError, match="only through"):
+        write_candidate_ledger(
+            candidates,
+            wrong_run_path,
+            source={
+                **rows[0]["source"],
+                "atlas_run_id": "different-atlas-run",
+            },
+            config=config,
+            protocol_id="ad-hoc-v0.1",
+        )
+    assert not wrong_run_path.exists()
+
+    forged_rows = json.loads(json.dumps(rows))
+    forged_candidate = forged_rows[1]
+    forged_candidate["source_run_id"] = "different-atlas-run"
+    _refresh_candidate_id(forged_candidate)
+    forged_path = tmp_path / "forged-run.jsonl"
+    _write_rehashed_ledger(forged_path, forged_rows)
+    with pytest.raises(ValueError, match="differs from the ledger source"):
+        list(read_candidate_records(forged_path))
+
+    wrong_layer_config = CandidateSearchConfig(
+        cosine_min=0.999,
+        relative_norm_gap_max=0.05,
+        drift_relative_divergence_min=1.5,
+        block_size=1,
+        layer_indices=(1,),
+    )
+    with pytest.raises(ValueError, match="layer scope differs"):
+        write_candidate_ledger(
+            candidates,
+            tmp_path / "wrong-layer-scope.jsonl",
+            source=rows[0]["source"],
+            config=wrong_layer_config,
+            protocol_id="ad-hoc-v0.1",
+        )
+    impossible_candidate = json.loads(json.dumps(candidates[0]))
+    impossible_candidate["state_metrics"]["cosine_similarity"] = 2.0
+    with pytest.raises(ValueError, match="metric domain"):
+        write_candidate_ledger(
+            (impossible_candidate,),
+            tmp_path / "impossible-metric.jsonl",
+            source={
+                "kind": "unit-test",
+                "neighbor_retrieval": rows[0]["source"][
+                    "neighbor_retrieval"
+                ],
+            },
+            config=config,
+            protocol_id="ad-hoc-v0.1",
+        )
+
+    malformed_cases = (
+        (
+            "current-claim",
+            lambda forged: forged[0].__setitem__(
+                "current_claim_level",
+                True,
+            ),
+            "header is invalid",
+        ),
+        (
+            "claim-ceiling",
+            lambda forged: (
+                forged[0].__setitem__("protocol_claim_ceiling", 999),
+                forged[0]["protocol"].__setitem__(
+                    "claim_ceiling",
+                    999,
+                ),
+            ),
+            "header is invalid",
+        ),
+        (
+            "candidate-claim",
+            lambda forged: forged[1].__setitem__("claim_level", True),
+            "record shape",
+        ),
+        (
+            "metric-domain",
+            lambda forged: forged[1]["state_metrics"].__setitem__(
+                "cosine_similarity",
+                2.0,
+            ),
+            "metric domain",
+        ),
+        (
+            "metric-fraction",
+            lambda forged: forged[1]["state_metrics"].__setitem__(
+                "angular_fraction_sq",
+                -10.0,
+            ),
+            "metric identities",
+        ),
+        (
+            "metric-distance",
+            lambda forged: forged[1]["state_metrics"].__setitem__(
+                "euclidean_distance",
+                -1.0,
+            ),
+            "metric identities",
+        ),
+        (
+            "row-bound",
+            lambda forged: (
+                forged[1]["right"].__setitem__("row_index", 999),
+                _refresh_candidate_id(forged[1]),
+            ),
+            "row identity",
+        ),
+        (
+            "layer-bound",
+            lambda forged: (
+                forged[1]["left"].__setitem__("layer_index", 99),
+                forged[1]["right"].__setitem__("layer_index", 99),
+                _refresh_candidate_id(forged[1]),
+            ),
+            "reference layer",
+        ),
+        (
+            "discovery-contract",
+            lambda forged: forged[0][
+                "discovery_contract"
+            ].__setitem__("semantic_annotation_used", True),
+            "discovery contract",
+        ),
+        (
+            "config-layer",
+            lambda forged: forged[0][
+                "candidate_search"
+            ].__setitem__("layer_indices", [1]),
+            "layer scope differs",
+        ),
+    )
+    for suffix, mutate, message in malformed_cases:
+        malformed = json.loads(json.dumps(rows))
+        mutate(malformed)
+        malformed_path = tmp_path / f"malformed-{suffix}.jsonl"
+        _write_rehashed_ledger(malformed_path, malformed)
+        with pytest.raises(ValueError, match=message):
+            list(read_candidate_records(malformed_path))
+
+
+def test_candidate_ledger_reader_rejects_content_tamper(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_atlas(tmp_path)
+    ledger_path = tmp_path / "tamper-ledger.jsonl"
+    extract_candidates_from_manifest(
+        manifest_path,
+        ledger_path,
+        config=CandidateSearchConfig(
+            cosine_min=0.999,
+            relative_norm_gap_max=0.05,
+            drift_relative_divergence_min=1.5,
+            block_size=1,
+        ),
+    )
+    rows = ledger_path.read_text(encoding="utf-8").splitlines()
+    candidate = json.loads(rows[1])
+    candidate["state_metrics"]["cosine_similarity"] = 0.0
+    rows[1] = json.dumps(
+        candidate,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    ledger_path.write_text(
+        "\n".join(rows) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="declared gates|content digest mismatch",
+    ):
+        list(read_candidate_records(ledger_path))
+
+
+def test_candidate_ledger_reader_rejects_rehashed_receipt_bypass(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_atlas(tmp_path)
+    ledger_path = tmp_path / "forged-ledger.jsonl"
+    extract_candidates_from_manifest(
+        manifest_path,
+        ledger_path,
+        config=CandidateSearchConfig(
+            cosine_min=0.999,
+            relative_norm_gap_max=0.05,
+            drift_relative_divergence_min=1.5,
+            block_size=1,
+        ),
+    )
+    records = [
+        json.loads(line)
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+    ]
+    header, candidate, footer = records
+    group = header["source"]["neighbor_retrieval"]["groups"][
+        "layer_index=0"
+    ]
+    group["backend"]["kind"] = "approximate"
+    group["backend_sha256"] = _json_sha256(group["backend"])
+    candidate["retrieval"]["backend_kind"] = "approximate"
+    candidate["retrieval"]["backend_sha256"] = group["backend_sha256"]
+    canonical_lines = [
+        json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+        for record in (header, candidate)
+    ]
+    footer_without_digest = dict(footer)
+    footer_without_digest.pop("content_sha256")
+    footer_identity = (
+        json.dumps(
+            footer_without_digest,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    )
+    footer["content_sha256"] = hashlib.sha256(
+        "".join(canonical_lines + [footer_identity]).encode("utf-8")
+    ).hexdigest()
+    ledger_path.write_text(
+        "".join(
+            canonical_lines
+            + [
+                json.dumps(
+                    footer,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="audit receipt"):
+        list(read_candidate_records(ledger_path))
 
 
 def test_bound_candidate_references_keep_context_identity_and_domain(
@@ -454,6 +782,321 @@ def test_bound_candidate_references_keep_context_identity_and_domain(
     assert candidate["left"]["tokenizer_addressable"] is True
     assert candidate["right"]["token_id"] == 12
     assert candidate["right"]["tokenizer_addressable"] is False
+
+
+def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
+    tmp_path: Path,
+) -> None:
+    if importlib.util.find_spec("faiss") is None:
+        pytest.skip("faiss optional dependency is absent")
+    manifest_path = _write_atlas(tmp_path)
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    row_identity_sha256 = atlas_global_row_key_sha256(
+        atlas_manifest_sha256=manifest_sha256,
+        atlas_run_id=manifest["run_id"],
+        token_ids=token_ids,
+        request=manifest["request"],
+    )
+    candidate_config = CandidateSearchConfig(
+        cosine_min=0.999,
+        relative_norm_gap_max=0.05,
+        drift_relative_divergence_min=1.5,
+        block_size=1,
+        layer_indices=(0,),
+    )
+    audit_config = NeighborAuditConfig()
+    selection = NeighborQuerySelectionContract(
+        seed=23,
+        count=3,
+        global_row_key_sha256=row_identity_sha256,
+    )
+    faiss_config = FaissHNSWConfig(
+        m=4,
+        ef_construction=40,
+        ef_search=40,
+        query_batch_size=2,
+    )
+    candidate_path = tmp_path / "faiss-candidate.yaml"
+    candidate_path.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": "spirallens.protocol.v0.1",
+                "protocol_id": "faiss-candidate-test-v0.1",
+                "status": "frozen",
+                "claim_ceiling": 1,
+                "candidate_search": candidate_config.to_dict(),
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    candidate_sha256 = hashlib.sha256(
+        candidate_path.read_bytes()
+    ).hexdigest()
+    neighbor_path = tmp_path / "faiss-neighbor.yaml"
+    neighbor_path.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": (
+                    "spirallens.neighbor-audit-protocol.v0.1"
+                ),
+                "protocol_id": "faiss-manifest-test-v0.1",
+                "status": "frozen",
+                "audit_scope": {
+                    "comparison_group": "layer_index=0"
+                },
+                "candidate_protocol": {
+                    "path": candidate_path.name,
+                    "sha256": candidate_sha256,
+                    "declared_id": "faiss-candidate-test-v0.1",
+                },
+                "retrieval_contract": {
+                    "input": "resid_pre",
+                    "metric": "cosine",
+                    "drift_available_to_backend": False,
+                    "decoded_strings_available_to_backend": False,
+                    "semantic_annotation_available_to_backend": False,
+                    "sae_annotation_available_to_backend": False,
+                    "projected_coordinates_available_to_backend": False,
+                },
+                "subject_backend": {
+                    "backend_id": "spirallens.faiss-hnsw-range",
+                    "backend_version": "0.1",
+                    "distribution": "faiss-cpu",
+                    "distribution_version": "1.14.3",
+                    "kind_required_for_full_vocabulary": (
+                        "approximate"
+                    ),
+                    "candidate_persistence_without_audit_receipt": (
+                        "forbidden"
+                    ),
+                    "config": faiss_config.to_dict(),
+                },
+                "query_sampling": {
+                    "method": "sha256_ranked_global_indices",
+                    "seed": selection.seed,
+                    "count": selection.count,
+                    "global_row_key_sha256": (
+                        row_identity_sha256
+                    ),
+                },
+                "exact_rerank": {
+                    "contract": (
+                        "spirallens.candidate-exact-rerank.v0.1"
+                    ),
+                    "required_before_persist": True,
+                    "backend_score_used_for_gate": False,
+                    "false_persistable_candidates_allowed": 0,
+                },
+                "audit": {
+                    "primary_metric": "candidate_boundary_recall",
+                    "candidate_boundary_recall_min": (
+                        audit_config.candidate_recall_min
+                    ),
+                    "repeats": audit_config.repeats,
+                    "repeat_mode": "independent_cold_rebuild",
+                    "minimum_reference_candidates": (
+                        audit_config.minimum_reference_candidates
+                    ),
+                    "missing_pair_sample_limit": (
+                        audit_config.missing_pair_sample_limit
+                    ),
+                    "zero_reference_candidates": "insufficient",
+                    "full_vocabulary_backend_promoted_by_this_protocol": (
+                        True
+                    ),
+                },
+                "claim_boundary": {
+                    "semantics_free": True,
+                    "candidate_is_not_verified_vortex": True,
+                    "passing_audit_proves_retrieval_coverage_only": (
+                        True
+                    ),
+                },
+                "deviations": [],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    protocol = NeighborAuditProtocolBinding(
+        protocol_id="faiss-manifest-test-v0.1",
+        status="frozen",
+        source_sha256=hashlib.sha256(
+            neighbor_path.read_bytes()
+        ).hexdigest(),
+        candidate_config_sha256=canonical_json_sha256(
+            candidate_config.to_dict()
+        ),
+        audit_config_sha256=audit_config.sha256,
+        query_selection=selection,
+    )
+    with pytest.raises(
+        ValueError,
+        match="require atlas checksum verification",
+    ):
+        audit_neighbor_backend_from_manifest(
+            manifest_path,
+            layer_index=0,
+            subject_backend_factory=lambda snapshot: FaissHNSWBackend(
+                snapshot,
+                row_identity_sha256=row_identity_sha256,
+                comparison_group="layer_index=0",
+                config=faiss_config,
+            ),
+            protocol_binding=protocol,
+            candidate_config=candidate_config,
+            audit_config=audit_config,
+            verify_checksums=False,
+        )
+    result = audit_neighbor_backend_from_manifest(
+        manifest_path,
+        layer_index=0,
+        subject_backend_factory=lambda snapshot: FaissHNSWBackend(
+            snapshot,
+            row_identity_sha256=row_identity_sha256,
+            comparison_group="layer_index=0",
+            config=faiss_config,
+        ),
+        protocol_binding=protocol,
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+    )
+    audit_path = tmp_path / "faiss-audit.json"
+    write_neighbor_audit(result, audit_path)
+    receipt = load_neighbor_audit_receipt(
+        audit_path,
+        protocol_path=neighbor_path,
+        expected_audit_sha256=result.sha256,
+        expected_protocol_sha256=hashlib.sha256(
+            neighbor_path.read_bytes()
+        ).hexdigest(),
+    )
+    ledger_path = tmp_path / "faiss-candidates.jsonl"
+
+    summary = extract_candidates_from_manifest(
+        manifest_path,
+        ledger_path,
+        config=candidate_config,
+        protocol_id="faiss-candidate-test-v0.1",
+        protocol_claim_ceiling=1,
+        protocol_binding={
+            "declared_id": "faiss-candidate-test-v0.1",
+            "claim_ceiling": 1,
+            "sha256": candidate_sha256,
+        },
+        neighbor_backend_factory=(
+            lambda snapshot, row_sha, group: FaissHNSWBackend(
+                snapshot,
+                row_identity_sha256=row_sha,
+                comparison_group=group,
+                config=faiss_config,
+            )
+        ),
+        neighbor_audit_receipts={"layer_index=0": receipt},
+    )
+    rows = [
+        json.loads(line)
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+    ]
+    candidate = list(read_candidate_records(ledger_path))[0]
+    binding = rows[0]["source"]["neighbor_retrieval"]["groups"][
+        "layer_index=0"
+    ]
+
+    assert summary.candidate_count == 1
+    assert binding["backend"]["kind"] == "approximate"
+    assert binding["audit_receipt_sha256"] == receipt.sha256
+    assert candidate["retrieval"]["audit_receipt_sha256"] == receipt.sha256
+    assert rows[-1]["candidate_count_by_group"] == {"layer_index=0": 1}
+
+    direct_path = tmp_path / "direct-approximate.jsonl"
+    with pytest.raises(
+        ValueError,
+        match="only through extract_candidates_from_manifest",
+    ):
+        write_candidate_ledger(
+            (candidate,),
+            direct_path,
+            source=rows[0]["source"],
+            config=candidate_config,
+            protocol_id="faiss-candidate-test-v0.1",
+            protocol_claim_ceiling=1,
+            protocol_binding=rows[0]["protocol"],
+            neighbor_audit_receipts={"layer_index=0": receipt},
+        )
+    assert not direct_path.exists()
+
+    for suffix, mutate in (
+        (
+            "config",
+            lambda forged: forged[0]["candidate_search"].__setitem__(
+                "cosine_min",
+                0.998,
+            ),
+        ),
+        (
+            "protocol-sha",
+            lambda forged: forged[0]["protocol"].__setitem__(
+                "sha256",
+                "f" * 64,
+            ),
+        ),
+        (
+            "protocol-id",
+            lambda forged: (
+                forged[0].__setitem__("protocol_id", "other-protocol"),
+                forged[0]["protocol"].__setitem__(
+                    "declared_id",
+                    "other-protocol",
+                ),
+                forged[-1].__setitem__(
+                    "protocol_id",
+                    "other-protocol",
+                ),
+            ),
+        ),
+        (
+            "atlas-manifest",
+            lambda forged: forged[0]["source"].__setitem__(
+                "atlas_manifest_sha256",
+                "e" * 64,
+            ),
+        ),
+        (
+            "row-identity",
+            lambda forged: forged[0]["source"].__setitem__(
+                "global_row_key_sha256",
+                "e" * 64,
+            ),
+        ),
+        (
+            "atlas-run",
+            lambda forged: forged[0]["source"].__setitem__(
+                "atlas_run_id",
+                "other-atlas-run",
+            ),
+        ),
+    ):
+        forged = json.loads(json.dumps(rows))
+        mutate(forged)
+        forged_path = tmp_path / f"forged-{suffix}.jsonl"
+        _write_rehashed_ledger(forged_path, forged)
+        with pytest.raises(
+            ValueError,
+            match="neighbor (audit )?receipt",
+        ):
+            list(read_candidate_records(forged_path))
+
+    malformed_candidate = json.loads(json.dumps(rows))
+    malformed_candidate[1]["claim_level"] = 999
+    malformed_path = tmp_path / "forged-candidate-shape.jsonl"
+    _write_rehashed_ledger(malformed_path, malformed_candidate)
+    with pytest.raises(ValueError, match="candidate record shape"):
+        list(read_candidate_records(malformed_path))
 
 
 def test_manifest_extraction_rejects_incomplete_atlas(tmp_path: Path) -> None:

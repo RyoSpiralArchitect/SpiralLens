@@ -29,6 +29,17 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Insufficient audit**: an audit whose exact reference contains too few
   candidates to evaluate the preregistered recall gate. In particular, a
   zero-candidate reference is not assigned recall 1.0.
+- **Prepared index build receipt**: a typed binding between actual serialized
+  index bytes and the full ordered state matrix, row identity, layer group,
+  dtype, shape, backend configuration, and runtime that produced them.
+- **Neighbor audit receipt**: a protocol-verified record authorizing one
+  identical full input/index/group for approximate proposal persistence after a
+  frozen, deviation-free audit pass. It is loaded against trusted external
+  audit and protocol digests; a self-constructed receipt record is not
+  authorization.
+- **Full-index/subset-query audit**: an audit that builds the approximate index
+  on every discovery row while bounding only the exact reference query rows.
+  It is not an audit of a separately indexed subset.
 
 Three evolution axes must also remain explicit:
 

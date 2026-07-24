@@ -64,6 +64,85 @@ def _print_json(payload: dict[str, Any]) -> None:
     )
 
 
+def _load_yaml_mapping(path: Path, *, label: str) -> tuple[bytes, dict[str, Any]]:
+    import yaml
+
+    source = path.resolve()
+    payload_bytes = source.read_bytes()
+    payload = yaml.safe_load(payload_bytes)
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} must contain a YAML mapping")
+    return payload_bytes, payload
+
+
+def _faiss_config_from_neighbor_protocol(
+    document: dict[str, Any],
+) -> Any:
+    from spirallens.neighbors import (
+        FAISS_HNSW_BACKEND_ID,
+        FaissHNSWConfig,
+    )
+
+    subject = document.get("subject_backend")
+    if (
+        not isinstance(subject, dict)
+        or subject.get("backend_id") != FAISS_HNSW_BACKEND_ID
+        or subject.get("backend_version") != "0.1"
+        or subject.get("distribution") != "faiss-cpu"
+        or str(subject.get("distribution_version")) != "1.14.3"
+        or not isinstance(subject.get("config"), dict)
+    ):
+        raise ValueError(
+            "neighbor protocol does not select Faiss HNSW v0.1"
+        )
+    return FaissHNSWConfig(**subject["config"])
+
+
+def _candidate_config_from_protocol_document(
+    document: dict[str, Any],
+) -> Any:
+    from spirallens.metrics import CandidateSearchConfig
+
+    search = document.get("candidate_search")
+    if not isinstance(search, dict):
+        raise ValueError(
+            "protocol is missing a candidate_search mapping"
+        )
+    allowed = set(CandidateSearchConfig.__dataclass_fields__)
+    unknown = set(search) - allowed
+    if unknown:
+        raise ValueError(
+            f"unknown candidate_search fields: {sorted(unknown)}"
+        )
+    values = dict(search)
+    if values.get("layer_indices") is not None:
+        values["layer_indices"] = tuple(values["layer_indices"])
+    return CandidateSearchConfig(**values)
+
+
+def _resolve_protocol_reference(
+    protocol_path: Path,
+    declared_path: object,
+) -> Path:
+    if not isinstance(declared_path, str) or not declared_path:
+        raise ValueError("protocol reference path is invalid")
+    reference = Path(declared_path)
+    candidates = (
+        reference.resolve()
+        if reference.is_absolute()
+        else (protocol_path.parent / reference).resolve(),
+        (protocol_path.parent.parent / reference).resolve(),
+    )
+    existing = tuple(
+        dict.fromkeys(path for path in candidates if path.is_file())
+    )
+    if len(existing) != 1:
+        raise ValueError(
+            f"protocol reference does not resolve uniquely: {declared_path}"
+        )
+    return existing[0]
+
+
 def _calibration_payload(report: Any, *, samples: int) -> dict[str, Any]:
     checks = [
         {
@@ -308,7 +387,7 @@ def _run_candidates(args: argparse.Namespace) -> int:
     from spirallens.metrics import (
         CandidateSearchConfig,
         extract_candidates_from_manifest,
-        load_candidate_config_from_protocol,
+        load_neighbor_audit_receipt,
     )
 
     if args.output.exists() and not args.overwrite:
@@ -346,7 +425,9 @@ def _run_candidates(args: argparse.Namespace) -> int:
             )
         protocol_id = declared_id
         protocol_claim_ceiling = declared_ceiling
-        config = load_candidate_config_from_protocol(protocol_path)
+        config = _candidate_config_from_protocol_document(
+            protocol_document
+        )
         if protocol_path.read_bytes() != protocol_bytes:
             raise RuntimeError("protocol changed while it was being bound")
         protocol_binding = {
@@ -396,6 +477,102 @@ def _run_candidates(args: argparse.Namespace) -> int:
     )
     protocol_binding["deviates_from_declared_search"] = bool(overrides)
 
+    neighbor_backend_factory = None
+    neighbor_audit_receipts = None
+    if args.neighbor_backend == "faiss-hnsw":
+        if (
+            args.neighbor_audit is None
+            or args.neighbor_audit_protocol is None
+            or args.expected_audit_sha256 is None
+            or args.expected_neighbor_protocol_sha256 is None
+        ):
+            raise ValueError(
+                "--neighbor-backend faiss-hnsw requires "
+                "--neighbor-audit, --neighbor-audit-protocol, "
+                "--expected-audit-sha256, and "
+                "--expected-neighbor-protocol-sha256"
+            )
+        if args.protocol is None:
+            raise ValueError(
+                "receipt-authorized Faiss extraction requires "
+                "--protocol"
+            )
+        if args.skip_checksums:
+            raise ValueError(
+                "receipt-authorized Faiss extraction cannot skip "
+                "atlas checksums"
+            )
+        if args.overwrite:
+            raise ValueError(
+                "receipt-authorized approximate ledgers cannot overwrite"
+            )
+        if config.layer_indices is None or len(config.layer_indices) != 1:
+            raise ValueError(
+                "Faiss candidate extraction requires exactly one --layers "
+                "value"
+            )
+        neighbor_protocol_bytes, neighbor_document = _load_yaml_mapping(
+            args.neighbor_audit_protocol,
+            label="neighbor audit protocol",
+        )
+        if hashlib.sha256(neighbor_protocol_bytes).hexdigest() != (
+            args.expected_neighbor_protocol_sha256
+        ):
+            raise ValueError(
+                "neighbor protocol does not match "
+                "--expected-neighbor-protocol-sha256"
+            )
+        faiss_config = _faiss_config_from_neighbor_protocol(
+            neighbor_document
+        )
+        receipt = load_neighbor_audit_receipt(
+            args.neighbor_audit,
+            protocol_path=args.neighbor_audit_protocol,
+            expected_audit_sha256=args.expected_audit_sha256,
+            expected_protocol_sha256=(
+                args.expected_neighbor_protocol_sha256
+            ),
+        )
+        if (
+            receipt.protocol_source_sha256
+            != args.expected_neighbor_protocol_sha256
+            or args.neighbor_audit_protocol.resolve().read_bytes()
+            != neighbor_protocol_bytes
+        ):
+            raise ValueError(
+                "neighbor protocol changed during receipt validation"
+            )
+        group_key = f"layer_index={config.layer_indices[0]}"
+        if receipt.comparison_group != group_key:
+            raise ValueError(
+                "neighbor audit receipt group differs from --layers"
+            )
+        from spirallens.neighbors import FaissHNSWBackend
+
+        def build_neighbor_backend(
+            snapshot: Any,
+            row_sha: str,
+            group: str,
+        ) -> FaissHNSWBackend:
+            return FaissHNSWBackend(
+                snapshot,
+                row_identity_sha256=row_sha,
+                comparison_group=group,
+                config=faiss_config,
+            )
+
+        neighbor_backend_factory = build_neighbor_backend
+        neighbor_audit_receipts = {group_key: receipt}
+    elif (
+        args.neighbor_audit is not None
+        or args.neighbor_audit_protocol is not None
+        or args.expected_audit_sha256 is not None
+        or args.expected_neighbor_protocol_sha256 is not None
+    ):
+        raise ValueError(
+            "neighbor audit flags require --neighbor-backend faiss-hnsw"
+        )
+
     summary = extract_candidates_from_manifest(
         args.manifest,
         args.output,
@@ -405,6 +582,8 @@ def _run_candidates(args: argparse.Namespace) -> int:
         overwrite=args.overwrite,
         protocol_claim_ceiling=protocol_claim_ceiling,
         protocol_binding=protocol_binding,
+        neighbor_backend_factory=neighbor_backend_factory,
+        neighbor_audit_receipts=neighbor_audit_receipts,
     )
     _print_json(
         {
@@ -414,6 +593,278 @@ def _run_candidates(args: argparse.Namespace) -> int:
             "ledger": str(summary.output_path.resolve()),
             "protocol_id": protocol_id,
             "execution_status": protocol_binding["execution_status"],
+            "neighbor_backend": args.neighbor_backend,
+        }
+    )
+    return 0
+
+
+def _run_neighbor_audit(args: argparse.Namespace) -> int:
+    import yaml
+
+    from spirallens.atlas import load_manifest
+    from spirallens.metrics import (
+        NeighborAuditConfig,
+        NeighborAuditProtocolBinding,
+        NeighborQuerySelectionContract,
+        atlas_global_row_key_sha256,
+        audit_neighbor_backend_from_manifest,
+        load_neighbor_audit_receipt,
+        write_neighbor_audit,
+    )
+    from spirallens.metrics.candidate_pairs import _load_manifest_array
+    from spirallens.neighbors import FaissHNSWBackend, canonical_json_sha256
+
+    protocol_path = args.protocol.resolve()
+    protocol_bytes, document = _load_yaml_mapping(
+        protocol_path,
+        label="neighbor audit protocol",
+    )
+    protocol_sha256 = hashlib.sha256(protocol_bytes).hexdigest()
+    if (
+        args.expected_protocol_sha256 is not None
+        and args.expected_protocol_sha256 != protocol_sha256
+    ):
+        raise ValueError(
+            "neighbor protocol does not match --expected-protocol-sha256"
+        )
+    protocol_id = document.get("protocol_id")
+    protocol_status = document.get("status")
+    if (
+        document.get("schema_version")
+        != "spirallens.neighbor-audit-protocol.v0.1"
+        or not isinstance(protocol_id, str)
+        or protocol_status not in {"preregistered-draft", "frozen"}
+    ):
+        raise ValueError("neighbor audit protocol identity is invalid")
+    if (
+        protocol_status == "frozen"
+        and args.expected_protocol_sha256 is None
+    ):
+        raise ValueError(
+            "frozen audits require --expected-protocol-sha256"
+        )
+    if protocol_status == "frozen" and args.skip_checksums:
+        raise ValueError(
+            "frozen neighbor audits cannot skip atlas checksums"
+        )
+    candidate_binding = document.get("candidate_protocol")
+    if not isinstance(candidate_binding, dict):
+        raise ValueError("neighbor protocol lacks candidate_protocol")
+    candidate_path = _resolve_protocol_reference(
+        protocol_path,
+        candidate_binding.get("path"),
+    )
+    candidate_bytes = candidate_path.read_bytes()
+    if hashlib.sha256(candidate_bytes).hexdigest() != candidate_binding.get(
+        "sha256"
+    ):
+        raise ValueError(
+            "candidate protocol bytes differ from neighbor protocol binding"
+        )
+    try:
+        candidate_document = yaml.safe_load(candidate_bytes)
+    except yaml.YAMLError as error:
+        raise ValueError("candidate protocol YAML is invalid") from error
+    if not isinstance(candidate_document, dict):
+        raise ValueError(
+            "candidate protocol must contain a YAML mapping"
+        )
+    candidate_config = replace(
+        _candidate_config_from_protocol_document(
+            candidate_document
+        ),
+        layer_indices=(args.layer,),
+    )
+    audit_values = document.get("audit")
+    if not isinstance(audit_values, dict):
+        raise ValueError("neighbor protocol lacks audit settings")
+    audit_config = NeighborAuditConfig(
+        candidate_recall_min=audit_values.get(
+            "candidate_boundary_recall_min"
+        ),
+        repeats=audit_values.get("repeats"),
+        minimum_reference_candidates=audit_values.get(
+            "minimum_reference_candidates"
+        ),
+        missing_pair_sample_limit=audit_values.get(
+            "missing_pair_sample_limit"
+        ),
+    )
+
+    requested_manifest = args.manifest.resolve()
+    manifest_path = (
+        requested_manifest / "manifest.json"
+        if requested_manifest.is_dir()
+        else requested_manifest
+    )
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = load_manifest(
+        manifest_path.parent,
+        verify_checksums=not args.skip_checksums,
+    )
+    if manifest_path.read_bytes() != manifest_bytes:
+        raise ValueError("atlas manifest changed during audit setup")
+    request = manifest.get("request")
+    run_id = manifest.get("run_id")
+    if not isinstance(request, dict) or not isinstance(run_id, str):
+        raise ValueError("atlas manifest audit provenance is invalid")
+    token_ids = _load_manifest_array(
+        manifest_path.parent,
+        manifest,
+        "token_ids",
+        verify_checksums=not args.skip_checksums,
+    )
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    row_identity_sha256 = atlas_global_row_key_sha256(
+        atlas_manifest_sha256=manifest_sha256,
+        atlas_run_id=run_id,
+        token_ids=token_ids,
+        request=request,
+    )
+    sampling = document.get("query_sampling")
+    if (
+        not isinstance(sampling, dict)
+        or sampling.get("method")
+        != "sha256_ranked_global_indices"
+    ):
+        raise ValueError("neighbor protocol query_sampling is invalid")
+    declared_row_identity = sampling.get("global_row_key_sha256")
+    if (
+        declared_row_identity is not None
+        and declared_row_identity != row_identity_sha256
+    ):
+        raise ValueError(
+            "neighbor protocol row identity differs from atlas"
+        )
+    if protocol_status == "frozen" and (
+        declared_row_identity != row_identity_sha256
+    ):
+        raise ValueError(
+            "frozen neighbor protocol must bind global_row_key_sha256"
+        )
+    selection = NeighborQuerySelectionContract(
+        seed=sampling.get("seed"),
+        count=sampling.get("count"),
+        global_row_key_sha256=row_identity_sha256,
+    )
+    group_key = f"layer_index={args.layer}"
+    audit_scope = document.get("audit_scope")
+    declared_group = (
+        audit_scope.get("comparison_group")
+        if isinstance(audit_scope, dict)
+        else None
+    )
+    if declared_group is not None and declared_group != group_key:
+        raise ValueError(
+            "neighbor protocol comparison_group differs from --layer"
+        )
+    if protocol_status == "frozen" and declared_group != group_key:
+        raise ValueError(
+            "frozen neighbor protocol must bind comparison_group"
+        )
+    deviations = document.get("deviations", [])
+    if (
+        not isinstance(deviations, list)
+        or any(
+            not isinstance(value, str) or not value
+            for value in deviations
+        )
+    ):
+        raise ValueError("neighbor protocol deviations are invalid")
+    if args.prepare_only:
+        if protocol_path.read_bytes() != protocol_bytes:
+            raise ValueError(
+                "neighbor protocol changed during binding preparation"
+            )
+        if candidate_path.read_bytes() != candidate_bytes:
+            raise ValueError(
+                "candidate protocol changed during binding preparation"
+            )
+        _print_json(
+            {
+                "command": "neighbor-audit",
+                "mode": "prepare-only",
+                "status": "bindings-ready",
+                "atlas_manifest_sha256": manifest_sha256,
+                "atlas_run_id": run_id,
+                "global_row_key_sha256": row_identity_sha256,
+                "comparison_group": group_key,
+                "neighbor_protocol_sha256": protocol_sha256,
+                "candidate_protocol_sha256": hashlib.sha256(
+                    candidate_bytes
+                ).hexdigest(),
+                "promotion_policy_declared": audit_values.get(
+                    "full_vocabulary_backend_promoted_by_this_protocol"
+                ),
+            }
+        )
+        return 0
+    if args.output is None:
+        raise ValueError(
+            "--output is required unless --prepare-only is used"
+        )
+    protocol_binding = NeighborAuditProtocolBinding(
+        protocol_id=protocol_id,
+        status=protocol_status,
+        source_sha256=protocol_sha256,
+        candidate_config_sha256=canonical_json_sha256(
+            candidate_config.to_dict()
+        ),
+        audit_config_sha256=audit_config.sha256,
+        deviations=tuple(sorted(set(deviations))),
+        query_selection=selection,
+    )
+    faiss_config = _faiss_config_from_neighbor_protocol(document)
+    result = audit_neighbor_backend_from_manifest(
+        manifest_path,
+        layer_index=args.layer,
+        subject_backend_factory=lambda snapshot: FaissHNSWBackend(
+            snapshot,
+            row_identity_sha256=row_identity_sha256,
+            comparison_group=group_key,
+            config=faiss_config,
+        ),
+        protocol_binding=protocol_binding,
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+        verify_checksums=not args.skip_checksums,
+    )
+    if protocol_path.read_bytes() != protocol_bytes:
+        raise ValueError("neighbor protocol changed during audit")
+    if candidate_path.read_bytes() != candidate_bytes:
+        raise ValueError("candidate protocol changed during audit")
+    output_path = write_neighbor_audit(
+        result,
+        args.output,
+        overwrite=args.overwrite,
+    )
+    try:
+        load_neighbor_audit_receipt(
+            output_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=result.sha256,
+            expected_protocol_sha256=protocol_sha256,
+        )
+    except (TypeError, ValueError):
+        promotion_eligible = False
+    else:
+        promotion_eligible = True
+    _print_json(
+        {
+            "command": "neighbor-audit",
+            "status": result.status,
+            "promotion_eligible": promotion_eligible,
+            "audit": str(output_path.resolve()),
+            "audit_sha256": result.sha256,
+            "audit_identity_sha256": result.identity_sha256,
+            "comparison_group": group_key,
+            "reference_candidate_count": (
+                result.reference_candidate_count
+            ),
+            "candidate_boundary_recall": list(
+                result.candidate_boundary_recall
+            ),
         }
     )
     return 0
@@ -565,6 +1016,33 @@ def _add_candidates_parser(subparsers: Any) -> None:
     parser.add_argument("--min-drift-norm", type=float)
     parser.add_argument("--block-size", type=int)
     parser.add_argument(
+        "--neighbor-backend",
+        choices=("exact", "faiss-hnsw"),
+        default="exact",
+        help=(
+            "retrieval backend; faiss-hnsw requires a frozen passing "
+            "neighbor-audit receipt for the same full atlas and layer"
+        ),
+    )
+    parser.add_argument(
+        "--neighbor-audit",
+        type=Path,
+        help="passing audit artifact authorizing approximate persistence",
+    )
+    parser.add_argument(
+        "--neighbor-audit-protocol",
+        type=Path,
+        help="exact frozen protocol bytes bound by --neighbor-audit",
+    )
+    parser.add_argument(
+        "--expected-audit-sha256",
+        help="required out-of-band digest for Faiss promotion",
+    )
+    parser.add_argument(
+        "--expected-neighbor-protocol-sha256",
+        help="required out-of-band digest for the frozen neighbor protocol",
+    )
+    parser.add_argument(
         "--max-pairwise-rows",
         type=int,
         help="fail loudly above this exact pairwise-search size",
@@ -580,6 +1058,43 @@ def _add_candidates_parser(subparsers: Any) -> None:
         help="replace an existing ledger path",
     )
     parser.set_defaults(handler=_run_candidates)
+
+
+def _add_neighbor_audit_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "neighbor-audit",
+        help=(
+            "compare one full-atlas Faiss HNSW index against a "
+            "preregistered exact query subset"
+        ),
+    )
+    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--layer", type=int, required=True)
+    parser.add_argument("--protocol", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help=(
+            "print atlas row/group bindings without building an index "
+            "or observing audit outcomes"
+        ),
+    )
+    parser.add_argument(
+        "--expected-protocol-sha256",
+        help="optional fail-closed digest for the neighbor protocol",
+    )
+    parser.add_argument(
+        "--skip-checksums",
+        action="store_true",
+        help="skip whole-file atlas hashes (manifest structure is still checked)",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="replace an existing audit path",
+    )
+    parser.set_defaults(handler=_run_neighbor_audit)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -600,6 +1115,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_calibrate_parser(subparsers)
     _add_context_bank_parser(subparsers)
     _add_atlas_parser(subparsers)
+    _add_neighbor_audit_parser(subparsers)
     _add_candidates_parser(subparsers)
     return parser
 

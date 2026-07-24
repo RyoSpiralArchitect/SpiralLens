@@ -26,11 +26,13 @@ from spirallens.metrics.candidate_pairs import (
 from spirallens.neighbors import (
     ExactBlockwiseBackend,
     NeighborBackendDescriptor,
+    NeighborIndexBuildReceipt,
     NeighborPair,
     NeighborQuery,
     canonical_json_sha256,
     exact_state_pair_metrics,
     finite_row_norms,
+    state_matrix_sha256,
 )
 
 
@@ -42,29 +44,93 @@ class StaticNeighborBackend:
         name: str,
         scores: tuple[float, ...] | None = None,
         deterministic: bool = True,
+        states: np.ndarray | None = None,
+        row_identity_sha256: str | None = None,
+        comparison_group: str = "ungrouped",
     ) -> None:
         self._pairs = pairs
         self._scores = scores or tuple(0.0 for _ in pairs)
+        parameters: list[tuple[str, object]] = [
+            ("fixture", name),
+            ("seed", 0),
+            ("thread_count", 1),
+        ]
+        self._index_bytes: bytes | None = None
+        self._build_receipt: NeighborIndexBuildReceipt | None = None
+        if states is None:
+            index_sha256 = hashlib.sha256(
+                name.encode("utf-8")
+            ).hexdigest()
+        else:
+            if row_identity_sha256 is None:
+                raise ValueError(
+                    "prepared static backend requires row identity"
+                )
+            states_sha256 = state_matrix_sha256(states)
+            self._index_bytes = json.dumps(
+                {
+                    "name": name,
+                    "states_sha256": states_sha256,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            index_sha256 = hashlib.sha256(
+                self._index_bytes
+            ).hexdigest()
+            parameters.extend(
+                (
+                    ("comparison_group", comparison_group),
+                    ("hidden_size", int(states.shape[1])),
+                    (
+                        "promotion_config_sha256",
+                        hashlib.sha256(name.encode("utf-8")).hexdigest(),
+                    ),
+                    ("row_count", int(states.shape[0])),
+                    (
+                        "row_identity_sha256",
+                        row_identity_sha256,
+                    ),
+                    ("states_dtype", str(states.dtype)),
+                    ("states_sha256", states_sha256),
+                )
+            )
+        parameters.append(("index_sha256", index_sha256))
         self._descriptor = NeighborBackendDescriptor(
             backend_id=f"tests.{name}",
             backend_version="1",
             kind="approximate",
             deterministic=deterministic,
-            parameters=(
-                ("fixture", name),
-                (
-                    "index_sha256",
-                    hashlib.sha256(name.encode("utf-8")).hexdigest(),
-                ),
-                ("seed", 0),
-                ("thread_count", 1),
-            ),
+            parameters=tuple(parameters),
             runtime=(("runtime", "pytest"),),
         )
+        if states is not None:
+            assert row_identity_sha256 is not None
+            self._build_receipt = NeighborIndexBuildReceipt(
+                backend=self._descriptor,
+                states_sha256=state_matrix_sha256(states),
+                row_identity_sha256=row_identity_sha256,
+                index_sha256=index_sha256,
+                comparison_group=comparison_group,
+                row_count=int(states.shape[0]),
+                hidden_size=int(states.shape[1]),
+                states_dtype=str(states.dtype),
+            )
 
     @property
     def descriptor(self) -> NeighborBackendDescriptor:
         return self._descriptor
+
+    @property
+    def build_receipt(self) -> NeighborIndexBuildReceipt:
+        if self._build_receipt is None:
+            raise AttributeError("backend was not prepared")
+        return self._build_receipt
+
+    def export_index_bytes(self) -> bytes:
+        if self._index_bytes is None:
+            raise AttributeError("backend was not prepared")
+        return self._index_bytes
 
     def iter_pairs(self, states, *, query):
         del states, query
@@ -162,7 +228,32 @@ def _synthetic_source() -> dict[str, object]:
     return {
         "kind": "synthetic_fixture",
         "fixture_id": "candidate-boundary-test-v1",
+        "row_identity_sha256": hashlib.sha256(
+            b"candidate-boundary-test-rows"
+        ).hexdigest(),
     }
+
+
+def _prepared_static_backend(
+    states: np.ndarray,
+    pairs: tuple[tuple[int, int], ...],
+    *,
+    name: str,
+    scores: tuple[float, ...] | None = None,
+    deterministic: bool = True,
+    group_key: str = "ungrouped",
+) -> StaticNeighborBackend:
+    return StaticNeighborBackend(
+        pairs,
+        name=name,
+        scores=scores,
+        deterministic=deterministic,
+        states=states,
+        row_identity_sha256=_synthetic_source()[
+            "row_identity_sha256"
+        ],
+        comparison_group=group_key,
+    )
 
 
 def _candidate_source_binding(
@@ -179,13 +270,25 @@ def _candidate_source_binding(
     return {
         "kind": "unit-test",
         "neighbor_retrieval": {
-            "backend": descriptor.to_dict(),
-            "backend_sha256": descriptor.sha256,
-            "query": query.to_dict(),
-            "query_sha256": query.sha256,
-            "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
-            "exact_rerank_required": True,
-            "backend_score_used_for_gates": False,
+            "schema_version": (
+                "spirallens.neighbor-retrieval-binding.v0.1"
+            ),
+            "groups": {
+                "ungrouped": {
+                    "comparison_group": "ungrouped",
+                    "backend": descriptor.to_dict(),
+                    "backend_sha256": descriptor.sha256,
+                    "query": query.to_dict(),
+                    "query_sha256": query.sha256,
+                    "exact_rerank_contract": (
+                        EXACT_RERANK_CONTRACT_VERSION
+                    ),
+                    "exact_rerank_required": True,
+                    "backend_score_used_for_gates": False,
+                    "audit_receipt": None,
+                    "audit_receipt_sha256": None,
+                }
+            },
         },
     }
 
@@ -611,7 +714,7 @@ def test_candidate_ledger_blocks_approximate_persistence_without_receipt(
         )
     )
 
-    with pytest.raises(ValueError, match="disabled until"):
+    with pytest.raises(ValueError, match="matching audit receipt"):
         write_candidate_ledger(
             records,
             tmp_path / "must-not-exist.jsonl",
@@ -637,7 +740,8 @@ def test_candidate_boundary_audit_passes_only_after_exact_rerank() -> None:
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda: StaticNeighborBackend(
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
             pairs,
             name="complete-with-false-proposal",
         ),
@@ -676,7 +780,8 @@ def test_candidate_boundary_audit_rejects_non_exact_reference_backend() -> None:
         audit_neighbor_backend(
             states,
             drifts,
-            subject_backend_factory=lambda: StaticNeighborBackend(
+            subject_backend_factory=lambda backend_states: _prepared_static_backend(
+                backend_states,
                 ((0, 1), (0, 2), (1, 2)),
                 name="subject",
             ),
@@ -702,9 +807,13 @@ def test_candidate_boundary_audit_rejects_subject_input_mutation() -> None:
         audit_neighbor_backend(
             states,
             drifts,
-            subject_backend_factory=lambda: SnapshotMutatingBackend(
+            subject_backend_factory=lambda backend_states: SnapshotMutatingBackend(
                 ((0, 1), (0, 2), (1, 2)),
                 name="input-mutator",
+                states=backend_states,
+                row_identity_sha256=_synthetic_source()[
+                    "row_identity_sha256"
+                ],
             ),
             protocol_binding=_audit_protocol_binding(
                 candidate_config,
@@ -726,8 +835,10 @@ def test_candidate_boundary_audit_fails_for_lossy_backend() -> None:
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda: StaticNeighborBackend(
-            ((0, 1),), name="lossy"
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1),),
+            name="lossy",
         ),
         protocol_binding=_audit_protocol_binding(
             candidate_config,
@@ -757,7 +868,7 @@ def test_zero_reference_candidates_are_insufficient_not_perfect() -> None:
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda: ExactBlockwiseBackend(
+        subject_backend_factory=lambda _backend_states: ExactBlockwiseBackend(
             block_size=backend.block_size,
             max_rows=backend.max_rows,
             max_comparisons=backend.max_comparisons,
@@ -786,7 +897,8 @@ def test_repeat_membership_change_fails_determinism_gate() -> None:
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda: StaticNeighborBackend(
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
             next(sequences),
             name="alternating",
         ),
@@ -813,8 +925,10 @@ def test_neighbor_audit_artifact_is_atomic_and_tamper_evident(
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda: StaticNeighborBackend(
-            ((0, 1), (0, 2), (1, 2)), name="artifact"
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="artifact",
         ),
         protocol_binding=_audit_protocol_binding(
             candidate_config,
@@ -870,9 +984,11 @@ def test_audit_identity_binds_run_and_comparison_group() -> None:
         return audit_neighbor_backend(
             states,
             drifts,
-            subject_backend_factory=lambda: StaticNeighborBackend(
+            subject_backend_factory=lambda backend_states: _prepared_static_backend(
+                backend_states,
                 ((0, 1), (0, 2), (1, 2)),
                 name="identity",
+                group_key=group_key,
             ),
             protocol_binding=binding,
             source_identity=_synthetic_source(),
@@ -901,8 +1017,36 @@ def test_tracked_neighbor_protocol_binds_unchanged_candidate_protocol() -> None:
     )
     assert payload["candidate_protocol"]["sha256"] == candidate_sha256
     assert payload["audit"]["candidate_boundary_recall_min"] == 0.99
+    assert payload["audit"]["minimum_reference_candidates"] == 100
     assert payload["audit"]["zero_reference_candidates"] == "insufficient"
-    assert payload["subject_backend"]["status"] == "not_selected"
+    assert (
+        payload["audit"][
+            "full_vocabulary_backend_promoted_by_this_protocol"
+        ]
+        is False
+    )
+    assert payload["subject_backend"]["status"] == (
+        "implementation_selected_unpromoted"
+    )
+    assert payload["subject_backend"]["backend_id"] == (
+        "spirallens.faiss-hnsw-range"
+    )
+    assert payload["subject_backend"]["distribution_version"] == "1.14.3"
+    assert payload["subject_backend"]["config"]["thread_count"] == 1
+    assert payload["query_sampling"] == {
+        "method": "sha256_ranked_global_indices",
+        "seed": 1729,
+        "count": 1000,
+        "global_row_key_sha256": None,
+        "binding_rule": "must_be_filled_before_status_frozen",
+    }
+    assert (
+        payload["claim_boundary"]["approximate_backend_currently_audited"]
+        is False
+    )
+    assert payload["promotion_readiness"][
+        "query_local_worst_case_recall_gate_implemented"
+    ] is False
     assert payload["claim_boundary"][
         "approximate_backend_currently_audited"
     ] is False

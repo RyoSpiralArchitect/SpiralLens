@@ -3,6 +3,10 @@ protocol_id: pythia-neighbor-v0.2
 status: preregistered-draft
 claim_ceiling: 1
 
+audit_scope:
+  comparison_group: null
+  binding_rule: must_be_filled_before_status_frozen
+
 candidate_protocol:
   path: protocols/pythia_v0_1.yaml
   sha256: a36baba8af4cd5845a72c0245ab0b3f69782e914015e0dcc00a99f20702e9ca1
@@ -38,10 +42,24 @@ reference_backend:
   inclusive_thresholds: true
 
 subject_backend:
-  status: not_selected
+  status: implementation_selected_unpromoted
+  backend_id: spirallens.faiss-hnsw-range
+  backend_version: "0.1"
+  distribution: faiss-cpu
+  distribution_version: 1.14.3
   kind_required_for_full_vocabulary: approximate
   optional_dependency_only: true
   candidate_persistence_without_audit_receipt: forbidden
+  config:
+    m: 32
+    ef_construction: 200
+    ef_search: 256
+    seed: 1729
+    thread_count: 1
+    query_batch_size: 512
+    score_margin: 0.0001
+    max_raw_hits: 20000000
+    max_proposed_pairs: 10000000
   required_provenance:
     - backend_id
     - backend_version
@@ -50,6 +68,13 @@ subject_backend:
     - seed
     - thread_count
     - index_digest
+
+query_sampling:
+  method: sha256_ranked_global_indices
+  seed: 1729
+  count: 1000
+  global_row_key_sha256: null
+  binding_rule: must_be_filled_before_status_frozen
 
 exact_rerank:
   contract: spirallens.candidate-exact-rerank.v0.1
@@ -63,10 +88,10 @@ audit:
   candidate_boundary_recall_min: 0.99
   repeats: 2
   repeat_mode: independent_cold_rebuild
-  minimum_reference_candidates: 1
+  minimum_reference_candidates: 100
   missing_pair_sample_limit: 20
   zero_reference_candidates: insufficient
-  top_k_recall_role: diagnostic_only
+  top_k_recall_role: not_applicable_range_search
   pooled_recall_can_override_failed_group: false
   full_vocabulary_backend_promoted_by_this_protocol: false
   protocol_binding_required: true
@@ -77,3 +102,9 @@ claim_boundary:
   candidate_is_not_verified_vortex: true
   passing_audit_proves_retrieval_coverage_only: true
   approximate_backend_currently_audited: false
+
+promotion_readiness:
+  receipt_mechanism_implemented: true
+  full_index_subset_query_audit_implemented: true
+  query_local_worst_case_recall_gate_implemented: false
+  tracked_protocol_can_issue_persistence_receipt: false
