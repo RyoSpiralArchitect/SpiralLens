@@ -38,11 +38,13 @@ Pythia-70M is a plumbing smoke. Pythia-160M is the first intended scientific
 run. SAE annotation, training-checkpoint trajectories, transfer operators, and
 natural-language interpretation are intentionally deferred.
 
-The executable path currently reaches step 4 for bounded exact searches.
+The executable path currently reaches step 4 through a state-only neighbor
+backend contract, a deterministic exact reference, and shared exact reranking.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, but are not yet wired from a Pythia candidate into a Level-2 result.
-The exact pairwise search fails loudly above 10,000 rows until an audited
-nearest-neighbor stage lands; a full-vocabulary atlas can still be captured.
+The exact pairwise reference fails loudly above 10,000 all-pair rows. No
+approximate backend has been selected or promoted yet; a full-vocabulary atlas
+can still be captured.
 
 ## Development install
 
@@ -129,6 +131,25 @@ spirallens candidates \
   --protocol protocols/pythia_v0_1.yaml
 ```
 
+Candidate ledger v0.2 separates retrieval from judgment. A backend sees only
+the unprojected `resid_pre` row matrix and proposes canonical global row-index
+pairs. SpiralLens then recomputes every state and drift metric in float64 from
+the original arrays. Backend scores cannot pass a gate or enter candidate
+identity.
+
+The bounded exact implementation is the current reference backend. The current
+preregistered-draft candidate-boundary recall contract for a future approximate
+backend is declared in
+[`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml):
+the initial target is `>= 0.99` across deterministic repeats. A reference set
+with zero exact candidates is `insufficient`, never an automatic pass. The
+audit API and internally validated, tamper-evident JSON artifact are
+implemented. Every audit backend receives a detached read-only state snapshot,
+with pre/post input digests checked on each cold rebuild. No real
+full-vocabulary approximate backend is yet called audited; approximate-backend
+candidate persistence remains disabled until an audit-receipt binding is
+implemented.
+
 `--full-vocabulary` is required to authorize every ID in the declared sweep
 domain explicitly.
 Atlas arrays are memory-mapped, manifests are written atomically, completed
@@ -143,11 +164,11 @@ to become a general library.
 
 - **Now — instrument foundation (`0.1.x`):** analytic phantoms, Pythia
   activation atlases, structural candidate ledgers, versioned provenance, and
-  fail-closed storage.
+  fail-closed storage, plus a state-only neighbor interface and exact reference.
 - **Next — candidate-to-loop system:** a public synthetic engineering context
-  bank, audited full-vocabulary neighbor search within each declared
-  context/position slice, cycle construction, relative holonomy, and
-  architecture/null accounting on Pythia-70M.
+  bank, a real approximate full-vocabulary backend that passes the frozen
+  recall audit within each declared context/position slice, cycle construction,
+  relative holonomy, and architecture/null accounting on Pythia-70M.
 - **First scientific protocol:** create separate frozen discovery and held-out
   context-bank artifacts, freeze the integrated instrument, and run the same
   preregistered design on Pythia-160M without tuning on either held-out results
@@ -173,6 +194,8 @@ immediate next plan live in the single
   promotion tests. A sampled charge is not a continuous-field certificate.
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
+- `neighbors/` retrieves row-index pairs from unprojected states only; it never
+  decides whether a pair is a candidate.
 - `semantics/` is downstream annotation and evaluation, never discovery.
 - `benchmarks/icicl/` is an optional external benchmark and is not imported by
   the core package.

@@ -392,7 +392,16 @@ def test_manifest_extraction_writes_complete_auditable_ledger(tmp_path: Path) ->
     assert summary.candidate_count == 1
     assert len(candidates) == 1
     assert rows[0]["record_type"] == "ledger_header"
+    assert rows[0]["schema_version"] == (
+        "spirallens.candidate-ledger.v0.2"
+    )
     assert rows[0]["source"]["atlas_run_id"] == "atlas-test-run"
+    assert rows[0]["source"]["neighbor_retrieval"][
+        "exact_rerank_required"
+    ] is True
+    assert rows[0]["source"]["neighbor_retrieval"][
+        "backend_score_used_for_gates"
+    ] is False
     assert rows[0]["current_claim_level"] == 1
     assert rows[0]["protocol_claim_ceiling"] == 1
     assert rows[0]["protocol"] == {
@@ -406,6 +415,11 @@ def test_manifest_extraction_writes_complete_auditable_ledger(tmp_path: Path) ->
     assert candidates[0]["left"]["layer_index"] == 0
     assert candidates[0]["left"]["token_id"] == 11
     assert candidates[0]["right"]["token_id"] == 12
+    assert candidates[0]["schema_version"] == "spirallens.candidate.v0.2"
+    assert candidates[0]["retrieval"]["exact_reranked"] is True
+    assert candidates[0]["retrieval"][
+        "backend_score_used_for_gates"
+    ] is False
 
 
 def test_bound_candidate_references_keep_context_identity_and_domain(

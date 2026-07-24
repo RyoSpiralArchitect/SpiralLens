@@ -22,9 +22,23 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 import yaml
 
+from spirallens.neighbors import (
+    ExactBlockwiseBackend,
+    NeighborBackend,
+    NeighborBackendDescriptor,
+    NeighborPair,
+    NeighborQuery,
+    canonical_json_sha256,
+    exact_state_pair_metrics,
+    finite_row_norms,
+    state_pair_passes_query,
+    validate_neighbor_pairs,
+)
 
-CANDIDATE_SCHEMA_VERSION = "spirallens.candidate.v0.1"
-LEDGER_SCHEMA_VERSION = "spirallens.candidate-ledger.v0.1"
+
+CANDIDATE_SCHEMA_VERSION = "spirallens.candidate.v0.2"
+LEDGER_SCHEMA_VERSION = "spirallens.candidate-ledger.v0.2"
+EXACT_RERANK_CONTRACT_VERSION = "spirallens.candidate-exact-rerank.v0.1"
 
 
 @dataclass(frozen=True)
@@ -155,20 +169,6 @@ def _finite_block(
     return block
 
 
-def _row_norms(
-    rows: NDArray[np.generic],
-    *,
-    block_size: int,
-    label: str,
-) -> NDArray[np.float64]:
-    norms = np.empty(rows.shape[0], dtype=np.float64)
-    for start in range(0, rows.shape[0], block_size):
-        stop = min(start + block_size, rows.shape[0])
-        block = _finite_block(rows, start, stop, label=label)
-        norms[start:stop] = np.linalg.norm(block, axis=1)
-    return norms
-
-
 def _json_safe(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {str(key): _json_safe(item) for key, item in value.items()}
@@ -196,7 +196,16 @@ def _reference_for_row(
     if references is None:
         return {"row_index": index}
     reference = dict(references[index])
-    reference.setdefault("row_index", index)
+    supplied_index = reference.get("row_index", index)
+    if (
+        isinstance(supplied_index, bool)
+        or not isinstance(supplied_index, Integral)
+        or int(supplied_index) != index
+    ):
+        raise ValueError(
+            f"references[{index}].row_index must equal its matrix row"
+        )
+    reference["row_index"] = index
     return _json_safe(reference)
 
 
@@ -217,7 +226,7 @@ def _candidate_id(
     return "cand_" + hashlib.sha256(encoded).hexdigest()[:24]
 
 
-def iter_candidate_pairs(
+def _iter_candidate_pairs_v0_1_oracle(
     states: ArrayLike,
     drifts: ArrayLike,
     *,
@@ -226,7 +235,7 @@ def iter_candidate_pairs(
     source_run_id: str = "array-input",
     group_key: str = "ungrouped",
 ) -> Iterator[dict[str, Any]]:
-    """Yield structural candidate rows without materializing an ``N x N`` matrix.
+    """Frozen pre-backend oracle retained for parity regression tests.
 
     Args:
         states: Row matrix ``(observations, hidden)`` at the input of a
@@ -256,12 +265,12 @@ def iter_candidate_pairs(
         )
 
     n_rows = state_rows.shape[0]
-    state_norms = _row_norms(
+    state_norms = finite_row_norms(
         state_rows,
         block_size=settings.block_size,
         label="states",
     )
-    drift_norms = _row_norms(
+    drift_norms = finite_row_norms(
         drift_rows,
         block_size=settings.block_size,
         label="drifts",
@@ -419,8 +428,360 @@ def iter_candidate_pairs(
                 }
 
 
+def _neighbor_query_from_config(
+    settings: CandidateSearchConfig,
+    *,
+    query_indices: tuple[int, ...] | None = None,
+) -> NeighborQuery:
+    return NeighborQuery(
+        cosine_min=settings.cosine_min,
+        relative_norm_gap_max=settings.relative_norm_gap_max,
+        min_state_norm=settings.min_state_norm,
+        epsilon=settings.epsilon,
+        query_indices=query_indices,
+    )
+
+
+def _default_exact_backend(
+    settings: CandidateSearchConfig,
+) -> ExactBlockwiseBackend:
+    return ExactBlockwiseBackend(
+        block_size=settings.block_size,
+        max_rows=settings.max_pairwise_rows,
+        max_comparisons=max(
+            1,
+            settings.max_pairwise_rows
+            * (settings.max_pairwise_rows - 1)
+            // 2,
+        ),
+    )
+
+
+def _validate_search_inputs(
+    states: ArrayLike,
+    drifts: ArrayLike,
+    *,
+    references: Sequence[Mapping[str, Any]] | None,
+) -> tuple[NDArray[np.generic], NDArray[np.generic]]:
+    state_rows = states if hasattr(states, "shape") else np.asanyarray(states)
+    drift_rows = drifts if hasattr(drifts, "shape") else np.asanyarray(drifts)
+    if state_rows.ndim != 2 or drift_rows.ndim != 2:
+        raise ValueError(
+            "states and drifts must both have shape (observations, hidden)"
+        )
+    if state_rows.shape != drift_rows.shape:
+        raise ValueError(
+            f"state/drift shape mismatch: {state_rows.shape} != "
+            f"{drift_rows.shape}"
+        )
+    if references is not None and len(references) != state_rows.shape[0]:
+        raise ValueError(
+            "references length must equal the number of observations"
+        )
+    if references is not None:
+        for index, reference in enumerate(references):
+            if not isinstance(reference, Mapping):
+                raise TypeError(f"references[{index}] must be a mapping")
+            _reference_for_row(references, index)
+    return state_rows, drift_rows
+
+
+def iter_exact_reranked_candidates(
+    states: ArrayLike,
+    drifts: ArrayLike,
+    pairs: Iterable[NeighborPair],
+    *,
+    backend_descriptor: NeighborBackendDescriptor,
+    query: NeighborQuery,
+    references: Sequence[Mapping[str, Any]] | None = None,
+    config: CandidateSearchConfig | None = None,
+    source_run_id: str = "array-input",
+    group_key: str = "ungrouped",
+) -> Iterator[dict[str, Any]]:
+    """Apply canonical float64 state and drift gates to proposed pairs.
+
+    Backend scores are deliberately ignored. This is the only path from
+    neighbor proposals to persisted structural candidates.
+    """
+
+    settings = config or CandidateSearchConfig()
+    if not isinstance(backend_descriptor, NeighborBackendDescriptor):
+        raise TypeError(
+            "backend_descriptor must be a NeighborBackendDescriptor"
+        )
+    if not isinstance(query, NeighborQuery):
+        raise TypeError("query must be a NeighborQuery")
+    expected_query = _neighbor_query_from_config(
+        settings,
+        query_indices=query.query_indices,
+    )
+    if query != expected_query:
+        raise ValueError(
+            "neighbor query boundaries must match CandidateSearchConfig"
+        )
+    state_rows, drift_rows = _validate_search_inputs(
+        states,
+        drifts,
+        references=references,
+    )
+    row_count = int(state_rows.shape[0])
+    state_norms = finite_row_norms(
+        state_rows,
+        block_size=settings.block_size,
+        label="states",
+    )
+    drift_norms = finite_row_norms(
+        drift_rows,
+        block_size=settings.block_size,
+        label="drifts",
+    )
+    query_scope = (
+        None
+        if query.query_indices is None
+        else set(query.query_indices)
+    )
+    retrieval = {
+        "backend_id": backend_descriptor.backend_id,
+        "backend_kind": backend_descriptor.kind,
+        "backend_sha256": backend_descriptor.sha256,
+        "query_sha256": query.sha256,
+        "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
+        "exact_reranked": True,
+        "backend_score_used_for_gates": False,
+    }
+
+    for pair in validate_neighbor_pairs(iter(pairs), row_count=row_count):
+        left_index = pair.left_index
+        right_index = pair.right_index
+        if (
+            query_scope is not None
+            and left_index not in query_scope
+            and right_index not in query_scope
+        ):
+            raise ValueError(
+                f"neighbor pair {pair.key} does not touch query_indices"
+            )
+
+        norm_a = float(state_norms[left_index])
+        norm_b = float(state_norms[right_index])
+        left_state = np.asarray(state_rows[left_index], dtype=np.float64)
+        right_state = np.asarray(state_rows[right_index], dtype=np.float64)
+        state_pair = exact_state_pair_metrics(
+            left_state,
+            right_state,
+            norm_a=norm_a,
+            norm_b=norm_b,
+            epsilon=settings.epsilon,
+        )
+        cosine = state_pair.cosine_similarity
+        radial_distance = abs(norm_a - norm_b)
+        relative_norm_gap = state_pair.relative_norm_gap
+        if not state_pair_passes_query(
+            state_pair,
+            norm_a=norm_a,
+            norm_b=norm_b,
+            query=query,
+        ):
+            continue
+
+        left_drift = np.asarray(drift_rows[left_index], dtype=np.float64)
+        right_drift = np.asarray(drift_rows[right_index], dtype=np.float64)
+        drift_norm_a = float(drift_norms[left_index])
+        drift_norm_b = float(drift_norms[right_index])
+        drift_difference = left_drift - right_drift
+        drift_divergence = float(np.linalg.norm(drift_difference))
+        mean_drift_norm = 0.5 * (drift_norm_a + drift_norm_b)
+        relative_drift_divergence = drift_divergence / max(
+            mean_drift_norm,
+            settings.epsilon,
+        )
+        if (
+            drift_norm_a < settings.min_drift_norm
+            or drift_norm_b < settings.min_drift_norm
+            or drift_divergence
+            < settings.drift_absolute_divergence_min
+            or relative_drift_divergence
+            < settings.drift_relative_divergence_min
+        ):
+            continue
+
+        angular_sq = max(
+            0.0,
+            2.0 * norm_a * norm_b * (1.0 - cosine),
+        )
+        state_distance_sq = radial_distance**2 + angular_sq
+        drift_cosine = float(
+            np.clip(
+                np.dot(left_drift, right_drift)
+                / (drift_norm_a * drift_norm_b),
+                -1.0,
+                1.0,
+            )
+        )
+        drift_radial = abs(drift_norm_a - drift_norm_b)
+        drift_angular_sq = max(
+            0.0,
+            2.0
+            * drift_norm_a
+            * drift_norm_b
+            * (1.0 - drift_cosine),
+        )
+
+        left_reference = _reference_for_row(references, left_index)
+        right_reference = _reference_for_row(references, right_index)
+        yield {
+            "schema_version": CANDIDATE_SCHEMA_VERSION,
+            "record_type": "candidate",
+            "candidate_id": _candidate_id(
+                source_run_id=source_run_id,
+                group_key=group_key,
+                left_reference=left_reference,
+                right_reference=right_reference,
+            ),
+            "candidate_kind": "cosine_near_drift_divergent",
+            "claim_level": 1,
+            "source_run_id": source_run_id,
+            "comparison_group": group_key,
+            "left": left_reference,
+            "right": right_reference,
+            "state_metrics": {
+                "cosine_similarity": cosine,
+                "norm_a": norm_a,
+                "norm_b": norm_b,
+                "euclidean_distance": float(np.sqrt(state_distance_sq)),
+                "radial_distance": radial_distance,
+                "angular_distance": float(np.sqrt(angular_sq)),
+                "relative_norm_gap": relative_norm_gap,
+                "angular_fraction_sq": angular_sq
+                / max(state_distance_sq, settings.epsilon),
+                "unit_chord_distance": float(
+                    np.sqrt(max(0.0, 2.0 * (1.0 - cosine)))
+                ),
+            },
+            "drift_metrics": {
+                "norm_a": drift_norm_a,
+                "norm_b": drift_norm_b,
+                "cosine_similarity": drift_cosine,
+                "divergence": drift_divergence,
+                "relative_divergence": relative_drift_divergence,
+                "radial_divergence": drift_radial,
+                "angular_divergence": float(np.sqrt(drift_angular_sq)),
+                "angular_fraction_sq": drift_angular_sq
+                / max(drift_divergence**2, settings.epsilon),
+            },
+            "retrieval": retrieval,
+            "discovery": {
+                "semantic_annotation_used": False,
+                "sae_annotation_used": False,
+                "projection_used": False,
+            },
+            "gates": {
+                "cosine_min": settings.cosine_min,
+                "relative_norm_gap_max": settings.relative_norm_gap_max,
+                "drift_relative_divergence_min": (
+                    settings.drift_relative_divergence_min
+                ),
+                "drift_absolute_divergence_min": (
+                    settings.drift_absolute_divergence_min
+                ),
+            },
+        }
+
+
+def iter_candidate_pairs(
+    states: ArrayLike,
+    drifts: ArrayLike,
+    *,
+    references: Sequence[Mapping[str, Any]] | None = None,
+    config: CandidateSearchConfig | None = None,
+    source_run_id: str = "array-input",
+    group_key: str = "ungrouped",
+    neighbor_backend: NeighborBackend | None = None,
+    query_indices: tuple[int, ...] | None = None,
+    expected_backend_descriptor: NeighborBackendDescriptor | None = None,
+) -> Iterator[dict[str, Any]]:
+    """Retrieve state neighbors, then exact-rerank structural candidates."""
+
+    settings = config or CandidateSearchConfig()
+    state_rows, _ = _validate_search_inputs(
+        states,
+        drifts,
+        references=references,
+    )
+    backend = neighbor_backend or _default_exact_backend(settings)
+    descriptor = backend.descriptor
+    if not isinstance(descriptor, NeighborBackendDescriptor):
+        raise TypeError(
+            "neighbor_backend.descriptor must be a "
+            "NeighborBackendDescriptor"
+        )
+    if (
+        expected_backend_descriptor is not None
+        and descriptor != expected_backend_descriptor
+    ):
+        raise ValueError(
+            "neighbor backend descriptor changed before retrieval"
+        )
+    query = _neighbor_query_from_config(
+        settings,
+        query_indices=query_indices,
+    )
+    yield from iter_exact_reranked_candidates(
+        states,
+        drifts,
+        backend.iter_pairs(state_rows, query=query),
+        backend_descriptor=descriptor,
+        query=query,
+        references=references,
+        config=settings,
+        source_run_id=source_run_id,
+        group_key=group_key,
+    )
+    if backend.descriptor != descriptor:
+        raise ValueError(
+            "neighbor backend descriptor changed during retrieval"
+        )
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _validated_neighbor_retrieval_binding(
+    source: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    binding = source.get("neighbor_retrieval")
+    if binding is None:
+        return None
+    if not isinstance(binding, Mapping):
+        raise TypeError("source.neighbor_retrieval must be a mapping")
+    backend = binding.get("backend")
+    query = binding.get("query")
+    backend_sha256 = binding.get("backend_sha256")
+    query_sha256 = binding.get("query_sha256")
+    if (
+        not isinstance(backend, Mapping)
+        or not isinstance(query, Mapping)
+        or not isinstance(backend_sha256, str)
+        or len(backend_sha256) != 64
+        or not isinstance(query_sha256, str)
+        or len(query_sha256) != 64
+        or canonical_json_sha256(backend) != backend_sha256
+        or canonical_json_sha256(query) != query_sha256
+        or binding.get("exact_rerank_contract")
+        != EXACT_RERANK_CONTRACT_VERSION
+        or binding.get("exact_rerank_required") is not True
+        or binding.get("backend_score_used_for_gates") is not False
+    ):
+        raise ValueError(
+            "source.neighbor_retrieval violates its provenance contract"
+        )
+    if backend.get("kind") == "approximate":
+        raise ValueError(
+            "approximate candidate persistence is disabled until an "
+            "audit-receipt binding is implemented"
+        )
+    return binding
 
 
 def write_candidate_ledger(
@@ -454,6 +815,10 @@ def write_candidate_ledger(
         raise FileExistsError(
             f"refusing to overwrite existing candidate ledger: {destination}"
         )
+    safe_source = _json_safe(source)
+    if not isinstance(safe_source, Mapping):
+        raise TypeError("source must be a mapping")
+    neighbor_binding = _validated_neighbor_retrieval_binding(safe_source)
     protocol_record: dict[str, Any] = {
         "declared_id": protocol_id,
         "claim_ceiling": int(protocol_claim_ceiling),
@@ -492,12 +857,17 @@ def write_candidate_ledger(
         "protocol_claim_ceiling": int(protocol_claim_ceiling),
         "protocol": protocol_record,
         "started_at": started_at,
-        "source": _json_safe(source),
+        "source": safe_source,
         "candidate_search": config.to_dict(),
         "discovery_contract": {
             "structural_metrics_only": True,
             "semantic_annotation_used": False,
             "candidate_is_not_verified_vortex": True,
+            "neighbor_backend_proposes_pairs_only": True,
+            "exact_rerank_required": True,
+            "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
+            "backend_score_used_for_gates": False,
+            "neighbor_retrieval_bound": neighbor_binding is not None,
         },
     }
 
@@ -508,6 +878,45 @@ def write_candidate_ledger(
                 safe_candidate = _json_safe(candidate)
                 if safe_candidate.get("record_type") != "candidate":
                     raise ValueError("candidate iterator emitted a non-candidate record")
+                retrieval = safe_candidate.get("retrieval")
+                if (
+                    safe_candidate.get("schema_version")
+                    != CANDIDATE_SCHEMA_VERSION
+                    or not isinstance(retrieval, Mapping)
+                    or set(retrieval)
+                    != {
+                        "backend_id",
+                        "backend_kind",
+                        "backend_sha256",
+                        "query_sha256",
+                        "exact_rerank_contract",
+                        "exact_reranked",
+                        "backend_score_used_for_gates",
+                    }
+                    or retrieval.get("exact_reranked") is not True
+                    or retrieval.get("backend_score_used_for_gates")
+                    is not False
+                    or retrieval.get("exact_rerank_contract")
+                    != EXACT_RERANK_CONTRACT_VERSION
+                ):
+                    raise ValueError(
+                        "candidate is not bound to the exact-rerank contract"
+                    )
+                if (
+                    neighbor_binding is None
+                    or retrieval.get("backend_sha256")
+                    != neighbor_binding.get("backend_sha256")
+                    or retrieval.get("query_sha256")
+                    != neighbor_binding.get("query_sha256")
+                    or retrieval.get("backend_id")
+                    != neighbor_binding["backend"].get("backend_id")
+                    or retrieval.get("backend_kind")
+                    != neighbor_binding["backend"].get("kind")
+                ):
+                    raise ValueError(
+                        "candidate retrieval provenance does not match "
+                        "the ledger header"
+                    )
                 handle.write(
                     json.dumps(safe_candidate, sort_keys=True, separators=(",", ":"))
                     + "\n"
@@ -642,6 +1051,7 @@ def extract_candidates_from_manifest(
     overwrite: bool = False,
     protocol_claim_ceiling: int = 1,
     protocol_binding: Mapping[str, Any] | None = None,
+    neighbor_backend: NeighborBackend | None = None,
 ) -> LedgerSummary:
     """Read a complete Pythia atlas and write a structural candidate ledger."""
 
@@ -652,12 +1062,23 @@ def extract_candidates_from_manifest(
         if requested_path.is_dir()
         else requested_path
     )
-    manifest_bytes = path.read_bytes()
+    manifest_bytes_before = path.read_bytes()
     # Import lazily so the lightweight metric primitives do not require model
     # dependencies merely to be imported.
     from spirallens.atlas import load_manifest
 
     manifest = load_manifest(path.parent, verify_checksums=verify_checksums)
+    manifest_bytes = path.read_bytes()
+    if manifest_bytes != manifest_bytes_before:
+        raise ValueError("atlas manifest changed during candidate validation")
+    try:
+        persisted_manifest = json.loads(manifest_bytes)
+    except json.JSONDecodeError as error:
+        raise ValueError("atlas manifest became invalid during validation") from error
+    if persisted_manifest != manifest:
+        raise ValueError(
+            "validated atlas manifest differs from its persisted snapshot"
+        )
     if not isinstance(manifest, Mapping):
         raise ValueError("atlas manifest must contain a JSON object")
     if manifest.get("status") != "complete":
@@ -676,19 +1097,19 @@ def extract_candidates_from_manifest(
         root,
         manifest,
         "token_ids",
-        verify_checksums=False,
+        verify_checksums=verify_checksums,
     )
     resid_pre = _load_manifest_array(
         root,
         manifest,
         "resid_pre",
-        verify_checksums=False,
+        verify_checksums=verify_checksums,
     )
     resid_post = _load_manifest_array(
         root,
         manifest,
         "resid_post",
-        verify_checksums=False,
+        verify_checksums=verify_checksums,
     )
     if token_ids.ndim != 1:
         raise ValueError("token_ids must have shape (observations,)")
@@ -717,6 +1138,14 @@ def extract_candidates_from_manifest(
     layers = settings.layer_indices or tuple(range(num_layers))
     if any(layer >= num_layers for layer in layers):
         raise ValueError(f"requested layer_indices exceed atlas layer count {num_layers}")
+    backend = neighbor_backend or _default_exact_backend(settings)
+    backend_descriptor = backend.descriptor
+    if not isinstance(backend_descriptor, NeighborBackendDescriptor):
+        raise TypeError(
+            "neighbor_backend.descriptor must be a "
+            "NeighborBackendDescriptor"
+        )
+    neighbor_query = _neighbor_query_from_config(settings)
 
     token_values = np.asarray(token_ids, dtype=np.int64)
     position = request.get(
@@ -832,6 +1261,8 @@ def extract_candidates_from_manifest(
                 config=settings,
                 source_run_id=run_id,
                 group_key=f"layer_index={layer_index}",
+                neighbor_backend=backend,
+                expected_backend_descriptor=backend_descriptor,
             )
 
     source = {
@@ -842,6 +1273,15 @@ def extract_candidates_from_manifest(
         "model": _json_safe(model),
         "request": _json_safe(request),
         "layers_analyzed": list(layers),
+        "neighbor_retrieval": {
+            "backend": backend_descriptor.to_dict(),
+            "backend_sha256": backend_descriptor.sha256,
+            "query": neighbor_query.to_dict(),
+            "query_sha256": neighbor_query.sha256,
+            "exact_rerank_contract": EXACT_RERANK_CONTRACT_VERSION,
+            "exact_rerank_required": True,
+            "backend_score_used_for_gates": False,
+        },
     }
     return write_candidate_ledger(
         all_candidates(),

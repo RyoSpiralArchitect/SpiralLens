@@ -138,7 +138,10 @@ Delivered:
 - per-batch slice hashes, whole-file hashes, and fail-closed resume;
 - structural candidate ledger with no semantic or SAE input;
 - protocol ID, status, SHA-256, claim ceiling, and override provenance;
-- exact blockwise pair search with an explicit size guard;
+- a state-only neighbor-backend contract, lexicographically deterministic exact
+  reference, and shared float64 exact reranker;
+- candidate-boundary recall/determinism audit artifacts with fail-closed
+  `pass`, `fail`, and `insufficient` outcomes;
 - CLI commands for calibration, atlas capture, and candidate extraction.
 
 Exit criteria:
@@ -158,7 +161,7 @@ What M0 does **not** prove:
 
 ### M1 — Candidate-to-loop integration
 
-**Status:** immediate next milestone.
+**Status:** in progress; immediate-plan steps 1–4 implemented.
 
 **Target release family:** `0.2.x`.
 
@@ -471,8 +474,12 @@ The next implementation sequence after the initial public repository push is:
    outcomes to tune the 160M confirmatory bank, then freeze the Pythia-160M
    protocol.
 
-The current implementation covers steps 1–3. The next engineering target is
-the neighbor-backend interface and exact-reference contract in step 4.
+The current implementation covers steps 1–4. It also defines the
+candidate-boundary recall/determinism artifact used to judge step 5, but it does
+not select or promote a real approximate backend. Audit inputs are detached,
+read-only snapshots whose digests are checked before and after every cold
+rebuild. The next engineering target is the audited full-vocabulary candidate
+index in step 5.
 
 The immediate deliverable is not “find a semantic vortex.” It is a replayable
 candidate-to-loop artifact whose promotion gates are explicit before the

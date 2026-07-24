@@ -20,6 +20,15 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   “OAM” is reserved for the motivating optical analogy.
 - **Candidate**: an observation that passed the stated structural gates. A
   candidate is not a verified semantic feature or vortex.
+- **Neighbor proposal**: a canonical unordered pair of global atlas row indices
+  retrieved from unprojected states. It is not a candidate until the shared
+  exact state-and-drift reranker passes it.
+- **Candidate-boundary recall**: the fraction of bounded exact candidates that
+  remain after a subject backend's proposals are exactly reranked. This, not
+  generic recall@k, is the initial approximate-backend promotion metric.
+- **Insufficient audit**: an audit whose exact reference contains too few
+  candidates to evaluate the preregistered recall gate. In particular, a
+  zero-candidate reference is not assigned recall 1.0.
 
 Three evolution axes must also remain explicit:
 

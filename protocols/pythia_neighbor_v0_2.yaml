@@ -1,0 +1,79 @@
+schema_version: spirallens.neighbor-audit-protocol.v0.1
+protocol_id: pythia-neighbor-v0.2
+status: preregistered-draft
+claim_ceiling: 1
+
+candidate_protocol:
+  path: protocols/pythia_v0_1.yaml
+  sha256: a36baba8af4cd5845a72c0245ab0b3f69782e914015e0dcc00a99f20702e9ca1
+  declared_id: pythia-v0.1
+
+retrieval_contract:
+  input: resid_pre
+  input_snapshot: detached_read_only
+  input_sha256_checked_before_and_after_each_rebuild: true
+  metric: cosine
+  comparison_unit:
+    - fixed_context_bank
+    - fixed_context_id
+    - fixed_observation_position
+    - fixed_layer_index
+  output: canonical_unordered_global_row_pairs
+  pair_order: left_then_right_ascending
+  drift_available_to_backend: false
+  decoded_strings_available_to_backend: false
+  semantic_annotation_available_to_backend: false
+  sae_annotation_available_to_backend: false
+  projected_coordinates_available_to_backend: false
+
+reference_backend:
+  backend_id: spirallens.exact-blockwise-reference
+  backend_version: "0.1"
+  kind: exact
+  deterministic: true
+  descriptor_sha256_bound_in_audit_identity: true
+  runtime_version_bound_in_descriptor: true
+  maximum_all_pair_rows: 10000
+  maximum_exact_comparisons: 50000000
+  inclusive_thresholds: true
+
+subject_backend:
+  status: not_selected
+  kind_required_for_full_vocabulary: approximate
+  optional_dependency_only: true
+  candidate_persistence_without_audit_receipt: forbidden
+  required_provenance:
+    - backend_id
+    - backend_version
+    - backend_config
+    - runtime_versions
+    - seed
+    - thread_count
+    - index_digest
+
+exact_rerank:
+  contract: spirallens.candidate-exact-rerank.v0.1
+  required_before_persist: true
+  source_values: original_atlas_values_cast_to_float64
+  backend_score_used_for_gate: false
+  false_persistable_candidates_allowed: 0
+
+audit:
+  primary_metric: candidate_boundary_recall
+  candidate_boundary_recall_min: 0.99
+  repeats: 2
+  repeat_mode: independent_cold_rebuild
+  minimum_reference_candidates: 1
+  missing_pair_sample_limit: 20
+  zero_reference_candidates: insufficient
+  top_k_recall_role: diagnostic_only
+  pooled_recall_can_override_failed_group: false
+  full_vocabulary_backend_promoted_by_this_protocol: false
+  protocol_binding_required: true
+  source_identity_required: true
+
+claim_boundary:
+  semantics_free: true
+  candidate_is_not_verified_vortex: true
+  passing_audit_proves_retrieval_coverage_only: true
+  approximate_backend_currently_audited: false
