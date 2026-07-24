@@ -1,16 +1,21 @@
-schema_version: spirallens.neighbor-audit-protocol.v0.1
+schema_version: spirallens.neighbor-audit-protocol.v0.2
 protocol_id: pythia-neighbor-v0.2
 status: preregistered-draft
 claim_ceiling: 1
+
+recall_gate_contract:
+  path: protocols/neighbor_recall_gate_v0_1.yaml
+  sha256: 5c44c9f1f9c22ad6acb06bd7a1ecc8f3d54511e54953b5cb7487304b1e1b5dde
+  gate_id: neighbor-recall-gate-v0.1
 
 audit_scope:
   comparison_group: null
   binding_rule: must_be_filled_before_status_frozen
 
 candidate_protocol:
-  path: protocols/pythia_v0_1.yaml
-  sha256: a36baba8af4cd5845a72c0245ab0b3f69782e914015e0dcc00a99f20702e9ca1
-  declared_id: pythia-v0.1
+  path: protocols/pythia_candidate_v0_2.yaml
+  sha256: ce3e6b6ba7c6cac026ba74671faf5c800e3d21bfc6abbf2641b9d03a37ceb2d8
+  declared_id: pythia-candidate-v0.2
 
 retrieval_contract:
   input: resid_pre
@@ -86,14 +91,24 @@ exact_rerank:
 audit:
   primary_metric: candidate_boundary_recall
   candidate_boundary_recall_min: 0.99
+  query_local_recall_min: 0.99
+  stratum_recall_min: 0.99
   repeats: 2
   repeat_mode: independent_cold_rebuild
   minimum_reference_candidates: 100
+  minimum_eligible_queries: 100
+  minimum_eligible_query_fraction: 0.1
+  density_strata_count: 4
+  minimum_eligible_queries_per_density_stratum: 20
+  boundary_shell_width: 0.0001
+  minimum_reference_candidates_per_stratum: 25
   missing_pair_sample_limit: 20
   zero_reference_candidates: insufficient
   top_k_recall_role: not_applicable_range_search
   pooled_recall_can_override_failed_group: false
-  full_vocabulary_backend_promoted_by_this_protocol: false
+  required_local_recall_contract: spirallens.neighbor-local-recall.v0.1
+  required_joint_strata: density_rank_x_cosine_boundary
+  issue_persistence_receipt_on_verified_pass: false
   protocol_binding_required: true
   source_identity_required: true
 
@@ -106,5 +121,9 @@ claim_boundary:
 promotion_readiness:
   receipt_mechanism_implemented: true
   full_index_subset_query_audit_implemented: true
-  query_local_worst_case_recall_gate_implemented: false
+  frozen_recall_gate_methodology_available: true
+  query_local_worst_case_recall_gate_implemented: true
+  atlas_execution_bindings_frozen: false
   tracked_protocol_can_issue_persistence_receipt: false
+
+deviations: []

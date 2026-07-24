@@ -142,6 +142,8 @@ Delivered:
   reference, and shared float64 exact reranker;
 - candidate-boundary recall/determinism audit artifacts with fail-closed
   `pass`, `fail`, and `insufficient` outcomes;
+- a standalone frozen query-local, relative-density, cosine-boundary, and
+  worst-case recall methodology, separate from any Pythia audit outcome;
 - a pinned, selected-but-unpromoted Faiss HNSW range-search backend with
   full-index/subset-query audit receipts and strict ledger replay;
 - CLI commands for calibration, atlas capture, neighbor-audit preparation and
@@ -164,8 +166,9 @@ What M0 does **not** prove:
 
 ### M1 — Candidate-to-loop integration
 
-**Status:** in progress; immediate-plan steps 1–4 and step-5 mechanism
-implemented, step-5 promotion evidence incomplete.
+**Status:** in progress; immediate-plan steps 1–4 and the step-5 mechanism and
+methodology contract are implemented, while Pythia execution bindings and
+promotion evidence remain incomplete.
 
 **Target release family:** `0.2.x`.
 
@@ -197,8 +200,10 @@ Deliverables:
 8. Recall and determinism evaluation of the approximate backend against exact
    subsets; the initial recall target is at least 0.99 at the preregistered
    candidate boundary.
-   Promotion also requires preregistered query-local, boundary/density-stratified,
-   and worst-case coverage gates; aggregate recall alone is not sufficient.
+   Promotion also requires the frozen query-local, relative-density,
+   density-by-cosine-boundary, and worst-case coverage gates; aggregate recall
+   alone is not sufficient. Freezing those measurement rules is not a Pythia
+   audit result.
 9. Approximate search is used only for retrieval; every persisted candidate is
    reranked and gated with the exact metric.
 10. A semantics-free candidate graph and deterministic cycle-construction
@@ -455,7 +460,7 @@ explicitly stated otherwise.
 | Projection artifacts look like vortices | Require ambient-space or gauge-accounted controls |
 | Full-vocabulary search becomes intractable | Keep exact reference subsets and audit approximate recall |
 | Backend differences create false candidates | Bind backend/runtime/index bytes, require verified receipts, and test repeatability before promotion |
-| Aggregate ANN recall hides a local collapse | Freeze query-local, boundary/density-stratified, and worst-case gates before enabling the tracked promotion flag |
+| Aggregate ANN recall hides a local collapse | Bind the frozen query-local, density-by-boundary, and worst-case methodology into each atlas-specific execution before enabling promotion |
 | Resume blesses corrupted partial data | Verify committed batch hashes before writing a new attempt |
 | Semantic labels leak into discovery | Separate modules, artifacts, and dataset splits |
 | Interesting Pythia-70M result drives confirmatory-bank tuning | Keep 70M as plumbing; freeze 160M contexts, splits, thresholds, and preprocessing independently of its outcomes |
@@ -473,8 +478,8 @@ The next implementation sequence after the initial public repository push is:
    digests into atlas capture and resume;
 4. define a neighbor-backend interface and retain exact blockwise search as the
    reference implementation;
-5. implement and qualify an audited full-vocabulary candidate index with
-   aggregate plus query-local/worst-case recall measurement;
+5. qualify the audited full-vocabulary candidate index against the frozen
+   aggregate, query-local, density-by-boundary, and worst-case methodology;
 6. construct a deterministic semantics-free candidate graph and closed cycles;
 7. connect cycles to local transport, relative holonomy, and the full null suite;
 8. run the integrated Pythia-70M pilot;
@@ -482,20 +487,19 @@ The next implementation sequence after the initial public repository push is:
    outcomes to tune the 160M confirmatory bank, then freeze the Pythia-160M
    protocol.
 
-The current implementation covers steps 1–4 and the engineering mechanism for
-step 5. It selects and pins Faiss HNSW, builds the same full index used by
-discovery, audits preregistered query subsets against the exact reference,
-binds actual index bytes and inputs into build receipts, and permits persistence
-only through a verified frozen-protocol receipt and the shared float64 exact
-reranker. Audit inputs are detached, read-only snapshots whose digests are
-checked before and after every cold rebuild.
+The current implementation covers steps 1–4 and the engineering and
+methodology portions of step 5. It selects and pins Faiss HNSW, builds the same
+full index used by discovery, audits preregistered query subsets against the
+exact reference, and binds actual index bytes and inputs into build receipts.
+The standalone recall methodology is frozen at
+[`../protocols/neighbor_recall_gate_v0_1.yaml`](../protocols/neighbor_recall_gate_v0_1.yaml).
 
-Step 5 is not complete: the tracked protocol remains
-`preregistered-draft`, explicitly forbids full-vocabulary promotion, and has no
-Pythia full-vocabulary pass. Before freezing it, SpiralLens must implement
-query-local, boundary/density-stratified, and worst-case recall gates so an
-aggregate 0.99 score cannot hide a local collapse. The detailed contract lives
-in [Neighbor Audit and Receipt Contract](neighbor_audit.md).
+Step 5 is not complete: the tracked Pythia protocol remains
+`preregistered-draft`, retains null atlas row/group bindings, explicitly
+forbids full-vocabulary promotion, and has no Pythia full-vocabulary pass.
+After adversarial review, one concrete execution must bind those identities
+before the subject audit runs. The detailed contract lives in
+[Neighbor Audit and Receipt Contract](neighbor_audit.md).
 
 The immediate deliverable is not “find a semantic vortex.” It is a replayable
 candidate-to-loop artifact whose promotion gates are explicit before the

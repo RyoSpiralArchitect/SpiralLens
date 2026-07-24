@@ -45,8 +45,9 @@ exist, but are not yet wired from a Pythia candidate into a Level-2 result.
 The exact pairwise reference fails loudly above 10,000 all-pair rows. No
 approximate backend has been promoted yet. A pinned Faiss HNSW range-search
 implementation and its receipt-gated audit path now exist, but the tracked
-protocol remains an unpromoted draft until query-local worst-case recall is
-specified and a full-vocabulary audit passes.
+Pythia execution protocol remains an unpromoted draft. The reusable
+query-local, relative-density, cosine-boundary, and worst-case recall
+methodology is frozen separately; no full-vocabulary audit outcome is claimed.
 
 ## Development install
 
@@ -144,13 +145,20 @@ but unpromoted approximate implementation is `faiss-cpu==1.14.3`
 search run single-threaded in fresh Python subprocesses; every proposal is
 still judged from the original atlas values by the shared float64 reranker.
 
-The preregistered-draft candidate-boundary recall contract is declared in
-[`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml):
-the aggregate target is `>= 0.99` across deterministic cold rebuilds, with at
-least 100 exact reference candidates. A zero-candidate reference is
-`insufficient`, never an automatic pass. The backend is built on the same full
-row matrix used for discovery while exact comparison is restricted to a
-deterministically preregistered query subset.
+The reusable measurement and support rules are frozen in
+[`protocols/neighbor_recall_gate_v0_1.yaml`](protocols/neighbor_recall_gate_v0_1.yaml).
+They require `>= 0.99` aggregate, query-local, density-macro, and
+density-by-cosine-boundary recall across deterministic cold rebuilds. Empty or
+under-supported required cells are `insufficient`, never an automatic pass.
+The atlas-specific execution declaration remains
+[`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml);
+it binds the frozen methodology by SHA-256 but is still
+`preregistered-draft`.
+Receipt-gated approximate persistence uses the separate typed candidate
+declaration
+[`protocols/pythia_candidate_v0_2.yaml`](protocols/pythia_candidate_v0_2.yaml);
+the older v0.1 declaration remains exact-only and cannot be made
+ANN-authorizing by changing its status alone.
 
 Index bytes, full states, row order, layer group, runtime, candidate protocol,
 query contract, and exact rerank contract are bound into the audit identity.
@@ -160,11 +168,11 @@ SHA-256 digests. The audit query subset may expand to all query rows at
 persistence; no other target field may change.
 
 The tracked neighbor protocol deliberately has
-`full_vocabulary_backend_promoted_by_this_protocol: false`. Aggregate recall
-can hide a query-local collapse, so this flag stays false until a
-query-local/worst-case coverage gate is implemented and frozen. Therefore no
-tracked full-vocabulary Pythia audit or approximate candidate ledger is claimed
-yet.
+`issue_persistence_receipt_on_verified_pass: false`. Aggregate recall
+can hide a query-local collapse, but freezing that measurement rule does not
+freeze a Pythia run. Its atlas row identity and layer group are still null, and
+no passing full-vocabulary audit has been observed. Therefore no tracked
+full-vocabulary Pythia audit or approximate candidate ledger is claimed yet.
 
 To obtain the atlas-specific bindings without running the ANN or observing an
 audit outcome:
@@ -197,9 +205,9 @@ to become a general library.
   fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
   full-index/subset-query audits, and verified receipt plumbing.
 - **Next — candidate-to-loop system:** a public synthetic engineering context
-  bank, query-local approximate-retrieval gates, a frozen full-vocabulary audit
-  within each declared context/position slice, cycle construction, relative
-  holonomy, and architecture/null accounting on Pythia-70M.
+  bank, an atlas-bound qualification run under the frozen query-local
+  approximate-retrieval gates, cycle construction, relative holonomy, and
+  architecture/null accounting on Pythia-70M.
 - **First scientific protocol:** create separate frozen discovery and held-out
   context-bank artifacts, freeze the integrated instrument, and run the same
   preregistered design on Pythia-160M without tuning on either held-out results

@@ -5,8 +5,18 @@ from pathlib import Path
 
 import pytest
 
-from spirallens.cli import build_parser, main
+from spirallens.cli import (
+    _load_yaml_mapping,
+    _neighbor_audit_config_from_protocol,
+    _neighbor_audit_exit_code,
+    _validate_recall_gate_contract,
+    build_parser,
+    main,
+)
 from spirallens.metrics import LedgerSummary
+from spirallens.metrics.neighbor_receipt import (
+    validate_neighbor_protocol_static_contract,
+)
 
 
 def test_calibrate_cli_persists_a_complete_report(tmp_path, capsys) -> None:
@@ -335,3 +345,73 @@ def test_neighbor_audit_prepare_only_owns_optional_output() -> None:
     assert prepared.output is None
     with pytest.raises(SystemExit):
         parser.parse_args(["atlas", "--max-tokens", "1"])
+
+
+def test_neighbor_protocol_loader_rejects_duplicate_keys(
+    tmp_path: Path,
+) -> None:
+    protocol = tmp_path / "duplicate.yaml"
+    protocol.write_text(
+        "schema_version: first\nschema_version: second\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="duplicate key"):
+        _load_yaml_mapping(protocol, label="neighbor protocol")
+
+
+def test_tracked_neighbor_protocol_binds_frozen_recall_gate() -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol_path = root / "protocols" / "pythia_neighbor_v0_2.yaml"
+    _, protocol = _load_yaml_mapping(
+        protocol_path,
+        label="neighbor protocol",
+    )
+    audit_config = _neighbor_audit_config_from_protocol(protocol)
+    validate_neighbor_protocol_static_contract(protocol)
+
+    gate_path, gate_bytes, gate = _validate_recall_gate_contract(
+        protocol_path=protocol_path,
+        document=protocol,
+        audit_config=audit_config,
+    )
+
+    assert gate_path.name == "neighbor_recall_gate_v0_1.yaml"
+    assert gate["status"] == "frozen"
+    assert protocol["recall_gate_contract"]["sha256"]
+    assert gate_path.read_bytes() == gate_bytes
+    assert audit_config.query_local_recall_min == 0.99
+    assert audit_config.stratum_recall_min == 0.99
+
+    contradictory = dict(protocol)
+    contradictory["status_override_for_review"] = "frozen"
+    with pytest.raises(ValueError, match="top-level contract"):
+        validate_neighbor_protocol_static_contract(contradictory)
+
+
+@pytest.mark.parametrize(
+    ("protocol_status", "audit_status", "eligible", "expected"),
+    (
+        ("preregistered-draft", "fail", False, 2),
+        ("preregistered-draft", "insufficient", False, 2),
+        ("preregistered-draft", "pass", False, 0),
+        ("frozen", "fail", False, 2),
+        ("frozen", "insufficient", False, 2),
+        ("frozen", "pass", False, 2),
+        ("frozen", "pass", True, 0),
+    ),
+)
+def test_frozen_neighbor_audit_exit_status_is_fail_closed(
+    protocol_status: str,
+    audit_status: str,
+    eligible: bool,
+    expected: int,
+) -> None:
+    assert (
+        _neighbor_audit_exit_code(
+            protocol_status=protocol_status,
+            audit_status=audit_status,
+            promotion_eligible=eligible,
+        )
+        == expected
+    )

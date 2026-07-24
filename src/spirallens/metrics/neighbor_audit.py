@@ -15,10 +15,12 @@ import uuid
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from spirallens import __version__ as SPIRALLENS_VERSION
 from spirallens.neighbors import (
     EXACT_BACKEND_ID,
     EXACT_BACKEND_VERSION,
     ExactBlockwiseBackend,
+    FaissHNSWBackend,
     NeighborBackend,
     NeighborBackendDescriptor,
     NeighborIndexBuildReceipt,
@@ -26,6 +28,8 @@ from spirallens.neighbors import (
     NeighborQuery,
     PreparedNeighborBackend,
     canonical_json_sha256,
+    exact_state_pair_metrics,
+    finite_row_norms,
     validate_prepared_backend,
     validate_neighbor_pairs,
 )
@@ -37,13 +41,23 @@ from .candidate_pairs import (
 )
 
 
-NEIGHBOR_AUDIT_SCHEMA_VERSION = "spirallens.neighbor-audit.v0.1"
+NEIGHBOR_AUDIT_SCHEMA_VERSION = "spirallens.neighbor-audit.v0.2"
 NEIGHBOR_AUDIT_IDENTITY_SCHEMA_VERSION = (
-    "spirallens.neighbor-audit-identity.v0.1"
+    "spirallens.neighbor-audit-identity.v0.2"
 )
 QUERY_SELECTION_SCHEMA_VERSION = (
     "spirallens.query-selection.sha256-ranked-indices.v0.1"
 )
+LOCAL_RECALL_CONTRACT_VERSION = (
+    "spirallens.neighbor-local-recall.v0.1"
+)
+COVERAGE_EVALUATOR_VERSION = (
+    "spirallens.neighbor-coverage-evaluator.v0.1"
+)
+BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT = (
+    "spirallens.builtin-faiss-audit-runner.v0.1"
+)
+CUSTOM_AUDIT_RUNNER_CONTRACT = "spirallens.custom-audit-runner.unverified"
 
 
 def _require_sha256(value: object, *, label: str) -> str:
@@ -56,32 +70,71 @@ def _require_sha256(value: object, *, label: str) -> str:
     return value
 
 
+def _reject_duplicate_json_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    payload: dict[str, object] = {}
+    for key, value in pairs:
+        if key in payload:
+            raise ValueError(
+                f"neighbor audit JSON contains duplicate key {key!r}"
+            )
+        payload[key] = value
+    return payload
+
+
 @dataclass(frozen=True)
 class NeighborAuditConfig:
     """Preregistered promotion gate for one exact-reference audit."""
 
     candidate_recall_min: float = 0.99
+    query_local_recall_min: float = 0.99
+    stratum_recall_min: float = 0.99
     repeats: int = 2
     minimum_reference_candidates: int = 1
+    minimum_eligible_queries: int = 1
+    minimum_eligible_query_fraction: float = 0.0
+    density_strata_count: int = 1
+    minimum_eligible_queries_per_density_stratum: int = 1
+    boundary_shell_width: float = 1e-4
+    minimum_reference_candidates_per_stratum: int = 1
     missing_pair_sample_limit: int = 20
 
     def __post_init__(self) -> None:
-        if (
-            isinstance(self.candidate_recall_min, bool)
-            or not isinstance(self.candidate_recall_min, Real)
-            or not np.isfinite(self.candidate_recall_min)
-        ):
-            raise TypeError("candidate_recall_min must be a finite real")
-        if not 0.0 <= self.candidate_recall_min <= 1.0:
-            raise ValueError("candidate_recall_min must lie in [0, 1]")
-        object.__setattr__(
-            self,
+        for field_name in (
             "candidate_recall_min",
-            float(self.candidate_recall_min),
-        )
+            "query_local_recall_min",
+            "stratum_recall_min",
+            "minimum_eligible_query_fraction",
+            "boundary_shell_width",
+        ):
+            value = getattr(self, field_name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Real)
+                or not np.isfinite(value)
+            ):
+                raise TypeError(f"{field_name} must be a finite real")
+            object.__setattr__(self, field_name, float(value))
+        for field_name in (
+            "candidate_recall_min",
+            "query_local_recall_min",
+            "stratum_recall_min",
+            "minimum_eligible_query_fraction",
+        ):
+            if not 0.0 <= getattr(self, field_name) <= 1.0:
+                raise ValueError(f"{field_name} must lie in [0, 1]")
+        if not 0.0 < self.boundary_shell_width <= 2.0:
+            raise ValueError(
+                "boundary_shell_width must lie in (0, 2]"
+            )
         for field_name in (
             "repeats",
             "minimum_reference_candidates",
+            "minimum_eligible_queries",
+            "density_strata_count",
+            "minimum_eligible_queries_per_density_stratum",
+            "minimum_reference_candidates_per_stratum",
             "missing_pair_sample_limit",
         ):
             value = getattr(self, field_name)
@@ -94,13 +147,26 @@ class NeighborAuditConfig:
             raise ValueError(
                 "repeats must be at least 2 for a cold-rebuild audit"
             )
-
     def to_dict(self) -> dict[str, object]:
         return {
             "candidate_recall_min": self.candidate_recall_min,
+            "query_local_recall_min": self.query_local_recall_min,
+            "stratum_recall_min": self.stratum_recall_min,
             "repeats": self.repeats,
             "minimum_reference_candidates": (
                 self.minimum_reference_candidates
+            ),
+            "minimum_eligible_queries": self.minimum_eligible_queries,
+            "minimum_eligible_query_fraction": (
+                self.minimum_eligible_query_fraction
+            ),
+            "density_strata_count": self.density_strata_count,
+            "minimum_eligible_queries_per_density_stratum": (
+                self.minimum_eligible_queries_per_density_stratum
+            ),
+            "boundary_shell_width": self.boundary_shell_width,
+            "minimum_reference_candidates_per_stratum": (
+                self.minimum_reference_candidates_per_stratum
             ),
             "missing_pair_sample_limit": self.missing_pair_sample_limit,
         }
@@ -368,6 +434,348 @@ def _candidate_pair_keys(
     return tuple(keys)
 
 
+def _query_axis(
+    query: NeighborQuery,
+    *,
+    row_count: int,
+) -> tuple[int, ...]:
+    if (
+        query.query_indices is not None
+        and query.query_indices
+        and query.query_indices[-1] >= row_count
+    ):
+        raise ValueError("query index exceeds row_count")
+    return (
+        tuple(range(row_count))
+        if query.query_indices is None
+        else query.query_indices
+    )
+
+
+def _pair_incidence_composition(
+    *,
+    pair_count: int,
+    incidence_count: int,
+    selected_selected_capacity: int,
+    selected_to_unselected_capacity: int,
+) -> tuple[int, int] | None:
+    selected_selected_count = incidence_count - pair_count
+    selected_to_unselected_count = 2 * pair_count - incidence_count
+    if not (
+        0
+        <= selected_selected_count
+        <= selected_selected_capacity
+        and 0
+        <= selected_to_unselected_count
+        <= selected_to_unselected_capacity
+    ):
+        return None
+    return selected_selected_count, selected_to_unselected_count
+
+
+def _density_stratum_incidence_is_valid(
+    *,
+    pair_count: int,
+    selected_selected_count: int,
+    row_count: int,
+    query_indices: tuple[int, ...],
+    query_pair_degrees: tuple[int, ...],
+    density_strata: tuple[tuple[str, tuple[int, ...]], ...],
+    joint_stratum_pair_counts: tuple[int, ...],
+) -> bool:
+    degree_by_query = dict(
+        zip(query_indices, query_pair_degrees, strict=True)
+    )
+    eligible_query_count = sum(
+        len(members) for _, members in density_strata
+    )
+    unselected_row_count = row_count - len(query_indices)
+    cross_density_capacity = 0
+    preceding_member_count = 0
+    for _, members in density_strata:
+        cross_density_capacity += preceding_member_count * len(members)
+        preceding_member_count += len(members)
+    total_unique_incidence = 0
+    same_density_selected_selected = 0
+    for density_index, (_, members) in enumerate(density_strata):
+        query_degree_sum = sum(
+            degree_by_query[query_index] for query_index in members
+        )
+        unique_pair_count = sum(
+            joint_stratum_pair_counts[
+                2 * density_index : 2 * density_index + 2
+            ]
+        )
+        internal_pair_count = query_degree_sum - unique_pair_count
+        external_pair_count = 2 * unique_pair_count - query_degree_sum
+        member_count = len(members)
+        external_endpoint_count = (
+            eligible_query_count
+            - member_count
+            + unselected_row_count
+        )
+        if not (
+            0
+            <= internal_pair_count
+            <= member_count * (member_count - 1) // 2
+            and 0
+            <= external_pair_count
+            <= member_count * external_endpoint_count
+        ):
+            return False
+        total_unique_incidence += unique_pair_count
+        same_density_selected_selected += internal_pair_count
+    cross_density_selected_selected = (
+        selected_selected_count - same_density_selected_selected
+    )
+    return (
+        0
+        <= cross_density_selected_selected
+        <= cross_density_capacity
+        and total_unique_incidence
+        == pair_count + cross_density_selected_selected
+    )
+
+
+def _density_stratum_id(index: int, count: int) -> str:
+    return f"density_rank_{index:02d}_of_{count:02d}"
+
+
+@dataclass(frozen=True)
+class _CoverageLayout:
+    query_indices: tuple[int, ...]
+    retrieval_neighbor_counts: tuple[int, ...]
+    reference_candidate_pairs_by_query: tuple[
+        tuple[tuple[int, int], ...],
+        ...,
+    ]
+    density_strata: tuple[tuple[str, tuple[int, ...]], ...]
+    candidate_strata: tuple[
+        tuple[str, tuple[tuple[int, int], ...]],
+        ...,
+    ]
+
+
+def _incident_pair_sets(
+    pairs: tuple[tuple[int, int], ...],
+    *,
+    query_indices: tuple[int, ...],
+) -> tuple[tuple[tuple[int, int], ...], ...]:
+    query_set = set(query_indices)
+    incident: dict[int, list[tuple[int, int]]] = {
+        index: [] for index in query_indices
+    }
+    for pair in pairs:
+        left_index, right_index = pair
+        if left_index in query_set:
+            incident[left_index].append(pair)
+        if right_index in query_set:
+            incident[right_index].append(pair)
+    return tuple(
+        tuple(incident[index]) for index in query_indices
+    )
+
+
+def _rank_density_strata(
+    *,
+    query_indices: tuple[int, ...],
+    retrieval_neighbor_counts: tuple[int, ...],
+    reference_candidate_counts: tuple[int, ...],
+    density_strata_count: int,
+) -> tuple[tuple[str, tuple[int, ...]], ...]:
+    eligible = tuple(
+        query_index
+        for query_index, reference_count in zip(
+            query_indices,
+            reference_candidate_counts,
+            strict=True,
+        )
+        if reference_count > 0
+    )
+    count_by_query = dict(
+        zip(query_indices, retrieval_neighbor_counts, strict=True)
+    )
+    ranked = sorted(
+        eligible,
+        key=lambda query_index: (
+            count_by_query[query_index],
+            query_index,
+        ),
+    )
+    density_members: list[list[int]] = [
+        [] for _ in range(density_strata_count)
+    ]
+    for rank, query_index in enumerate(ranked):
+        stratum_index = min(
+            density_strata_count - 1,
+            density_strata_count * rank // max(1, len(ranked)),
+        )
+        density_members[stratum_index].append(query_index)
+    return tuple(
+        (
+            _density_stratum_id(stratum_index, density_strata_count),
+            tuple(sorted(members)),
+        )
+        for stratum_index, members in enumerate(density_members)
+    )
+
+
+def _build_coverage_layout(
+    states: NDArray[np.generic],
+    *,
+    query: NeighborQuery,
+    reference_pairs: tuple[tuple[int, int], ...],
+    reference_candidates: tuple[tuple[int, int], ...],
+    config: NeighborAuditConfig,
+) -> _CoverageLayout:
+    query_indices = _query_axis(
+        query,
+        row_count=int(states.shape[0]),
+    )
+    retrieval_by_query = _incident_pair_sets(
+        reference_pairs,
+        query_indices=query_indices,
+    )
+    candidates_by_query = _incident_pair_sets(
+        reference_candidates,
+        query_indices=query_indices,
+    )
+    retrieval_counts = tuple(
+        len(pairs) for pairs in retrieval_by_query
+    )
+    density_strata = _rank_density_strata(
+        query_indices=query_indices,
+        retrieval_neighbor_counts=retrieval_counts,
+        reference_candidate_counts=tuple(
+            len(pairs) for pairs in candidates_by_query
+        ),
+        density_strata_count=config.density_strata_count,
+    )
+
+    state_norms = finite_row_norms(
+        states,
+        block_size=max(1, min(4096, int(states.shape[0]))),
+        label="coverage states",
+    )
+    shell_pairs: set[tuple[int, int]] = set()
+    for left_index, right_index in reference_candidates:
+        metrics = exact_state_pair_metrics(
+            np.asarray(states[left_index], dtype=np.float64),
+            np.asarray(states[right_index], dtype=np.float64),
+            norm_a=float(state_norms[left_index]),
+            norm_b=float(state_norms[right_index]),
+            epsilon=query.epsilon,
+        )
+        cosine_slack = (
+            metrics.cosine_similarity - query.cosine_min
+        )
+        if cosine_slack < -1e-15:
+            raise ValueError(
+                "reference candidate lies outside the cosine boundary"
+            )
+        if cosine_slack <= config.boundary_shell_width:
+            shell_pairs.add((left_index, right_index))
+    reference_candidate_set = set(reference_candidates)
+    interior_pairs = reference_candidate_set - shell_pairs
+    candidate_by_query = dict(
+        zip(query_indices, candidates_by_query, strict=True)
+    )
+    candidate_strata: list[
+        tuple[str, tuple[tuple[int, int], ...]]
+    ] = []
+    for density_id, members in density_strata:
+        density_pairs: set[tuple[int, int]] = set()
+        for query_index in members:
+            density_pairs.update(candidate_by_query[query_index])
+        candidate_strata.extend(
+            (
+                (
+                    f"{density_id}__cosine_shell",
+                    tuple(sorted(density_pairs & shell_pairs)),
+                ),
+                (
+                    f"{density_id}__interior",
+                    tuple(sorted(density_pairs & interior_pairs)),
+                ),
+            )
+        )
+    return _CoverageLayout(
+        query_indices=query_indices,
+        retrieval_neighbor_counts=retrieval_counts,
+        reference_candidate_pairs_by_query=candidates_by_query,
+        density_strata=density_strata,
+        candidate_strata=tuple(candidate_strata),
+    )
+
+
+def _recall(
+    match_count: int,
+    reference_count: int,
+) -> float | None:
+    return (
+        None
+        if reference_count == 0
+        else match_count / reference_count
+    )
+
+
+def _query_recall_matrix(
+    reference_counts: tuple[int, ...],
+    repeat_match_counts: tuple[tuple[int, ...], ...],
+) -> tuple[tuple[float | None, ...], ...]:
+    return tuple(
+        tuple(
+            _recall(match_count, reference_count)
+            for match_count, reference_count in zip(
+                repeat_counts,
+                reference_counts,
+                strict=True,
+            )
+        )
+        for repeat_counts in repeat_match_counts
+    )
+
+
+def _density_macro_recall(
+    *,
+    query_indices: tuple[int, ...],
+    query_recalls: tuple[tuple[float | None, ...], ...],
+    density_strata: tuple[tuple[str, tuple[int, ...]], ...],
+) -> tuple[tuple[float | None, ...], ...]:
+    position = {
+        query_index: index
+        for index, query_index in enumerate(query_indices)
+    }
+    return tuple(
+        tuple(
+            (
+                None
+                if not members
+                else float(
+                    np.mean(
+                        [
+                            repeat_recalls[position[query_index]]
+                            for query_index in members
+                        ]
+                    )
+                )
+            )
+            for _, members in density_strata
+        )
+        for repeat_recalls in query_recalls
+    )
+
+
+def _stratum_recall_matrix(
+    reference_counts: tuple[int, ...],
+    repeat_match_counts: tuple[tuple[int, ...], ...],
+) -> tuple[tuple[float | None, ...], ...]:
+    return _query_recall_matrix(
+        reference_counts,
+        repeat_match_counts,
+    )
+
+
 def _validate_subject_descriptor(
     descriptor: NeighborBackendDescriptor,
     *,
@@ -477,22 +885,106 @@ def _expected_status(
     *,
     reference_candidate_count: int,
     candidate_recalls: tuple[float | None, ...],
+    query_indices: tuple[int, ...],
+    query_reference_candidate_counts: tuple[int, ...],
+    repeat_query_candidate_match_counts: tuple[
+        tuple[int, ...],
+        ...,
+    ],
+    density_strata: tuple[tuple[str, tuple[int, ...]], ...],
+    stratum_reference_candidate_counts: tuple[int, ...],
+    repeat_stratum_candidate_match_counts: tuple[
+        tuple[int, ...],
+        ...,
+    ],
     deterministic: bool,
     audit_config: NeighborAuditConfig,
 ) -> Literal["pass", "fail", "insufficient"]:
-    if (
+    query_recalls = _query_recall_matrix(
+        query_reference_candidate_counts,
+        repeat_query_candidate_match_counts,
+    )
+    density_recalls = _density_macro_recall(
+        query_indices=query_indices,
+        query_recalls=query_recalls,
+        density_strata=density_strata,
+    )
+    stratum_recalls = _stratum_recall_matrix(
+        stratum_reference_candidate_counts,
+        repeat_stratum_candidate_match_counts,
+    )
+    eligible_count = sum(
+        count > 0 for count in query_reference_candidate_counts
+    )
+    support_sufficient = (
         reference_candidate_count
-        < audit_config.minimum_reference_candidates
+        >= audit_config.minimum_reference_candidates
+        and eligible_count >= audit_config.minimum_eligible_queries
+        and eligible_count
+        >= int(
+            np.ceil(
+                len(query_indices)
+                * audit_config.minimum_eligible_query_fraction
+            )
+        )
+        and all(
+            len(members)
+            >= audit_config.minimum_eligible_queries_per_density_stratum
+            for _, members in density_strata
+        )
+        and all(
+            count
+            >= audit_config.minimum_reference_candidates_per_stratum
+            for count in stratum_reference_candidate_counts
+        )
+    )
+    aggregate_values = [
+        value for value in candidate_recalls if value is not None
+    ]
+    query_values = [
+        value
+        for repeat_values in query_recalls
+        for value in repeat_values
+        if value is not None
+    ]
+    density_values = [
+        value
+        for repeat_values in density_recalls
+        for value in repeat_values
+        if value is not None
+    ]
+    stratum_values = [
+        value
+        for repeat_values in stratum_recalls
+        for value in repeat_values
+        if value is not None
+    ]
+    known_failure = (
+        not deterministic
+        or any(
+            value < audit_config.candidate_recall_min
+            for value in aggregate_values
+        )
+        or any(
+            value < audit_config.query_local_recall_min
+            for value in query_values
+        )
+        or any(
+            value < audit_config.stratum_recall_min
+            for value in (*density_values, *stratum_values)
+        )
+    )
+    if known_failure:
+        return "fail"
+    if (
+        not support_sufficient
+        or len(aggregate_values) != audit_config.repeats
+        or not query_values
+        or not density_values
+        or not stratum_values
     ):
         return "insufficient"
-    values = [value for value in candidate_recalls if value is not None]
-    if (
-        len(values) == audit_config.repeats
-        and min(values) >= audit_config.candidate_recall_min
-        and deterministic
-    ):
-        return "pass"
-    return "fail"
+    return "pass"
 
 
 @dataclass(frozen=True)
@@ -515,6 +1007,7 @@ class NeighborAuditResult:
     query: NeighborQuery
     reference_backend: NeighborBackendDescriptor
     subject_backend: NeighborBackendDescriptor
+    subject_runner_contract: str
     reference_pair_count: int
     reference_pair_sha256: str
     reference_candidate_count: int
@@ -526,6 +1019,29 @@ class NeighborAuditResult:
     repeat_candidate_sha256: tuple[str, ...]
     retrieval_boundary_recall: tuple[float | None, ...]
     candidate_boundary_recall: tuple[float | None, ...]
+    query_retrieval_neighbor_counts: tuple[int, ...]
+    query_reference_candidate_counts: tuple[int, ...]
+    query_reference_candidate_sha256: tuple[str, ...]
+    repeat_query_candidate_match_counts: tuple[
+        tuple[int, ...],
+        ...,
+    ]
+    density_strata_query_indices: tuple[
+        tuple[str, tuple[int, ...]],
+        ...,
+    ]
+    stratum_reference_candidate_counts: tuple[
+        tuple[str, int],
+        ...,
+    ]
+    stratum_reference_candidate_sha256: tuple[
+        tuple[str, str],
+        ...,
+    ]
+    repeat_stratum_candidate_match_counts: tuple[
+        tuple[int, ...],
+        ...,
+    ]
     cold_rebuild: bool
     deterministic: bool
     missing_candidate_pair_count: int
@@ -588,6 +1104,33 @@ class NeighborAuditResult:
             expected_row_identity_sha256=row_identity_sha256,
             expected_comparison_group=self.comparison_group,
         )
+        if self.subject_runner_contract not in {
+            BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT,
+            CUSTOM_AUDIT_RUNNER_CONTRACT,
+        }:
+            raise ValueError("audit subject runner contract is invalid")
+        if (
+            self.subject_runner_contract
+            == BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT
+            and (
+                self.subject_backend.backend_id
+                != "spirallens.faiss-hnsw-range"
+                or self.subject_backend.backend_version != "0.1"
+            )
+        ):
+            raise ValueError(
+                "built-in Faiss runner contract has a non-Faiss "
+                "descriptor"
+            )
+        if (
+            self.protocol_binding.status == "frozen"
+            and self.subject_runner_contract
+            != BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT
+        ):
+            raise ValueError(
+                "frozen audits require the built-in Faiss runner "
+                "contract"
+            )
         if not isinstance(self.cold_rebuild, bool) or not self.cold_rebuild:
             raise ValueError("audit repeats must be independent cold rebuilds")
 
@@ -625,10 +1168,351 @@ class NeighborAuditResult:
             for value in count_values
         ):
             raise ValueError("audit counts must be non-negative integers")
+        empty_digest = _pair_sha256(())
+        counted_pair_digests = (
+            (
+                self.reference_pair_count,
+                self.reference_pair_sha256,
+            ),
+            (
+                self.reference_candidate_count,
+                self.reference_candidate_sha256,
+            ),
+            *zip(
+                self.repeat_pair_counts,
+                self.repeat_pair_sha256,
+                strict=True,
+            ),
+            *zip(
+                self.repeat_candidate_counts,
+                self.repeat_candidate_sha256,
+                strict=True,
+            ),
+        )
+        if any(
+            (count == 0) != (digest == empty_digest)
+            for count, digest in counted_pair_digests
+        ):
+            raise ValueError("pair-set digest disagrees with its count")
+        if self.reference_candidate_count > self.reference_pair_count:
+            raise ValueError(
+                "reference candidates exceed reference retrieval pairs"
+            )
+        if (
+            self.reference_candidate_count == self.reference_pair_count
+            and self.reference_candidate_sha256
+            != self.reference_pair_sha256
+        ):
+            raise ValueError(
+                "complete reference candidate digest disagrees with "
+                "retrieval membership"
+            )
+        if any(
+            candidate_count > pair_count
+            or candidate_count > pair_match_count
+            for candidate_count, pair_count, pair_match_count in zip(
+                self.repeat_candidate_counts,
+                self.repeat_pair_counts,
+                self.repeat_pair_match_counts,
+                strict=True,
+            )
+        ):
+            raise ValueError(
+                "subject candidates exceed matched retrieval pairs"
+            )
+        if any(
+            candidate_count == pair_count
+            and candidate_digest != pair_digest
+            for candidate_count, pair_count, candidate_digest, pair_digest in zip(
+                self.repeat_candidate_counts,
+                self.repeat_pair_counts,
+                self.repeat_candidate_sha256,
+                self.repeat_pair_sha256,
+                strict=True,
+            )
+        ):
+            raise ValueError(
+                "complete subject candidate digest disagrees with "
+                "retrieval membership"
+            )
+        query_indices = _query_axis(
+            self.query,
+            row_count=self.row_count,
+        )
+        query_count = len(query_indices)
+        selected_to_unselected_capacity = query_count * (
+            self.row_count - query_count
+        )
+        selected_selected_capacity = (
+            query_count * (query_count - 1) // 2
+        )
+        query_scope_pair_capacity = (
+            selected_to_unselected_capacity
+            + selected_selected_capacity
+        )
+        if self.reference_pair_count > query_scope_pair_capacity:
+            raise ValueError(
+                "reference retrieval pairs exceed the query scope"
+            )
+        if any(
+            pair_count > query_scope_pair_capacity
+            for pair_count in self.repeat_pair_counts
+        ):
+            raise ValueError(
+                "subject retrieval pairs exceed the query scope"
+            )
+        query_field_lengths = (
+            len(self.query_retrieval_neighbor_counts),
+            len(self.query_reference_candidate_counts),
+            len(self.query_reference_candidate_sha256),
+        )
+        if any(length != len(query_indices) for length in query_field_lengths):
+            raise ValueError(
+                "query-local evidence does not match the query axis"
+            )
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            for value in (
+                *self.query_retrieval_neighbor_counts,
+                *self.query_reference_candidate_counts,
+            )
+        ):
+            raise ValueError(
+                "query-local counts must be non-negative integers"
+            )
+        maximum_query_degree = max(0, self.row_count - 1)
+        if any(
+            retrieval_count > maximum_query_degree
+            for retrieval_count in self.query_retrieval_neighbor_counts
+        ):
+            raise ValueError(
+                "query retrieval degree exceeds the row universe"
+            )
+        retrieval_incidence_count = sum(
+            self.query_retrieval_neighbor_counts
+        )
+        retrieval_incidence_composition = _pair_incidence_composition(
+            pair_count=self.reference_pair_count,
+            incidence_count=retrieval_incidence_count,
+            selected_selected_capacity=selected_selected_capacity,
+            selected_to_unselected_capacity=(
+                selected_to_unselected_capacity
+            ),
+        )
+        if retrieval_incidence_composition is None:
+            raise ValueError(
+                "query retrieval incidences do not cover the reference"
+            )
+        if any(
+            candidate_count > retrieval_count
+            or candidate_count > self.reference_candidate_count
+            for retrieval_count, candidate_count in zip(
+                self.query_retrieval_neighbor_counts,
+                self.query_reference_candidate_counts,
+                strict=True,
+            )
+        ):
+            raise ValueError("query-local reference counts are impossible")
+        for digest in self.query_reference_candidate_sha256:
+            _require_sha256(digest, label="query reference digest")
+        if any(
+            (count == 0) != (digest == empty_digest)
+            for count, digest in zip(
+                self.query_reference_candidate_counts,
+                self.query_reference_candidate_sha256,
+                strict=True,
+            )
+        ):
+            raise ValueError("empty query evidence digest is invalid")
+        query_incidence_count = sum(
+            self.query_reference_candidate_counts
+        )
+        candidate_incidence_composition = _pair_incidence_composition(
+            pair_count=self.reference_candidate_count,
+            incidence_count=query_incidence_count,
+            selected_selected_capacity=selected_selected_capacity,
+            selected_to_unselected_capacity=(
+                selected_to_unselected_capacity
+            ),
+        )
+        if (
+            candidate_incidence_composition is None
+            or any(
+                candidate_count > retrieval_count
+                for candidate_count, retrieval_count in zip(
+                    candidate_incidence_composition,
+                    retrieval_incidence_composition,
+                    strict=True,
+                )
+            )
+        ):
+            raise ValueError(
+                "query-local incidences do not cover the reference"
+            )
+        expected_density_strata = _rank_density_strata(
+            query_indices=query_indices,
+            retrieval_neighbor_counts=(
+                self.query_retrieval_neighbor_counts
+            ),
+            reference_candidate_counts=(
+                self.query_reference_candidate_counts
+            ),
+            density_strata_count=(
+                self.audit_config.density_strata_count
+            ),
+        )
+        if self.density_strata_query_indices != expected_density_strata:
+            raise ValueError(
+                "density strata differ from exact-reference ranking"
+            )
+        expected_stratum_names = tuple(
+            name
+            for density_id, _ in expected_density_strata
+            for name in (
+                f"{density_id}__cosine_shell",
+                f"{density_id}__interior",
+            )
+        )
+        stratum_count_names = tuple(
+            name for name, _ in self.stratum_reference_candidate_counts
+        )
+        stratum_digest_names = tuple(
+            name for name, _ in self.stratum_reference_candidate_sha256
+        )
+        if (
+            stratum_count_names != expected_stratum_names
+            or stratum_digest_names != expected_stratum_names
+        ):
+            raise ValueError("candidate recall strata are invalid")
+        stratum_reference_counts = tuple(
+            count
+            for _, count in self.stratum_reference_candidate_counts
+        )
+        if any(
+            isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 0
+            or count > self.reference_candidate_count
+            for count in stratum_reference_counts
+        ):
+            raise ValueError("stratum reference counts are invalid")
+        for _, digest in self.stratum_reference_candidate_sha256:
+            _require_sha256(digest, label="stratum reference digest")
+        if any(
+            (count == 0) != (digest == empty_digest)
+            for (_, count), (_, digest) in zip(
+                self.stratum_reference_candidate_counts,
+                self.stratum_reference_candidate_sha256,
+                strict=True,
+            )
+        ):
+            raise ValueError("empty stratum evidence digest is invalid")
+        if not _density_stratum_incidence_is_valid(
+            pair_count=self.reference_candidate_count,
+            selected_selected_count=(
+                candidate_incidence_composition[0]
+            ),
+            row_count=self.row_count,
+            query_indices=query_indices,
+            query_pair_degrees=(
+                self.query_reference_candidate_counts
+            ),
+            density_strata=expected_density_strata,
+            joint_stratum_pair_counts=stratum_reference_counts,
+        ):
+            raise ValueError(
+                "candidate strata do not cover the reference"
+            )
+        if (
+            len(self.repeat_query_candidate_match_counts)
+            != self.audit_config.repeats
+            or len(self.repeat_stratum_candidate_match_counts)
+            != self.audit_config.repeats
+        ):
+            raise ValueError(
+                "local recall repeat evidence does not match repeats"
+            )
+        for repeat_counts in self.repeat_query_candidate_match_counts:
+            if len(repeat_counts) != len(query_indices) or any(
+                isinstance(match_count, bool)
+                or not isinstance(match_count, int)
+                or match_count < 0
+                or match_count > reference_count
+                for match_count, reference_count in zip(
+                    repeat_counts,
+                    self.query_reference_candidate_counts,
+                    strict=True,
+                )
+            ):
+                raise ValueError(
+                    "query-local repeat match counts are invalid"
+                )
+        for repeat_counts in self.repeat_stratum_candidate_match_counts:
+            if len(repeat_counts) != len(expected_stratum_names) or any(
+                isinstance(match_count, bool)
+                or not isinstance(match_count, int)
+                or match_count < 0
+                or match_count > reference_count
+                for match_count, reference_count in zip(
+                    repeat_counts,
+                    stratum_reference_counts,
+                    strict=True,
+                )
+            ):
+                raise ValueError(
+                    "stratum repeat match counts are invalid"
+                )
+        for repeat_index, candidate_count in enumerate(
+            self.repeat_candidate_counts
+        ):
+            repeat_query_match_counts = (
+                self.repeat_query_candidate_match_counts[repeat_index]
+            )
+            repeat_stratum_match_counts = (
+                self.repeat_stratum_candidate_match_counts[repeat_index]
+            )
+            repeat_incidence_composition = _pair_incidence_composition(
+                pair_count=candidate_count,
+                incidence_count=sum(repeat_query_match_counts),
+                selected_selected_capacity=selected_selected_capacity,
+                selected_to_unselected_capacity=(
+                    selected_to_unselected_capacity
+                ),
+            )
+            if not (
+                repeat_incidence_composition is not None
+                and all(
+                    subject_count <= reference_count
+                    for subject_count, reference_count in zip(
+                        repeat_incidence_composition,
+                        candidate_incidence_composition,
+                        strict=True,
+                    )
+                )
+                and _density_stratum_incidence_is_valid(
+                    pair_count=candidate_count,
+                    selected_selected_count=(
+                        repeat_incidence_composition[0]
+                    ),
+                    row_count=self.row_count,
+                    query_indices=query_indices,
+                    query_pair_degrees=repeat_query_match_counts,
+                    density_strata=expected_density_strata,
+                    joint_stratum_pair_counts=(
+                        repeat_stratum_match_counts
+                    ),
+                )
+            ):
+                raise ValueError(
+                    "local recall matches do not cover subject candidates"
+                )
 
-        for pair_count, match_count, recall in zip(
+        for pair_count, match_count, pair_digest, recall in zip(
             self.repeat_pair_counts,
             self.repeat_pair_match_counts,
+            self.repeat_pair_sha256,
             self.retrieval_boundary_recall,
             strict=True,
         ):
@@ -637,6 +1521,16 @@ class NeighborAuditResult:
                 or match_count > pair_count
             ):
                 raise ValueError("retrieval match count is impossible")
+            if (
+                pair_count
+                == match_count
+                == self.reference_pair_count
+                and pair_digest != self.reference_pair_sha256
+            ):
+                raise ValueError(
+                    "complete retrieval membership digest disagrees "
+                    "with the reference"
+                )
             expected_recall = (
                 None
                 if self.reference_pair_count == 0
@@ -658,14 +1552,23 @@ class NeighborAuditResult:
             ):
                 raise ValueError("retrieval recall disagrees with counts")
 
-        for candidate_count, recall in zip(
+        for candidate_count, candidate_digest, recall in zip(
             self.repeat_candidate_counts,
+            self.repeat_candidate_sha256,
             self.candidate_boundary_recall,
             strict=True,
         ):
             if candidate_count > self.reference_candidate_count:
                 raise ValueError(
                     "subject candidates exceed the exact reference"
+                )
+            if (
+                candidate_count == self.reference_candidate_count
+                and candidate_digest != self.reference_candidate_sha256
+            ):
+                raise ValueError(
+                    "complete candidate membership digest disagrees "
+                    "with the reference"
                 )
             expected_recall = (
                 None
@@ -695,6 +1598,13 @@ class NeighborAuditResult:
         )
         if self.deterministic is not expected_deterministic:
             raise ValueError("determinism flag disagrees with repeat digests")
+        if self.deterministic and (
+            len(set(self.repeat_query_candidate_match_counts)) != 1
+            or len(set(self.repeat_stratum_candidate_match_counts)) != 1
+        ):
+            raise ValueError(
+                "deterministic candidates have inconsistent local evidence"
+            )
         expected_missing = max(
             (
                 self.reference_candidate_count - count
@@ -718,11 +1628,384 @@ class NeighborAuditResult:
         expected_status = _expected_status(
             reference_candidate_count=self.reference_candidate_count,
             candidate_recalls=self.candidate_boundary_recall,
+            query_indices=query_indices,
+            query_reference_candidate_counts=(
+                self.query_reference_candidate_counts
+            ),
+            repeat_query_candidate_match_counts=(
+                self.repeat_query_candidate_match_counts
+            ),
+            density_strata=self.density_strata_query_indices,
+            stratum_reference_candidate_counts=(
+                stratum_reference_counts
+            ),
+            repeat_stratum_candidate_match_counts=(
+                self.repeat_stratum_candidate_match_counts
+            ),
             deterministic=self.deterministic,
             audit_config=self.audit_config,
         )
         if self.status != expected_status:
             raise ValueError("audit status disagrees with promotion gates")
+
+    @property
+    def coverage_contract_sha256(self) -> str:
+        return canonical_json_sha256(
+            {
+                "contract": LOCAL_RECALL_CONTRACT_VERSION,
+                "evaluator": COVERAGE_EVALUATOR_VERSION,
+                "spirallens_version": SPIRALLENS_VERSION,
+                "numpy_version": np.__version__,
+                "audit_config": self.audit_config.to_dict(),
+            }
+        )
+
+    def _query_recalls(
+        self,
+    ) -> tuple[tuple[float | None, ...], ...]:
+        return _query_recall_matrix(
+            self.query_reference_candidate_counts,
+            self.repeat_query_candidate_match_counts,
+        )
+
+    def _density_recalls(
+        self,
+    ) -> tuple[tuple[float | None, ...], ...]:
+        return _density_macro_recall(
+            query_indices=_query_axis(
+                self.query,
+                row_count=self.row_count,
+            ),
+            query_recalls=self._query_recalls(),
+            density_strata=self.density_strata_query_indices,
+        )
+
+    def _stratum_recalls(
+        self,
+    ) -> tuple[tuple[float | None, ...], ...]:
+        return _stratum_recall_matrix(
+            tuple(
+                count
+                for _, count in self.stratum_reference_candidate_counts
+            ),
+            self.repeat_stratum_candidate_match_counts,
+        )
+
+    def _repeat_worst_case_recall(
+        self,
+    ) -> tuple[float | None, ...]:
+        query_recalls = self._query_recalls()
+        density_recalls = self._density_recalls()
+        stratum_recalls = self._stratum_recalls()
+        values: list[float | None] = []
+        for repeat_index in range(self.audit_config.repeats):
+            aggregate = self.candidate_boundary_recall[repeat_index]
+            positive_query_values = tuple(
+                value
+                for value in query_recalls[repeat_index]
+                if value is not None
+            )
+            density_values = density_recalls[repeat_index]
+            stratum_values = stratum_recalls[repeat_index]
+            if (
+                aggregate is None
+                or not positive_query_values
+                or any(value is None for value in density_values)
+                or any(value is None for value in stratum_values)
+            ):
+                values.append(None)
+                continue
+            values.append(
+                min(
+                    aggregate,
+                    *positive_query_values,
+                    *(
+                        value
+                        for value in density_values
+                        if value is not None
+                    ),
+                    *(
+                        value
+                        for value in stratum_values
+                        if value is not None
+                    ),
+                )
+            )
+        return tuple(values)
+
+    @staticmethod
+    def _gate_status(
+        values: tuple[float, ...],
+        *,
+        threshold: float,
+        support_sufficient: bool,
+    ) -> Literal["pass", "fail", "insufficient"]:
+        if any(value < threshold for value in values):
+            return "fail"
+        if not support_sufficient or not values:
+            return "insufficient"
+        return "pass"
+
+    def coverage_gate_statuses(
+        self,
+    ) -> dict[str, Literal["pass", "fail", "insufficient"]]:
+        query_indices = _query_axis(
+            self.query,
+            row_count=self.row_count,
+        )
+        query_recalls = self._query_recalls()
+        density_recalls = self._density_recalls()
+        stratum_recalls = self._stratum_recalls()
+        eligible_count = sum(
+            count > 0 for count in self.query_reference_candidate_counts
+        )
+        aggregate_values = tuple(
+            value
+            for value in self.candidate_boundary_recall
+            if value is not None
+        )
+        query_values = tuple(
+            value
+            for repeat_values in query_recalls
+            for value in repeat_values
+            if value is not None
+        )
+        density_values = tuple(
+            value
+            for repeat_values in density_recalls
+            for value in repeat_values
+            if value is not None
+        )
+        stratum_values = tuple(
+            value
+            for repeat_values in stratum_recalls
+            for value in repeat_values
+            if value is not None
+        )
+        return {
+            "aggregate": self._gate_status(
+                aggregate_values,
+                threshold=self.audit_config.candidate_recall_min,
+                support_sufficient=(
+                    self.reference_candidate_count
+                    >= self.audit_config.minimum_reference_candidates
+                ),
+            ),
+            "query_local": self._gate_status(
+                query_values,
+                threshold=self.audit_config.query_local_recall_min,
+                support_sufficient=(
+                    eligible_count
+                    >= self.audit_config.minimum_eligible_queries
+                    and eligible_count
+                    >= int(
+                        np.ceil(
+                            len(query_indices)
+                            * self.audit_config
+                            .minimum_eligible_query_fraction
+                        )
+                    )
+                ),
+            ),
+            "density_macro": self._gate_status(
+                density_values,
+                threshold=self.audit_config.stratum_recall_min,
+                support_sufficient=all(
+                    len(members)
+                    >= self.audit_config
+                    .minimum_eligible_queries_per_density_stratum
+                    for _, members in self.density_strata_query_indices
+                ),
+            ),
+            "density_boundary_joint": self._gate_status(
+                stratum_values,
+                threshold=self.audit_config.stratum_recall_min,
+                support_sufficient=all(
+                    count
+                    >= self.audit_config
+                    .minimum_reference_candidates_per_stratum
+                    for _, count in (
+                        self.stratum_reference_candidate_counts
+                    )
+                ),
+            ),
+            "determinism": (
+                "pass" if self.deterministic else "fail"
+            ),
+        }
+
+    def coverage_evidence_dict(self) -> dict[str, object]:
+        query_indices = _query_axis(
+            self.query,
+            row_count=self.row_count,
+        )
+        query_recalls = self._query_recalls()
+        density_recalls = self._density_recalls()
+        stratum_recalls = self._stratum_recalls()
+        density_by_query = {
+            query_index: density_id
+            for density_id, members in self.density_strata_query_indices
+            for query_index in members
+        }
+        query_records = []
+        for position, query_index in enumerate(query_indices):
+            query_records.append(
+                {
+                    "query_index": query_index,
+                    "reference_retrieval_degree": (
+                        self.query_retrieval_neighbor_counts[position]
+                    ),
+                    "reference_candidate_degree": (
+                        self.query_reference_candidate_counts[position]
+                    ),
+                    "reference_candidate_sha256": (
+                        self.query_reference_candidate_sha256[position]
+                    ),
+                    "density_stratum": density_by_query.get(query_index),
+                    "repeat_match_counts": [
+                        repeat_counts[position]
+                        for repeat_counts in (
+                            self.repeat_query_candidate_match_counts
+                        )
+                    ],
+                    "repeat_recall": [
+                        repeat_values[position]
+                        for repeat_values in query_recalls
+                    ],
+                }
+            )
+        stratum_records = []
+        for position, ((stratum_id, count), (_, digest)) in enumerate(
+            zip(
+                self.stratum_reference_candidate_counts,
+                self.stratum_reference_candidate_sha256,
+                strict=True,
+            )
+        ):
+            stratum_records.append(
+                {
+                    "stratum_id": stratum_id,
+                    "reference_candidate_count": count,
+                    "reference_candidate_sha256": digest,
+                    "repeat_match_counts": [
+                        repeat_counts[position]
+                        for repeat_counts in (
+                            self.repeat_stratum_candidate_match_counts
+                        )
+                    ],
+                    "repeat_recall": [
+                        repeat_values[position]
+                        for repeat_values in stratum_recalls
+                    ],
+                }
+            )
+        zero_reference_queries = [
+            query_index
+            for query_index, count in zip(
+                query_indices,
+                self.query_reference_candidate_counts,
+                strict=True,
+            )
+            if count == 0
+        ]
+        query_minima = [
+            min(
+                value
+                for value in repeat_values
+                if value is not None
+            )
+            if any(value is not None for value in repeat_values)
+            else None
+            for repeat_values in query_recalls
+        ]
+        density_minima = [
+            min(
+                value
+                for value in repeat_values
+                if value is not None
+            )
+            if any(value is not None for value in repeat_values)
+            else None
+            for repeat_values in density_recalls
+        ]
+        stratum_minima = [
+            min(
+                value
+                for value in repeat_values
+                if value is not None
+            )
+            if any(value is not None for value in repeat_values)
+            else None
+            for repeat_values in stratum_recalls
+        ]
+        return {
+            "contract": LOCAL_RECALL_CONTRACT_VERSION,
+            "contract_sha256": self.coverage_contract_sha256,
+            "evaluator": {
+                "contract": COVERAGE_EVALUATOR_VERSION,
+                "spirallens_version": SPIRALLENS_VERSION,
+                "numpy_version": np.__version__,
+            },
+            "basis": {
+                "query_candidate_denominator": (
+                    "exact_reference_candidate_incidence"
+                ),
+                "selected_selected_pair_ownership": (
+                    "count_once_for_each_selected_endpoint"
+                ),
+                "zero_denominator_query": "null_not_pass",
+                "density_basis": (
+                    "exact_reference_retrieval_incident_degree"
+                ),
+                "density_assignment": (
+                    "stable_equal_count_rank_degree_then_global_row"
+                ),
+                "density_aggregation": (
+                    "macro_query_local_candidate_recall"
+                ),
+                "boundary_basis": (
+                    "exact_float64_cosine_slack"
+                ),
+                "boundary_shell": (
+                    "zero_to_width_inclusive"
+                ),
+                "interior": "greater_than_width",
+                "joint_cells": "density_x_boundary",
+                "pooling_override": False,
+            },
+            "zero_reference_queries": {
+                "count": len(zero_reference_queries),
+                "indices_sha256": canonical_json_sha256(
+                    {"indices": zero_reference_queries}
+                ),
+            },
+            "queries": query_records,
+            "density_strata": [
+                {
+                    "stratum_id": density_id,
+                    "query_indices": list(members),
+                    "repeat_macro_recall": [
+                        repeat_values[position]
+                        for repeat_values in density_recalls
+                    ],
+                }
+                for position, (density_id, members) in enumerate(
+                    self.density_strata_query_indices
+                )
+            ],
+            "candidate_strata": stratum_records,
+            "repeat_worst_query_recall": query_minima,
+            "repeat_worst_density_macro_recall": density_minima,
+            "repeat_worst_joint_stratum_recall": stratum_minima,
+            "repeat_worst_case_recall": list(
+                self._repeat_worst_case_recall()
+            ),
+            "gate_status": self.coverage_gate_statuses(),
+        }
+
+    @property
+    def coverage_evidence_sha256(self) -> str:
+        return canonical_json_sha256(self.coverage_evidence_dict())
 
     def identity_dict(self) -> dict[str, object]:
         candidate_config = self.candidate_config.to_dict()
@@ -752,12 +2035,26 @@ class NeighborAuditResult:
             ),
             "audit_config": audit_config,
             "audit_config_sha256": self.audit_config.sha256,
+            "coverage_contract": {
+                "contract": LOCAL_RECALL_CONTRACT_VERSION,
+                "evaluator": COVERAGE_EVALUATOR_VERSION,
+                "spirallens_version": SPIRALLENS_VERSION,
+                "numpy_version": np.__version__,
+                "sha256": self.coverage_contract_sha256,
+            },
             "query": query,
             "query_sha256": self.query.sha256,
             "reference_backend": reference_backend,
             "reference_backend_sha256": self.reference_backend.sha256,
             "subject_backend": subject_backend,
             "subject_backend_sha256": self.subject_backend.sha256,
+            "subject_runner": {
+                "contract": self.subject_runner_contract,
+                "exact_python_type_required": (
+                    self.subject_runner_contract
+                    == BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT
+                ),
+            },
             "exact_rerank": {
                 "contract": EXACT_RERANK_CONTRACT_VERSION,
                 "required": True,
@@ -798,6 +2095,10 @@ class NeighborAuditResult:
             "identity": self.identity_dict(),
             "audit_identity_sha256": self.identity_sha256,
             "exact_rerank": exact_rerank,
+            "coverage": {
+                **self.coverage_evidence_dict(),
+                "evidence_sha256": self.coverage_evidence_sha256,
+            },
             "reference": {
                 "retrieval_pair_count": self.reference_pair_count,
                 "retrieval_pair_sha256": self.reference_pair_sha256,
@@ -836,6 +2137,45 @@ class NeighborAuditResult:
                     )
                 ),
                 "deterministic": self.deterministic,
+                "worst_query_local_recall": min(
+                    (
+                        value
+                        for repeat_values in self._query_recalls()
+                        for value in repeat_values
+                        if value is not None
+                    ),
+                    default=None,
+                ),
+                "worst_density_macro_recall": min(
+                    (
+                        value
+                        for repeat_values in self._density_recalls()
+                        for value in repeat_values
+                        if value is not None
+                    ),
+                    default=None,
+                ),
+                "worst_density_boundary_joint_recall": min(
+                    (
+                        value
+                        for repeat_values in self._stratum_recalls()
+                        for value in repeat_values
+                        if value is not None
+                    ),
+                    default=None,
+                ),
+                "worst_case_recall": (
+                    None
+                    if any(
+                        value is None
+                        for value in self._repeat_worst_case_recall()
+                    )
+                    else min(
+                        value
+                        for value in self._repeat_worst_case_recall()
+                        if value is not None
+                    )
+                ),
             },
             "missing_candidates": {
                 "count": self.missing_candidate_pair_count,
@@ -852,6 +2192,10 @@ class NeighborAuditResult:
             },
             "promotion_contract": {
                 "candidate_boundary_recall_is_primary": True,
+                "query_local_gate_required": True,
+                "density_macro_gate_required": True,
+                "density_boundary_joint_gate_required": True,
+                "pooled_recall_can_override_local_failure": False,
                 "zero_reference_candidates": "insufficient",
                 "protocol_binding_required": True,
                 "cold_rebuild_required": True,
@@ -1058,8 +2402,44 @@ def audit_neighbor_backend(
     )
     reference_pair_set = set(reference_keys)
     reference_candidate_set = set(reference_candidates)
+    coverage_layout = _build_coverage_layout(
+        state_rows,
+        query=query,
+        reference_pairs=reference_keys,
+        reference_candidates=reference_candidates,
+        config=audit_settings,
+    )
+    query_reference_candidate_counts = tuple(
+        len(pairs)
+        for pairs in (
+            coverage_layout.reference_candidate_pairs_by_query
+        )
+    )
+    query_reference_candidate_sha256 = tuple(
+        _pair_sha256(pairs)
+        for pairs in (
+            coverage_layout.reference_candidate_pairs_by_query
+        )
+    )
+    stratum_reference_candidate_counts = tuple(
+        (stratum_id, len(pairs))
+        for stratum_id, pairs in coverage_layout.candidate_strata
+    )
+    stratum_reference_candidate_sha256 = tuple(
+        (stratum_id, _pair_sha256(pairs))
+        for stratum_id, pairs in coverage_layout.candidate_strata
+    )
+    query_reference_candidate_sets = tuple(
+        frozenset(pairs)
+        for pairs in coverage_layout.reference_candidate_pairs_by_query
+    )
+    stratum_reference_candidate_sets = tuple(
+        frozenset(pairs)
+        for _, pairs in coverage_layout.candidate_strata
+    )
 
     subject_descriptor: NeighborBackendDescriptor | None = None
+    subject_runner_contract: str | None = None
     built_backends: list[NeighborBackend] = []
     repeat_pair_counts: list[int] = []
     repeat_pair_match_counts: list[int] = []
@@ -1068,6 +2448,8 @@ def audit_neighbor_backend(
     repeat_candidate_digests: list[str] = []
     retrieval_recalls: list[float | None] = []
     candidate_recalls: list[float | None] = []
+    repeat_query_candidate_match_counts: list[tuple[int, ...]] = []
+    repeat_stratum_candidate_match_counts: list[tuple[int, ...]] = []
     missing_by_repeat: list[set[tuple[int, int]]] = []
 
     for _ in range(audit_settings.repeats):
@@ -1075,6 +2457,25 @@ def audit_neighbor_backend(
         if not isinstance(backend, NeighborBackend):
             raise TypeError(
                 "subject_backend_factory must return a NeighborBackend"
+            )
+        if (
+            protocol_binding.status == "frozen"
+            and type(backend) is not FaissHNSWBackend
+        ):
+            raise TypeError(
+                "frozen promotion audits require the built-in "
+                "FaissHNSWBackend implementation"
+            )
+        current_runner_contract = (
+            BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT
+            if type(backend) is FaissHNSWBackend
+            else CUSTOM_AUDIT_RUNNER_CONTRACT
+        )
+        if subject_runner_contract is None:
+            subject_runner_contract = current_runner_contract
+        elif current_runner_contract != subject_runner_contract:
+            raise ValueError(
+                "subject backend runner changed between cold rebuilds"
             )
         if any(backend is previous for previous in built_backends):
             raise ValueError(
@@ -1176,11 +2577,24 @@ def audit_neighbor_backend(
             else len(subject_candidate_set)
             / len(reference_candidate_set)
         )
+        repeat_query_candidate_match_counts.append(
+            tuple(
+                len(pairs & subject_candidate_set)
+                for pairs in query_reference_candidate_sets
+            )
+        )
+        repeat_stratum_candidate_match_counts.append(
+            tuple(
+                len(pairs & subject_candidate_set)
+                for pairs in stratum_reference_candidate_sets
+            )
+        )
         missing_by_repeat.append(
             reference_candidate_set - subject_candidate_set
         )
 
     assert subject_descriptor is not None
+    assert subject_runner_contract is not None
     deterministic = (
         subject_descriptor.deterministic
         and len(set(repeat_pair_digests)) == 1
@@ -1189,6 +2603,21 @@ def audit_neighbor_backend(
     status = _expected_status(
         reference_candidate_count=len(reference_candidate_set),
         candidate_recalls=tuple(candidate_recalls),
+        query_indices=coverage_layout.query_indices,
+        query_reference_candidate_counts=(
+            query_reference_candidate_counts
+        ),
+        repeat_query_candidate_match_counts=tuple(
+            repeat_query_candidate_match_counts
+        ),
+        density_strata=coverage_layout.density_strata,
+        stratum_reference_candidate_counts=tuple(
+            count
+            for _, count in stratum_reference_candidate_counts
+        ),
+        repeat_stratum_candidate_match_counts=tuple(
+            repeat_stratum_candidate_match_counts
+        ),
         deterministic=deterministic,
         audit_config=audit_settings,
     )
@@ -1214,6 +2643,7 @@ def audit_neighbor_backend(
         query=query,
         reference_backend=reference_descriptor,
         subject_backend=subject_descriptor,
+        subject_runner_contract=subject_runner_contract,
         reference_pair_count=len(reference_keys),
         reference_pair_sha256=_pair_sha256(reference_keys),
         reference_candidate_count=len(reference_candidates),
@@ -1225,6 +2655,28 @@ def audit_neighbor_backend(
         repeat_candidate_sha256=tuple(repeat_candidate_digests),
         retrieval_boundary_recall=tuple(retrieval_recalls),
         candidate_boundary_recall=tuple(candidate_recalls),
+        query_retrieval_neighbor_counts=(
+            coverage_layout.retrieval_neighbor_counts
+        ),
+        query_reference_candidate_counts=(
+            query_reference_candidate_counts
+        ),
+        query_reference_candidate_sha256=(
+            query_reference_candidate_sha256
+        ),
+        repeat_query_candidate_match_counts=tuple(
+            repeat_query_candidate_match_counts
+        ),
+        density_strata_query_indices=coverage_layout.density_strata,
+        stratum_reference_candidate_counts=(
+            stratum_reference_candidate_counts
+        ),
+        stratum_reference_candidate_sha256=(
+            stratum_reference_candidate_sha256
+        ),
+        repeat_stratum_candidate_match_counts=tuple(
+            repeat_stratum_candidate_match_counts
+        ),
         cold_rebuild=True,
         deterministic=deterministic,
         missing_candidate_pair_count=len(missing),
@@ -1308,6 +2760,7 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         "identity",
         "audit_identity_sha256",
         "exact_rerank",
+        "coverage",
         "reference",
         "repeats",
         "metrics",
@@ -1322,9 +2775,17 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
     repeats = payload.get("repeats")
     metrics = payload.get("metrics")
     missing = payload.get("missing_candidates")
+    coverage = payload.get("coverage")
     if not all(
         isinstance(value, Mapping)
-        for value in (identity, reference, repeats, metrics, missing)
+        for value in (
+            identity,
+            reference,
+            repeats,
+            metrics,
+            missing,
+            coverage,
+        )
     ):
         raise ValueError("neighbor audit nested objects are invalid")
     assert isinstance(identity, Mapping)
@@ -1332,12 +2793,29 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
     assert isinstance(repeats, Mapping)
     assert isinstance(metrics, Mapping)
     assert isinstance(missing, Mapping)
+    assert isinstance(coverage, Mapping)
+    coverage_evidence = dict(coverage)
+    coverage_evidence_sha256 = coverage_evidence.pop(
+        "evidence_sha256",
+        None,
+    )
+    _require_sha256(
+        coverage_evidence_sha256,
+        label="coverage.evidence_sha256",
+    )
+    if (
+        canonical_json_sha256(coverage_evidence)
+        != coverage_evidence_sha256
+    ):
+        raise ValueError("coverage evidence digest mismatch")
     input_payload = identity.get("input")
     candidate_payload = identity.get("candidate_config")
     audit_payload = identity.get("audit_config")
+    coverage_contract_payload = identity.get("coverage_contract")
     query_payload = identity.get("query")
     reference_backend_payload = identity.get("reference_backend")
     subject_backend_payload = identity.get("subject_backend")
+    subject_runner_payload = identity.get("subject_runner")
     protocol_payload = identity.get("protocol")
     source_payload = identity.get("source_identity")
     if not all(
@@ -1346,9 +2824,11 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
             input_payload,
             candidate_payload,
             audit_payload,
+            coverage_contract_payload,
             query_payload,
             reference_backend_payload,
             subject_backend_payload,
+            subject_runner_payload,
             protocol_payload,
             source_payload,
         )
@@ -1357,9 +2837,11 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
     assert isinstance(input_payload, Mapping)
     assert isinstance(candidate_payload, Mapping)
     assert isinstance(audit_payload, Mapping)
+    assert isinstance(coverage_contract_payload, Mapping)
     assert isinstance(query_payload, Mapping)
     assert isinstance(reference_backend_payload, Mapping)
     assert isinstance(subject_backend_payload, Mapping)
+    assert isinstance(subject_runner_payload, Mapping)
     assert isinstance(protocol_payload, Mapping)
     assert isinstance(source_payload, Mapping)
 
@@ -1370,6 +2852,29 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         )
     candidate_config = CandidateSearchConfig(**candidate_values)
     audit_config = NeighborAuditConfig(**dict(audit_payload))
+    expected_coverage_contract_sha256 = canonical_json_sha256(
+        {
+            "contract": LOCAL_RECALL_CONTRACT_VERSION,
+            "evaluator": COVERAGE_EVALUATOR_VERSION,
+            "spirallens_version": SPIRALLENS_VERSION,
+            "numpy_version": np.__version__,
+            "audit_config": audit_config.to_dict(),
+        }
+    )
+    if dict(coverage_contract_payload) != {
+        "contract": LOCAL_RECALL_CONTRACT_VERSION,
+        "evaluator": COVERAGE_EVALUATOR_VERSION,
+        "spirallens_version": SPIRALLENS_VERSION,
+        "numpy_version": np.__version__,
+        "sha256": expected_coverage_contract_sha256,
+    }:
+        raise ValueError("coverage contract binding is invalid")
+    if (
+        coverage.get("contract") != LOCAL_RECALL_CONTRACT_VERSION
+        or coverage.get("contract_sha256")
+        != expected_coverage_contract_sha256
+    ):
+        raise ValueError("coverage evidence contract is invalid")
     query_indices = query_payload.get("query_indices")
     query = NeighborQuery(
         cosine_min=query_payload.get("cosine_min"),
@@ -1380,6 +2885,19 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
             None if query_indices is None else tuple(query_indices)
         ),
     )
+    row_count = input_payload.get("row_count")
+    if (
+        isinstance(row_count, bool)
+        or not isinstance(row_count, int)
+        or row_count < 0
+    ):
+        raise ValueError("audit input row_count is invalid")
+    if (
+        query.query_indices is not None
+        and query.query_indices
+        and query.query_indices[-1] >= row_count
+    ):
+        raise ValueError("query index exceeds row_count")
     selection_payload = protocol_payload.get("query_selection")
     if selection_payload is not None and not isinstance(
         selection_payload,
@@ -1413,6 +2931,103 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         deviations=tuple(protocol_payload.get("deviations", ())),
         query_selection=query_selection,
     )
+    query_records = coverage.get("queries")
+    density_records = coverage.get("density_strata")
+    stratum_records = coverage.get("candidate_strata")
+    if not all(
+        isinstance(records, list)
+        for records in (
+            query_records,
+            density_records,
+            stratum_records,
+        )
+    ):
+        raise ValueError("coverage evidence records are invalid")
+    assert isinstance(query_records, list)
+    assert isinstance(density_records, list)
+    assert isinstance(stratum_records, list)
+    if not all(isinstance(record, Mapping) for record in query_records):
+        raise ValueError("query-local coverage records are invalid")
+    if not all(isinstance(record, Mapping) for record in density_records):
+        raise ValueError("density coverage records are invalid")
+    if not all(isinstance(record, Mapping) for record in stratum_records):
+        raise ValueError("candidate stratum records are invalid")
+    if (
+        len(density_records) != audit_config.density_strata_count
+        or len(stratum_records)
+        != 2 * audit_config.density_strata_count
+    ):
+        raise ValueError(
+            "coverage strata do not match density_strata_count"
+        )
+    expected_query_record_count = (
+        row_count
+        if query.query_indices is None
+        else len(query.query_indices)
+    )
+    if len(query_records) != expected_query_record_count:
+        raise ValueError(
+            "query-local evidence does not match the query axis"
+        )
+
+    repeat_lists = (
+        repeats.get("retrieval_pair_counts"),
+        repeats.get("retrieval_pair_match_counts"),
+        repeats.get("retrieval_pair_sha256"),
+        repeats.get("candidate_counts"),
+        repeats.get("candidate_sha256"),
+        metrics.get("retrieval_boundary_recall"),
+        metrics.get("candidate_boundary_recall"),
+    )
+    if not all(
+        isinstance(values, list)
+        and len(values) == audit_config.repeats
+        for values in repeat_lists
+    ):
+        raise ValueError("audit repeat arrays do not match repeats")
+
+    query_repeat_rows: list[tuple[object, ...]] = []
+    for repeat_index in range(audit_config.repeats):
+        repeat_row: list[object] = []
+        for record in query_records:
+            assert isinstance(record, Mapping)
+            match_counts = record.get("repeat_match_counts")
+            if (
+                not isinstance(match_counts, list)
+                or len(match_counts) != audit_config.repeats
+            ):
+                raise ValueError(
+                    "query-local repeat match counts are invalid"
+                )
+            repeat_row.append(match_counts[repeat_index])
+        query_repeat_rows.append(tuple(repeat_row))
+
+    stratum_repeat_rows: list[tuple[object, ...]] = []
+    for repeat_index in range(audit_config.repeats):
+        repeat_row = []
+        for record in stratum_records:
+            assert isinstance(record, Mapping)
+            match_counts = record.get("repeat_match_counts")
+            if (
+                not isinstance(match_counts, list)
+                or len(match_counts) != audit_config.repeats
+            ):
+                raise ValueError(
+                    "stratum repeat match counts are invalid"
+                )
+            repeat_row.append(match_counts[repeat_index])
+        stratum_repeat_rows.append(tuple(repeat_row))
+
+    density_strata: list[tuple[object, tuple[object, ...]]] = []
+    for record in density_records:
+        assert isinstance(record, Mapping)
+        indices = record.get("query_indices")
+        if not isinstance(indices, list):
+            raise ValueError("density query indices are invalid")
+        density_strata.append(
+            (record.get("stratum_id"), tuple(indices))
+        )
+
     sample = missing.get("sample")
     if not isinstance(sample, list):
         raise ValueError("missing candidate sample must be a list")
@@ -1436,6 +3051,9 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         ),
         subject_backend=_descriptor_from_payload(
             subject_backend_payload
+        ),
+        subject_runner_contract=subject_runner_payload.get(
+            "contract"
         ),
         reference_pair_count=reference.get("retrieval_pair_count"),
         reference_pair_sha256=reference.get("retrieval_pair_sha256"),
@@ -1462,6 +3080,39 @@ def _result_from_payload(payload: Mapping[str, object]) -> NeighborAuditResult:
         candidate_boundary_recall=tuple(
             metrics.get("candidate_boundary_recall", ())
         ),
+        query_retrieval_neighbor_counts=tuple(
+            record.get("reference_retrieval_degree")
+            for record in query_records
+        ),
+        query_reference_candidate_counts=tuple(
+            record.get("reference_candidate_degree")
+            for record in query_records
+        ),
+        query_reference_candidate_sha256=tuple(
+            record.get("reference_candidate_sha256")
+            for record in query_records
+        ),
+        repeat_query_candidate_match_counts=tuple(
+            query_repeat_rows
+        ),
+        density_strata_query_indices=tuple(density_strata),
+        stratum_reference_candidate_counts=tuple(
+            (
+                record.get("stratum_id"),
+                record.get("reference_candidate_count"),
+            )
+            for record in stratum_records
+        ),
+        stratum_reference_candidate_sha256=tuple(
+            (
+                record.get("stratum_id"),
+                record.get("reference_candidate_sha256"),
+            )
+            for record in stratum_records
+        ),
+        repeat_stratum_candidate_match_counts=tuple(
+            stratum_repeat_rows
+        ),
         cold_rebuild=repeats.get("cold_rebuild"),
         deterministic=metrics.get("deterministic"),
         missing_candidate_pair_count=missing.get("count"),
@@ -1483,7 +3134,10 @@ def _load_neighbor_audit_result(
 
     source = Path(path)
     try:
-        artifact = json.loads(source.read_text(encoding="utf-8"))
+        artifact = json.loads(
+            source.read_text(encoding="utf-8"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+        )
     except json.JSONDecodeError as error:
         raise ValueError(f"invalid neighbor audit JSON: {source}") from error
     if not isinstance(artifact, dict):
@@ -1501,7 +3155,9 @@ def _load_neighbor_audit_result(
         raise ValueError("neighbor audit schema is invalid")
     result = _result_from_payload(artifact)
     reconstructed = result.to_dict()
-    if reconstructed != artifact:
+    if canonical_json_sha256(reconstructed) != canonical_json_sha256(
+        artifact
+    ):
         raise ValueError("neighbor audit nested digest or field mismatch")
     if (
         expected_identity_sha256 is not None

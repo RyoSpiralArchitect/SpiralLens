@@ -23,6 +23,11 @@ from spirallens.metrics.candidate_pairs import (
     EXACT_RERANK_CONTRACT_VERSION,
     _iter_candidate_pairs_v0_1_oracle,
 )
+from spirallens.metrics.neighbor_audit import (
+    _expected_status,
+    _incident_pair_sets,
+    _rank_density_strata,
+)
 from spirallens.neighbors import (
     ExactBlockwiseBackend,
     NeighborBackendDescriptor,
@@ -206,6 +211,16 @@ def _candidate_config(*, block_size: int = 2) -> CandidateSearchConfig:
         drift_relative_divergence_min=1.5,
         block_size=block_size,
     )
+
+
+def _fixture_audit_config(
+    **overrides: object,
+) -> NeighborAuditConfig:
+    values: dict[str, object] = {
+        "boundary_shell_width": 0.000999,
+    }
+    values.update(overrides)
+    return NeighborAuditConfig(**values)
 
 
 def _audit_protocol_binding(
@@ -736,7 +751,9 @@ def test_candidate_boundary_audit_passes_only_after_exact_rerank() -> None:
         (1, 2),
     )
     candidate_config = _candidate_config()
-    audit_config = NeighborAuditConfig(candidate_recall_min=0.99)
+    audit_config = _fixture_audit_config(
+        candidate_recall_min=0.99
+    )
     result = audit_neighbor_backend(
         states,
         drifts,
@@ -760,11 +777,122 @@ def test_candidate_boundary_audit_passes_only_after_exact_rerank() -> None:
     assert result.repeat_candidate_counts == (2, 2)
     assert result.candidate_boundary_recall == (1.0, 1.0)
     assert result.retrieval_boundary_recall == (1.0, 1.0)
+    assert payload["metrics"]["worst_case_recall"] == 1.0
+    assert payload["coverage"]["repeat_worst_case_recall"] == [
+        1.0,
+        1.0,
+    ]
     assert payload["exact_rerank"]["false_persistable_candidates"] == 0
     assert payload["promotion_contract"][
         "actual_approximate_backend_promoted"
     ] is False
     assert payload["top_k_diagnostic"]["status"] == "not_run"
+
+
+def test_query_local_failure_cannot_be_hidden_by_pooled_recall() -> None:
+    audit_config = NeighborAuditConfig(
+        candidate_recall_min=0.99,
+        query_local_recall_min=0.99,
+        stratum_recall_min=0.0,
+        minimum_eligible_queries=2,
+        minimum_eligible_queries_per_density_stratum=1,
+        boundary_shell_width=0.1,
+    )
+
+    status = _expected_status(
+        reference_candidate_count=100,
+        candidate_recalls=(0.99, 0.99),
+        query_indices=(0, 1),
+        query_reference_candidate_counts=(99, 1),
+        repeat_query_candidate_match_counts=((99, 0), (99, 0)),
+        density_strata=(("density_rank_00_of_01", (0, 1)),),
+        stratum_reference_candidate_counts=(100,),
+        repeat_stratum_candidate_match_counts=((99,), (99,)),
+        deterministic=True,
+        audit_config=audit_config,
+    )
+
+    assert status == "fail"
+
+
+def test_joint_boundary_failure_cannot_be_hidden_by_pooled_recall() -> None:
+    audit_config = NeighborAuditConfig(
+        candidate_recall_min=0.99,
+        query_local_recall_min=0.0,
+        stratum_recall_min=0.99,
+        minimum_eligible_queries=1,
+        minimum_eligible_queries_per_density_stratum=1,
+        boundary_shell_width=0.1,
+    )
+
+    status = _expected_status(
+        reference_candidate_count=100,
+        candidate_recalls=(0.99, 0.99),
+        query_indices=(0,),
+        query_reference_candidate_counts=(100,),
+        repeat_query_candidate_match_counts=((99,), (99,)),
+        density_strata=(("density_rank_00_of_01", (0,)),),
+        stratum_reference_candidate_counts=(99, 1),
+        repeat_stratum_candidate_match_counts=(
+            (99, 0),
+            (99, 0),
+        ),
+        deterministic=True,
+        audit_config=audit_config,
+    )
+
+    assert status == "fail"
+
+
+def test_under_supported_required_stratum_is_insufficient() -> None:
+    audit_config = NeighborAuditConfig(
+        minimum_eligible_queries=1,
+        minimum_eligible_queries_per_density_stratum=1,
+        boundary_shell_width=0.1,
+        minimum_reference_candidates_per_stratum=2,
+    )
+
+    status = _expected_status(
+        reference_candidate_count=10,
+        candidate_recalls=(1.0, 1.0),
+        query_indices=(0,),
+        query_reference_candidate_counts=(10,),
+        repeat_query_candidate_match_counts=((10,), (10,)),
+        density_strata=(("density_rank_00_of_01", (0,)),),
+        stratum_reference_candidate_counts=(10, 1),
+        repeat_stratum_candidate_match_counts=(
+            (10, 1),
+            (10, 1),
+        ),
+        deterministic=True,
+        audit_config=audit_config,
+    )
+
+    assert status == "insufficient"
+
+
+def test_selected_selected_pair_has_two_query_local_owners() -> None:
+    incident = _incident_pair_sets(
+        ((0, 1), (1, 2)),
+        query_indices=(0, 1),
+    )
+
+    assert incident == (((0, 1),), ((0, 1), (1, 2)))
+    assert sum(map(len, incident)) == 3
+
+
+def test_density_rank_ties_use_global_row_index() -> None:
+    strata = _rank_density_strata(
+        query_indices=(9, 2, 7, 4),
+        retrieval_neighbor_counts=(3, 3, 3, 3),
+        reference_candidate_counts=(1, 1, 1, 1),
+        density_strata_count=2,
+    )
+
+    assert strata == (
+        ("density_rank_00_of_02", (2, 4)),
+        ("density_rank_01_of_02", (7, 9)),
+    )
 
 
 def test_candidate_boundary_audit_rejects_non_exact_reference_backend() -> None:
@@ -793,6 +921,37 @@ def test_candidate_boundary_audit_rejects_non_exact_reference_backend() -> None:
             candidate_config=candidate_config,
             audit_config=audit_config,
             reference_backend=fake_reference,  # type: ignore[arg-type]
+        )
+
+
+def test_custom_audit_runner_cannot_be_relabelled_frozen() -> None:
+    states, drifts = _candidate_fixture()
+    candidate_config = _candidate_config()
+    audit_config = _fixture_audit_config()
+    draft = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="custom-draft-runner",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+    )
+
+    with pytest.raises(ValueError, match="built-in Faiss runner"):
+        replace(
+            draft,
+            protocol_binding=replace(
+                draft.protocol_binding,
+                status="frozen",
+            ),
         )
 
 
@@ -916,6 +1075,287 @@ def test_repeat_membership_change_fails_determinism_gate() -> None:
     assert len(set(result.repeat_pair_sha256)) == 2
 
 
+def test_neighbor_audit_result_rejects_impossible_candidate_counts() -> None:
+    states, drifts = _candidate_fixture()
+    candidate_config = _candidate_config()
+    audit_config = _fixture_audit_config()
+    result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="subset-count",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="subject candidates exceed matched retrieval pairs",
+    ):
+        replace(
+            result,
+            repeat_pair_counts=(1, 1),
+            repeat_pair_match_counts=(1, 1),
+            retrieval_boundary_recall=(1 / 3, 1 / 3),
+        )
+
+    empty_pair_digest = hashlib.sha256(b"").hexdigest()
+    with pytest.raises(
+        ValueError,
+        match="pair-set digest disagrees with its count",
+    ):
+        replace(
+            result,
+            reference_pair_sha256=empty_pair_digest,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="complete retrieval membership digest disagrees",
+    ):
+        replace(
+            result,
+            repeat_pair_sha256=("f" * 64, "f" * 64),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="complete candidate membership digest disagrees",
+    ):
+        replace(
+            result,
+            repeat_candidate_sha256=("f" * 64, "f" * 64),
+        )
+
+    all_candidate_config = replace(
+        candidate_config,
+        drift_relative_divergence_min=0.0,
+    )
+    all_candidate_result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="all-retrieval-pairs-are-candidates",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            all_candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=all_candidate_config,
+        audit_config=audit_config,
+    )
+    assert (
+        all_candidate_result.reference_candidate_count
+        == all_candidate_result.reference_pair_count
+    )
+    with pytest.raises(
+        ValueError,
+        match="complete reference candidate digest disagrees",
+    ):
+        replace(
+            all_candidate_result,
+            reference_candidate_sha256="f" * 64,
+        )
+    with pytest.raises(
+        ValueError,
+        match="complete subject candidate digest disagrees",
+    ):
+        replace(
+            all_candidate_result,
+            repeat_candidate_sha256=("f" * 64, "f" * 64),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="reference candidates exceed reference retrieval pairs",
+    ):
+        replace(
+            result,
+            reference_pair_count=1,
+            repeat_pair_counts=(1, 1),
+            repeat_pair_match_counts=(1, 1),
+            retrieval_boundary_recall=(1.0, 1.0),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="reference retrieval pairs exceed the query scope",
+    ):
+        replace(
+            result,
+            reference_pair_count=10,
+            retrieval_boundary_recall=(0.3, 0.3),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="subject retrieval pairs exceed the query scope",
+    ):
+        replace(
+            result,
+            repeat_pair_counts=(10, 10),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="query retrieval degree exceeds the row universe",
+    ):
+        replace(
+            result,
+            query_retrieval_neighbor_counts=(4, 4, 4, 4),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="query retrieval incidences do not cover the reference",
+    ):
+        replace(
+            result,
+            query_retrieval_neighbor_counts=(0, 0, 0, 0),
+        )
+
+    impossible_candidate_incidence = (1, 1, 1, 0)
+    with pytest.raises(
+        ValueError,
+        match="query-local incidences do not cover the reference",
+    ):
+        replace(
+            result,
+            query_reference_candidate_counts=(
+                impossible_candidate_incidence
+            ),
+            repeat_query_candidate_match_counts=(
+                impossible_candidate_incidence,
+                impossible_candidate_incidence,
+            ),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="local recall matches do not cover subject candidates",
+    ):
+        replace(
+            result,
+            repeat_query_candidate_match_counts=(
+                impossible_candidate_incidence,
+                impossible_candidate_incidence,
+            ),
+        )
+
+    invalid_stratum_counts = list(
+        result.stratum_reference_candidate_counts
+    )
+    invalid_stratum_matches = [
+        list(values)
+        for values in result.repeat_stratum_candidate_match_counts
+    ]
+    stratum_index = next(
+        index
+        for index, (_, count) in enumerate(invalid_stratum_counts)
+        if count < result.reference_candidate_count
+    )
+    stratum_name, stratum_count = invalid_stratum_counts[stratum_index]
+    invalid_stratum_counts[stratum_index] = (
+        stratum_name,
+        stratum_count + 1,
+    )
+    for values in invalid_stratum_matches:
+        values[stratum_index] += 1
+    with pytest.raises(
+        ValueError,
+        match="candidate strata do not cover the reference",
+    ):
+        replace(
+            result,
+            stratum_reference_candidate_counts=tuple(
+                invalid_stratum_counts
+            ),
+            repeat_stratum_candidate_match_counts=tuple(
+                tuple(values) for values in invalid_stratum_matches
+            ),
+        )
+
+    partial_query_result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="partial-query-composition",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+        query_indices=(0, 1),
+    )
+    assert partial_query_result.query_retrieval_neighbor_counts == (2, 2)
+    assert partial_query_result.query_reference_candidate_counts == (1, 2)
+
+    with pytest.raises(
+        ValueError,
+        match="query-local incidences do not cover the reference",
+    ):
+        replace(
+            partial_query_result,
+            query_retrieval_neighbor_counts=(1, 2),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="local recall matches do not cover subject candidates",
+    ):
+        replace(
+            partial_query_result,
+            repeat_query_candidate_match_counts=((0, 2), (0, 2)),
+        )
+
+
+def test_neighbor_audit_result_rejects_out_of_range_query_index() -> None:
+    states, drifts = _candidate_fixture()
+    candidate_config = _candidate_config()
+    audit_config = _fixture_audit_config()
+    result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="query-index-bound",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+    )
+
+    with pytest.raises(ValueError, match="query index exceeds row_count"):
+        replace(
+            result,
+            query=replace(
+                result.query,
+                query_indices=(result.row_count,),
+            ),
+        )
+
+
 def test_neighbor_audit_artifact_is_atomic_and_tamper_evident(
     tmp_path: Path,
 ) -> None:
@@ -962,6 +1402,60 @@ def test_neighbor_audit_artifact_is_atomic_and_tamper_evident(
     with pytest.raises(ValueError, match="candidate recall disagrees"):
         load_neighbor_audit(output)
 
+    coverage_output = tmp_path / "coverage-tamper.json"
+    write_neighbor_audit(result, coverage_output)
+    coverage_payload = json.loads(
+        coverage_output.read_text(encoding="utf-8")
+    )
+    coverage_payload["coverage"]["queries"][0][
+        "reference_candidate_degree"
+    ] += 1
+    coverage_without_digest = dict(coverage_payload["coverage"])
+    coverage_without_digest.pop("evidence_sha256")
+    coverage_payload["coverage"]["evidence_sha256"] = (
+        canonical_json_sha256(coverage_without_digest)
+    )
+    audit_without_digest = dict(coverage_payload)
+    audit_without_digest.pop("audit_sha256")
+    coverage_payload["audit_sha256"] = canonical_json_sha256(
+        audit_without_digest
+    )
+    coverage_output.write_text(
+        json.dumps(coverage_payload),
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        ValueError,
+        match="query-local incidences do not cover",
+    ):
+        load_neighbor_audit(coverage_output)
+
+    legacy_output = tmp_path / "legacy-schema.json"
+    write_neighbor_audit(result, legacy_output)
+    legacy_payload = json.loads(
+        legacy_output.read_text(encoding="utf-8")
+    )
+    legacy_payload["schema_version"] = "spirallens.neighbor-audit.v0.1"
+    legacy_without_digest = dict(legacy_payload)
+    legacy_without_digest.pop("audit_sha256")
+    legacy_payload["audit_sha256"] = canonical_json_sha256(
+        legacy_without_digest
+    )
+    legacy_output.write_text(
+        json.dumps(legacy_payload),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="schema is invalid"):
+        load_neighbor_audit(legacy_output)
+
+    duplicate_output = tmp_path / "duplicate-key.json"
+    duplicate_output.write_text(
+        '{"status":"fail","status":"pass"}\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate key 'status'"):
+        load_neighbor_audit(duplicate_output)
+
     with pytest.raises(ValueError, match="determinism flag"):
         replace(result, deterministic=False)
     with pytest.raises(ValueError, match="reference_backend"):
@@ -972,6 +1466,49 @@ def test_neighbor_audit_artifact_is_atomic_and_tamper_evident(
                 name="forged-reference",
             ).descriptor,
         )
+
+
+def test_neighbor_audit_loader_rejects_json_type_normalization(
+    tmp_path: Path,
+) -> None:
+    states, drifts = _candidate_fixture()
+    candidate_config = _candidate_config()
+    audit_config = NeighborAuditConfig()
+    result = audit_neighbor_backend(
+        states,
+        drifts,
+        subject_backend_factory=lambda backend_states: _prepared_static_backend(
+            backend_states,
+            ((0, 1), (0, 2), (1, 2)),
+            name="json-type-normalization",
+        ),
+        protocol_binding=_audit_protocol_binding(
+            candidate_config,
+            audit_config,
+        ),
+        source_identity=_synthetic_source(),
+        candidate_config=candidate_config,
+        audit_config=audit_config,
+    )
+    output = tmp_path / "json-type-normalization.json"
+    write_neighbor_audit(result, output)
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    payload["promotion_contract"][
+        "actual_approximate_backend_promoted"
+    ] = 0
+    payload_without_sha = {
+        key: value
+        for key, value in payload.items()
+        if key != "audit_sha256"
+    }
+    payload["audit_sha256"] = canonical_json_sha256(payload_without_sha)
+    output.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        ValueError,
+        match="nested digest or field mismatch",
+    ):
+        load_neighbor_audit(output)
 
 
 def test_audit_identity_binds_run_and_comparison_group() -> None:
@@ -1011,17 +1548,56 @@ def test_tracked_neighbor_protocol_binds_unchanged_candidate_protocol() -> None:
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     candidate_path = root / payload["candidate_protocol"]["path"]
     candidate_sha256 = hashlib.sha256(candidate_path.read_bytes()).hexdigest()
+    candidate = yaml.safe_load(
+        candidate_path.read_text(encoding="utf-8")
+    )
+    gate_path = root / payload["recall_gate_contract"]["path"]
+    gate_sha256 = hashlib.sha256(gate_path.read_bytes()).hexdigest()
+    gate = yaml.safe_load(gate_path.read_text(encoding="utf-8"))
 
     assert payload["schema_version"] == (
-        "spirallens.neighbor-audit-protocol.v0.1"
+        "spirallens.neighbor-audit-protocol.v0.2"
     )
     assert payload["candidate_protocol"]["sha256"] == candidate_sha256
+    assert candidate["schema_version"] == (
+        "spirallens.candidate-protocol.v0.2"
+    )
+    assert candidate["status"] == "preregistered-draft"
+    assert candidate["discovery_contract"]["pairwise_processing"] == (
+        "exact_or_verified_receipt_gated_approximate"
+    )
+    assert candidate["discovery_contract"]["approximate_backend"][
+        "allowed_only_with_verified_neighbor_audit_receipt"
+    ] is True
+    assert payload["recall_gate_contract"] == {
+        "path": "protocols/neighbor_recall_gate_v0_1.yaml",
+        "sha256": gate_sha256,
+        "gate_id": "neighbor-recall-gate-v0.1",
+    }
+    assert gate["status"] == "frozen"
+    assert gate["claim_boundary"][
+        "backend_audit_outcome_declared_here"
+    ] is False
     assert payload["audit"]["candidate_boundary_recall_min"] == 0.99
+    assert payload["audit"]["query_local_recall_min"] == 0.99
+    assert payload["audit"]["stratum_recall_min"] == 0.99
     assert payload["audit"]["minimum_reference_candidates"] == 100
-    assert payload["audit"]["zero_reference_candidates"] == "insufficient"
+    assert payload["audit"]["minimum_eligible_queries"] == 100
+    assert payload["audit"]["density_strata_count"] == 4
     assert (
         payload["audit"][
-            "full_vocabulary_backend_promoted_by_this_protocol"
+            "minimum_reference_candidates_per_stratum"
+        ]
+        == 25
+    )
+    assert payload["audit"]["zero_reference_candidates"] == "insufficient"
+    assert (
+        payload["audit"]["pooled_recall_can_override_failed_group"]
+        is False
+    )
+    assert (
+        payload["audit"][
+            "issue_persistence_receipt_on_verified_pass"
         ]
         is False
     )
@@ -1046,6 +1622,15 @@ def test_tracked_neighbor_protocol_binds_unchanged_candidate_protocol() -> None:
     )
     assert payload["promotion_readiness"][
         "query_local_worst_case_recall_gate_implemented"
+    ] is True
+    assert payload["promotion_readiness"][
+        "frozen_recall_gate_methodology_available"
+    ] is True
+    assert payload["promotion_readiness"][
+        "atlas_execution_bindings_frozen"
+    ] is False
+    assert payload["promotion_readiness"][
+        "tracked_protocol_can_issue_persistence_receipt"
     ] is False
     assert payload["claim_boundary"][
         "approximate_backend_currently_audited"

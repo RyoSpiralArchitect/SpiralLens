@@ -67,9 +67,43 @@ def _print_json(payload: dict[str, Any]) -> None:
 def _load_yaml_mapping(path: Path, *, label: str) -> tuple[bytes, dict[str, Any]]:
     import yaml
 
+    class _UniqueKeyLoader(yaml.SafeLoader):
+        pass
+
+    def construct_mapping(
+        loader: _UniqueKeyLoader,
+        node: Any,
+        deep: bool = False,
+    ) -> dict[Any, Any]:
+        mapping: dict[Any, Any] = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError as error:
+                raise ValueError(
+                    f"{label} contains an invalid mapping key"
+                ) from error
+            if duplicate:
+                raise ValueError(
+                    f"{label} contains duplicate key {key!r}"
+                )
+            mapping[key] = loader.construct_object(
+                value_node,
+                deep=deep,
+            )
+        return mapping
+
+    _UniqueKeyLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping,
+    )
     source = path.resolve()
     payload_bytes = source.read_bytes()
-    payload = yaml.safe_load(payload_bytes)
+    try:
+        payload = yaml.load(payload_bytes, Loader=_UniqueKeyLoader)
+    except yaml.YAMLError as error:
+        raise ValueError(f"{label} is invalid YAML") from error
     if not isinstance(payload, dict):
         raise ValueError(f"{label} must contain a YAML mapping")
     return payload_bytes, payload
@@ -141,6 +175,125 @@ def _resolve_protocol_reference(
             f"protocol reference does not resolve uniquely: {declared_path}"
         )
     return existing[0]
+
+
+def _neighbor_audit_config_from_protocol(
+    document: dict[str, Any],
+) -> Any:
+    from spirallens.metrics import NeighborAuditConfig
+    from spirallens.metrics.neighbor_audit import (
+        LOCAL_RECALL_CONTRACT_VERSION,
+    )
+
+    audit = document.get("audit")
+    if not isinstance(audit, dict):
+        raise ValueError("neighbor protocol lacks audit settings")
+    config_fields = {
+        "candidate_boundary_recall_min",
+        "query_local_recall_min",
+        "stratum_recall_min",
+        "repeats",
+        "minimum_reference_candidates",
+        "minimum_eligible_queries",
+        "minimum_eligible_query_fraction",
+        "density_strata_count",
+        "minimum_eligible_queries_per_density_stratum",
+        "boundary_shell_width",
+        "minimum_reference_candidates_per_stratum",
+        "missing_pair_sample_limit",
+    }
+    policy_fields = {
+        "primary_metric",
+        "repeat_mode",
+        "zero_reference_candidates",
+        "top_k_recall_role",
+        "pooled_recall_can_override_failed_group",
+        "required_local_recall_contract",
+        "required_joint_strata",
+        "issue_persistence_receipt_on_verified_pass",
+        "protocol_binding_required",
+        "source_identity_required",
+    }
+    if set(audit) != config_fields | policy_fields:
+        raise ValueError(
+            "neighbor protocol audit fields differ from v0.2 schema"
+        )
+    if (
+        audit["primary_metric"] != "candidate_boundary_recall"
+        or audit["repeat_mode"] != "independent_cold_rebuild"
+        or audit["zero_reference_candidates"] != "insufficient"
+        or audit["top_k_recall_role"]
+        != "not_applicable_range_search"
+        or audit["pooled_recall_can_override_failed_group"] is not False
+        or audit["required_local_recall_contract"]
+        != LOCAL_RECALL_CONTRACT_VERSION
+        or audit["required_joint_strata"]
+        != "density_rank_x_cosine_boundary"
+        or audit["protocol_binding_required"] is not True
+        or audit["source_identity_required"] is not True
+    ):
+        raise ValueError(
+            "neighbor protocol audit methodology is invalid"
+        )
+    return NeighborAuditConfig(
+        candidate_recall_min=audit[
+            "candidate_boundary_recall_min"
+        ],
+        query_local_recall_min=audit["query_local_recall_min"],
+        stratum_recall_min=audit["stratum_recall_min"],
+        repeats=audit["repeats"],
+        minimum_reference_candidates=audit[
+            "minimum_reference_candidates"
+        ],
+        minimum_eligible_queries=audit[
+            "minimum_eligible_queries"
+        ],
+        minimum_eligible_query_fraction=audit[
+            "minimum_eligible_query_fraction"
+        ],
+        density_strata_count=audit["density_strata_count"],
+        minimum_eligible_queries_per_density_stratum=audit[
+            "minimum_eligible_queries_per_density_stratum"
+        ],
+        boundary_shell_width=audit["boundary_shell_width"],
+        minimum_reference_candidates_per_stratum=audit[
+            "minimum_reference_candidates_per_stratum"
+        ],
+        missing_pair_sample_limit=audit[
+            "missing_pair_sample_limit"
+        ],
+    )
+
+
+def _validate_recall_gate_contract(
+    *,
+    protocol_path: Path,
+    document: dict[str, Any],
+    audit_config: Any,
+) -> tuple[Path, bytes, dict[str, Any]]:
+    from spirallens.metrics.neighbor_receipt import (
+        validate_recall_gate_contract,
+    )
+
+    gate_path, gate_bytes, gate = validate_recall_gate_contract(
+        audit_config=audit_config,
+        protocol_path=protocol_path,
+        protocol=document,
+    )
+    return gate_path, gate_bytes, dict(gate)
+
+
+def _neighbor_audit_exit_code(
+    *,
+    protocol_status: str,
+    audit_status: str,
+    promotion_eligible: bool,
+) -> int:
+    if audit_status != "pass":
+        return 2
+    if protocol_status == "frozen" and not promotion_eligible:
+        return 2
+    return 0
 
 
 def _calibration_payload(report: Any, *, samples: int) -> dict[str, Any]:
@@ -600,11 +753,8 @@ def _run_candidates(args: argparse.Namespace) -> int:
 
 
 def _run_neighbor_audit(args: argparse.Namespace) -> int:
-    import yaml
-
     from spirallens.atlas import load_manifest
     from spirallens.metrics import (
-        NeighborAuditConfig,
         NeighborAuditProtocolBinding,
         NeighborQuerySelectionContract,
         atlas_global_row_key_sha256,
@@ -613,6 +763,10 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         write_neighbor_audit,
     )
     from spirallens.metrics.candidate_pairs import _load_manifest_array
+    from spirallens.metrics.neighbor_receipt import (
+        _candidate_config_from_bytes,
+        validate_neighbor_protocol_static_contract,
+    )
     from spirallens.neighbors import FaissHNSWBackend, canonical_json_sha256
 
     protocol_path = args.protocol.resolve()
@@ -632,11 +786,12 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     protocol_status = document.get("status")
     if (
         document.get("schema_version")
-        != "spirallens.neighbor-audit-protocol.v0.1"
+        != "spirallens.neighbor-audit-protocol.v0.2"
         or not isinstance(protocol_id, str)
         or protocol_status not in {"preregistered-draft", "frozen"}
     ):
         raise ValueError("neighbor audit protocol identity is invalid")
+    validate_neighbor_protocol_static_contract(document)
     if (
         protocol_status == "frozen"
         and args.expected_protocol_sha256 is None
@@ -662,35 +817,97 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError(
             "candidate protocol bytes differ from neighbor protocol binding"
         )
-    try:
-        candidate_document = yaml.safe_load(candidate_bytes)
-    except yaml.YAMLError as error:
-        raise ValueError("candidate protocol YAML is invalid") from error
-    if not isinstance(candidate_document, dict):
-        raise ValueError(
-            "candidate protocol must contain a YAML mapping"
+    candidate_document, candidate_config = (
+        _candidate_config_from_bytes(
+            candidate_bytes,
+            layer_index=args.layer,
+            require_frozen=protocol_status == "frozen",
         )
-    candidate_config = replace(
-        _candidate_config_from_protocol_document(
-            candidate_document
-        ),
-        layer_indices=(args.layer,),
     )
-    audit_values = document.get("audit")
-    if not isinstance(audit_values, dict):
-        raise ValueError("neighbor protocol lacks audit settings")
-    audit_config = NeighborAuditConfig(
-        candidate_recall_min=audit_values.get(
-            "candidate_boundary_recall_min"
-        ),
-        repeats=audit_values.get("repeats"),
-        minimum_reference_candidates=audit_values.get(
-            "minimum_reference_candidates"
-        ),
-        missing_pair_sample_limit=audit_values.get(
-            "missing_pair_sample_limit"
-        ),
+    if (
+        candidate_binding.get("declared_id")
+        != candidate_document.get("protocol_id")
+    ):
+        raise ValueError(
+            "candidate protocol ID differs from neighbor binding"
+        )
+    audit_config = _neighbor_audit_config_from_protocol(document)
+    gate_path, gate_bytes, gate_document = (
+        _validate_recall_gate_contract(
+            protocol_path=protocol_path,
+            document=document,
+            audit_config=audit_config,
+        )
     )
+    audit_values = document["audit"]
+    assert isinstance(audit_values, dict)
+    readiness = document.get("promotion_readiness")
+    expected_readiness_fields = {
+        "receipt_mechanism_implemented",
+        "full_index_subset_query_audit_implemented",
+        "frozen_recall_gate_methodology_available",
+        "query_local_worst_case_recall_gate_implemented",
+        "atlas_execution_bindings_frozen",
+        "tracked_protocol_can_issue_persistence_receipt",
+    }
+    if (
+        not isinstance(readiness, dict)
+        or set(readiness) != expected_readiness_fields
+        or readiness["receipt_mechanism_implemented"] is not True
+        or readiness[
+            "full_index_subset_query_audit_implemented"
+        ]
+        is not True
+        or readiness[
+            "frozen_recall_gate_methodology_available"
+        ]
+        is not True
+        or readiness[
+            "query_local_worst_case_recall_gate_implemented"
+        ]
+        is not True
+    ):
+        raise ValueError(
+            "neighbor protocol promotion readiness is invalid"
+        )
+    if protocol_status == "frozen":
+        if (
+            candidate_document.get("status") != "frozen"
+            or readiness["atlas_execution_bindings_frozen"] is not True
+            or readiness[
+                "tracked_protocol_can_issue_persistence_receipt"
+            ]
+            is not True
+            or audit_values[
+                "issue_persistence_receipt_on_verified_pass"
+            ]
+            is not True
+        ):
+            raise ValueError(
+                "frozen neighbor protocol is not promotion-ready"
+            )
+    elif (
+        readiness["atlas_execution_bindings_frozen"] is not False
+        or readiness[
+            "tracked_protocol_can_issue_persistence_receipt"
+        ]
+        is not False
+        or audit_values[
+            "issue_persistence_receipt_on_verified_pass"
+        ]
+        is not False
+    ):
+        raise ValueError(
+            "draft neighbor protocol cannot authorize promotion"
+        )
+    faiss_config = _faiss_config_from_neighbor_protocol(document)
+    if (
+        faiss_config.score_margin
+        != audit_config.boundary_shell_width
+    ):
+        raise ValueError(
+            "boundary_shell_width must equal subject score_margin"
+        )
 
     requested_manifest = args.manifest.resolve()
     manifest_path = (
@@ -781,6 +998,10 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             raise ValueError(
                 "candidate protocol changed during binding preparation"
             )
+        if gate_path.read_bytes() != gate_bytes:
+            raise ValueError(
+                "recall gate contract changed during binding preparation"
+            )
         _print_json(
             {
                 "command": "neighbor-audit",
@@ -794,8 +1015,18 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
                 "candidate_protocol_sha256": hashlib.sha256(
                     candidate_bytes
                 ).hexdigest(),
+                "recall_gate_id": gate_document["gate_id"],
+                "recall_gate_sha256": hashlib.sha256(
+                    gate_bytes
+                ).hexdigest(),
+                "local_recall_contract": gate_document[
+                    "local_recall_contract"
+                ],
+                "audit_config": audit_config.to_dict(),
+                "audit_config_sha256": audit_config.sha256,
+                "query_selection_sha256": selection.sha256,
                 "promotion_policy_declared": audit_values.get(
-                    "full_vocabulary_backend_promoted_by_this_protocol"
+                    "issue_persistence_receipt_on_verified_pass"
                 ),
             }
         )
@@ -815,7 +1046,6 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         deviations=tuple(sorted(set(deviations))),
         query_selection=selection,
     )
-    faiss_config = _faiss_config_from_neighbor_protocol(document)
     result = audit_neighbor_backend_from_manifest(
         manifest_path,
         layer_index=args.layer,
@@ -834,6 +1064,8 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError("neighbor protocol changed during audit")
     if candidate_path.read_bytes() != candidate_bytes:
         raise ValueError("candidate protocol changed during audit")
+    if gate_path.read_bytes() != gate_bytes:
+        raise ValueError("recall gate contract changed during audit")
     output_path = write_neighbor_audit(
         result,
         args.output,
@@ -846,18 +1078,32 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             expected_audit_sha256=result.sha256,
             expected_protocol_sha256=protocol_sha256,
         )
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as error:
         promotion_eligible = False
+        promotion_ineligibility_reason = str(error)
     else:
         promotion_eligible = True
+        promotion_ineligibility_reason = None
     _print_json(
         {
             "command": "neighbor-audit",
             "status": result.status,
             "promotion_eligible": promotion_eligible,
+            "promotion_ineligibility_reason": (
+                promotion_ineligibility_reason
+            ),
             "audit": str(output_path.resolve()),
             "audit_sha256": result.sha256,
             "audit_identity_sha256": result.identity_sha256,
+            "coverage_contract_sha256": (
+                result.coverage_contract_sha256
+            ),
+            "coverage_evidence_sha256": (
+                result.coverage_evidence_sha256
+            ),
+            "coverage_gate_status": (
+                result.coverage_gate_statuses()
+            ),
             "comparison_group": group_key,
             "reference_candidate_count": (
                 result.reference_candidate_count
@@ -867,7 +1113,11 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
             ),
         }
     )
-    return 0
+    return _neighbor_audit_exit_code(
+        protocol_status=protocol_status,
+        audit_status=result.status,
+        promotion_eligible=promotion_eligible,
+    )
 
 
 def _add_calibrate_parser(subparsers: Any) -> None:

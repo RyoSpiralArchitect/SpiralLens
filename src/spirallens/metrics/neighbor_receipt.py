@@ -12,6 +12,8 @@ from typing import Mapping
 import yaml
 
 from spirallens.neighbors import (
+    FAISS_HNSW_BACKEND_ID,
+    FAISS_HNSW_BACKEND_VERSION,
     NeighborBackendDescriptor,
     NeighborIndexBuildReceipt,
     NeighborQuery,
@@ -23,15 +25,75 @@ from .candidate_pairs import (
     CandidateSearchConfig,
 )
 from .neighbor_audit import (
+    BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT,
+    COVERAGE_EVALUATOR_VERSION,
+    LOCAL_RECALL_CONTRACT_VERSION,
+    NeighborAuditConfig,
     NeighborAuditResult,
     load_neighbor_audit_result,
 )
 
 
 NEIGHBOR_AUDIT_RECEIPT_SCHEMA_VERSION = (
-    "spirallens.neighbor-audit-receipt.v0.1"
+    "spirallens.neighbor-audit-receipt.v0.2"
+)
+NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
+    "spirallens.neighbor-audit-protocol.v0.2"
+)
+REQUIRED_COVERAGE_GATES = (
+    "aggregate",
+    "query_local",
+    "density_macro",
+    "density_boundary_joint",
+    "determinism",
 )
 _VERIFIED_RECEIPT_TOKEN = object()
+
+
+class _UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate mapping keys."""
+
+    def construct_mapping(
+        self,
+        node: yaml.Node,
+        deep: bool = False,
+    ) -> object:
+        if not isinstance(node, yaml.MappingNode):
+            raise yaml.constructor.ConstructorError(
+                None,
+                None,
+                "expected a mapping node",
+                node.start_mark,
+            )
+        self.flatten_mapping(node)
+        mapping: dict[object, object] = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError as error:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    "found an unhashable mapping key",
+                    key_node.start_mark,
+                ) from error
+            if duplicate:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    f"found duplicate key {key!r}",
+                    key_node.start_mark,
+                )
+            mapping[key] = self.construct_object(value_node, deep=deep)
+        return mapping
+
+
+def _strict_yaml_load(payload_bytes: bytes, *, label: str) -> object:
+    try:
+        return yaml.load(payload_bytes, Loader=_UniqueKeySafeLoader)
+    except yaml.YAMLError as error:
+        raise ValueError(f"{label} YAML is invalid: {error}") from error
 
 
 def _require_sha256(value: object, *, label: str) -> str:
@@ -58,12 +120,10 @@ def _load_protocol_mapping(
     path: Path,
 ) -> tuple[bytes, Mapping[str, object]]:
     protocol_bytes = path.read_bytes()
-    try:
-        protocol = yaml.safe_load(protocol_bytes)
-    except yaml.YAMLError as error:
-        raise ValueError(
-            f"invalid neighbor audit protocol: {path}"
-        ) from error
+    protocol = _strict_yaml_load(
+        protocol_bytes,
+        label=f"neighbor audit protocol {path}",
+    )
     if not isinstance(protocol, Mapping):
         raise ValueError(
             "neighbor audit protocol must contain a mapping"
@@ -100,13 +160,108 @@ def _candidate_config_from_bytes(
     payload_bytes: bytes,
     *,
     layer_index: int,
+    require_frozen: bool = True,
 ) -> tuple[Mapping[str, object], CandidateSearchConfig]:
-    try:
-        payload = yaml.safe_load(payload_bytes)
-    except yaml.YAMLError as error:
-        raise ValueError("candidate protocol YAML is invalid") from error
+    payload = _strict_yaml_load(
+        payload_bytes,
+        label="candidate protocol",
+    )
     if not isinstance(payload, Mapping):
         raise ValueError("candidate protocol must contain a mapping")
+    expected_top_level = {
+        "schema_version",
+        "protocol_id",
+        "status",
+        "claim_ceiling",
+        "scope",
+        "candidate_search",
+        "discovery_contract",
+        "required_followup_before_level_2",
+        "semantic_evaluation",
+    }
+    expected_scope = {
+        "discovery_unit": [
+            "token_id",
+            "fixed_context_ids",
+            "token_position",
+            "layer_index",
+        ],
+        "pythia_70m_role": "plumbing_smoke",
+        "pythia_160m_role": "first_scientific_target",
+        "atlas_schema_version": "spirallens.activation_atlas.v2",
+        "excluded_from_v0_2": [
+            "semantic_labels_during_discovery",
+            "sae_features_during_discovery",
+            "projected_curl",
+            "training_checkpoint_trajectory",
+            "transfer_operator",
+        ],
+    }
+    expected_discovery_contract = {
+        "input_state": "resid_pre",
+        "update_vector": "resid_post_minus_resid_pre",
+        "pairwise_processing": (
+            "exact_or_verified_receipt_gated_approximate"
+        ),
+        "exact_backend": {
+            "backend_id": "spirallens.exact-blockwise-reference",
+            "row_guard": "fail_loud_above_10000",
+        },
+        "approximate_backend": {
+            "allowed_only_with_verified_neighbor_audit_receipt": True,
+            "receipt_scope": "same_full_input_index_group",
+            "full_index_required": True,
+            "exact_rerank_required": True,
+            "persistence_without_verified_receipt": "forbidden",
+        },
+        "full_pair_matrix_persisted": False,
+        "semantic_annotation_used": False,
+        "sae_annotation_used": False,
+        "projection_used": False,
+        "output_record_name": "candidate",
+        "candidate_is_not_verified_vortex": True,
+        "zero_candidate_run_is_valid": True,
+    }
+    expected_followup = [
+        "basis_reparameterization",
+        "orientation_reversal",
+        "radius_sweep",
+        "sampling_density_sweep",
+        "rope_accounting",
+        "layernorm_accounting",
+        "fixed_routing_accounting",
+        "matched_null",
+    ]
+    expected_semantic_evaluation = {
+        "stage": "post_discovery_only",
+        "storage": "separate_sha256_bound_sidecar",
+        "required_split_for_confirmatory_claim": "held_out",
+    }
+    if (
+        set(payload) != expected_top_level
+        or payload.get("schema_version")
+        != "spirallens.candidate-protocol.v0.2"
+        or not isinstance(payload.get("protocol_id"), str)
+        or not payload["protocol_id"]
+        or payload.get("status")
+        not in {"preregistered-draft", "frozen"}
+        or (
+            require_frozen
+            and payload.get("status") != "frozen"
+        )
+        or payload.get("claim_ceiling") != 1
+        or payload.get("scope") != expected_scope
+        or payload.get("discovery_contract")
+        != expected_discovery_contract
+        or payload.get("required_followup_before_level_2")
+        != expected_followup
+        or payload.get("semantic_evaluation")
+        != expected_semantic_evaluation
+    ):
+        raise ValueError(
+            "candidate protocol does not authorize receipt-gated "
+            "approximate discovery"
+        )
     search = payload.get("candidate_search")
     if not isinstance(search, Mapping):
         raise ValueError(
@@ -133,6 +288,473 @@ def _candidate_config_from_bytes(
     return payload, config
 
 
+def validate_recall_gate_contract(
+    *,
+    audit_config: NeighborAuditConfig,
+    protocol_path: Path,
+    protocol: Mapping[str, object],
+) -> tuple[Path, bytes, Mapping[str, object]]:
+    """Validate the separately frozen local-recall methodology contract."""
+
+    if not isinstance(audit_config, NeighborAuditConfig):
+        raise TypeError("audit_config must be a NeighborAuditConfig")
+    binding = protocol.get("recall_gate_contract")
+    if (
+        not isinstance(binding, Mapping)
+        or set(binding) != {"path", "sha256", "gate_id"}
+    ):
+        raise ValueError(
+            "frozen protocol is missing an exact recall_gate_contract binding"
+        )
+    gate_path = _resolve_protocol_reference(
+        protocol_path,
+        binding.get("path"),
+    )
+    gate_bytes = gate_path.read_bytes()
+    if hashlib.sha256(gate_bytes).hexdigest() != binding.get("sha256"):
+        raise ValueError(
+            "recall gate bytes differ from frozen protocol binding"
+        )
+    gate = _strict_yaml_load(gate_bytes, label="recall gate")
+    if not isinstance(gate, Mapping):
+        raise ValueError("recall gate must contain a mapping")
+    expected_top_level = {
+        "schema_version",
+        "gate_id",
+        "status",
+        "local_recall_contract",
+        "methodology",
+        "density",
+        "boundary",
+        "thresholds",
+        "support",
+        "gate_logic",
+        "evidence",
+        "claim_boundary",
+    }
+    if (
+        set(gate) != expected_top_level
+        or gate.get("schema_version")
+        != "spirallens.neighbor-recall-gate.v0.1"
+        or gate.get("gate_id") != binding.get("gate_id")
+        or gate.get("status") != "frozen"
+        or gate.get("local_recall_contract")
+        != LOCAL_RECALL_CONTRACT_VERSION
+    ):
+        raise ValueError(
+            "recall gate identity differs from its frozen binding"
+        )
+
+    expected_methodology = {
+        "subject_output_unit": "canonical_unordered_global_row_pair",
+        "reference_retrieval_set": (
+            "exact_state_boundary_pairs_touching_selected_queries"
+        ),
+        "reference_candidate_set": (
+            "exact_reranked_reference_candidates"
+        ),
+        "subject_candidate_set": (
+            "subject_proposals_after_shared_exact_rerank"
+        ),
+        "subject_candidates_must_be_subset_of_reference_candidates": True,
+        "query_local_denominator": (
+            "exact_reference_candidate_incidence"
+        ),
+        "sampled_query_pair_ownership": {
+            "query_local": "count_once_for_each_selected_endpoint",
+            "pooled_pair_sets": "count_once",
+        },
+        "zero_denominator_query": "null_not_pass",
+        "low_support_query_removed_from_worst_case": False,
+        "repeat_pooling_or_union_override": "forbidden",
+    }
+    expected_density = {
+        "basis": "exact_reference_retrieval_incident_degree",
+        "subject_output_used_for_assignment": False,
+        "eligible_queries": (
+            "selected_queries_with_positive_reference_candidate_degree"
+        ),
+        "assignment": "stable_equal_count_rank",
+        "sort_key": [
+            "exact_reference_retrieval_incident_degree_ascending",
+            "global_row_index_ascending",
+        ],
+        "stratum_id": "density_rank_index_of_count",
+        "aggregation": "macro_query_local_candidate_recall",
+        "micro_recall_role": "diagnostic_only",
+    }
+    expected_boundary = {
+        "candidate_universe": "exact_reranked_reference_candidates",
+        "score_source": "original_states_canonical_float64_cosine",
+        "subject_score_used_for_assignment": False,
+        "slack": "exact_cosine_minus_candidate_cosine_min",
+        "strata": {
+            "cosine_shell": {
+                "lower": 0.0,
+                "lower_inclusive": True,
+                "upper_source": "thresholds.boundary_shell_width",
+                "upper_inclusive": True,
+            },
+            "interior": {
+                "lower_source": "thresholds.boundary_shell_width",
+                "lower_inclusive": False,
+                "upper": "unbounded",
+            },
+        },
+        "joint_cells": "density_stratum_x_boundary_stratum",
+        "pair_membership_within_joint_cell": "unique",
+        "selected_pair_may_enter_two_density_cells": True,
+    }
+    config = audit_config
+    expected_thresholds = {
+        "aggregate_candidate_recall_min": config.candidate_recall_min,
+        "query_local_recall_min": config.query_local_recall_min,
+        "density_macro_and_joint_stratum_recall_min": (
+            config.stratum_recall_min
+        ),
+        "boundary_shell_width": config.boundary_shell_width,
+        "boundary_shell_width_must_equal_subject_score_margin": True,
+        "repeats": config.repeats,
+        "repeat_mode": "independent_cold_rebuild_same_frozen_seed",
+    }
+    expected_support = {
+        "minimum_reference_candidates": (
+            config.minimum_reference_candidates
+        ),
+        "minimum_eligible_queries": config.minimum_eligible_queries,
+        "minimum_eligible_query_fraction": (
+            config.minimum_eligible_query_fraction
+        ),
+        "density_strata_count": config.density_strata_count,
+        "minimum_eligible_queries_per_density_stratum": (
+            config.minimum_eligible_queries_per_density_stratum
+        ),
+        "minimum_reference_candidates_per_joint_stratum": (
+            config.minimum_reference_candidates_per_stratum
+        ),
+        "zero_reference_candidates": "insufficient",
+        "empty_required_cell": "insufficient",
+        "under_supported_required_cell": "insufficient",
+    }
+    expected_gate_logic = {
+        "required": [
+            "aggregate_candidate_recall_each_repeat",
+            "query_local_recall_each_eligible_query_each_repeat",
+            "density_macro_recall_each_stratum_each_repeat",
+            "density_boundary_joint_recall_each_cell_each_repeat",
+            "deterministic_repeat_membership",
+            "support_requirements",
+        ],
+        "overall_precedence": [
+            "any_known_failure_is_fail",
+            "otherwise_any_missing_or_insufficient_support_is_insufficient",
+            "otherwise_all_required_gates_pass",
+        ],
+        "worst_case_reduction": (
+            "minimum_over_all_required_cells_and_repeats"
+        ),
+        "pooled_recall_can_override_failed_cell": False,
+        "missing_or_not_run_can_issue_receipt": False,
+    }
+    expected_evidence = {
+        "evaluator_contract": COVERAGE_EVALUATOR_VERSION,
+        "evaluator_runtime_bound_in_audit_identity": [
+            "spirallens_version",
+            "numpy_version",
+        ],
+        "query_record_fields": [
+            "query_index",
+            "reference_retrieval_degree",
+            "reference_candidate_degree",
+            "reference_candidate_sha256",
+            "density_stratum",
+            "repeat_match_counts",
+            "repeat_recall",
+        ],
+        "joint_stratum_record_fields": [
+            "stratum_id",
+            "reference_candidate_count",
+            "reference_candidate_sha256",
+            "repeat_match_counts",
+            "repeat_recall",
+        ],
+        "zero_reference_query_count_required": True,
+        "zero_reference_query_indices_sha256_required": True,
+        "coverage_contract_sha256_required": True,
+        "coverage_evidence_sha256_required": True,
+        "audit_and_protocol_digests_must_be_supplied_out_of_band_for_receipt": (
+            True
+        ),
+    }
+    expected_claim_boundary = {
+        "passing_gate_proves_retrieval_coverage_only": True,
+        "semantic_claim": False,
+        "topological_claim": False,
+        "causal_claim": False,
+        "backend_audit_outcome_declared_here": False,
+    }
+    expected_sections = {
+        "methodology": expected_methodology,
+        "density": expected_density,
+        "boundary": expected_boundary,
+        "thresholds": expected_thresholds,
+        "support": expected_support,
+        "gate_logic": expected_gate_logic,
+        "evidence": expected_evidence,
+        "claim_boundary": expected_claim_boundary,
+    }
+    if any(
+        not isinstance(gate.get(name), Mapping)
+        or dict(gate[name]) != expected
+        for name, expected in expected_sections.items()
+    ):
+        raise ValueError(
+            "recall gate methodology or thresholds differ from the audit"
+        )
+    if gate_path.read_bytes() != gate_bytes:
+        raise ValueError(
+            "recall gate bytes changed during receipt validation"
+        )
+    return gate_path, gate_bytes, gate
+
+
+def validate_neighbor_protocol_static_contract(
+    protocol: Mapping[str, object],
+) -> None:
+    """Reject ambiguous or contradictory neighbor protocol declarations."""
+
+    expected_top_level = {
+        "schema_version",
+        "protocol_id",
+        "status",
+        "claim_ceiling",
+        "recall_gate_contract",
+        "audit_scope",
+        "candidate_protocol",
+        "retrieval_contract",
+        "reference_backend",
+        "subject_backend",
+        "query_sampling",
+        "exact_rerank",
+        "audit",
+        "claim_boundary",
+        "promotion_readiness",
+        "deviations",
+    }
+    status = protocol.get("status")
+    if (
+        set(protocol) != expected_top_level
+        or protocol.get("schema_version")
+        != NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+        or not isinstance(protocol.get("protocol_id"), str)
+        or not protocol["protocol_id"]
+        or status not in {"preregistered-draft", "frozen"}
+        or protocol.get("claim_ceiling") != 1
+        or protocol.get("deviations") != []
+    ):
+        raise ValueError(
+            "neighbor protocol top-level contract is invalid"
+        )
+    recall_binding = protocol.get("recall_gate_contract")
+    candidate_binding = protocol.get("candidate_protocol")
+    if (
+        not isinstance(recall_binding, Mapping)
+        or set(recall_binding) != {"path", "sha256", "gate_id"}
+        or not isinstance(candidate_binding, Mapping)
+        or set(candidate_binding)
+        != {"path", "sha256", "declared_id"}
+    ):
+        raise ValueError(
+            "neighbor protocol reference bindings are invalid"
+        )
+
+    expected_retrieval = {
+        "input": "resid_pre",
+        "input_snapshot": "detached_read_only",
+        "input_sha256_checked_before_and_after_each_rebuild": True,
+        "metric": "cosine",
+        "comparison_unit": [
+            "fixed_context_bank",
+            "fixed_context_id",
+            "fixed_observation_position",
+            "fixed_layer_index",
+        ],
+        "output": "canonical_unordered_global_row_pairs",
+        "pair_order": "left_then_right_ascending",
+        "drift_available_to_backend": False,
+        "decoded_strings_available_to_backend": False,
+        "semantic_annotation_available_to_backend": False,
+        "sae_annotation_available_to_backend": False,
+        "projected_coordinates_available_to_backend": False,
+    }
+    expected_reference = {
+        "backend_id": "spirallens.exact-blockwise-reference",
+        "backend_version": "0.1",
+        "kind": "exact",
+        "deterministic": True,
+        "descriptor_sha256_bound_in_audit_identity": True,
+        "runtime_version_bound_in_descriptor": True,
+        "maximum_all_pair_rows": 10000,
+        "maximum_exact_comparisons": 50000000,
+        "inclusive_thresholds": True,
+    }
+    expected_rerank = {
+        "contract": EXACT_RERANK_CONTRACT_VERSION,
+        "required_before_persist": True,
+        "source_values": "original_atlas_values_cast_to_float64",
+        "backend_score_used_for_gate": False,
+        "false_persistable_candidates_allowed": 0,
+    }
+    expected_claim = {
+        "semantics_free": True,
+        "candidate_is_not_verified_vortex": True,
+        "passing_audit_proves_retrieval_coverage_only": True,
+        "approximate_backend_currently_audited": False,
+    }
+    if (
+        protocol.get("retrieval_contract") != expected_retrieval
+        or protocol.get("reference_backend") != expected_reference
+        or protocol.get("exact_rerank") != expected_rerank
+        or protocol.get("claim_boundary") != expected_claim
+    ):
+        raise ValueError(
+            "neighbor protocol static methodology is invalid"
+        )
+
+    subject = protocol.get("subject_backend")
+    expected_subject_fields = {
+        "status",
+        "backend_id",
+        "backend_version",
+        "distribution",
+        "distribution_version",
+        "kind_required_for_full_vocabulary",
+        "optional_dependency_only",
+        "candidate_persistence_without_audit_receipt",
+        "config",
+        "required_provenance",
+    }
+    if (
+        not isinstance(subject, Mapping)
+        or set(subject) != expected_subject_fields
+        or subject.get("status")
+        != "implementation_selected_unpromoted"
+        or subject.get("backend_id") != FAISS_HNSW_BACKEND_ID
+        or str(subject.get("backend_version"))
+        != FAISS_HNSW_BACKEND_VERSION
+        or subject.get("distribution") != "faiss-cpu"
+        or str(subject.get("distribution_version")) != "1.14.3"
+        or subject.get("kind_required_for_full_vocabulary")
+        != "approximate"
+        or subject.get("optional_dependency_only") is not True
+        or subject.get("candidate_persistence_without_audit_receipt")
+        != "forbidden"
+        or not isinstance(subject.get("config"), Mapping)
+        or subject.get("required_provenance")
+        != [
+            "backend_id",
+            "backend_version",
+            "backend_config",
+            "runtime_versions",
+            "seed",
+            "thread_count",
+            "index_digest",
+        ]
+    ):
+        raise ValueError(
+            "neighbor protocol subject declaration is invalid"
+        )
+
+    scope = protocol.get("audit_scope")
+    sampling = protocol.get("query_sampling")
+    readiness = protocol.get("promotion_readiness")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (scope, sampling, readiness)
+    ):
+        raise ValueError(
+            "neighbor protocol execution binding is invalid"
+        )
+    assert isinstance(scope, Mapping)
+    assert isinstance(sampling, Mapping)
+    assert isinstance(readiness, Mapping)
+    common_readiness = {
+        "receipt_mechanism_implemented": True,
+        "full_index_subset_query_audit_implemented": True,
+        "frozen_recall_gate_methodology_available": True,
+        "query_local_worst_case_recall_gate_implemented": True,
+    }
+    if status == "preregistered-draft":
+        expected_scope = {
+            "comparison_group": None,
+            "binding_rule": "must_be_filled_before_status_frozen",
+        }
+        if (
+            set(sampling)
+            != {
+                "method",
+                "seed",
+                "count",
+                "global_row_key_sha256",
+                "binding_rule",
+            }
+            or sampling.get("global_row_key_sha256") is not None
+            or sampling.get("binding_rule")
+            != "must_be_filled_before_status_frozen"
+            or dict(readiness)
+            != {
+                **common_readiness,
+                "atlas_execution_bindings_frozen": False,
+                "tracked_protocol_can_issue_persistence_receipt": False,
+            }
+        ):
+            raise ValueError(
+                "draft neighbor protocol binding is invalid"
+            )
+    else:
+        expected_scope = {
+            "comparison_group": scope.get("comparison_group")
+        }
+        if (
+            set(scope) != {"comparison_group"}
+            or not isinstance(scope.get("comparison_group"), str)
+            or not scope["comparison_group"]
+            or set(sampling)
+            != {
+                "method",
+                "seed",
+                "count",
+                "global_row_key_sha256",
+            }
+            or not isinstance(
+                sampling.get("global_row_key_sha256"),
+                str,
+            )
+            or dict(readiness)
+            != {
+                **common_readiness,
+                "atlas_execution_bindings_frozen": True,
+                "tracked_protocol_can_issue_persistence_receipt": True,
+            }
+        ):
+            raise ValueError(
+                "frozen neighbor protocol binding is invalid"
+            )
+    if (
+        dict(scope) != expected_scope
+        or sampling.get("method")
+        != "sha256_ranked_global_indices"
+        or isinstance(sampling.get("seed"), bool)
+        or not isinstance(sampling.get("seed"), Integral)
+        or isinstance(sampling.get("count"), bool)
+        or not isinstance(sampling.get("count"), Integral)
+        or sampling["count"] <= 0
+    ):
+        raise ValueError(
+            "neighbor protocol query sampling is invalid"
+        )
+
+
 def _validate_promotion_protocol(
     result: NeighborAuditResult,
     *,
@@ -142,10 +764,9 @@ def _validate_promotion_protocol(
 ) -> tuple[str, str]:
     """Match every promotion-bearing protocol field to the audit."""
 
+    validate_neighbor_protocol_static_contract(protocol)
     if (
-        protocol.get("schema_version")
-        != "spirallens.neighbor-audit-protocol.v0.1"
-        or protocol.get("protocol_id")
+        protocol.get("protocol_id")
         != result.protocol_binding.protocol_id
         or protocol.get("status") != "frozen"
         or result.protocol_binding.status != "frozen"
@@ -161,6 +782,31 @@ def _validate_promotion_protocol(
         raise ValueError(
             "audit deviations differ from the frozen protocol"
         )
+    gate_path, gate_bytes, _ = validate_recall_gate_contract(
+        audit_config=result.audit_config,
+        protocol_path=protocol_path,
+        protocol=protocol,
+    )
+    gate_statuses = result.coverage_gate_statuses()
+    if (
+        set(gate_statuses) != set(REQUIRED_COVERAGE_GATES)
+        or any(
+            gate_statuses[name] != "pass"
+            for name in REQUIRED_COVERAGE_GATES
+        )
+    ):
+        raise ValueError(
+            "all frozen aggregate, local, stratified, and determinism "
+            "coverage gates must pass"
+        )
+    if (
+        result.subject_runner_contract
+        != BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT
+    ):
+        raise ValueError(
+            "persistence receipts require the built-in Faiss audit "
+            "runner"
+        )
     if (
         result.candidate_config.layer_indices is None
         or len(result.candidate_config.layer_indices) != 1
@@ -173,6 +819,7 @@ def _validate_promotion_protocol(
     scope = protocol.get("audit_scope")
     if (
         not isinstance(scope, Mapping)
+        or set(scope) != {"comparison_group"}
         or scope.get("comparison_group") != expected_group
         or result.comparison_group != expected_group
     ):
@@ -181,7 +828,11 @@ def _validate_promotion_protocol(
         )
 
     candidate_binding = protocol.get("candidate_protocol")
-    if not isinstance(candidate_binding, Mapping):
+    if (
+        not isinstance(candidate_binding, Mapping)
+        or set(candidate_binding)
+        != {"path", "sha256", "declared_id"}
+    ):
         raise ValueError(
             "frozen protocol is missing candidate_protocol"
         )
@@ -213,30 +864,55 @@ def _validate_promotion_protocol(
 
     audit = protocol.get("audit")
     expected_audit = {
+        "primary_metric": "candidate_boundary_recall",
         "candidate_boundary_recall_min": (
             result.audit_config.candidate_recall_min
         ),
+        "query_local_recall_min": (
+            result.audit_config.query_local_recall_min
+        ),
+        "stratum_recall_min": result.audit_config.stratum_recall_min,
         "repeats": result.audit_config.repeats,
+        "repeat_mode": "independent_cold_rebuild",
         "minimum_reference_candidates": (
             result.audit_config.minimum_reference_candidates
+        ),
+        "minimum_eligible_queries": (
+            result.audit_config.minimum_eligible_queries
+        ),
+        "minimum_eligible_query_fraction": (
+            result.audit_config.minimum_eligible_query_fraction
+        ),
+        "density_strata_count": (
+            result.audit_config.density_strata_count
+        ),
+        "minimum_eligible_queries_per_density_stratum": (
+            result.audit_config
+            .minimum_eligible_queries_per_density_stratum
+        ),
+        "boundary_shell_width": (
+            result.audit_config.boundary_shell_width
+        ),
+        "minimum_reference_candidates_per_stratum": (
+            result.audit_config.minimum_reference_candidates_per_stratum
         ),
         "missing_pair_sample_limit": (
             result.audit_config.missing_pair_sample_limit
         ),
+        "zero_reference_candidates": "insufficient",
+        "top_k_recall_role": "not_applicable_range_search",
+        "pooled_recall_can_override_failed_group": False,
+        "required_local_recall_contract": (
+            LOCAL_RECALL_CONTRACT_VERSION
+        ),
+        "required_joint_strata": "density_rank_x_cosine_boundary",
+        "issue_persistence_receipt_on_verified_pass": True,
+        "protocol_binding_required": True,
+        "source_identity_required": True,
     }
     if (
         not isinstance(audit, Mapping)
-        or any(
-            audit.get(key) != value
-            for key, value in expected_audit.items()
-        )
-        or audit.get("primary_metric")
-        != "candidate_boundary_recall"
-        or audit.get("repeat_mode")
-        != "independent_cold_rebuild"
-        or audit.get("zero_reference_candidates") != "insufficient"
-        or audit.get("full_vocabulary_backend_promoted_by_this_protocol")
-        is not True
+        or dict(audit) != expected_audit
     ):
         raise ValueError(
             "audit settings or promotion policy differ from the result"
@@ -254,10 +930,7 @@ def _validate_promotion_protocol(
         "count": selection.count,
         "global_row_key_sha256": selection.global_row_key_sha256,
     }
-    if any(
-        sampling.get(key) != value
-        for key, value in expected_sampling.items()
-    ):
+    if dict(sampling) != expected_sampling:
         raise ValueError(
             "audit query selection differs from frozen protocol"
         )
@@ -266,19 +939,69 @@ def _validate_promotion_protocol(
             "audit query rows differ from frozen selection"
         )
 
+    expected_reference = {
+        "backend_id": "spirallens.exact-blockwise-reference",
+        "backend_version": "0.1",
+        "kind": "exact",
+        "deterministic": True,
+        "descriptor_sha256_bound_in_audit_identity": True,
+        "runtime_version_bound_in_descriptor": True,
+        "maximum_all_pair_rows": 10000,
+        "maximum_exact_comparisons": 50000000,
+        "inclusive_thresholds": True,
+    }
+    reference = protocol.get("reference_backend")
+    if (
+        not isinstance(reference, Mapping)
+        or dict(reference) != expected_reference
+    ):
+        raise ValueError(
+            "exact reference declaration differs from frozen protocol"
+        )
+
     subject = protocol.get("subject_backend")
     subject_parameters = dict(result.subject_backend.parameters)
     subject_runtime = dict(result.subject_backend.runtime)
+    expected_subject_fields = {
+        "status",
+        "backend_id",
+        "backend_version",
+        "distribution",
+        "distribution_version",
+        "kind_required_for_full_vocabulary",
+        "optional_dependency_only",
+        "candidate_persistence_without_audit_receipt",
+        "config",
+        "required_provenance",
+    }
     if (
         not isinstance(subject, Mapping)
+        or set(subject) != expected_subject_fields
+        or subject.get("status")
+        != "implementation_selected_unpromoted"
+        or result.subject_backend.backend_id
+        != FAISS_HNSW_BACKEND_ID
+        or result.subject_backend.backend_version
+        != FAISS_HNSW_BACKEND_VERSION
         or subject.get("backend_id")
         != result.subject_backend.backend_id
         or str(subject.get("backend_version"))
         != result.subject_backend.backend_version
         or subject.get("kind_required_for_full_vocabulary")
         != "approximate"
+        or subject.get("optional_dependency_only") is not True
         or subject.get("candidate_persistence_without_audit_receipt")
         != "forbidden"
+        or subject.get("required_provenance")
+        != [
+            "backend_id",
+            "backend_version",
+            "backend_config",
+            "runtime_versions",
+            "seed",
+            "thread_count",
+            "index_digest",
+        ]
         or not isinstance(subject.get("config"), Mapping)
         or any(
             subject_parameters.get(key) != value
@@ -287,6 +1010,12 @@ def _validate_promotion_protocol(
     ):
         raise ValueError(
             "subject backend differs from frozen protocol"
+        )
+    if subject_parameters.get("score_margin") != (
+        result.audit_config.boundary_shell_width
+    ):
+        raise ValueError(
+            "boundary shell width differs from the subject score margin"
         )
     if result.subject_backend.backend_id == (
         "spirallens.faiss-hnsw-range"
@@ -317,48 +1046,80 @@ def _validate_promotion_protocol(
             )
 
     retrieval = protocol.get("retrieval_contract")
+    expected_retrieval = {
+        "input": "resid_pre",
+        "input_snapshot": "detached_read_only",
+        "input_sha256_checked_before_and_after_each_rebuild": True,
+        "metric": "cosine",
+        "comparison_unit": [
+            "fixed_context_bank",
+            "fixed_context_id",
+            "fixed_observation_position",
+            "fixed_layer_index",
+        ],
+        "output": "canonical_unordered_global_row_pairs",
+        "pair_order": "left_then_right_ascending",
+        "drift_available_to_backend": False,
+        "decoded_strings_available_to_backend": False,
+        "semantic_annotation_available_to_backend": False,
+        "sae_annotation_available_to_backend": False,
+        "projected_coordinates_available_to_backend": False,
+    }
     if (
         not isinstance(retrieval, Mapping)
-        or retrieval.get("input") != "resid_pre"
-        or retrieval.get("metric") != "cosine"
-        or retrieval.get("drift_available_to_backend") is not False
-        or retrieval.get("decoded_strings_available_to_backend") is not False
-        or retrieval.get("semantic_annotation_available_to_backend")
-        is not False
-        or retrieval.get("sae_annotation_available_to_backend") is not False
-        or retrieval.get("projected_coordinates_available_to_backend")
-        is not False
+        or dict(retrieval) != expected_retrieval
     ):
         raise ValueError(
             "retrieval isolation differs from frozen protocol"
         )
     rerank = protocol.get("exact_rerank")
+    expected_rerank = {
+        "contract": EXACT_RERANK_CONTRACT_VERSION,
+        "required_before_persist": True,
+        "source_values": "original_atlas_values_cast_to_float64",
+        "backend_score_used_for_gate": False,
+        "false_persistable_candidates_allowed": 0,
+    }
     if (
         not isinstance(rerank, Mapping)
-        or rerank.get("contract") != EXACT_RERANK_CONTRACT_VERSION
-        or rerank.get("required_before_persist") is not True
-        or rerank.get("backend_score_used_for_gate") is not False
-        or rerank.get("false_persistable_candidates_allowed") != 0
+        or dict(rerank) != expected_rerank
     ):
         raise ValueError(
             "exact rerank policy differs from frozen protocol"
         )
     claim_boundary = protocol.get("claim_boundary")
+    expected_claim_boundary = {
+        "semantics_free": True,
+        "candidate_is_not_verified_vortex": True,
+        "passing_audit_proves_retrieval_coverage_only": True,
+        "approximate_backend_currently_audited": False,
+    }
     if (
         not isinstance(claim_boundary, Mapping)
-        or claim_boundary.get("semantics_free") is not True
-        or claim_boundary.get("candidate_is_not_verified_vortex")
-        is not True
-        or claim_boundary.get(
-            "passing_audit_proves_retrieval_coverage_only"
-        )
-        is not True
+        or dict(claim_boundary) != expected_claim_boundary
     ):
         raise ValueError(
             "claim boundary differs from frozen protocol"
         )
+    promotion_readiness = protocol.get("promotion_readiness")
+    expected_promotion_readiness = {
+        "receipt_mechanism_implemented": True,
+        "full_index_subset_query_audit_implemented": True,
+        "frozen_recall_gate_methodology_available": True,
+        "query_local_worst_case_recall_gate_implemented": True,
+        "atlas_execution_bindings_frozen": True,
+        "tracked_protocol_can_issue_persistence_receipt": True,
+    }
+    if (
+        not isinstance(promotion_readiness, Mapping)
+        or dict(promotion_readiness) != expected_promotion_readiness
+    ):
+        raise ValueError(
+            "promotion readiness does not authorize a persistence receipt"
+        )
     if (
         candidate_path.read_bytes() != candidate_bytes
+        or gate_path.read_bytes() != gate_bytes
         or protocol_path.read_bytes() != protocol_bytes
     ):
         raise ValueError(
@@ -491,6 +1252,8 @@ class NeighborAuditReceipt:
     query_boundary_sha256: str
     authorized_target_query_sha256: str
     query_selection_sha256: str
+    coverage_contract_sha256: str
+    coverage_evidence_sha256: str
     exact_rerank_contract: str = EXACT_RERANK_CONTRACT_VERSION
     schema_version: str = NEIGHBOR_AUDIT_RECEIPT_SCHEMA_VERSION
     _verification_token: object | None = field(
@@ -517,6 +1280,8 @@ class NeighborAuditReceipt:
             "query_boundary_sha256",
             "authorized_target_query_sha256",
             "query_selection_sha256",
+            "coverage_contract_sha256",
+            "coverage_evidence_sha256",
         ):
             _require_sha256(getattr(self, field_name), label=field_name)
         if self.schema_version != NEIGHBOR_AUDIT_RECEIPT_SCHEMA_VERSION:
@@ -704,6 +1469,8 @@ class NeighborAuditReceipt:
             ),
             authorized_target_query_sha256=target_query.sha256,
             query_selection_sha256=selection.sha256,
+            coverage_contract_sha256=result.coverage_contract_sha256,
+            coverage_evidence_sha256=result.coverage_evidence_sha256,
         )
 
     def validate_target(
@@ -788,6 +1555,13 @@ class NeighborAuditReceipt:
 
         if not isinstance(payload, Mapping):
             raise TypeError("neighbor audit receipt must be a mapping")
+        if (
+            payload.get("schema_version")
+            != NEIGHBOR_AUDIT_RECEIPT_SCHEMA_VERSION
+        ):
+            raise ValueError(
+                "neighbor audit receipt schema is invalid"
+            )
         backend_payload = payload.get("subject_backend")
         build_payload = payload.get("subject_build_receipt")
         if (
@@ -871,6 +1645,12 @@ class NeighborAuditReceipt:
             query_selection_sha256=payload[
                 "query_selection_sha256"
             ],
+            coverage_contract_sha256=payload[
+                "coverage_contract_sha256"
+            ],
+            coverage_evidence_sha256=payload[
+                "coverage_evidence_sha256"
+            ],
             exact_rerank_contract=payload[
                 "exact_rerank_contract"
             ],
@@ -918,6 +1698,12 @@ class NeighborAuditReceipt:
                 self.authorized_target_query_sha256
             ),
             "query_selection_sha256": self.query_selection_sha256,
+            "coverage_contract_sha256": (
+                self.coverage_contract_sha256
+            ),
+            "coverage_evidence_sha256": (
+                self.coverage_evidence_sha256
+            ),
             "exact_rerank_contract": self.exact_rerank_contract,
         }
 

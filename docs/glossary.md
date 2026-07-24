@@ -26,12 +26,33 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Candidate-boundary recall**: the fraction of bounded exact candidates that
   remain after a subject backend's proposals are exactly reranked. This, not
   generic recall@k, is the initial approximate-backend promotion metric.
+- **Frozen recall-gate methodology**: the outcome-independent rules for
+  query-local incidence, relative-density ranking, cosine-boundary strata,
+  support, and worst-case reduction. Freezing it does not freeze an
+  atlas/layer execution and does not assert that a backend passed.
+- **Query-local candidate recall**: candidate-boundary recall restricted to
+  exact reference candidates incident to one selected query row. A pair whose
+  endpoints are both selected belongs to both query-local denominators.
+- **Relative-density stratum**: a deterministic equal-count rank stratum of
+  evaluable queries, ordered by exact-reference retrieval degree and then
+  global row index. It is not derived from ANN hits or projected coordinates.
+- **Cosine-boundary shell**: exact reranked reference candidates whose canonical
+  float64 cosine slack lies from zero through the frozen shell width,
+  inclusively. Subject-backend scores cannot determine shell membership.
 - **Insufficient audit**: an audit whose exact reference contains too few
-  candidates to evaluate the preregistered recall gate. In particular, a
-  zero-candidate reference is not assigned recall 1.0.
+  candidates, evaluable queries, or required stratum members to evaluate the
+  frozen recall gate. In particular, a zero denominator is not assigned recall
+  1.0.
 - **Prepared index build receipt**: a typed binding between actual serialized
   index bytes and the full ordered state matrix, row identity, layer group,
   dtype, shape, backend configuration, and runtime that produced them.
+- **Receipt-gated candidate protocol**: the v0.2 candidate declaration that
+  permits approximate proposals only through a verified same-input/index/group
+  receipt followed by the shared exact reranker. The older v0.1 declaration is
+  exact-only; changing its status does not grant ANN authorization.
+- **Built-in Faiss audit runner**: the exact in-tree `FaissHNSWBackend` Python
+  implementation used for a promotion-eligible audit. Subclasses, wrappers,
+  and custom backends remain measurable but non-promotable.
 - **Neighbor audit receipt**: a protocol-verified record authorizing one
   identical full input/index/group for approximate proposal persistence after a
   frozen, deviation-free audit pass. It is loaded against trusted external

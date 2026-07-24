@@ -61,6 +61,63 @@ def _json_sha256(value: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _write_recall_gate_contract(
+    tmp_path: Path,
+    audit_config: NeighborAuditConfig,
+) -> Path:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "protocols"
+        / "neighbor_recall_gate_v0_1.yaml"
+    )
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    document["gate_id"] = "faiss-candidate-recall-gate-v0.1"
+    document["thresholds"].update(
+        {
+            "aggregate_candidate_recall_min": (
+                audit_config.candidate_recall_min
+            ),
+            "query_local_recall_min": (
+                audit_config.query_local_recall_min
+            ),
+            "density_macro_and_joint_stratum_recall_min": (
+                audit_config.stratum_recall_min
+            ),
+            "boundary_shell_width": (
+                audit_config.boundary_shell_width
+            ),
+            "repeats": audit_config.repeats,
+        }
+    )
+    document["support"].update(
+        {
+            "minimum_reference_candidates": (
+                audit_config.minimum_reference_candidates
+            ),
+            "minimum_eligible_queries": (
+                audit_config.minimum_eligible_queries
+            ),
+            "minimum_eligible_query_fraction": (
+                audit_config.minimum_eligible_query_fraction
+            ),
+            "density_strata_count": audit_config.density_strata_count,
+            "minimum_eligible_queries_per_density_stratum": (
+                audit_config
+                .minimum_eligible_queries_per_density_stratum
+            ),
+            "minimum_reference_candidates_per_joint_stratum": (
+                audit_config.minimum_reference_candidates_per_stratum
+            ),
+        }
+    )
+    path = tmp_path / "faiss-recall-gate.yaml"
+    path.write_text(
+        yaml.safe_dump(document, sort_keys=False),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _write_rehashed_ledger(
     path: Path,
     records: list[dict[str, Any]],
@@ -153,24 +210,54 @@ def _slice_sha256(
     return digest.hexdigest()
 
 
-def _write_atlas(tmp_path: Path, *, status: str = "complete") -> Path:
-    token_ids = np.array([11, 12, 13], dtype=np.int64)
-    resid_pre = np.array(
-        [
-            [[1.0, 0.0, 0.0]],
-            [[0.9999995, 0.001, 0.0]],
-            [[0.0, 1.0, 0.0]],
-        ],
-        dtype=np.float32,
+def _write_atlas(
+    tmp_path: Path,
+    *,
+    status: str = "complete",
+    recall_gate_fixture: bool = False,
+) -> Path:
+    token_ids = np.array(
+        [11, 12, 13, 14]
+        if recall_gate_fixture
+        else [11, 12, 13],
+        dtype=np.int64,
     )
-    drift = np.array(
-        [
-            [[0.0, 1.0, 0.0]],
-            [[0.0, -1.0, 0.0]],
-            [[0.0, 0.1, 0.0]],
-        ],
-        dtype=np.float32,
-    )
+    if recall_gate_fixture:
+        resid_pre = np.array(
+            [
+                [[1.0, 0.0, 0.0]],
+                [[1.0, 0.001, 0.0]],
+                [[1.0, -0.001, 0.0]],
+                [[0.0, 1.0, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+        drift = np.array(
+            [
+                [[0.0, 1.0, 0.0]],
+                [[0.0, -1.0, 0.0]],
+                [[0.0, 1.0, 0.0]],
+                [[0.0, 0.1, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+    else:
+        resid_pre = np.array(
+            [
+                [[1.0, 0.0, 0.0]],
+                [[0.9999995, 0.001, 0.0]],
+                [[0.0, 1.0, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+        drift = np.array(
+            [
+                [[0.0, 1.0, 0.0]],
+                [[0.0, -1.0, 0.0]],
+                [[0.0, 0.1, 0.0]],
+            ],
+            dtype=np.float32,
+        )
     arrays = {
         "token_ids": token_ids,
         "resid_pre": resid_pre,
@@ -212,7 +299,8 @@ def _write_atlas(tmp_path: Path, *, status: str = "complete") -> Path:
     token_digest = hashlib.sha256(
         np.asarray(token_ids, dtype="<i8", order="C").tobytes(order="C")
     ).hexdigest()
-    completed_rows = 3 if status == "complete" else 2
+    total_rows = int(token_ids.shape[0])
+    completed_rows = total_rows if status == "complete" else 2
     capture = {
         "atlas_schema_version": "spirallens.activation_atlas.v2",
         "capture_implementation": {
@@ -262,8 +350,11 @@ def _write_atlas(tmp_path: Path, *, status: str = "complete") -> Path:
             "context_ids": [0, 1],
             "attention_mask": [1, 1],
             "position": 1,
-            "selection": {"kind": "subset", "subset_size_before_limit": 3},
-            "num_tokens": 3,
+            "selection": {
+                "kind": "subset",
+                "subset_size_before_limit": total_rows,
+            },
+            "num_tokens": total_rows,
             "token_ids_sha256": token_digest,
             "capture_dtype": "float32",
             "capture_fingerprint": capture_fingerprint,
@@ -280,14 +371,14 @@ def _write_atlas(tmp_path: Path, *, status: str = "complete") -> Path:
         "arrays": descriptors,
         "progress": {
             "completed_rows": completed_rows,
-            "total_rows": 3,
+            "total_rows": total_rows,
             "committed_batches": 1,
         },
         "attempts": [
             {
                 "started_at": "2026-01-01T00:00:00+00:00",
                 "resume_from_row": 0,
-                "batch_size": 3,
+                "batch_size": total_rows,
                 "capture": capture,
                 "capture_fingerprint": capture_fingerprint,
             }
@@ -789,7 +880,10 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
 ) -> None:
     if importlib.util.find_spec("faiss") is None:
         pytest.skip("faiss optional dependency is absent")
-    manifest_path = _write_atlas(tmp_path)
+    manifest_path = _write_atlas(
+        tmp_path,
+        recall_gate_fixture=True,
+    )
     manifest_bytes = manifest_path.read_bytes()
     manifest = json.loads(manifest_bytes)
     token_ids = np.load(tmp_path / "token_ids.npy", allow_pickle=False)
@@ -807,10 +901,18 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         block_size=1,
         layer_indices=(0,),
     )
-    audit_config = NeighborAuditConfig()
+    audit_config = NeighborAuditConfig(
+        minimum_reference_candidates=1,
+        minimum_eligible_queries=1,
+        minimum_eligible_query_fraction=0.0,
+        density_strata_count=1,
+        minimum_eligible_queries_per_density_stratum=1,
+        boundary_shell_width=0.000999,
+        minimum_reference_candidates_per_stratum=1,
+    )
     selection = NeighborQuerySelectionContract(
         seed=23,
-        count=3,
+        count=int(token_ids.shape[0]),
         global_row_key_sha256=row_identity_sha256,
     )
     faiss_config = FaissHNSWConfig(
@@ -818,62 +920,122 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         ef_construction=40,
         ef_search=40,
         query_batch_size=2,
+        score_margin=audit_config.boundary_shell_width,
     )
     candidate_path = tmp_path / "faiss-candidate.yaml"
+    candidate_document = yaml.safe_load(
+        (
+            Path(__file__).resolve().parents[1]
+            / "protocols"
+            / "pythia_candidate_v0_2.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    candidate_document["protocol_id"] = (
+        "faiss-candidate-test-v0.2"
+    )
+    candidate_document["status"] = "frozen"
+    candidate_document["candidate_search"] = (
+        candidate_config.to_dict()
+    )
     candidate_path.write_text(
-        yaml.safe_dump(
-            {
-                "schema_version": "spirallens.protocol.v0.1",
-                "protocol_id": "faiss-candidate-test-v0.1",
-                "status": "frozen",
-                "claim_ceiling": 1,
-                "candidate_search": candidate_config.to_dict(),
-            },
-            sort_keys=False,
-        ),
+        yaml.safe_dump(candidate_document, sort_keys=False),
         encoding="utf-8",
     )
     candidate_sha256 = hashlib.sha256(
         candidate_path.read_bytes()
     ).hexdigest()
+    recall_gate_path = _write_recall_gate_contract(
+        tmp_path,
+        audit_config,
+    )
     neighbor_path = tmp_path / "faiss-neighbor.yaml"
     neighbor_path.write_text(
         yaml.safe_dump(
-            {
-                "schema_version": (
-                    "spirallens.neighbor-audit-protocol.v0.1"
-                ),
-                "protocol_id": "faiss-manifest-test-v0.1",
-                "status": "frozen",
+                {
+                    "schema_version": (
+                        "spirallens.neighbor-audit-protocol.v0.2"
+                    ),
+                    "protocol_id": "faiss-manifest-test-v0.1",
+                    "status": "frozen",
+                    "claim_ceiling": 1,
+                    "recall_gate_contract": {
+                        "path": recall_gate_path.name,
+                        "sha256": hashlib.sha256(
+                            recall_gate_path.read_bytes()
+                        ).hexdigest(),
+                        "gate_id": (
+                            "faiss-candidate-recall-gate-v0.1"
+                        ),
+                    },
                 "audit_scope": {
                     "comparison_group": "layer_index=0"
                 },
                 "candidate_protocol": {
                     "path": candidate_path.name,
                     "sha256": candidate_sha256,
-                    "declared_id": "faiss-candidate-test-v0.1",
+                        "declared_id": "faiss-candidate-test-v0.2",
                 },
-                "retrieval_contract": {
-                    "input": "resid_pre",
-                    "metric": "cosine",
-                    "drift_available_to_backend": False,
+                    "retrieval_contract": {
+                        "input": "resid_pre",
+                        "input_snapshot": "detached_read_only",
+                        "input_sha256_checked_before_and_after_each_rebuild": (
+                            True
+                        ),
+                        "metric": "cosine",
+                        "comparison_unit": [
+                            "fixed_context_bank",
+                            "fixed_context_id",
+                            "fixed_observation_position",
+                            "fixed_layer_index",
+                        ],
+                        "output": (
+                            "canonical_unordered_global_row_pairs"
+                        ),
+                        "pair_order": "left_then_right_ascending",
+                        "drift_available_to_backend": False,
                     "decoded_strings_available_to_backend": False,
                     "semantic_annotation_available_to_backend": False,
                     "sae_annotation_available_to_backend": False,
-                    "projected_coordinates_available_to_backend": False,
-                },
-                "subject_backend": {
-                    "backend_id": "spirallens.faiss-hnsw-range",
+                        "projected_coordinates_available_to_backend": False,
+                    },
+                    "reference_backend": {
+                        "backend_id": (
+                            "spirallens.exact-blockwise-reference"
+                        ),
+                        "backend_version": "0.1",
+                        "kind": "exact",
+                        "deterministic": True,
+                        "descriptor_sha256_bound_in_audit_identity": True,
+                        "runtime_version_bound_in_descriptor": True,
+                        "maximum_all_pair_rows": 10000,
+                        "maximum_exact_comparisons": 50000000,
+                        "inclusive_thresholds": True,
+                    },
+                    "subject_backend": {
+                        "status": (
+                            "implementation_selected_unpromoted"
+                        ),
+                        "backend_id": "spirallens.faiss-hnsw-range",
                     "backend_version": "0.1",
                     "distribution": "faiss-cpu",
                     "distribution_version": "1.14.3",
-                    "kind_required_for_full_vocabulary": (
-                        "approximate"
-                    ),
-                    "candidate_persistence_without_audit_receipt": (
-                        "forbidden"
-                    ),
-                    "config": faiss_config.to_dict(),
+                        "kind_required_for_full_vocabulary": (
+                            "approximate"
+                        ),
+                        "optional_dependency_only": True,
+                        "candidate_persistence_without_audit_receipt": (
+                            "forbidden"
+                        ),
+                        "config": faiss_config.to_dict(),
+                        "required_provenance": [
+                            "backend_id",
+                            "backend_version",
+                            "backend_config",
+                            "runtime_versions",
+                            "seed",
+                            "thread_count",
+                            "index_digest",
+                        ],
                 },
                 "query_sampling": {
                     "method": "sha256_ranked_global_indices",
@@ -886,38 +1048,90 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
                 "exact_rerank": {
                     "contract": (
                         "spirallens.candidate-exact-rerank.v0.1"
-                    ),
-                    "required_before_persist": True,
-                    "backend_score_used_for_gate": False,
+                        ),
+                        "required_before_persist": True,
+                        "source_values": (
+                            "original_atlas_values_cast_to_float64"
+                        ),
+                        "backend_score_used_for_gate": False,
                     "false_persistable_candidates_allowed": 0,
                 },
                 "audit": {
                     "primary_metric": "candidate_boundary_recall",
-                    "candidate_boundary_recall_min": (
-                        audit_config.candidate_recall_min
-                    ),
-                    "repeats": audit_config.repeats,
-                    "repeat_mode": "independent_cold_rebuild",
-                    "minimum_reference_candidates": (
-                        audit_config.minimum_reference_candidates
-                    ),
-                    "missing_pair_sample_limit": (
-                        audit_config.missing_pair_sample_limit
-                    ),
-                    "zero_reference_candidates": "insufficient",
-                    "full_vocabulary_backend_promoted_by_this_protocol": (
-                        True
-                    ),
-                },
+                        "candidate_boundary_recall_min": (
+                            audit_config.candidate_recall_min
+                        ),
+                        "query_local_recall_min": (
+                            audit_config.query_local_recall_min
+                        ),
+                        "stratum_recall_min": (
+                            audit_config.stratum_recall_min
+                        ),
+                        "repeats": audit_config.repeats,
+                        "repeat_mode": "independent_cold_rebuild",
+                        "minimum_reference_candidates": (
+                            audit_config.minimum_reference_candidates
+                        ),
+                        "minimum_eligible_queries": (
+                            audit_config.minimum_eligible_queries
+                        ),
+                        "minimum_eligible_query_fraction": (
+                            audit_config.minimum_eligible_query_fraction
+                        ),
+                        "density_strata_count": (
+                            audit_config.density_strata_count
+                        ),
+                        "minimum_eligible_queries_per_density_stratum": (
+                            audit_config
+                            .minimum_eligible_queries_per_density_stratum
+                        ),
+                        "boundary_shell_width": (
+                            audit_config.boundary_shell_width
+                        ),
+                        "minimum_reference_candidates_per_stratum": (
+                            audit_config
+                            .minimum_reference_candidates_per_stratum
+                        ),
+                        "missing_pair_sample_limit": (
+                            audit_config.missing_pair_sample_limit
+                        ),
+                        "zero_reference_candidates": "insufficient",
+                        "top_k_recall_role": (
+                            "not_applicable_range_search"
+                        ),
+                        "pooled_recall_can_override_failed_group": False,
+                        "required_local_recall_contract": (
+                            "spirallens.neighbor-local-recall.v0.1"
+                        ),
+                        "required_joint_strata": (
+                            "density_rank_x_cosine_boundary"
+                        ),
+                        "issue_persistence_receipt_on_verified_pass": True,
+                        "protocol_binding_required": True,
+                        "source_identity_required": True,
+                    },
                 "claim_boundary": {
                     "semantics_free": True,
                     "candidate_is_not_verified_vortex": True,
-                    "passing_audit_proves_retrieval_coverage_only": (
-                        True
-                    ),
+                        "passing_audit_proves_retrieval_coverage_only": (
+                            True
+                        ),
+                        "approximate_backend_currently_audited": False,
+                    },
+                    "promotion_readiness": {
+                        "receipt_mechanism_implemented": True,
+                        "full_index_subset_query_audit_implemented": True,
+                        "frozen_recall_gate_methodology_available": True,
+                        "query_local_worst_case_recall_gate_implemented": (
+                            True
+                        ),
+                        "atlas_execution_bindings_frozen": True,
+                        "tracked_protocol_can_issue_persistence_receipt": (
+                            True
+                        ),
+                    },
+                    "deviations": [],
                 },
-                "deviations": [],
-            },
             sort_keys=False,
         ),
         encoding="utf-8",
@@ -981,10 +1195,10 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         manifest_path,
         ledger_path,
         config=candidate_config,
-        protocol_id="faiss-candidate-test-v0.1",
+        protocol_id="faiss-candidate-test-v0.2",
         protocol_claim_ceiling=1,
         protocol_binding={
-            "declared_id": "faiss-candidate-test-v0.1",
+            "declared_id": "faiss-candidate-test-v0.2",
             "claim_ceiling": 1,
             "sha256": candidate_sha256,
         },
@@ -1007,11 +1221,11 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         "layer_index=0"
     ]
 
-    assert summary.candidate_count == 1
+    assert summary.candidate_count == 2
     assert binding["backend"]["kind"] == "approximate"
     assert binding["audit_receipt_sha256"] == receipt.sha256
     assert candidate["retrieval"]["audit_receipt_sha256"] == receipt.sha256
-    assert rows[-1]["candidate_count_by_group"] == {"layer_index=0": 1}
+    assert rows[-1]["candidate_count_by_group"] == {"layer_index=0": 2}
 
     direct_path = tmp_path / "direct-approximate.jsonl"
     with pytest.raises(
@@ -1023,7 +1237,7 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
             direct_path,
             source=rows[0]["source"],
             config=candidate_config,
-            protocol_id="faiss-candidate-test-v0.1",
+            protocol_id="faiss-candidate-test-v0.2",
             protocol_claim_ceiling=1,
             protocol_binding=rows[0]["protocol"],
             neighbor_audit_receipts={"layer_index=0": receipt},

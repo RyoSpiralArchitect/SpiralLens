@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
-import json
 from pathlib import Path
 
 import numpy as np
@@ -21,98 +20,12 @@ from spirallens.metrics import (
     write_neighbor_audit,
 )
 from spirallens.neighbors import (
-    NeighborBackendDescriptor,
-    NeighborIndexBuildReceipt,
-    NeighborPair,
+    FaissHNSWBackend,
+    FaissHNSWConfig,
     NeighborQuery,
     canonical_json_sha256,
     state_matrix_sha256,
 )
-
-
-class PreparedAllPairsBackend:
-    def __init__(
-        self,
-        states: np.ndarray,
-        *,
-        row_identity_sha256: str,
-        comparison_group: str,
-        recipe: str = "all-pairs-v1",
-    ) -> None:
-        states_sha256 = state_matrix_sha256(states)
-        self._index_bytes = json.dumps(
-            {
-                "recipe": recipe,
-                "states_sha256": states_sha256,
-                "row_identity_sha256": row_identity_sha256,
-                "comparison_group": comparison_group,
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        index_sha256 = hashlib.sha256(self._index_bytes).hexdigest()
-        self._descriptor = NeighborBackendDescriptor(
-            backend_id="tests.prepared-all-pairs",
-            backend_version="1",
-            kind="approximate",
-            deterministic=True,
-            parameters=(
-                ("comparison_group", comparison_group),
-                ("hidden_size", int(states.shape[1])),
-                ("index_sha256", index_sha256),
-                (
-                    "promotion_config_sha256",
-                    hashlib.sha256(recipe.encode("utf-8")).hexdigest(),
-                ),
-                ("row_count", int(states.shape[0])),
-                ("row_identity_sha256", row_identity_sha256),
-                ("seed", 0),
-                ("states_dtype", str(states.dtype)),
-                ("states_sha256", states_sha256),
-                ("thread_count", 1),
-            ),
-            runtime=(("runtime", "pytest"),),
-        )
-        self._receipt = NeighborIndexBuildReceipt(
-            backend=self._descriptor,
-            states_sha256=states_sha256,
-            row_identity_sha256=row_identity_sha256,
-            index_sha256=index_sha256,
-            comparison_group=comparison_group,
-            row_count=int(states.shape[0]),
-            hidden_size=int(states.shape[1]),
-            states_dtype=str(states.dtype),
-        )
-
-    @property
-    def descriptor(self) -> NeighborBackendDescriptor:
-        return self._descriptor
-
-    @property
-    def build_receipt(self) -> NeighborIndexBuildReceipt:
-        return self._receipt
-
-    def export_index_bytes(self) -> bytes:
-        return self._index_bytes
-
-    def iter_pairs(self, states, *, query):
-        del states
-        query_scope = (
-            None
-            if query.query_indices is None
-            else set(query.query_indices)
-        )
-        for left_index in range(self._receipt.row_count):
-            for right_index in range(
-                left_index + 1,
-                self._receipt.row_count,
-            ):
-                if (
-                    query_scope is None
-                    or left_index in query_scope
-                    or right_index in query_scope
-                ):
-                    yield NeighborPair(left_index, right_index, 0.0)
 
 
 def _fixture() -> tuple[np.ndarray, np.ndarray]:
@@ -139,6 +52,75 @@ def _fixture() -> tuple[np.ndarray, np.ndarray]:
     return states, drifts
 
 
+def _faiss_config(
+    audit_config: NeighborAuditConfig,
+) -> FaissHNSWConfig:
+    return FaissHNSWConfig(
+        m=4,
+        ef_construction=40,
+        ef_search=40,
+        query_batch_size=2,
+        score_margin=audit_config.boundary_shell_width,
+    )
+
+
+def _write_recall_gate(
+    tmp_path: Path,
+    audit_config: NeighborAuditConfig,
+) -> Path:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "protocols"
+        / "neighbor_recall_gate_v0_1.yaml"
+    )
+    document = yaml.safe_load(source.read_text(encoding="utf-8"))
+    document["gate_id"] = "tests-neighbor-recall-gate-v0.1"
+    document["thresholds"].update(
+        {
+            "aggregate_candidate_recall_min": (
+                audit_config.candidate_recall_min
+            ),
+            "query_local_recall_min": (
+                audit_config.query_local_recall_min
+            ),
+            "density_macro_and_joint_stratum_recall_min": (
+                audit_config.stratum_recall_min
+            ),
+            "boundary_shell_width": (
+                audit_config.boundary_shell_width
+            ),
+            "repeats": audit_config.repeats,
+        }
+    )
+    document["support"].update(
+        {
+            "minimum_reference_candidates": (
+                audit_config.minimum_reference_candidates
+            ),
+            "minimum_eligible_queries": (
+                audit_config.minimum_eligible_queries
+            ),
+            "minimum_eligible_query_fraction": (
+                audit_config.minimum_eligible_query_fraction
+            ),
+            "density_strata_count": audit_config.density_strata_count,
+            "minimum_eligible_queries_per_density_stratum": (
+                audit_config
+                .minimum_eligible_queries_per_density_stratum
+            ),
+            "minimum_reference_candidates_per_joint_stratum": (
+                audit_config.minimum_reference_candidates_per_stratum
+            ),
+        }
+    )
+    path = tmp_path / "recall-gate.yaml"
+    path.write_text(
+        yaml.safe_dump(document, sort_keys=False),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _frozen_result(
     tmp_path: Path,
 ):
@@ -152,56 +134,113 @@ def _frozen_result(
         block_size=2,
         layer_indices=(0,),
     )
-    audit_config = NeighborAuditConfig()
+    audit_config = NeighborAuditConfig(
+        candidate_recall_min=0.99,
+        query_local_recall_min=0.99,
+        stratum_recall_min=0.99,
+        minimum_reference_candidates=1,
+        minimum_eligible_queries=1,
+        minimum_eligible_query_fraction=0.0,
+        density_strata_count=1,
+        minimum_eligible_queries_per_density_stratum=1,
+        boundary_shell_width=0.000999,
+        minimum_reference_candidates_per_stratum=1,
+    )
     selection = NeighborQuerySelectionContract(
         seed=7,
         count=states.shape[0],
         global_row_key_sha256=row_identity_sha256,
     )
     candidate_path = tmp_path / "candidate.yaml"
+    candidate_document = yaml.safe_load(
+        (
+            Path(__file__).resolve().parents[1]
+            / "protocols"
+            / "pythia_candidate_v0_2.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    candidate_document["protocol_id"] = "frozen-candidate-v0.2"
+    candidate_document["status"] = "frozen"
+    candidate_document["candidate_search"] = (
+        candidate_config.to_dict()
+    )
     candidate_path.write_text(
-        yaml.safe_dump(
-            {
-                "schema_version": "spirallens.protocol.v0.1",
-                "protocol_id": "frozen-candidate-v0.1",
-                "status": "frozen",
-                "claim_ceiling": 1,
-                "candidate_search": candidate_config.to_dict(),
-            },
-            sort_keys=False,
-        ),
+        yaml.safe_dump(candidate_document, sort_keys=False),
         encoding="utf-8",
     )
+    recall_gate_path = _write_recall_gate(tmp_path, audit_config)
     protocol_path = tmp_path / "neighbor.yaml"
     protocol_document = {
-        "schema_version": "spirallens.neighbor-audit-protocol.v0.1",
+        "schema_version": "spirallens.neighbor-audit-protocol.v0.2",
         "protocol_id": "frozen-neighbor-v0.1",
         "status": "frozen",
+        "claim_ceiling": 1,
+        "recall_gate_contract": {
+            "path": recall_gate_path.name,
+            "sha256": hashlib.sha256(
+                recall_gate_path.read_bytes()
+            ).hexdigest(),
+            "gate_id": "tests-neighbor-recall-gate-v0.1",
+        },
         "audit_scope": {"comparison_group": "layer_index=0"},
         "candidate_protocol": {
             "path": candidate_path.name,
             "sha256": hashlib.sha256(
                 candidate_path.read_bytes()
             ).hexdigest(),
-            "declared_id": "frozen-candidate-v0.1",
+            "declared_id": "frozen-candidate-v0.2",
         },
         "retrieval_contract": {
             "input": "resid_pre",
+            "input_snapshot": "detached_read_only",
+            "input_sha256_checked_before_and_after_each_rebuild": True,
             "metric": "cosine",
+            "comparison_unit": [
+                "fixed_context_bank",
+                "fixed_context_id",
+                "fixed_observation_position",
+                "fixed_layer_index",
+            ],
+            "output": "canonical_unordered_global_row_pairs",
+            "pair_order": "left_then_right_ascending",
             "drift_available_to_backend": False,
             "decoded_strings_available_to_backend": False,
             "semantic_annotation_available_to_backend": False,
             "sae_annotation_available_to_backend": False,
             "projected_coordinates_available_to_backend": False,
         },
+        "reference_backend": {
+            "backend_id": "spirallens.exact-blockwise-reference",
+            "backend_version": "0.1",
+            "kind": "exact",
+            "deterministic": True,
+            "descriptor_sha256_bound_in_audit_identity": True,
+            "runtime_version_bound_in_descriptor": True,
+            "maximum_all_pair_rows": 10000,
+            "maximum_exact_comparisons": 50000000,
+            "inclusive_thresholds": True,
+        },
         "subject_backend": {
-            "backend_id": "tests.prepared-all-pairs",
-            "backend_version": "1",
+            "status": "implementation_selected_unpromoted",
+            "backend_id": "spirallens.faiss-hnsw-range",
+            "backend_version": "0.1",
+            "distribution": "faiss-cpu",
+            "distribution_version": "1.14.3",
             "kind_required_for_full_vocabulary": "approximate",
+            "optional_dependency_only": True,
             "candidate_persistence_without_audit_receipt": (
                 "forbidden"
             ),
-            "config": {"seed": 0, "thread_count": 1},
+            "config": _faiss_config(audit_config).to_dict(),
+            "required_provenance": [
+                "backend_id",
+                "backend_version",
+                "backend_config",
+                "runtime_versions",
+                "seed",
+                "thread_count",
+                "index_digest",
+            ],
         },
         "query_sampling": {
             "method": "sha256_ranked_global_indices",
@@ -212,6 +251,7 @@ def _frozen_result(
         "exact_rerank": {
             "contract": "spirallens.candidate-exact-rerank.v0.1",
             "required_before_persist": True,
+            "source_values": "original_atlas_values_cast_to_float64",
             "backend_score_used_for_gate": False,
             "false_persistable_candidates_allowed": 0,
         },
@@ -220,21 +260,65 @@ def _frozen_result(
             "candidate_boundary_recall_min": (
                 audit_config.candidate_recall_min
             ),
+            "query_local_recall_min": (
+                audit_config.query_local_recall_min
+            ),
+            "stratum_recall_min": (
+                audit_config.stratum_recall_min
+            ),
             "repeats": audit_config.repeats,
             "repeat_mode": "independent_cold_rebuild",
             "minimum_reference_candidates": (
                 audit_config.minimum_reference_candidates
             ),
+            "minimum_eligible_queries": (
+                audit_config.minimum_eligible_queries
+            ),
+            "minimum_eligible_query_fraction": (
+                audit_config.minimum_eligible_query_fraction
+            ),
+            "density_strata_count": (
+                audit_config.density_strata_count
+            ),
+            "minimum_eligible_queries_per_density_stratum": (
+                audit_config
+                .minimum_eligible_queries_per_density_stratum
+            ),
+            "boundary_shell_width": (
+                audit_config.boundary_shell_width
+            ),
+            "minimum_reference_candidates_per_stratum": (
+                audit_config.minimum_reference_candidates_per_stratum
+            ),
             "missing_pair_sample_limit": (
                 audit_config.missing_pair_sample_limit
             ),
             "zero_reference_candidates": "insufficient",
-            "full_vocabulary_backend_promoted_by_this_protocol": True,
+            "top_k_recall_role": "not_applicable_range_search",
+            "pooled_recall_can_override_failed_group": False,
+            "required_local_recall_contract": (
+                "spirallens.neighbor-local-recall.v0.1"
+            ),
+            "required_joint_strata": (
+                "density_rank_x_cosine_boundary"
+            ),
+            "issue_persistence_receipt_on_verified_pass": True,
+            "protocol_binding_required": True,
+            "source_identity_required": True,
         },
         "claim_boundary": {
             "semantics_free": True,
             "candidate_is_not_verified_vortex": True,
             "passing_audit_proves_retrieval_coverage_only": True,
+            "approximate_backend_currently_audited": False,
+        },
+        "promotion_readiness": {
+            "receipt_mechanism_implemented": True,
+            "full_index_subset_query_audit_implemented": True,
+            "frozen_recall_gate_methodology_available": True,
+            "query_local_worst_case_recall_gate_implemented": True,
+            "atlas_execution_bindings_frozen": True,
+            "tracked_protocol_can_issue_persistence_receipt": True,
         },
         "deviations": [],
     }
@@ -268,10 +352,11 @@ def _frozen_result(
     result = audit_neighbor_backend(
         states,
         drifts,
-        subject_backend_factory=lambda snapshot: PreparedAllPairsBackend(
+        subject_backend_factory=lambda snapshot: FaissHNSWBackend(
             snapshot,
             row_identity_sha256=row_identity_sha256,
             comparison_group="layer_index=0",
+            config=_faiss_config(audit_config),
         ),
         protocol_binding=protocol,
         source_identity=source,
@@ -291,6 +376,31 @@ def _frozen_result(
     )
 
 
+def _rebind_result_to_protocol(result, protocol_path: Path):
+    return replace(
+        result,
+        protocol_binding=replace(
+            result.protocol_binding,
+            source_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        ),
+    )
+
+
+def _write_rebound_audit(
+    tmp_path: Path,
+    result,
+    protocol_path: Path,
+    *,
+    name: str,
+):
+    rebound = _rebind_result_to_protocol(result, protocol_path)
+    audit_path = tmp_path / name
+    write_neighbor_audit(rebound, audit_path)
+    return rebound, audit_path
+
+
 def _target(
     result,
     states,
@@ -299,10 +409,11 @@ def _target(
     manifest_sha256,
     receipt,
 ):
-    backend = PreparedAllPairsBackend(
+    backend = FaissHNSWBackend(
         states,
         row_identity_sha256=row_identity_sha256,
         comparison_group="layer_index=0",
+        config=_faiss_config(result.audit_config),
     )
     return NeighborPersistenceTarget(
         backend=backend.descriptor,
@@ -365,6 +476,17 @@ def test_receipt_authorizes_only_identical_full_input_index_group(
     receipt.validate_target(target)
     assert receipt.subject_backend == target.backend
     assert receipt.authorized_target_query_sha256 == target.query.sha256
+    assert receipt.schema_version == (
+        "spirallens.neighbor-audit-receipt.v0.2"
+    )
+    assert (
+        receipt.coverage_contract_sha256
+        == result.coverage_contract_sha256
+    )
+    assert (
+        receipt.coverage_evidence_sha256
+        == result.coverage_evidence_sha256
+    )
     with pytest.raises(ValueError, match="drifts"):
         receipt.validate_target(
             replace(target, drifts_sha256="f" * 64)
@@ -373,6 +495,12 @@ def test_receipt_authorizes_only_identical_full_input_index_group(
     assert reconstructed.verified is False
     with pytest.raises(ValueError, match="verified audit/protocol"):
         reconstructed.validate_target(target)
+    legacy = receipt.to_dict()
+    legacy["schema_version"] = (
+        "spirallens.neighbor-audit-receipt.v0.1"
+    )
+    with pytest.raises(ValueError, match="receipt schema"):
+        NeighborAuditReceipt.from_dict(legacy)
     malformed = receipt.to_dict()
     malformed["row_count"] += 1
     with pytest.raises(ValueError, match="index build receipt"):
@@ -457,6 +585,216 @@ def test_load_receipt_binds_actual_frozen_protocol_bytes(
             audit_path,
             protocol_path=protocol_path,
             expected_audit_sha256=result.sha256,
+            expected_protocol_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    (
+        (
+            lambda document: document.__setitem__(
+                "schema_version",
+                "spirallens.neighbor-audit-protocol.v0.1",
+            ),
+            "top-level contract",
+        ),
+        (
+            lambda document: document["audit"].__setitem__(
+                "query_local_recall_min",
+                0.98,
+            ),
+            "audit settings",
+        ),
+        (
+            lambda document: document["audit"].__setitem__(
+                "pooled_recall_can_override_failed_group",
+                True,
+            ),
+            "audit settings",
+        ),
+        (
+            lambda document: document["promotion_readiness"].__setitem__(
+                "tracked_protocol_can_issue_persistence_receipt",
+                False,
+            ),
+            "frozen neighbor protocol binding",
+        ),
+    ),
+)
+def test_receipt_rejects_legacy_or_incomplete_promotion_contract(
+    tmp_path: Path,
+    mutate,
+    match: str,
+) -> None:
+    result, *_, protocol_path = _frozen_result(tmp_path)
+    document = yaml.safe_load(protocol_path.read_text(encoding="utf-8"))
+    mutate(document)
+    protocol_path.write_text(
+        yaml.safe_dump(document, sort_keys=False),
+        encoding="utf-8",
+    )
+    rebound, audit_path = _write_rebound_audit(
+        tmp_path,
+        result,
+        protocol_path,
+        name=f"invalid-{match.replace(' ', '-')}.json",
+    )
+
+    with pytest.raises(ValueError, match=match):
+        load_neighbor_audit_receipt(
+            audit_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=rebound.sha256,
+            expected_protocol_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        )
+
+
+def test_receipt_rejects_rehashed_recall_gate_methodology_change(
+    tmp_path: Path,
+) -> None:
+    result, *_, protocol_path = _frozen_result(tmp_path)
+    protocol = yaml.safe_load(protocol_path.read_text(encoding="utf-8"))
+    gate_path = protocol_path.parent / protocol["recall_gate_contract"]["path"]
+    gate = yaml.safe_load(gate_path.read_text(encoding="utf-8"))
+    gate["gate_logic"]["pooled_recall_can_override_failed_cell"] = True
+    gate_path.write_text(
+        yaml.safe_dump(gate, sort_keys=False),
+        encoding="utf-8",
+    )
+    protocol["recall_gate_contract"]["sha256"] = hashlib.sha256(
+        gate_path.read_bytes()
+    ).hexdigest()
+    protocol_path.write_text(
+        yaml.safe_dump(protocol, sort_keys=False),
+        encoding="utf-8",
+    )
+    rebound, audit_path = _write_rebound_audit(
+        tmp_path,
+        result,
+        protocol_path,
+        name="changed-methodology.json",
+    )
+
+    with pytest.raises(ValueError, match="recall gate methodology"):
+        load_neighbor_audit_receipt(
+            audit_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=rebound.sha256,
+            expected_protocol_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ("exact_only", "draft_status"),
+)
+def test_receipt_rejects_candidate_protocol_without_ann_authorization(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    result, *_, protocol_path = _frozen_result(tmp_path)
+    protocol = yaml.safe_load(
+        protocol_path.read_text(encoding="utf-8")
+    )
+    candidate_path = (
+        protocol_path.parent
+        / protocol["candidate_protocol"]["path"]
+    )
+    candidate = yaml.safe_load(
+        candidate_path.read_text(encoding="utf-8")
+    )
+    if mutation == "exact_only":
+        candidate["discovery_contract"]["pairwise_processing"] = (
+            "exact_blockwise"
+        )
+    else:
+        candidate["status"] = "preregistered-draft"
+    candidate_path.write_text(
+        yaml.safe_dump(candidate, sort_keys=False),
+        encoding="utf-8",
+    )
+    protocol["candidate_protocol"]["sha256"] = hashlib.sha256(
+        candidate_path.read_bytes()
+    ).hexdigest()
+    protocol_path.write_text(
+        yaml.safe_dump(protocol, sort_keys=False),
+        encoding="utf-8",
+    )
+    rebound, audit_path = _write_rebound_audit(
+        tmp_path,
+        result,
+        protocol_path,
+        name=f"candidate-{mutation}.json",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not authorize receipt-gated approximate discovery",
+    ):
+        load_neighbor_audit_receipt(
+            audit_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=rebound.sha256,
+            expected_protocol_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        )
+
+
+def test_receipt_rejects_duplicate_protocol_or_gate_keys(
+    tmp_path: Path,
+) -> None:
+    result, *_, protocol_path = _frozen_result(tmp_path)
+    audit_path = tmp_path / "audit.json"
+    write_neighbor_audit(result, audit_path)
+    protocol_path.write_text(
+        protocol_path.read_text(encoding="utf-8") + "status: frozen\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate key"):
+        load_neighbor_audit_receipt(
+            audit_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=result.sha256,
+            expected_protocol_sha256=hashlib.sha256(
+                protocol_path.read_bytes()
+            ).hexdigest(),
+        )
+
+    gate_case = tmp_path / "gate-case" / "nested"
+    gate_case.mkdir(parents=True)
+    result, *_, protocol_path = _frozen_result(gate_case)
+    protocol = yaml.safe_load(protocol_path.read_text(encoding="utf-8"))
+    gate_path = protocol_path.parent / protocol["recall_gate_contract"]["path"]
+    gate_path.write_text(
+        gate_path.read_text(encoding="utf-8") + "status: frozen\n",
+        encoding="utf-8",
+    )
+    protocol["recall_gate_contract"]["sha256"] = hashlib.sha256(
+        gate_path.read_bytes()
+    ).hexdigest()
+    protocol_path.write_text(
+        yaml.safe_dump(protocol, sort_keys=False),
+        encoding="utf-8",
+    )
+    rebound, audit_path = _write_rebound_audit(
+        gate_case,
+        result,
+        protocol_path,
+        name="duplicate-gate.json",
+    )
+    with pytest.raises(ValueError, match="duplicate key"):
+        load_neighbor_audit_receipt(
+            audit_path,
+            protocol_path=protocol_path,
+            expected_audit_sha256=rebound.sha256,
             expected_protocol_sha256=hashlib.sha256(
                 protocol_path.read_bytes()
             ).hexdigest(),

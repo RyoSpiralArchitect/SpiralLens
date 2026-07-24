@@ -64,6 +64,12 @@ def _query(
     )
 
 
+class _OverriddenFaissSearch(FaissHNSWBackend):
+    def iter_pairs(self, states, *, query):
+        del states, query
+        yield from ()
+
+
 def test_faiss_hnsw_build_is_byte_deterministic_and_bound() -> None:
     states = _states()
     kwargs = {
@@ -180,7 +186,9 @@ def test_faiss_hnsw_runs_through_candidate_boundary_audit() -> None:
         drift_relative_divergence_min=1.5,
         block_size=2,
     )
-    audit_config = NeighborAuditConfig()
+    audit_config = NeighborAuditConfig(
+        boundary_shell_width=0.000999
+    )
     protocol = NeighborAuditProtocolBinding(
         protocol_id="faiss-test-v0.1",
         status="preregistered-draft",
@@ -217,6 +225,52 @@ def test_faiss_hnsw_runs_through_candidate_boundary_audit() -> None:
     assert result.subject_backend.kind == "approximate"
     assert result.candidate_boundary_recall == (1.0, 1.0)
     assert result.identity_dict()["subject_index_build_sha256"]
+
+
+def test_frozen_audit_rejects_overridden_faiss_search() -> None:
+    states = _states()
+    drifts = np.zeros_like(states)
+    candidate_config = CandidateSearchConfig(
+        cosine_min=0.999,
+        relative_norm_gap_max=0.05,
+        drift_relative_divergence_min=1.5,
+        block_size=2,
+    )
+    audit_config = NeighborAuditConfig(
+        boundary_shell_width=0.000999
+    )
+    protocol = NeighborAuditProtocolBinding(
+        protocol_id="faiss-exact-type-test-v0.1",
+        status="frozen",
+        source_sha256="a" * 64,
+        candidate_config_sha256=canonical_json_sha256(
+            candidate_config.to_dict()
+        ),
+        audit_config_sha256=audit_config.sha256,
+    )
+
+    with pytest.raises(TypeError, match="built-in FaissHNSWBackend"):
+        audit_neighbor_backend(
+            states,
+            drifts,
+            subject_backend_factory=lambda snapshot: (
+                _OverriddenFaissSearch(
+                    snapshot,
+                    row_identity_sha256=_row_identity(),
+                    comparison_group="layer_index=0",
+                    config=_config(score_margin=0.000999),
+                )
+            ),
+            protocol_binding=protocol,
+            source_identity={
+                "kind": "synthetic_fixture",
+                "fixture_id": "overridden-faiss-search",
+                "row_identity_sha256": _row_identity(),
+            },
+            candidate_config=candidate_config,
+            audit_config=audit_config,
+            group_key="layer_index=0",
+        )
 
 
 def test_faiss_hnsw_requires_single_thread() -> None:

@@ -1,6 +1,6 @@
 # Neighbor Audit and Receipt Contract
 
-- **Status:** mechanism implemented; tracked Faiss promotion not yet authorized
+- **Status:** recall methodology frozen; Pythia execution/promotion not frozen
 - **Backend:** `spirallens.faiss-hnsw-range@0.1`
 - **Distribution:** `faiss-cpu==1.14.3`
 - **Artifact maturity:** experimental, pre-1.0
@@ -36,18 +36,23 @@ An audit does not build a small ANN index and extrapolate its result. It:
 4. limits only the exact reference query scope;
 5. runs independent cold Faiss rebuilds;
 6. exact-reranks both reference and subject proposals;
-7. reports candidate-boundary recall and determinism.
+7. reports aggregate, query-local, density-macro, density-by-boundary, and
+   worst-case recall together with determinism and support status.
 
 For 50,304 rows, the tracked query count of 1,000 keeps the exact comparison
 budget below 50 million while auditing the same full HNSW index intended for
 discovery.
 
-The current tracked draft requires aggregate candidate-boundary recall of at
-least 0.99, two identical cold rebuilds, and at least 100 exact reference
-candidates. That is not yet sufficient for promotion: aggregate recall can
-hide failure concentrated in one query or density region. The tracked protocol
-therefore keeps promotion disabled until query-local/worst-case coverage is
-implemented.
+The reusable methodology is frozen in
+[`../protocols/neighbor_recall_gate_v0_1.yaml`](../protocols/neighbor_recall_gate_v0_1.yaml).
+It requires at least 0.99 recall globally, at every evaluable query, in every
+relative-density macro, and in every required density-by-cosine-boundary joint
+cell across both cold rebuilds. Zero denominators remain null and required
+cells below frozen support minima are `insufficient`.
+
+This does not freeze or pass the Pythia execution. The tracked Pythia protocol
+binds the methodology digest but remains `preregistered-draft`, with null atlas
+row/group bindings and promotion disabled.
 
 ## 3. Bound identities
 
@@ -65,6 +70,7 @@ The index build receipt binds:
 The promotion receipt additionally binds:
 
 - audit artifact and audit identity SHA-256;
+- coverage-evaluator contract, SpiralLens version, and NumPy version;
 - exact frozen neighbor-protocol bytes;
 - exact candidate-protocol ID and SHA-256;
 - atlas manifest, run, state, drift, and row identities;
@@ -94,7 +100,8 @@ spirallens neighbor-audit \
 Before a real audit, a separately reviewed protocol copy must bind the emitted
 `global_row_key_sha256` and `comparison_group`, set `status: frozen`, and be
 hashed out of band. The tracked draft must not be switched to promotion-ready
-until its query-local coverage gate is implemented.
+until those atlas-specific bindings, its frozen candidate protocol, and the
+complete promotion-readiness declaration have been independently reviewed.
 
 Once such a future protocol has been reviewed and frozen:
 
@@ -120,7 +127,7 @@ AUDIT_SHA="<trusted audit_sha256 from the completed audit>"
 spirallens candidates \
   --manifest runs/pythia70-full/manifest.json \
   --output runs/pythia70-full/layer-0-candidates.jsonl \
-  --protocol protocols/pythia_v0_1.yaml \
+  --protocol protocols/pythia_candidate_v0_2.yaml \
   --layers 0 \
   --neighbor-backend faiss-hnsw \
   --neighbor-audit runs/pythia70-full/layer-0-neighbor-audit.json \
@@ -134,6 +141,12 @@ path. Atlas-backed publication is owned by the manifest extraction path, so
 the public low-level ledger writer cannot relabel atlas candidates or accept
 self-declared approximate candidates. Every group, including a group with zero
 candidates, remains present in the footer.
+
+Frozen qualification also requires the exact built-in
+`FaissHNSWBackend` Python type for every cold rebuild. A subclass, wrapper, or
+custom backend can be measured under a draft protocol, but its result carries
+an unverified runner contract and cannot be relabelled into a promotion
+receipt.
 
 ## 5. Fail-closed behavior
 
@@ -155,6 +168,14 @@ typed backend, query, and embedded receipt records. For authenticity rather
 than corruption detection, callers should also retain and supply an external
 ledger SHA-256.
 
+The v0.2 audit artifact stores local membership digests and recomputable
+counts, recalls, support states, and gate outcomes, but not the full pair
+membership matrices as an external sidecar. Its digest therefore detects
+post-write corruption under the local audit-process trust boundary; it is not
+a cryptographic proof that an independently implemented evaluator would
+derive the same strata. A future independently replayable evidence sidecar is
+required before treating the receipt mechanism itself as scientific evidence.
+
 ## 6. Current non-claims and next gate
 
 No tracked artifact currently says that Faiss has passed the Pythia
@@ -162,8 +183,8 @@ full-vocabulary audit. No approximate ledger is committed as evidence.
 Candidate-boundary recall measures retrieval coverage only. It does not prove
 semantic structure, topology, holonomy, phase, or causal relevance.
 
-The next promotion work is to define and implement query-local, density/boundary
-stratified, and worst-case recall requirements; freeze them before observing
-the full audit outcome; then run the Pythia-70M integration pilot. Only after
-that does the roadmap advance to deterministic candidate-graph and loop
-construction.
+The next promotion work is to bind a specific atlas row identity and layer,
+complete the frozen-protocol adversarial review, and only then execute the
+full-vocabulary Pythia audit. A frozen methodology is not an audit result.
+Only after a separately verified pass does the roadmap advance to
+deterministic candidate-graph and loop construction.
