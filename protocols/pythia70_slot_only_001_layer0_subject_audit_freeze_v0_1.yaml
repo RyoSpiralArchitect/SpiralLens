@@ -1,0 +1,92 @@
+schema_version: spirallens.subject-audit-freeze.v0.1
+freeze_id: pythia70-slot-only-001-layer0-subject-audit-v0.1
+status: frozen_before_outcome
+
+source:
+  repository: https://github.com/RyoSpiralArchitect/SpiralLens
+  branch: SpiralReality/pythia70-subject-audit
+  implementation_commit: 3941fe1c8a7126fc641ee884a79f6f674a7e618c
+  required_worktree_state: clean
+  post_implementation_change_allowed_before_audit:
+    - this_freeze_record_only
+
+atlas:
+  manifest_path: runs/pythia70-full-slot-only-001/manifest.json
+  manifest_sha256: 6acc23da3726b65bc6151b96a57c949892da9286b98849b300408a3820380eea
+  run_id: 94b678fd-963b-4e7b-91b1-874c2eeb80f3
+  row_count: 50304
+  selection: full_vocabulary
+  context_bank_binding_sha256: b57e412ba504052787919b7eca8fbef88f3b773e089aea92ed72bf43c998aaa9
+  context_id: synthetic-slot-only-001
+  context_role: example
+  context_bank_claim_eligible: false
+  layer_index: 0
+
+frozen_protocols:
+  candidate:
+    path: protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml
+    sha256: d6f60d38237825178f4d7c799e27da370049787d47ca999172121f07c84d212e
+    parent_draft_path: protocols/pythia_candidate_v0_2.yaml
+    parent_draft_sha256: ce3e6b6ba7c6cac026ba74671faf5c800e3d21bfc6abbf2641b9d03a37ceb2d8
+    allowed_freeze_changes:
+      - protocol_id
+      - status_preregistered_draft_to_frozen
+      - candidate_search.layer_indices_null_to_layer_0
+  neighbor:
+    path: protocols/pythia70_slot_only_001_layer0_neighbor_v0_2.yaml
+    sha256: 296609585f4f165e44a235d6a8af9416b840477313a63013414abb1ed9a55661
+    parent_draft_path: protocols/pythia_neighbor_v0_2.yaml
+    parent_draft_sha256: 45f6699badb314f68c43d5fee2bf2070405af13b518437e24590b0de9f117350
+    allowed_freeze_changes:
+      - protocol_id
+      - status_preregistered_draft_to_frozen
+      - audit_scope_binding
+      - frozen_candidate_protocol_binding
+      - query_row_universe_binding
+      - receipt_issue_flag_false_to_true
+      - promotion_readiness_execution_flags_false_to_true
+  recall_gate:
+    path: protocols/neighbor_recall_gate_v0_1.yaml
+    sha256: 5c44c9f1f9c22ad6acb06bd7a1ecc8f3d54511e54953b5cb7487304b1e1b5dde
+
+prepared_bindings:
+  comparison_group: layer_index=0
+  global_row_key_schema_version: spirallens.global-row-key.v0.2
+  global_row_key_sha256: d39cd127bd50f564a8ea13e080f19806a3ce390b9ed4436b49d2701054409c43
+  query_selection_sha256: 664d84861a4b05a1ae63d17e5d54c8ddb322d1c2e61c65df87f3a689ecb1055b
+  audit_config_sha256: f40dff69a36698a25540fec3cacac260e504fd218961ccf41bd9996bd4e17c7c
+  query_count: 1000
+  query_seed: 1729
+
+runtime:
+  executable: /Library/Frameworks/Python.framework/Versions/3.13/bin/python3
+  python_implementation: CPython
+  python_version: 3.13.13
+  platform: macOS-26.2-arm64-arm-64bit-Mach-O
+  machine: arm64
+  spirallens_version: 0.1.0
+  numpy_version: 2.4.4
+  faiss_distribution: faiss-cpu
+  faiss_version: 1.14.3
+  faiss_compile_options: "OPTIMIZE DD ARM_NEON MAC_METAL "
+  import_mode: clean_git_worktree_at_implementation_commit
+  required_pythonpath: src
+  same_runtime_required_for_candidate_extraction: true
+
+single_shot_contract:
+  prepare_only_before_outcome_allowed: true
+  subject_audit_runs_allowed: 1
+  overwrite_allowed: false
+  pass_is_terminal: true
+  fail_is_terminal: true
+  insufficient_is_terminal: true
+  retry_after_observing_outcome_allowed: false
+  tuning_from_this_outcome_allowed: false
+  output_path: runs/pythia70-full-slot-only-001/layer-0-neighbor-audit.json
+
+claim_boundary:
+  qualification_kind: retrieval_plumbing
+  semantic_evidence: false
+  scientific_target_evidence: false
+  passing_audit_proves_retrieval_coverage_only: true
+  candidate_is_not_verified_vortex: true
