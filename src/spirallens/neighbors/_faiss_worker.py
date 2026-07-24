@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 
@@ -19,6 +20,44 @@ def _load_faiss():
             "Faiss HNSW requires `pip install 'spirallens[ann]'`"
         ) from error
     return faiss
+
+
+def _validated_runtime_contract() -> dict[str, str]:
+    from spirallens.execution_freeze import (
+        current_worker_runtime_contract,
+    )
+
+    raw = os.environ.get(
+        "SPIRALLENS_FAISS_WORKER_RUNTIME_CONTRACT"
+    )
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("Faiss worker runtime contract is missing")
+    try:
+        expected = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "Faiss worker runtime contract is invalid JSON"
+        ) from error
+    if (
+        not isinstance(expected, dict)
+        or not expected
+        or any(
+            not isinstance(key, str)
+            or not key
+            or not isinstance(value, str)
+            or not value
+            for key, value in expected.items()
+        )
+    ):
+        raise ValueError("Faiss worker runtime contract is invalid")
+    actual = current_worker_runtime_contract(
+        expected.get("execution_freeze_sha256")
+    )
+    if actual != expected:
+        raise ValueError(
+            "Faiss worker imports differ from the runtime contract"
+        )
+    return actual
 
 
 def _atomic_json(path: Path, payload: dict[str, object]) -> None:
@@ -79,6 +118,7 @@ def _run_build(args: argparse.Namespace) -> int:
             "row_count": int(rows.shape[0]),
             "hidden_size": int(rows.shape[1]),
             "thread_count": 1,
+            "runtime": args.runtime_contract,
         },
     )
     return 0
@@ -172,6 +212,7 @@ def _parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = _parser().parse_args()
+    args.runtime_contract = _validated_runtime_contract()
     return int(args.handler(args))
 
 

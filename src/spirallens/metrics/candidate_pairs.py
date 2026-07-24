@@ -40,6 +40,8 @@ from spirallens.neighbors import (
 )
 
 if TYPE_CHECKING:
+    from spirallens.execution_freeze import ValidatedExecutionFreeze
+
     from .neighbor_audit import (
         NeighborAuditConfig,
         NeighborAuditProtocolBinding,
@@ -2784,7 +2786,7 @@ def extract_candidates_from_manifest(
     )
 
 
-def audit_neighbor_backend_from_manifest(
+def _audit_neighbor_backend_from_manifest(
     manifest_path: str | Path,
     *,
     layer_index: int,
@@ -2795,11 +2797,15 @@ def audit_neighbor_backend_from_manifest(
     protocol_binding: "NeighborAuditProtocolBinding",
     candidate_config: CandidateSearchConfig,
     audit_config: "NeighborAuditConfig",
+    execution_freeze: "ValidatedExecutionFreeze",
     verify_checksums: bool = True,
 ) -> "NeighborAuditResult":
     """Audit one prepared full-input index on preregistered query rows."""
 
     from spirallens.atlas import load_manifest
+    from spirallens.execution_freeze import (
+        validated_execution_freeze_sha256,
+    )
 
     from .neighbor_audit import (
         NeighborAuditProtocolBinding,
@@ -2835,6 +2841,10 @@ def audit_neighbor_backend_from_manifest(
         raise ValueError(
             "candidate_config must bind exactly the audited layer"
         )
+    execution_freeze_sha256 = (
+        validated_execution_freeze_sha256(execution_freeze)
+    )
+    execution_freeze.revalidate()
     selection = protocol_binding.query_selection
     if selection is None:
         raise ValueError(
@@ -2968,6 +2978,7 @@ def audit_neighbor_backend_from_manifest(
             "atlas_run_id": run_id,
             "observation_scope_sha256": observation_scope_sha256,
             "global_row_key_sha256": global_row_key_sha256,
+            "execution_freeze_sha256": execution_freeze_sha256,
         },
         candidate_config=candidate_config,
         audit_config=audit_config,
@@ -3001,4 +3012,6 @@ def audit_neighbor_backend_from_manifest(
         raise ValueError(
             "atlas arrays changed during neighbor audit"
         )
+    execution_freeze.revalidate()
+    execution_freeze.validate_subject_backend(result.subject_backend)
     return result

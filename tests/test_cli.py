@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
 
+from spirallens.audit_output import (
+    persist_reserved_audit_output,
+    reserve_audit_output,
+)
 from spirallens.cli import (
     _load_yaml_mapping,
     _neighbor_audit_config_from_protocol,
@@ -408,6 +413,97 @@ def test_draft_neighbor_protocol_is_prepare_only(
     assert "draft protocols are prepare-only" in (
         capsys.readouterr().err
     )
+
+
+def test_frozen_audit_output_rejects_symlink_component(
+    tmp_path: Path,
+) -> None:
+    real = tmp_path / "real"
+    real.mkdir()
+    linked = tmp_path / "linked"
+    linked.symlink_to(real, target_is_directory=True)
+
+    with pytest.raises(OSError):
+        reserve_audit_output(linked / "audit.json")
+
+
+def test_frozen_audit_output_reservation_is_exclusive_and_durable(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "audit.json"
+    reservation = reserve_audit_output(output)
+    reservation.close()
+
+    marker = output.read_text(encoding="utf-8")
+    assert marker.startswith(
+        "spirallens-neighbor-audit-reservation-v0.3\n"
+    )
+    assert "\nrecovery=.audit.json.recovery-" in marker
+    with pytest.raises(FileExistsError, match="already reserved"):
+        reserve_audit_output(output)
+
+
+def test_reserved_output_rejects_parent_path_swap(
+    tmp_path: Path,
+) -> None:
+    original_parent = tmp_path / "target"
+    original_parent.mkdir()
+    output = original_parent / "audit.json"
+    reservation = reserve_audit_output(output)
+    moved_parent = tmp_path / "moved"
+    original_parent.rename(moved_parent)
+    original_parent.mkdir()
+
+    with pytest.raises(
+        ValueError,
+        match="parent directory identity changed",
+    ):
+        persist_reserved_audit_output(
+            reservation,
+            destination=output,
+            payload=b"artifact\n",
+        )
+    reservation.close()
+    assert not output.exists()
+    assert (moved_parent / "audit.json").read_text(
+        encoding="utf-8"
+    ).startswith("spirallens-neighbor-audit-reservation-v0.3\n")
+
+
+def test_reserved_output_keeps_complete_recovery_on_final_write_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "audit.json"
+    reservation = reserve_audit_output(output)
+    payload = b'{"complete":true}\n'
+    original_write = os.write
+    write_count = 0
+
+    def fail_final_write(descriptor: int, data: object) -> int:
+        nonlocal write_count
+        write_count += 1
+        if write_count == 2:
+            raise OSError("simulated final-path failure")
+        return original_write(descriptor, data)
+
+    monkeypatch.setattr(
+        "spirallens.audit_output.os.write",
+        fail_final_write,
+    )
+    with pytest.raises(OSError, match="simulated"):
+        persist_reserved_audit_output(
+            reservation,
+            destination=output,
+            payload=payload,
+        )
+    reservation.close()
+
+    recovery_files = list(
+        tmp_path.glob(".audit.json.recovery-*")
+    )
+    assert len(recovery_files) == 1
+    assert recovery_files[0].read_bytes() == payload
 
 
 def test_neighbor_protocol_loader_rejects_duplicate_keys(

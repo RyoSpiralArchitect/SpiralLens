@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import yaml
 
+from spirallens.audit_output import reserve_audit_output
 from spirallens.metrics import (
     CandidateSearchConfig,
     NeighborAuditConfig,
@@ -348,6 +349,7 @@ def _frozen_result(
             b"layer-0-scope"
         ).hexdigest(),
         "global_row_key_sha256": row_identity_sha256,
+        "execution_freeze_sha256": "e" * 64,
     }
     result = audit_neighbor_backend(
         states,
@@ -397,8 +399,32 @@ def _write_rebound_audit(
 ):
     rebound = _rebind_result_to_protocol(result, protocol_path)
     audit_path = tmp_path / name
-    write_neighbor_audit(rebound, audit_path)
+    _write_atlas_audit(rebound, audit_path)
     return rebound, audit_path
+
+
+def _write_atlas_audit(result, audit_path: Path) -> None:
+    reservation = reserve_audit_output(audit_path)
+    try:
+        write_neighbor_audit(
+            result,
+            audit_path,
+            _reservation=reservation,
+        )
+    finally:
+        reservation.close()
+
+
+def test_atlas_audit_requires_exclusive_output_reservation(
+    tmp_path: Path,
+) -> None:
+    result, *_ = _frozen_result(tmp_path)
+
+    with pytest.raises(
+        ValueError,
+        match="require an exclusive output reservation",
+    ):
+        write_neighbor_audit(result, tmp_path / "unreserved-audit.json")
 
 
 def _target(
@@ -455,7 +481,7 @@ def test_receipt_authorizes_only_identical_full_input_index_group(
         protocol_path,
     ) = _frozen_result(tmp_path)
     audit_path = tmp_path / "audit.json"
-    write_neighbor_audit(result, audit_path)
+    _write_atlas_audit(result, audit_path)
     receipt = load_neighbor_audit_receipt(
         audit_path,
         protocol_path=protocol_path,
@@ -547,7 +573,7 @@ def test_receipt_rejects_draft_or_deviated_audit(
             protocol_binding=binding,
         )
         audit_path = tmp_path / f"forged-{index}.json"
-        write_neighbor_audit(forged, audit_path)
+        _write_atlas_audit(forged, audit_path)
         with pytest.raises(ValueError):
             load_neighbor_audit_receipt(
                 audit_path,
@@ -564,7 +590,7 @@ def test_load_receipt_binds_actual_frozen_protocol_bytes(
 ) -> None:
     result, *_, protocol_path = _frozen_result(tmp_path)
     audit_path = tmp_path / "audit.json"
-    write_neighbor_audit(result, audit_path)
+    _write_atlas_audit(result, audit_path)
 
     receipt = load_neighbor_audit_receipt(
         audit_path,
@@ -753,7 +779,7 @@ def test_receipt_rejects_duplicate_protocol_or_gate_keys(
 ) -> None:
     result, *_, protocol_path = _frozen_result(tmp_path)
     audit_path = tmp_path / "audit.json"
-    write_neighbor_audit(result, audit_path)
+    _write_atlas_audit(result, audit_path)
     protocol_path.write_text(
         protocol_path.read_text(encoding="utf-8") + "status: frozen\n",
         encoding="utf-8",

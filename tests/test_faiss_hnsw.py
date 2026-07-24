@@ -15,6 +15,9 @@ from spirallens.metrics import (  # noqa: E402
     NeighborAuditProtocolBinding,
     audit_neighbor_backend,
 )
+from spirallens.execution_freeze import (  # noqa: E402
+    current_worker_runtime_contract,
+)
 from spirallens.neighbors import (  # noqa: E402
     FaissHNSWBackend,
     FaissHNSWConfig,
@@ -134,6 +137,23 @@ def test_faiss_hnsw_rejects_wrong_input_or_group() -> None:
             states=states,
             row_identity_sha256=_row_identity(),
             comparison_group="layer_index=1",
+        )
+
+
+def test_faiss_hnsw_rejects_mismatched_worker_runtime() -> None:
+    runtime = current_worker_runtime_contract(None)
+    runtime["numpy_version"] = "forged"
+
+    with pytest.raises(
+        ValueError,
+        match="differs from its contract",
+    ):
+        FaissHNSWBackend(
+            _states(),
+            row_identity_sha256=_row_identity(),
+            comparison_group="layer_index=0",
+            config=_config(),
+            worker_runtime_contract=runtime,
         )
 
 

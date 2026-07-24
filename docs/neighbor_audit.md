@@ -133,12 +133,16 @@ Once such a future protocol has been reviewed and frozen:
 
 ```bash
 NEIGHBOR_PROTOCOL_SHA="$(shasum -a 256 protocols/frozen-neighbor.yaml | awk '{print $1}')"
+EXECUTION_FREEZE="protocols/frozen-subject-execution.yaml"
+EXECUTION_FREEZE_SHA="$(shasum -a 256 "$EXECUTION_FREEZE" | awk '{print $1}')"
 
 spirallens neighbor-audit \
   --manifest runs/pythia70-full/manifest.json \
   --layer 0 \
   --protocol protocols/frozen-neighbor.yaml \
   --expected-protocol-sha256 "$NEIGHBOR_PROTOCOL_SHA" \
+  --execution-freeze "$EXECUTION_FREEZE" \
+  --expected-execution-freeze-sha256 "$EXECUTION_FREEZE_SHA" \
   --output runs/pythia70-full/layer-0-neighbor-audit.json
 ```
 
@@ -146,6 +150,18 @@ The command may emit `pass`, `fail`, or `insufficient`. Only a frozen,
 deviation-free `pass` under a protocol that explicitly authorizes promotion
 can produce a verified receipt. The audit output prints its SHA-256; preserve
 that value outside the artifact before candidate extraction.
+Before computation, the CLI verifies the freeze record against its trusted
+digest, literal argv and absolute paths, clean pushed Git state, fixed Git
+binary, source-only import cache state, Python executable, and
+content-addressed NumPy/Faiss distributions. It then reserves the non-symlink
+output pathname exclusively. Before touching that marker, the writer fsyncs a
+complete recovery sidecar. A failure therefore leaves either the original
+reservation marker or a complete recovery artifact, and the reserved path
+blocks an implicit retry.
+
+The validated Python object is an internal fail-closed execution witness, not
+an in-process security boundary against code that is already executing inside
+the interpreter.
 
 ```bash
 AUDIT_SHA="<trusted audit_sha256 from the completed audit>"

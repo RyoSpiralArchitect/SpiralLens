@@ -354,6 +354,7 @@ def _canonical_source_json(source: Mapping[str, object]) -> str:
             "atlas_manifest_sha256",
             "observation_scope_sha256",
             "global_row_key_sha256",
+            "execution_freeze_sha256",
         ):
             _require_sha256(payload.get(field_name), label=field_name)
     else:
@@ -2691,14 +2692,47 @@ def write_neighbor_audit(
     output_path: str | Path,
     *,
     overwrite: bool = False,
+    _reservation: object | None = None,
 ) -> Path:
-    """Atomically persist one content-addressed audit artifact."""
+    """Durably persist one content-addressed audit artifact."""
 
     if not isinstance(result, NeighborAuditResult):
         raise TypeError("result must be a NeighborAuditResult")
     if not isinstance(overwrite, bool):
         raise TypeError("overwrite must be a boolean")
+    source_payload = json.loads(result.source_identity_json)
+    if (
+        source_payload.get("kind") == "atlas_subset"
+        and _reservation is None
+    ):
+        raise ValueError(
+            "atlas-backed neighbor audits require an exclusive "
+            "output reservation"
+        )
     destination = Path(output_path)
+    if _reservation is not None:
+        from spirallens.audit_output import (
+            persist_reserved_audit_output,
+        )
+
+        if overwrite:
+            raise ValueError(
+                "reserved neighbor audit output cannot use overwrite"
+            )
+        encoded = (
+            json.dumps(
+                result.artifact(),
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+            + b"\n"
+        )
+        return persist_reserved_audit_output(
+            _reservation,
+            destination=destination,
+            payload=encoded,
+        )
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists() and not overwrite:
         raise FileExistsError(

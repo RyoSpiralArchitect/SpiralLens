@@ -7,11 +7,13 @@ state-only side of the discovery boundary.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 import hashlib
 import importlib.util
 import json
 from numbers import Integral, Real
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -54,7 +56,20 @@ def _require_faiss_distribution() -> None:
         )
 
 
-def _run_worker(arguments: list[str]) -> None:
+def _run_worker(
+    arguments: list[str],
+    *,
+    runtime_contract: Mapping[str, str],
+) -> None:
+    environment = os.environ.copy()
+    environment["SPIRALLENS_FAISS_WORKER_RUNTIME_CONTRACT"] = (
+        json.dumps(
+            dict(runtime_contract),
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    )
     completed = subprocess.run(
         [
             sys.executable,
@@ -65,6 +80,7 @@ def _run_worker(arguments: list[str]) -> None:
         check=False,
         capture_output=True,
         text=True,
+        env=environment,
     )
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip()
@@ -151,7 +167,12 @@ class FaissHNSWBackend:
         row_identity_sha256: str,
         comparison_group: str,
         config: FaissHNSWConfig | None = None,
+        worker_runtime_contract: Mapping[str, str] | None = None,
     ) -> None:
+        from spirallens.execution_freeze import (
+            current_worker_runtime_contract,
+        )
+
         settings = config or FaissHNSWConfig()
         if not isinstance(settings, FaissHNSWConfig):
             raise TypeError("config must be a FaissHNSWConfig")
@@ -167,6 +188,38 @@ class FaissHNSWBackend:
             raise TypeError(
                 "comparison_group must be a non-empty string"
             )
+        frozen_runtime = (
+            None
+            if worker_runtime_contract is None
+            else dict(worker_runtime_contract)
+        )
+        if frozen_runtime is not None and (
+            not frozen_runtime
+            or any(
+                not isinstance(key, str)
+                or not key
+                or not isinstance(value, str)
+                or not value
+                for key, value in frozen_runtime.items()
+            )
+        ):
+            raise ValueError("worker_runtime_contract is invalid")
+        freeze_sha256 = (
+            frozen_runtime.get("execution_freeze_sha256")
+            if frozen_runtime is not None
+            else None
+        )
+        actual_runtime = current_worker_runtime_contract(
+            freeze_sha256
+        )
+        if (
+            frozen_runtime is not None
+            and frozen_runtime != actual_runtime
+        ):
+            raise ValueError(
+                "current Faiss worker runtime differs from its contract"
+            )
+        self._worker_runtime_contract = actual_runtime
         source_rows = np.asanyarray(states)
         if source_rows.ndim != 2:
             raise ValueError(
@@ -210,7 +263,8 @@ class FaissHNSWBackend:
                 str(settings.ef_search),
                 "--seed",
                 str(settings.seed),
-            ]
+            ],
+            runtime_contract=self._worker_runtime_contract,
         )
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         if not isinstance(metadata, dict):
@@ -219,6 +273,8 @@ class FaissHNSWBackend:
         index_sha256 = hashlib.sha256(index_bytes).hexdigest()
         if (
             metadata.get("index_sha256") != index_sha256
+            or metadata.get("runtime")
+            != self._worker_runtime_contract
             or metadata.get("faiss_version")
             != FAISS_DISTRIBUTION_VERSION
             or metadata.get("worker_states_sha256")
@@ -234,21 +290,7 @@ class FaissHNSWBackend:
             metadata.get("normalized_states_sha256"),
             label="normalized_states_sha256",
         )
-        runtime = tuple(
-            sorted(
-                (
-                    (key, str(metadata[key]))
-                    for key in (
-                        "faiss_compile_options",
-                        "faiss_version",
-                        "machine",
-                        "numpy_version",
-                        "python_version",
-                        "system",
-                    )
-                )
-            )
-        )
+        runtime = tuple(sorted(self._worker_runtime_contract.items()))
         promotion_config = {
             "backend_id": FAISS_HNSW_BACKEND_ID,
             "backend_version": FAISS_HNSW_BACKEND_VERSION,
@@ -438,7 +480,8 @@ class FaissHNSWBackend:
                     str(self._config.max_raw_hits),
                     "--radius",
                     repr(radius),
-                ]
+                ],
+                runtime_contract=self._worker_runtime_contract,
             )
             manifest = json.loads(
                 manifest_path.read_text(encoding="utf-8")

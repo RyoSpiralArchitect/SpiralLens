@@ -174,6 +174,12 @@ query contract, and exact rerank contract are bound into the audit identity.
 Query selection uses a canonical row-universe digest over ordered token IDs,
 the ContextBank/model revision, position, and token domain. Raw manifest bytes
 and run UUIDs remain audit provenance but cannot change the query sample.
+Every subject audit also requires an out-of-band-hashed execution-freeze
+record that verifies the exact pushed source tree, interpreter, installed
+NumPy/Faiss content, import root, paths, and argv. Its digest is persisted in
+the audit identity. The final pathname is exclusively reserved before any
+outcome computation, and a complete fsynced recovery sidecar is staged before
+the reservation marker can be replaced.
 Approximate candidate persistence accepts only the built-in Faiss backend and
 a receipt loaded from persisted audit/protocol files against out-of-band
 SHA-256 digests. The audit query subset may expand to all query rows at

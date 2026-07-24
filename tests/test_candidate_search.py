@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 from spirallens.atlas import ContextBankBinding
+from spirallens.audit_output import reserve_audit_output
 from spirallens.contexts import (
     BankStatus,
     ContextBank,
@@ -27,7 +28,6 @@ from spirallens.metrics import (
     NeighborAuditConfig,
     NeighborAuditProtocolBinding,
     NeighborQuerySelectionContract,
-    audit_neighbor_backend_from_manifest,
     decompose_difference,
     extract_candidates_from_manifest,
     iter_candidate_pairs,
@@ -37,6 +37,7 @@ from spirallens.metrics import (
     write_candidate_ledger,
 )
 from spirallens.metrics.candidate_pairs import (
+    _audit_neighbor_backend_from_manifest,
     _validate_neighbor_audit_atlas_scope,
     atlas_global_row_key_sha256,
     read_candidate_records,
@@ -60,6 +61,14 @@ def _json_sha256(value: dict[str, object]) -> str:
         allow_nan=False,
     ).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+class _TestExecutionFreeze:
+    def revalidate(self) -> None:
+        return None
+
+    def validate_subject_backend(self, descriptor: object) -> None:
+        del descriptor
 
 
 def _write_recall_gate_contract(
@@ -644,7 +653,7 @@ def test_manifest_subject_audit_rejects_draft_before_backend_or_io(
         ValueError,
         match="require a frozen protocol binding",
     ):
-        audit_neighbor_backend_from_manifest(
+        _audit_neighbor_backend_from_manifest(
             tmp_path / "missing-manifest.json",
             layer_index=0,
             subject_backend_factory=lambda _: pytest.fail(
@@ -653,6 +662,42 @@ def test_manifest_subject_audit_rejects_draft_before_backend_or_io(
             protocol_binding=protocol,
             candidate_config=candidate_config,
             audit_config=NeighborAuditConfig(),
+            execution_freeze=object(),
+        )
+
+
+def test_manifest_subject_audit_rejects_bare_freeze_digest(
+    tmp_path: Path,
+) -> None:
+    protocol = NeighborAuditProtocolBinding(
+        protocol_id="frozen-test",
+        status="frozen",
+        source_sha256="a" * 64,
+        candidate_config_sha256="b" * 64,
+        audit_config_sha256="c" * 64,
+        query_selection=NeighborQuerySelectionContract(
+            seed=1,
+            count=1,
+            global_row_key_sha256="d" * 64,
+        ),
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="validated execution-freeze capability",
+    ):
+        _audit_neighbor_backend_from_manifest(
+            tmp_path / "missing-manifest.json",
+            layer_index=0,
+            subject_backend_factory=lambda _: pytest.fail(
+                "backend factory must not run"
+            ),
+            protocol_binding=protocol,
+            candidate_config=CandidateSearchConfig(
+                layer_indices=(0,)
+            ),
+            audit_config=NeighborAuditConfig(),
+            execution_freeze="e" * 64,
         )
 
 
@@ -1053,6 +1098,7 @@ def test_bound_candidate_references_keep_context_identity_and_domain(
 
 def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     if importlib.util.find_spec("faiss") is None:
         pytest.skip("faiss optional dependency is absent")
@@ -1326,7 +1372,7 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         ValueError,
         match="require atlas checksum verification",
     ):
-        audit_neighbor_backend_from_manifest(
+        _audit_neighbor_backend_from_manifest(
             manifest_path,
             layer_index=0,
             subject_backend_factory=lambda snapshot: FaissHNSWBackend(
@@ -1338,9 +1384,19 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
             protocol_binding=protocol,
             candidate_config=candidate_config,
             audit_config=audit_config,
+            execution_freeze=object(),
             verify_checksums=False,
         )
-    result = audit_neighbor_backend_from_manifest(
+    monkeypatch.setattr(
+        "spirallens.execution_freeze."
+        "validated_execution_freeze_sha256",
+        lambda capability: (
+            "e" * 64
+            if isinstance(capability, _TestExecutionFreeze)
+            else pytest.fail("unexpected execution-freeze capability")
+        ),
+    )
+    result = _audit_neighbor_backend_from_manifest(
         manifest_path,
         layer_index=0,
         subject_backend_factory=lambda snapshot: FaissHNSWBackend(
@@ -1352,9 +1408,18 @@ def test_manifest_faiss_extraction_requires_and_binds_passing_receipt(
         protocol_binding=protocol,
         candidate_config=candidate_config,
         audit_config=audit_config,
+        execution_freeze=_TestExecutionFreeze(),
     )
     audit_path = tmp_path / "faiss-audit.json"
-    write_neighbor_audit(result, audit_path)
+    reservation = reserve_audit_output(audit_path)
+    try:
+        write_neighbor_audit(
+            result,
+            audit_path,
+            _reservation=reservation,
+        )
+    finally:
+        reservation.close()
     receipt = load_neighbor_audit_receipt(
         audit_path,
         protocol_path=neighbor_path,

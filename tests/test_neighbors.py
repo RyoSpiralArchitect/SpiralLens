@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import yaml
 
+from spirallens.audit_output import reserve_audit_output
 from spirallens.metrics import (
     CandidateSearchConfig,
     NeighborAuditConfig,
@@ -1379,6 +1380,44 @@ def test_neighbor_audit_artifact_is_atomic_and_tamper_evident(
         audit_config=audit_config,
     )
     output = tmp_path / "neighbor-audit.json"
+    reserved_output = tmp_path / "reserved-neighbor-audit.json"
+    reservation = reserve_audit_output(reserved_output)
+    write_neighbor_audit(
+        result,
+        reserved_output,
+        _reservation=reservation,
+    )
+    reservation.close()
+    assert load_neighbor_audit(reserved_output)[
+        "audit_sha256"
+    ] == result.sha256
+
+    replaced_output = tmp_path / "replaced-reservation.json"
+    replaced_reservation = reserve_audit_output(replaced_output)
+    replaced_output.unlink()
+    replaced_output.write_text("competitor\n", encoding="utf-8")
+    with pytest.raises(
+        ValueError,
+        match="reservation identity changed",
+    ):
+        write_neighbor_audit(
+            result,
+            replaced_output,
+            _reservation=replaced_reservation,
+        )
+    replaced_reservation.close()
+    assert replaced_output.read_text(encoding="utf-8") == "competitor\n"
+
+    with pytest.raises(
+        TypeError,
+        match="reservation capability is invalid",
+    ):
+        write_neighbor_audit(
+            result,
+            tmp_path / "forged-reservation.json",
+            _reservation=object(),
+        )
+
     write_neighbor_audit(result, output)
     loaded = load_neighbor_audit(output)
 

@@ -712,6 +712,9 @@ def _run_candidates(args: argparse.Namespace) -> int:
                 row_identity_sha256=row_sha,
                 comparison_group=group,
                 config=faiss_config,
+                worker_runtime_contract=dict(
+                    receipt.subject_backend.runtime
+                ),
             )
 
         neighbor_backend_factory = build_neighbor_backend
@@ -754,15 +757,19 @@ def _run_candidates(args: argparse.Namespace) -> int:
 
 def _run_neighbor_audit(args: argparse.Namespace) -> int:
     from spirallens.atlas import load_manifest
+    from spirallens.audit_output import reserve_audit_output
+    from spirallens.execution_freeze import (
+        validate_subject_audit_execution_freeze,
+    )
     from spirallens.metrics import (
         NeighborAuditProtocolBinding,
         NeighborQuerySelectionContract,
         atlas_global_row_key_sha256,
-        audit_neighbor_backend_from_manifest,
         load_neighbor_audit_receipt,
         write_neighbor_audit,
     )
     from spirallens.metrics.candidate_pairs import (
+        _audit_neighbor_backend_from_manifest,
         _load_manifest_array,
         _validate_neighbor_audit_atlas_scope,
     )
@@ -814,6 +821,14 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     if protocol_status == "frozen" and args.overwrite:
         raise ValueError(
             "frozen neighbor audits cannot overwrite an audit artifact"
+        )
+    if not args.prepare_only and (
+        args.execution_freeze is None
+        or args.expected_execution_freeze_sha256 is None
+    ):
+        raise ValueError(
+            "subject neighbor audits require --execution-freeze and "
+            "--expected-execution-freeze-sha256"
         )
     candidate_binding = document.get("candidate_protocol")
     if not isinstance(candidate_binding, dict):
@@ -1056,12 +1071,44 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         raise ValueError(
             "--output is required unless --prepare-only is used"
         )
-    requested_output_path = args.output.resolve()
-    if requested_output_path.exists() and not args.overwrite:
-        raise FileExistsError(
-            "refusing to observe another audit outcome before writing "
-            f"{requested_output_path}; choose a new --output path"
+    requested_output_path = Path(os.path.abspath(args.output))
+    assert args.execution_freeze is not None
+    assert args.expected_execution_freeze_sha256 is not None
+    freeze_path = args.execution_freeze.resolve()
+    freeze_bytes, freeze_document = _load_yaml_mapping(
+        freeze_path,
+        label="subject audit execution freeze",
+    )
+    execution_freeze = (
+        validate_subject_audit_execution_freeze(
+            document=freeze_document,
+            source_bytes=freeze_bytes,
+            source_path=freeze_path,
+            expected_sha256=(
+                args.expected_execution_freeze_sha256
+            ),
+            manifest_path=manifest_path,
+            manifest_sha256=manifest_sha256,
+            protocol_path=protocol_path,
+            protocol_sha256=protocol_sha256,
+            candidate_protocol_path=candidate_path.resolve(),
+            candidate_protocol_sha256=hashlib.sha256(
+                candidate_bytes
+            ).hexdigest(),
+            recall_gate_path=gate_path.resolve(),
+            recall_gate_sha256=hashlib.sha256(
+                gate_bytes
+            ).hexdigest(),
+            output_path=requested_output_path,
+            layer_index=args.layer,
+            comparison_group=group_key,
+            global_row_key_sha256=row_identity_sha256,
+            query_selection_sha256=selection.sha256,
+            audit_config_sha256=audit_config.sha256,
+            query_count=selection.count,
+            query_seed=selection.seed,
         )
+    )
     protocol_binding = NeighborAuditProtocolBinding(
         protocol_id=protocol_id,
         status=protocol_status,
@@ -1073,31 +1120,47 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         deviations=tuple(sorted(set(deviations))),
         query_selection=selection,
     )
-    result = audit_neighbor_backend_from_manifest(
-        manifest_path,
-        layer_index=args.layer,
-        subject_backend_factory=lambda snapshot: FaissHNSWBackend(
-            snapshot,
-            row_identity_sha256=row_identity_sha256,
-            comparison_group=group_key,
-            config=faiss_config,
-        ),
-        protocol_binding=protocol_binding,
-        candidate_config=candidate_config,
-        audit_config=audit_config,
-        verify_checksums=not args.skip_checksums,
-    )
-    if protocol_path.read_bytes() != protocol_bytes:
-        raise ValueError("neighbor protocol changed during audit")
-    if candidate_path.read_bytes() != candidate_bytes:
-        raise ValueError("candidate protocol changed during audit")
-    if gate_path.read_bytes() != gate_bytes:
-        raise ValueError("recall gate contract changed during audit")
-    output_path = write_neighbor_audit(
-        result,
-        requested_output_path,
-        overwrite=args.overwrite,
-    )
+    output_reservation = reserve_audit_output(requested_output_path)
+    try:
+        result = _audit_neighbor_backend_from_manifest(
+            manifest_path,
+            layer_index=args.layer,
+            subject_backend_factory=lambda snapshot: FaissHNSWBackend(
+                snapshot,
+                row_identity_sha256=row_identity_sha256,
+                comparison_group=group_key,
+                config=faiss_config,
+                worker_runtime_contract=(
+                    execution_freeze.worker_runtime_contract()
+                ),
+            ),
+            protocol_binding=protocol_binding,
+            candidate_config=candidate_config,
+            audit_config=audit_config,
+            execution_freeze=execution_freeze,
+            verify_checksums=not args.skip_checksums,
+        )
+        if protocol_path.read_bytes() != protocol_bytes:
+            raise ValueError("neighbor protocol changed during audit")
+        if candidate_path.read_bytes() != candidate_bytes:
+            raise ValueError("candidate protocol changed during audit")
+        if gate_path.read_bytes() != gate_bytes:
+            raise ValueError("recall gate contract changed during audit")
+        if freeze_path.read_bytes() != freeze_bytes:
+            raise ValueError(
+                "subject audit execution freeze changed during audit"
+            )
+        execution_freeze.revalidate()
+        execution_freeze.validate_subject_backend(
+            result.subject_backend
+        )
+        output_path = write_neighbor_audit(
+            result,
+            requested_output_path,
+            _reservation=output_reservation,
+        )
+    finally:
+        output_reservation.close()
     try:
         load_neighbor_audit_receipt(
             output_path,
@@ -1360,6 +1423,15 @@ def _add_neighbor_audit_parser(subparsers: Any) -> None:
     parser.add_argument(
         "--expected-protocol-sha256",
         help="optional fail-closed digest for the neighbor protocol",
+    )
+    parser.add_argument(
+        "--execution-freeze",
+        type=Path,
+        help="tracked source/runtime/invocation freeze for subject audits",
+    )
+    parser.add_argument(
+        "--expected-execution-freeze-sha256",
+        help="required out-of-band digest for --execution-freeze",
     )
     parser.add_argument(
         "--skip-checksums",
