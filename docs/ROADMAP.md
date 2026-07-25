@@ -14,20 +14,29 @@ The roadmap is capability-based rather than date-based. A milestone is complete
 only when its exit criteria are satisfied; running a larger model or producing
 an interesting visualization does not advance the milestone by itself.
 
+The [Order-Parameter-First Fundamental Frame](FUNDAMENTAL_FRAME.md) is the
+current ontology for scientific objects and claim labels. The
+[Experiment Interpretation Ledger](EXPERIMENT_INTERPRETATION_LEDGER.md)
+preserves the temporal relation between that frame and earlier experiments.
+Neither document changes a frozen protocol or observed artifact.
+
 ## 1. North star
 
-SpiralLens should become a model-agnostic, auditable toolkit for measuring
-closed-loop transport structure in learned representations while keeping four
+SpiralLens should become a model-agnostic, auditable toolkit that keeps six
 things separate:
 
-1. a geometric or transport observable;
-2. invariance under declared nuisance transformations;
-3. a topology claim;
-4. a semantic or causal interpretation.
+1. an explicitly bound observation substrate;
+2. an optional model-derived order parameter or section;
+3. a geometric or transport observable;
+4. invariance under declared nuisance transformations;
+5. a topology claim;
+6. a semantic or causal interpretation.
 
-The library should let a researcher construct a loop, estimate local transport,
-account for known architectural factors, persist every decision with provenance,
-run matched nulls, and promote a result only as far as its evidence allows.
+The library should let a researcher bind a substrate, define a field or remain
+explicitly on the geometry branch, construct matched loops, estimate local
+transport, account for known architectural factors, persist every decision
+with provenance, run matched nulls, and promote a result only as far as its
+evidence allows.
 
 The motivating optical-vortex and OAM analogy is useful intuition. It is not an
 assumption that transformer activations are physical optical fields.
@@ -39,9 +48,23 @@ These rules apply to every milestone and release:
 - A large drift is not automatically a phase shift.
 - High cosine similarity plus divergent updates creates a structural candidate,
   not a verified vortex or semantic distinction.
+- A field-unbound scalar such as anisotropy, effective rank, eigengap,
+  projected norm, density, or coherence is a `SupportDiagnostic`, not an order
+  parameter or core. It becomes a `CoreScore` only through an exact same-field
+  singularity/identifiability binding.
+- Amplitude and phase-like direction must arise from the same declared,
+  substrate-bound field.
+- A core is an independently defined singular or unresolved set, not the center
+  selected after maximizing winding.
 - Continuous holonomy and sampled winding remain separate types and claims.
 - Sampled winding is the winding of the declared discrete interpolation; it is
   not a certificate for an unknown continuous field.
+- Continuous Procrustes rotation is not quantized charge.
+- Deterministic construction under one graph protocol is reproducibility, not
+  graph-construction-family invariance.
+- A topology claim requires matched cycle or homology support across every
+  preregistered admissible graph family; unsupported comparisons are
+  `insufficient` and supported disagreement is `fail_graph_dependence`.
 - Projected curl, UMAP/PCA geometry, and other projection-dependent quantities
   may rank exploratory candidates but are not promoted to physical invariants.
 - Whitening or PCA may condition a distance calculation, but cannot by itself
@@ -54,28 +77,33 @@ These rules apply to every milestone and release:
 - The scientific observation unit is at least
   `model × revision × token/context × position × layer`; token ID alone is not
   treated as meaning.
+- A swept ID denotes a model input embedding row. Even when that row is
+  tokenizer-addressable, a fixed-context model-input-row activation atlas is
+  not described as a language-space or semantic atlas.
 - Zero-candidate and null results are valid completed outcomes.
-- Pythia-70M is plumbing and integration validation. Pythia-160M is the first
-  intended claim-bearing model.
+- Pythia-70M is plumbing and integration validation. Pythia-160M remains the
+  historically intended first claim-bearing model family, but the Fundamental
+  Frame does not authorize a subject run.
 
-The [claim ladder](claim_ladder.md) remains authoritative for result labels,
-and an individual experiment protocol remains authoritative for that run’s
-thresholds and claim ceiling.
+The [branched claim taxonomy](claim_ladder.md) remains authoritative for result
+labels, and an individual experiment protocol remains authoritative for that
+run’s thresholds and claim ceiling.
 
 ## 3. Two independent maturity axes
 
 SpiralLens tracks scientific evidence and software maturity separately.
 
-- **Scientific evidence:** analogy → Level 1 observable → Level 2 invariant
+- **Scientific evidence:** analogy → Level 1G geometry or Level 1D defect-field
+  observable → Level 2G invariant geometry or Level 2T topological-defect
   candidate → Level 3 semantic and causal evidence.
 - **Software maturity:** research preview → experimental API → alpha → beta →
   stable library.
 
 A scientific hypothesis may be rejected while the software still matures into
 a valuable 1.0 library that reliably reproduces positive, negative, and
-inconclusive outcomes. Conversely, an interesting Level-2 or Level-3 result
-does not make the API stable. Release versions describe software contracts, not
-the truth of the motivating hypothesis.
+inconclusive outcomes. Conversely, an interesting Level 2G, Level 2T, or
+Level 3 result does not make the API stable. Release versions describe
+software contracts, not the truth of the motivating hypothesis.
 
 ## 4. What “library” means
 
@@ -105,6 +133,7 @@ The target is:
 | Boundary | Responsibility | Dependency policy |
 | --- | --- | --- |
 | `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
+| future `graphs` and order-parameter boundaries | Scientific graph families, field artifacts, core diagnostics, and matched-class controls | Experimental core only after synthetic qualification |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -124,7 +153,7 @@ define the core mathematical API or artifact schema.
 
 **Status:** implemented; hardening continues.
 
-Delivered:
+Delivered by C7, plus the explicitly marked post-C7 outcome addendum:
 
 - analytic rotation, winding, stretch, radial, shear, basis, reverse,
   off-core, nested-radius, and sampling-alias controls;
@@ -135,10 +164,24 @@ Delivered:
 - per-batch slice hashes, whole-file hashes, and fail-closed resume;
 - structural candidate ledger with no semantic or SAE input;
 - protocol ID, status, SHA-256, claim ceiling, and override provenance;
-- exact blockwise pair search with an explicit size guard;
-- CLI commands for calibration, atlas capture, and candidate extraction.
+- a state-only neighbor-backend contract, lexicographically deterministic exact
+  reference, and shared float64 exact reranker;
+- candidate-boundary recall/determinism audit artifacts with fail-closed
+  `pass`, `fail`, and `insufficient` outcomes;
+- a standalone frozen query-local, relative-density, cosine-boundary, and
+  worst-case recall methodology, separate from any Pythia audit outcome;
+- a pinned, selected-but-unpromoted Faiss HNSW range-search backend with
+  full-index/subset-query audit receipts and strict ledger replay;
+- a versioned one-query native range-call path, a tracked
+  subject-independent production-shape two-cold-process qualification receipt,
+  and a fresh-subprocess consumer-validation contract;
+- post-C7 outcome addendum: one frozen consumer-safe Pythia-70M
+  full-index/subset-query audit ended terminal `insufficient` with zero
+  exact-reference support and issued no promotion receipt;
+- CLI commands for calibration, atlas capture, neighbor-audit preparation and
+  execution, native range preflight, and candidate extraction.
 
-Exit criteria:
+Historical exit criteria, preserved from the C7 roadmap:
 
 - all analytic controls pass;
 - storage corruption and incompatible resume are rejected;
@@ -146,16 +189,28 @@ Exit criteria:
 - a zero-candidate run completes normally;
 - no current artifact is described above Claim Level 1.
 
+Post-C7 interpretation mapping, not a historical exit criterion:
+
+- no M0 artifact exceeds the current Level 1G or Level 1D ceilings;
+- no real-model defect field reaches Level 1D.
+
 What M0 does **not** prove:
 
 - that a Pythia representation contains a closed semantic loop;
 - that any candidate has non-zero relative holonomy;
 - that sampled winding reflects continuous topology;
+- that a model-derived order parameter or core has been defined;
+- that a scalar support diagnostic supplies phase or quantized charge;
+- that one deterministic graph construction is topology-invariant;
 - that SAE reconstruction removes the hypothesized information.
 
-### M1 — Candidate-to-loop integration
+### M1 — Field qualification and candidate-to-loop integration
 
-**Status:** immediate next milestone.
+**Status:** in progress. Observation, ContextBank, retrieval, qualification,
+and recall-gate machinery exist. The first frozen consumer-safe Pythia-70M
+retrieval audit ended `insufficient` and did not promote the backend. The
+order-parameter-first preparation and graph-family qualification layer is not
+implemented.
 
 **Target release family:** `0.2.x`.
 
@@ -163,39 +218,116 @@ Deliverables:
 
 1. `ObservationKey` and `ContextBank` contracts that make model revision,
    context, token position, layer, and capture stage explicit.
-2. A neighbor-search protocol suitable for the full 50,304-token Pythia
-   vocabulary.
-3. An exact reference backend for bounded datasets and an audited approximate
+2. A tracked public context bank containing 6–12 project-authored synthetic
+   engineering fixtures. Every context has `role=example` and
+   `claim_eligible=false`; the bank tests loading, validation, capture, and
+   replay only.
+3. Discovery and held-out roles are rejected from that public engineering
+   bank. Scientific discovery and held-out banks begin in M2 as separate frozen
+   artifacts.
+4. Atlas requests bind the bank's source and canonical digests, selected role,
+   ordered context IDs, sweep/observation positions, and sweep domain. Resume
+   rejects any mismatch before appending an attempt. The binding embeds
+   canonical bank content so load/replay can recompute bank, selected-context,
+   tokenizer, and request-identity digests independently.
+5. Atlas manifests persist `language_space_atlas=false`,
+   `semantic_unit=false`; decoded strings, when present downstream, are
+   display-only sidecars rather than observation identity. Candidate references
+   carry the bound bank/context/spec identities and tokenizer-addressability
+   flag rather than aggregating by decoded text.
+6. A neighbor-search protocol suitable for the full 50,304-row Pythia model
+   input embedding table.
+7. An exact reference backend for bounded datasets and an audited approximate
    backend for full-vocabulary discovery.
-4. Recall and determinism evaluation of the approximate backend against exact
+8. Recall and determinism evaluation of the approximate backend against exact
    subsets; the initial recall target is at least 0.99 at the preregistered
    candidate boundary.
-5. Approximate search is used only for retrieval; every persisted candidate is
+   Promotion also requires the frozen query-local, relative-density,
+   density-by-cosine-boundary, and worst-case coverage gates; aggregate recall
+   alone is not sufficient. Freezing those measurement rules is not a Pythia
+   audit result.
+9. Approximate search is used only for retrieval; every persisted candidate is
    reranked and gated with the exact metric.
-6. A semantics-free candidate graph and deterministic cycle-construction
-   procedure.
-7. Local transport estimation using declared JVP, pullback metric, whitening,
-   and/or Procrustes choices.
-8. Relative holonomy rather than raw endpoint drift.
-9. RoPE, LayerNorm, attention value, attention routing, MLP, basis, orientation,
-   radius, and sampling-density controls wired into one run artifact.
-10. Each required gate is persisted as `pass`, `fail`, `insufficient`, or
+10. Experimental `SubstrateBinding`, `SupportDiagnostic`,
+    `GeometricFieldEstimate`, `CoreScore`, `OrderParameterSpec`,
+    `OrderParameterField`, `CoreCandidate`, and `GroundTruthAnchor` contracts
+    qualified on synthetic representation-shaped phantoms before any new
+    subject protocol.
+11. Competing field hypotheses with explicit transformation laws, fit scopes,
+    claim ceilings, and no outcome-selected winner.
+12. Semantics-free, deterministic mutual-kNN, fixed-radius, and
+    shared-neighbor candidate graph families with canonical construction
+    receipts.
+13. Deterministic cycle construction plus a matched support or homology rule
+    that remains meaningful across graph families.
+14. A full crossed field-estimation-graph by cycle-construction-graph null,
+    extended by a core-estimation-graph axis whenever the core estimator is
+    neither graph-free nor bound to the field graph, with graph diversity,
+    support, and worst-case gates.
+15. Local transport estimation using declared JVP, pullback metric, whitening,
+    projector, and/or Procrustes choices.
+16. Relative holonomy rather than raw endpoint drift on the geometry branch.
+17. Sampled winding only from an eligible, nonzero, orientable
+    order-parameter section on the defect branch with a frozen
+    trivialization/reference or gauge-invariant connection-corrected lift.
+18. RoPE, LayerNorm, attention value, attention routing, MLP, basis,
+    orientation, radius, sampling-density, graph-family, and matched-null
+    controls wired into one run artifact.
+19. Each required gate is persisted as `pass`, `fail`, `insufficient`, or
     `not_run`; incomplete gates cannot silently pass.
-11. A versioned loop/candidate artifact linking every result back to atlas rows
-   and protocol hashes.
+20. Versioned substrate, field, graph, discriminated geometry/defect loop, and
+    result artifacts linking every result back to atlas rows, fit scopes, and
+    protocol hashes.
+21. A charge-blind `CoreScore`/`CoreCandidate` receipt bound to the same
+    order-parameter field and frozen before loop readout, kept distinct from a
+    supplied `GroundTruthAnchor`, with known-core, off-core, density, and
+    sparse-support controls.
+22. Attempted, evaluable, insufficient, and abstention counts plus worst-case
+    coverage, recall, and specificity gates across required phantom strata.
+23. A content-addressed `CalibrationSelectionDecision` sealed before hidden
+    confirmation, followed by a non-selecting
+    `CalibrationConfirmationResult`.
+24. A future `SubjectProtocolManifest` and access boundary that reveal no
+    subject-derived values before separate review, freeze, and execution
+    authorization.
 
 Exit criteria:
 
 - a full-vocabulary Pythia-70M atlas completes for every declared fixed
   context/position slice under a recorded resource budget;
+- the tracked public example bank validates with all roles equal to `example`
+  and with claim eligibility disabled;
 - approximate discovery meets its preregistered recall target on exact subsets;
-- loop construction is deterministic from the frozen protocol and run ID;
+- a locked independent synthetic calibration qualifies the selected
+  instrument bundle before subject `prepare-only`;
+- the calibration-selection artifact freezes advanced hypotheses, required
+  cells, thresholds, coverage, abstention, and aggregation before hidden
+  confirmation;
+- every required stratum meets its worst-case coverage and specificity gates
+  without converting adverse cases into selective `insufficient` outcomes;
+- all required graph families are deterministic, genuinely distinct, and
+  supported;
+- the crossed graph-family matrix passes on known positives and rejects
+  pure-gauge, shuffled, and rewired negatives, including the core-graph axis
+  when present;
+- loop construction is deterministic from the frozen protocol and run ID, and
+  topology comparisons bind a matched class rather than a cycle-basis index;
 - injected-rotation positives survive while pure-gauge/stretch/shear negatives
   are rejected;
 - each shortlisted real-model loop has matched reverse, radius, sampling, and
   architecture-accounted controls;
+- every Level 1D result binds a replayable order-parameter field and an
+  explicit singular-set/core status; every localized-defect result binds an
+  independently inferred `CoreCandidate` to that same field;
+- supplied phantom anchors qualify conditional loop mathematics only and do
+  not satisfy core-localization criteria;
+- every local-frame integer binds its field, connection, interpolation, and
+  trivialization/reference convention;
+- subject `prepare-only` reveals no activation, graph, support, eigenspectrum,
+  core, or candidate value;
 - rerunning from persisted atlas data requires no model download or inference;
-- results remain Claim Level 1 unless every Level-2 control is complete.
+- Level 2G and Level 2T are promoted independently and only after every
+  branch-specific control is complete.
 
 ### M2 — Frozen Pythia-160M scientific protocol
 
@@ -205,10 +337,17 @@ Exit criteria:
 
 Deliverables:
 
-- a frozen context bank with discovery and held-out partitions;
+- separate frozen discovery and held-out context-bank artifacts; a loader or
+  run cannot silently mix their roles;
+- split assignment grouped by `family_id`, `source_id`, and `template_id`, so
+  exact or near-copy templates cannot cross discovery and held-out boundaries;
+- any learned preprocessing is fit on analytic calibration and discovery data
+  only, then frozen before held-out observation;
 - immutable Pythia-160M model revision and capture contract;
-- thresholds fixed from analytic controls and Pythia-70M plumbing, not tuned on
-  Pythia-160M outcomes;
+- thresholds fixed from analytic controls, not tuned on Pythia-160M outcomes;
+- Pythia-70M outcomes may qualify plumbing but cannot select or tune
+  Pythia-160M confirmatory contexts, split membership, thresholds, exclusions,
+  or learned preprocessing;
 - a preregistered resource budget, null family, stopping rule, and claim ceiling;
 - complete offline replay artifacts;
 - a concise result report that treats positive, zero, and null outcomes equally.
@@ -219,7 +358,8 @@ Exit criteria:
 - every reported candidate links to all required null results;
 - an independent rerun reproduces the persisted structural quantities within
   declared numerical tolerances;
-- any Level-2 label is earned per candidate, not inherited from the run.
+- any Level 2G or Level 2T label is earned per candidate, not inherited from
+  the run.
 
 Passing M2 does not establish semantics or SAE loss.
 
@@ -249,7 +389,7 @@ Exit criteria:
 - the effect replicates across declared contexts and at least one independent
   model checkpoint or seed.
 
-Only this milestone can support a Claim Level 3 result.
+Only this milestone can support a Level 3 result.
 
 ### M4 — Replication and model abstraction
 
@@ -378,6 +518,17 @@ Generated model weights, credentials, private prompts, and large activation
 arrays are not committed to Git. Small synthetic fixtures may be committed when
 their provenance and license are clear.
 
+Context banks have an additional leakage boundary:
+
+- public M1 fixtures remain `role=example` and `claim_eligible=false`;
+- discovery and held-out contexts live in separate frozen M2 artifacts;
+- split assignment groups related items by family, source, and template rather
+  than assigning individual rows independently;
+- learned transforms are fit only on calibration/discovery data and are frozen
+  before held-out evaluation;
+- results observed on Pythia-70M cannot be used to tune the Pythia-160M
+  confirmatory bank.
+
 ## 9. Contribution and decision model
 
 During the research phase, decisions that alter persisted meaning should be
@@ -391,8 +542,11 @@ recorded before implementation. High-impact examples include:
 - changing stable API or deprecation policy.
 
 The intended long-term mechanism is a lightweight RFC or architecture-decision
-record reviewed in public. Until that structure lands, this roadmap, the claim
-ladder, and tracked protocols are the decision anchors.
+record reviewed in public. Until that structure lands, the Fundamental Frame
+controls current ontology, the Interpretation Ledger records temporal
+decisions, this roadmap controls sequencing, the claim taxonomy controls
+labels, and tracked protocols control individual executions. None can rewrite
+an earlier artifact.
 
 Contributions submitted to the project are accepted under Apache-2.0 unless
 explicitly stated otherwise.
@@ -402,35 +556,74 @@ explicitly stated otherwise.
 | Risk | Required response |
 | --- | --- |
 | Optical language outruns the observable | Persist mathematically named quantities and explicit non-claims |
+| Geometry is promoted without a substrate referent | Keep geometry on Level 1G/2G unless a separate field/defect contract exists |
+| A scalar diagnostic is laundered into an order parameter | Persist it as `SupportDiagnostic`; permit `CoreScore` only with an exact same-field singularity rule |
+| A core is selected from the observed winding | Localize singular support independently and freeze the matching rule before charge evaluation |
+| One deterministic graph is mistaken for topology | Require genuinely distinct graph families and the full crossed construction null |
+| Integer rounding is mistaken for quantization | Bind target topology, amplitude/identifiability, branch margin, matched class, and deformation stability |
 | Projection artifacts look like vortices | Require ambient-space or gauge-accounted controls |
 | Full-vocabulary search becomes intractable | Keep exact reference subsets and audit approximate recall |
-| Backend differences create false candidates | Bind backend/runtime and test repeatability before promotion |
+| Backend differences create false candidates | Bind backend/runtime/index bytes, require verified receipts, and test repeatability before promotion |
+| Aggregate ANN recall hides a local collapse | Bind the frozen query-local, density-by-boundary, and worst-case methodology into each atlas-specific execution before enabling promotion |
 | Resume blesses corrupted partial data | Verify committed batch hashes before writing a new attempt |
 | Semantic labels leak into discovery | Separate modules, artifacts, and dataset splits |
-| Interesting Pythia-70M result drives threshold tuning | Keep 70M as plumbing and freeze before 160M |
+| Interesting Pythia-70M result drives confirmatory-bank tuning | Keep 70M as plumbing; freeze 160M contexts, splits, thresholds, and preprocessing independently of its outcomes |
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
 
 ## 11. Immediate next plan
 
-The next implementation sequence after the initial public repository push is:
+The original sequence completed the ContextBank, atlas, neighbor-backend,
+recall-gate, producer-qualification, and consumer-safe execution machinery. Its
+first frozen v0.4 Pythia-70M full-index/subset-query audit ended terminal
+`insufficient`: all 1,000 selected queries had zero exact-reference support, so
+recall was not estimable and no promotion receipt was issued. The exact
+historical reading is preserved in the
+[Interpretation Ledger](EXPERIMENT_INTERPRETATION_LEDGER.md).
 
-1. define `ObservationKey`, `ContextSpec`, and `ContextBank` contracts;
-2. create a small, reviewed context bank with explicit discovery/held-out roles;
-3. define a neighbor-backend interface and retain exact blockwise search as the
-   reference implementation;
-4. implement an audited full-vocabulary candidate index with recall measurement;
-5. construct a deterministic semantics-free candidate graph and closed cycles;
-6. connect cycles to local transport, relative holonomy, and the full null suite;
-7. run the integrated Pythia-70M pilot and freeze the Pythia-160M protocol.
+That outcome remains a terminal retrieval-only result. Separately, a
+post-outcome conceptual review established prospective gates for a new
+Level-0 order-parameter question. No inference from the audit status or empty
+support selected the field hypotheses, graph families, or calibration rules
+below:
 
-The immediate deliverable is not “find a semantic vortex.” It is a replayable
-candidate-to-loop artifact whose promotion gates are explicit before the
-Pythia-160M result is visible.
+1. adopt and review the Fundamental Frame, branched claim taxonomy, and
+   historical interpretation ledger;
+2. register competing field hypotheses F0–F4 with transformation laws, fit
+   scopes, and claim ceilings;
+3. define canonical substrate, graph, support, geometry-field,
+   order-parameter, connection, discriminated loop, and calibration artifacts;
+4. build independent high-dimensional representation-shaped phantom families;
+5. implement deterministic mutual-kNN, fixed-radius, and shared-neighbor graph
+   constructors plus diversity receipts for field, cycle, and any explicit
+   core-estimation axis;
+6. qualify the full field-estimation-graph by cycle-graph matrix on
+   calibration-selection phantoms;
+7. freeze nonnumeric failure semantics, coverage/abstention gates, core/anchor
+   receipts, and all required strata;
+8. seal a `CalibrationSelectionDecision` before opening the independent
+   confirmation bundle;
+9. run one locked independent synthetic confirmation and require byte-identical
+   replay;
+10. only then prepare a new subject manifest with new IDs, freeze, and output
+    path under the no-subject-value access boundary;
+11. keep future discovery and confirmation roles separate and forbid
+    Pythia-70M outcomes from selecting Pythia-160M choices.
+
+The current work stops after documentation and preparation design. It performs
+no new subject field estimation, graph construction, or outcome observation.
+The detailed preparation gates are in
+[Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
+
+The immediate deliverable is a synthetic-qualified, replayable instrument
+bundle. It is not “find a semantic vortex,” and it does not authorize a subject
+run.
 
 ## 12. Roadmap change rule
 
 Changes to milestone order or scientific promotion gates should update this
-document in the same pull request as the implementing change. Completed
-milestones should retain their original exit criteria, with amendments recorded
-explicitly rather than silently rewriting history.
+document and the Fundamental Frame in the same reviewed change. Every
+interpretive change also receives an Interpretation Ledger entry. Completed
+milestones, frozen protocols, and persisted outcomes retain their original
+criteria and bytes; amendments are recorded explicitly rather than silently
+rewriting history.

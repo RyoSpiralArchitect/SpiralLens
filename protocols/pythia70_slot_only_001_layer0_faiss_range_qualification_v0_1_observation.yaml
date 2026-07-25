@@ -1,0 +1,101 @@
+schema_version: spirallens.faiss-hnsw-qualification-predecessor-observation.v0.1
+status: producer_pass_consumer_binding_unestablished
+qualification_schema_version: spirallens.faiss-hnsw-range-qualification.v0.1
+observed_receipt_sha256: 572bed090750a314d4415eeaaef3c2f96662a08442437616c9dc85823c2b33cb
+observed_fixture_sha256: 5d365820e09ce33683bcf9d003a64f842bad89055a62088b64c3b6f8d28df58e
+observed_search_sha256: b78b2f47d875be459dc451568876416339ad2f609c19087ca8a92e702d9b70ce
+observed_cold_process_runs: 2
+observed_raw_hit_count_per_run: 16384
+observed_payload:
+  schema_version: spirallens.faiss-hnsw-range-qualification.v0.1
+  status: pass
+  backend:
+    backend_id: spirallens.faiss-hnsw-range
+    backend_version: "0.2"
+  source:
+    branch: SpiralReality/pythia70-subject-audit-v03
+    implementation_commit: dca11d116c2d5218d586bb5d089460d28e59e7d8
+    repository: https://github.com/RyoSpiralArchitect/SpiralLens.git
+    spirallens_package_tree: d7003c09037cb34b9147a2992a4ae74c88f2e907
+  fixture:
+    cluster_size: 32
+    generator: numpy.pcg64.standard_normal.float32.cluster-repeat
+    hidden_size: 512
+    normalized_states_sha256: 385809fdea18d1a22b4941bd19d553eed496e8926d423d2697ac2fc8fb3a84d4
+    query_count: 512
+    query_indices_sha256: 5738153ec97595b1c1e4dc027f7b7fb4534f19ed2ce9f9ee712e6d34a384cde7
+    row_count: 50304
+    schema_version: spirallens.faiss-hnsw-range-fixture.v0.1
+    seed: 1729
+    states_sha256: 68c21c7dcd9da212b14b909e9e6046a63dc89d29193289ac3ec846192b0acc54
+  fixture_sha256: 5d365820e09ce33683bcf9d003a64f842bad89055a62088b64c3b6f8d28df58e
+  search:
+    cosine_min: 0.995
+    ef_construction: 200
+    ef_search: 256
+    m: 32
+    max_native_call_hits: 50304
+    max_raw_hits: 20000000
+    query_batch_size: 512
+    radius: 0.9948999285697937
+    range_call_batch_size: 1
+    score_margin: 0.0001
+    seed: 1729
+    thread_count: 1
+  runtime:
+    faiss_compile_options: "OPTIMIZE DD ARM_NEON MAC_METAL "
+    faiss_distribution_sha256: 517e50988835c8f0ce8d33e7e54aa9f1071a491e24cdcaa9554902e0093a7f20
+    faiss_hnsw_source_sha256: 0392d6e4f4cf3d396d29e05c1d6db1f1178971e3c6e0fc2df33b29c23e580ff8
+    faiss_import_file: /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/faiss/__init__.py
+    faiss_import_sha256: 6f4d198d9431a15681ef14acec5f8b1ac7638e92a835ffba4ec79b6d575bd9e8
+    faiss_native_file: /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/faiss/_swigfaiss.abi3.so
+    faiss_native_sha256: 1b5096677ca2f13cc5532c70c0a49ece5af61b05b62974809ca2eafe4827f538
+    faiss_version: 1.14.3
+    faiss_worker_source_sha256: 3ef0aafe676a6fc14413096a9674291acfc959b03d39f06748d69f3b2a044af5
+    machine: arm64
+    numpy_distribution_sha256: 62abf59d0dac58d4c3f80c5e41e7c6a56e643343e859de71126ec24f0bcffa41
+    numpy_import_file: /Users/ryohiga/Library/Python/3.13/lib/python/site-packages/numpy/__init__.py
+    numpy_import_sha256: 2e8da3e4385e79c4885b3f7324a8b957e6f01732b239e99e266a12c62a008b8d
+    numpy_version: 2.4.4
+    process_image: /Library/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python
+    process_image_sha256: 7ee125c1edcfa2d6404a28caaa5724b7b239da901c86bbc1eb91d6a784deeef3
+    python_version: 3.13.13
+    system: Darwin
+  cold_runs:
+    - index_sha256: 918b944826bb0ce8d54075c6c445094ed6f693884f4d93f02dc9a9e55aca306f
+      labels_sha256: 88db3591c18db51d37cb4701025cf396f8933cd23da0342d8afed58bec0b746a
+      limits_length: 513
+      limits_sha256: e7590b133bda24494c767107df9299098e1d4d01d388b63112ea1fa677fcc720
+      raw_hit_count: 16384
+      scores_sha256: bfd60cdc0f88013bf865242dd97a2bf1118cd0a3d349f61f67e2f6b46c407eaa
+    - index_sha256: 918b944826bb0ce8d54075c6c445094ed6f693884f4d93f02dc9a9e55aca306f
+      labels_sha256: 88db3591c18db51d37cb4701025cf396f8933cd23da0342d8afed58bec0b746a
+      limits_length: 513
+      limits_sha256: e7590b133bda24494c767107df9299098e1d4d01d388b63112ea1fa677fcc720
+      raw_hit_count: 16384
+      scores_sha256: bfd60cdc0f88013bf865242dd97a2bf1118cd0a3d349f61f67e2f6b46c407eaa
+source:
+  repository: https://github.com/RyoSpiralArchitect/SpiralLens.git
+  branch: SpiralReality/pythia70-subject-audit-v03
+  implementation_commit: dca11d116c2d5218d586bb5d089460d28e59e7d8
+  spirallens_package_tree: d7003c09037cb34b9147a2992a4ae74c88f2e907
+consumer_preflight:
+  torch_loaded_parent_process: true
+  phase: frozen_protocol_prepare_only
+  status: infrastructure_abort_before_protocol_freeze
+  boundary: in_process_fixture_normalization
+  unsafe_duplicate_openmp_override_used: false
+artifact_recovery:
+  original_receipt_available: false
+  raw_receipt_bytes_preserved: false
+  reason: volatile_untracked_worktree_removed_during_host_restart
+  provenance: terminal_tool_log_complete_payload_and_sha256
+  reconstructed_receipt_claimed: false
+authorization:
+  producer_qualification_pass_observed: true
+  consumer_binding_established: false
+  promotion_authorized: false
+  subject_data_observed: false
+  subject_audit_outcome_observed: false
+  subject_one_shot_consumed: false
+  superseded_by_qualification_schema_version: spirallens.faiss-hnsw-range-qualification.v0.2

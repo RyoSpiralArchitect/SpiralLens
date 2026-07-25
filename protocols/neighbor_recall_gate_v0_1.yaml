@@ -1,0 +1,117 @@
+schema_version: spirallens.neighbor-recall-gate.v0.1
+gate_id: neighbor-recall-gate-v0.1
+status: frozen
+local_recall_contract: spirallens.neighbor-local-recall.v0.1
+
+methodology:
+  subject_output_unit: canonical_unordered_global_row_pair
+  reference_retrieval_set: exact_state_boundary_pairs_touching_selected_queries
+  reference_candidate_set: exact_reranked_reference_candidates
+  subject_candidate_set: subject_proposals_after_shared_exact_rerank
+  subject_candidates_must_be_subset_of_reference_candidates: true
+  query_local_denominator: exact_reference_candidate_incidence
+  sampled_query_pair_ownership:
+    query_local: count_once_for_each_selected_endpoint
+    pooled_pair_sets: count_once
+  zero_denominator_query: null_not_pass
+  low_support_query_removed_from_worst_case: false
+  repeat_pooling_or_union_override: forbidden
+
+density:
+  basis: exact_reference_retrieval_incident_degree
+  subject_output_used_for_assignment: false
+  eligible_queries: selected_queries_with_positive_reference_candidate_degree
+  assignment: stable_equal_count_rank
+  sort_key:
+    - exact_reference_retrieval_incident_degree_ascending
+    - global_row_index_ascending
+  stratum_id: density_rank_index_of_count
+  aggregation: macro_query_local_candidate_recall
+  micro_recall_role: diagnostic_only
+
+boundary:
+  candidate_universe: exact_reranked_reference_candidates
+  score_source: original_states_canonical_float64_cosine
+  subject_score_used_for_assignment: false
+  slack: exact_cosine_minus_candidate_cosine_min
+  strata:
+    cosine_shell:
+      lower: 0.0
+      lower_inclusive: true
+      upper_source: thresholds.boundary_shell_width
+      upper_inclusive: true
+    interior:
+      lower_source: thresholds.boundary_shell_width
+      lower_inclusive: false
+      upper: unbounded
+  joint_cells: density_stratum_x_boundary_stratum
+  pair_membership_within_joint_cell: unique
+  selected_pair_may_enter_two_density_cells: true
+
+thresholds:
+  aggregate_candidate_recall_min: 0.99
+  query_local_recall_min: 0.99
+  density_macro_and_joint_stratum_recall_min: 0.99
+  boundary_shell_width: 0.0001
+  boundary_shell_width_must_equal_subject_score_margin: true
+  repeats: 2
+  repeat_mode: independent_cold_rebuild_same_frozen_seed
+
+support:
+  minimum_reference_candidates: 100
+  minimum_eligible_queries: 100
+  minimum_eligible_query_fraction: 0.1
+  density_strata_count: 4
+  minimum_eligible_queries_per_density_stratum: 20
+  minimum_reference_candidates_per_joint_stratum: 25
+  zero_reference_candidates: insufficient
+  empty_required_cell: insufficient
+  under_supported_required_cell: insufficient
+
+gate_logic:
+  required:
+    - aggregate_candidate_recall_each_repeat
+    - query_local_recall_each_eligible_query_each_repeat
+    - density_macro_recall_each_stratum_each_repeat
+    - density_boundary_joint_recall_each_cell_each_repeat
+    - deterministic_repeat_membership
+    - support_requirements
+  overall_precedence:
+    - any_known_failure_is_fail
+    - otherwise_any_missing_or_insufficient_support_is_insufficient
+    - otherwise_all_required_gates_pass
+  worst_case_reduction: minimum_over_all_required_cells_and_repeats
+  pooled_recall_can_override_failed_cell: false
+  missing_or_not_run_can_issue_receipt: false
+
+evidence:
+  evaluator_contract: spirallens.neighbor-coverage-evaluator.v0.1
+  evaluator_runtime_bound_in_audit_identity:
+    - spirallens_version
+    - numpy_version
+  query_record_fields:
+    - query_index
+    - reference_retrieval_degree
+    - reference_candidate_degree
+    - reference_candidate_sha256
+    - density_stratum
+    - repeat_match_counts
+    - repeat_recall
+  joint_stratum_record_fields:
+    - stratum_id
+    - reference_candidate_count
+    - reference_candidate_sha256
+    - repeat_match_counts
+    - repeat_recall
+  zero_reference_query_count_required: true
+  zero_reference_query_indices_sha256_required: true
+  coverage_contract_sha256_required: true
+  coverage_evidence_sha256_required: true
+  audit_and_protocol_digests_must_be_supplied_out_of_band_for_receipt: true
+
+claim_boundary:
+  passing_gate_proves_retrieval_coverage_only: true
+  semantic_claim: false
+  topological_claim: false
+  causal_claim: false
+  backend_audit_outcome_declared_here: false

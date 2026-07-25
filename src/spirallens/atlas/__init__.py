@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from .id_sweep import SweepConfig, run_id_sweep, select_token_ids
+from .id_sweep import (
+    ATLAS_CONTEXT_BINDING_SCHEMA_VERSION,
+    ContextBankBinding,
+    SweepConfig,
+    run_id_sweep,
+    select_token_ids,
+)
 from .store import (
     ATLAS_SCHEMA_VERSION,
     AtlasIntegrityError,
@@ -12,8 +18,10 @@ from .store import (
 
 __all__ = [
     "ATLAS_SCHEMA_VERSION",
+    "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION",
     "AtlasIntegrityError",
     "AtlasStateError",
+    "ContextBankBinding",
     "SweepConfig",
     "load_manifest",
     "run_id_sweep",

@@ -1,0 +1,137 @@
+schema_version: spirallens.neighbor-audit-protocol.v0.4
+protocol_id: pythia70-slot-only-001-layer0-neighbor-v0.4
+status: frozen
+claim_ceiling: 1
+
+recall_gate_contract:
+  path: protocols/neighbor_recall_gate_v0_1.yaml
+  sha256: 5c44c9f1f9c22ad6acb06bd7a1ecc8f3d54511e54953b5cb7487304b1e1b5dde
+  gate_id: neighbor-recall-gate-v0.1
+
+audit_scope:
+  comparison_group: layer_index=0
+
+candidate_protocol:
+  path: protocols/pythia70_slot_only_001_layer0_candidate_v0_2.yaml
+  sha256: d6f60d38237825178f4d7c799e27da370049787d47ca999172121f07c84d212e
+  declared_id: pythia70-slot-only-001-layer0-candidate-v0.2
+
+backend_qualification:
+  schema_version: spirallens.faiss-hnsw-range-qualification.v0.2
+  path: protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json
+  sha256: 3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76
+  fixture_sha256: 5d365820e09ce33683bcf9d003a64f842bad89055a62088b64c3b6f8d28df58e
+
+retrieval_contract:
+  input: resid_pre
+  input_snapshot: detached_read_only
+  input_sha256_checked_before_and_after_each_rebuild: true
+  metric: cosine
+  comparison_unit:
+    - fixed_context_bank
+    - fixed_context_id
+    - fixed_observation_position
+    - fixed_layer_index
+  output: canonical_unordered_global_row_pairs
+  pair_order: left_then_right_ascending
+  drift_available_to_backend: false
+  decoded_strings_available_to_backend: false
+  semantic_annotation_available_to_backend: false
+  sae_annotation_available_to_backend: false
+  projected_coordinates_available_to_backend: false
+
+reference_backend:
+  backend_id: spirallens.exact-blockwise-reference
+  backend_version: "0.1"
+  kind: exact
+  deterministic: true
+  descriptor_sha256_bound_in_audit_identity: true
+  runtime_version_bound_in_descriptor: true
+  maximum_all_pair_rows: 10000
+  maximum_exact_comparisons: 50000000
+  inclusive_thresholds: true
+
+subject_backend:
+  status: implementation_selected_unpromoted
+  backend_id: spirallens.faiss-hnsw-range
+  backend_version: "0.2"
+  distribution: faiss-cpu
+  distribution_version: 1.14.3
+  kind_required_for_full_vocabulary: approximate
+  optional_dependency_only: true
+  candidate_persistence_without_audit_receipt: forbidden
+  config:
+    m: 32
+    ef_construction: 200
+    ef_search: 256
+    seed: 1729
+    thread_count: 1
+    query_batch_size: 512
+    range_call_batch_size: 1
+    score_margin: 0.0001
+    max_raw_hits: 20000000
+    max_proposed_pairs: 10000000
+  required_provenance:
+    - backend_id
+    - backend_version
+    - backend_config
+    - runtime_versions
+    - seed
+    - thread_count
+    - index_digest
+    - qualification_receipt_digest
+    - qualification_fixture_digest
+
+query_sampling:
+  method: sha256_ranked_global_indices
+  seed: 1729
+  count: 1000
+  global_row_key_sha256: d39cd127bd50f564a8ea13e080f19806a3ce390b9ed4436b49d2701054409c43
+
+exact_rerank:
+  contract: spirallens.candidate-exact-rerank.v0.1
+  required_before_persist: true
+  source_values: original_atlas_values_cast_to_float64
+  backend_score_used_for_gate: false
+  false_persistable_candidates_allowed: 0
+
+audit:
+  primary_metric: candidate_boundary_recall
+  candidate_boundary_recall_min: 0.99
+  query_local_recall_min: 0.99
+  stratum_recall_min: 0.99
+  repeats: 2
+  repeat_mode: independent_cold_rebuild
+  minimum_reference_candidates: 100
+  minimum_eligible_queries: 100
+  minimum_eligible_query_fraction: 0.1
+  density_strata_count: 4
+  minimum_eligible_queries_per_density_stratum: 20
+  boundary_shell_width: 0.0001
+  minimum_reference_candidates_per_stratum: 25
+  missing_pair_sample_limit: 20
+  zero_reference_candidates: insufficient
+  top_k_recall_role: not_applicable_range_search
+  pooled_recall_can_override_failed_group: false
+  required_local_recall_contract: spirallens.neighbor-local-recall.v0.1
+  required_joint_strata: density_rank_x_cosine_boundary
+  issue_persistence_receipt_on_verified_pass: true
+  protocol_binding_required: true
+  source_identity_required: true
+
+claim_boundary:
+  semantics_free: true
+  candidate_is_not_verified_vortex: true
+  passing_audit_proves_retrieval_coverage_only: true
+  approximate_backend_currently_audited: false
+
+promotion_readiness:
+  receipt_mechanism_implemented: true
+  full_index_subset_query_audit_implemented: true
+  frozen_recall_gate_methodology_available: true
+  query_local_worst_case_recall_gate_implemented: true
+  production_shape_subprocess_qualified: true
+  atlas_execution_bindings_frozen: true
+  tracked_protocol_can_issue_persistence_receipt: true
+
+deviations: []
