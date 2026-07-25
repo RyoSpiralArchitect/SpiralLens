@@ -241,7 +241,9 @@ and zero candidates for all 1,000 selected queries. Therefore no approximate
 candidate ledger or backend promotion is authorized.
 The compact tracked outcome witness is
 [`protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml`](protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml);
-it is observation-only and does not reconstruct the ignored audit artifact.
+it is observation-only and binds the
+[exact tracked audit bytes](runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json)
+without reconstructing them.
 
 The historical pre-outcome prepare-only invocation used to obtain
 atlas-specific bindings without running the ANN or observing an audit outcome

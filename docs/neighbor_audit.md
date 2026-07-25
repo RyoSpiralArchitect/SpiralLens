@@ -212,6 +212,8 @@ passed, every recall quantity remained null, and no promotion receipt was
 issued. The output is not rerun or used to retune its boundary. The exact
 outcome witness is preserved in
 [`../protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml`](../protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml);
+the exact audit bytes are preserved at
+[`../runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json`](../runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json);
 its exact interpretation is recorded in the
 [Experiment Interpretation Ledger](EXPERIMENT_INTERPRETATION_LEDGER.md).
 

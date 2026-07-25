@@ -37,6 +37,10 @@ evidence carried by the original artifact.
   graph families, thresholds, contexts, or exclusions.
 - The reframe adds stricter positive referents. It is not evidence that any
   earlier candidate was a core, phase shift, winding, or vortex.
+- Commits named by a frozen execution record must remain reachable from the
+  canonical repository history. A cumulative integration carrying such a
+  record uses a merge commit rather than squash/rebase unless equivalent
+  content-addressed source objects are preserved separately.
 
 ## 2. Source chronology
 
@@ -50,7 +54,7 @@ evidence carried by the original artifact.
 | `dca11d1`–`7a3b0ac` | Native-call and consumer-safe qualification hardening | Subject-independent Faiss production-shape qualification |
 | `321a75b` | v0.4 neighbor and receipt bindings frozen | New remediation protocol, distinct from the consumed predecessor |
 | `23480d1` | v0.3 execution freeze issued | Exact pushed source/runtime/argv bound before the new subject outcome |
-| post-`23480d1` local artifact | frozen v0.4 subject audit completed | Terminal `insufficient` artifact generated from the frozen snapshot and retained outside Git |
+| post-`23480d1` local artifact | frozen v0.4 subject audit completed | Terminal `insufficient` artifact generated from the frozen snapshot; its exact bytes were later tracked without modification |
 
 This ledger is a child of `23480d1` and was authored after the final row. It
 does not amend any row in the table.
@@ -258,7 +262,7 @@ order-parameter, graph-invariance, topology, or semantic evidence.
 - post-outcome observation sidecar:
   `protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml`;
 - observation-sidecar SHA-256:
-  `26e88359b5d5c4afd45e0bad11f73109f9ca34aab3a6b452c4b4e2be5038e4da`.
+  `7ac964b55fe226a1b2c4deaf757c96b14d5a1fe36f42363ca739dfe50fab44f5`.
 
 **Observed terminal outcome**
 
@@ -282,8 +286,11 @@ order-parameter, graph-invariance, topology, or semantic evidence.
 - persisted file-bytes SHA-256:
   `eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06`.
 
-The run artifact is retained outside Git according to the repository artifact
-policy. The digests above identify the locally validated terminal artifact.
+The canonical run artifact bytes are preserved at
+[`../runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json`](../runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json).
+They were copied byte-for-byte after observation and retain file SHA-256
+`eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06`;
+tracking them does not alter or reconstruct the original artifact.
 
 **Original and retained meaning**
 

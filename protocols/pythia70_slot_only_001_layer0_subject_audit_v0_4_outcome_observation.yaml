@@ -23,8 +23,9 @@ frozen_inputs:
 
 original_artifact:
   repository_relative_path: runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json
-  tracked_in_git: false
+  tracked_in_git: true
   available_when_observation_recorded: true
+  tracked_copy_is_byte_identical: true
   artifact_reconstruction_claimed: false
   schema_version: spirallens.neighbor-audit.v0.2
   file_bytes_sha256: eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06

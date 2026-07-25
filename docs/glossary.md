@@ -11,9 +11,10 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Interpretation amendment**: A dated ledger entry that narrows, partitions,
   or replaces an authorized reading without modifying the protocol, artifact,
   or earlier entry it discusses.
-- **Outcome observation sidecar**: A compact, content-addressed witness to an
-  outcome artifact kept outside Git. It binds validated hashes and selected
-  facts but is not a reconstruction, execution protocol, or promotion receipt.
+- **Outcome observation sidecar**: A compact, content-addressed witness to a
+  separately persisted outcome artifact. It binds validated hashes and
+  selected facts but is not a reconstruction, execution protocol, or promotion
+  receipt.
 - **Calibration evidence**: Evidence from an analytic or synthetic substrate
   with supplied ground truth. It qualifies conditional mathematics or
   instrument behavior and does not occupy a real-model claim-ladder rung.
