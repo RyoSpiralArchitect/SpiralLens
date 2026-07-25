@@ -1,6 +1,8 @@
 # Neighbor Audit and Receipt Contract
 
-- **Status:** recall methodology frozen; v0.3 producer preserved, v0.4 consumer-safe preflight/receipt/freeze and one-shot outcome pending
+- **Status:** recall methodology frozen; v0.3 producer preserved; v0.4
+  consumer-safe qualification and freeze completed; one-shot subject outcome
+  terminal `insufficient`; no promotion
 - **Backend:** legacy `spirallens.faiss-hnsw-range@0.1`; qualified native-call path `@0.2`
 - **Distribution:** `faiss-cpu==1.14.3`
 - **Artifact maturity:** experimental, pre-1.0
@@ -62,22 +64,24 @@ relative-density macro, and in every required density-by-cosine-boundary joint
 cell across both cold rebuilds. Zero denominators remain null and required
 cells below frozen support minima are `insufficient`.
 
-This does not freeze or pass the Pythia execution. The active tracked v0.4
-Pythia protocol binds the methodology digest and exact future qualification
-path but remains `preregistered-draft`, with null atlas row/group and receipt
-digests and promotion disabled. The published v0.3 protocol bytes remain
-preserved for static parsing and historical inspection only. Because the
-receipt-v0.1 bytes were never tracked and consumer binding was never
-established, v0.3 cannot authorize preflight, subject execution, or
-approximate-candidate persistence. The only active path is v0.4 with
-qualification receipt schema v0.2.
+Freezing this methodology did not freeze or pass a Pythia execution. The
+generic tracked v0.4 protocol remains `preregistered-draft`, with null atlas
+row/group and receipt digests and promotion disabled. A distinct
+atlas-specific v0.4 copy later bound the methodology, qualification receipt,
+row universe, layer, and candidate protocol before one subject execution. The
+published v0.3 protocol bytes remain preserved for static parsing and
+historical inspection only. Because the receipt-v0.1 bytes were never tracked
+and consumer binding was never established, v0.3 cannot authorize preflight,
+subject execution, or approximate-candidate persistence. The only executed
+consumer-safe path used v0.4 with qualification receipt schema v0.2.
 
 ## 3. Production-shape native qualification
 
-Backend v0.2 cannot enter a subject audit without a canonical qualification
-receipt. The preflight has no atlas or subject-data argument and runs the same
-range-call helper twice in independent subprocesses over a deterministic
-synthetic fixture with 50,304 float32 rows, hidden size 512, and 512 queries.
+Backend v0.2 could not enter a subject audit without a canonical qualification
+receipt. The completed preflight had no atlas or subject-data argument and ran
+the same range-call helper twice in independent subprocesses over a
+deterministic synthetic fixture with 50,304 float32 rows, hidden size 512, and
+512 queries.
 It binds the exact fixture and query digests, index and hit-array digests,
 Faiss native/distribution digests, search config, and both cold-run results.
 It also records the exact clean, live-pushed preflight commit and the
@@ -94,16 +98,12 @@ promotion and did not consume the subject one-shot. Receipt v0.2 is a distinct
 schema and output identity; it moves consumer fixture regeneration across the
 fresh-process boundary instead of weakening the runtime safety policy.
 
-```bash
-DRAFT_SHA="$(shasum -a 256 protocols/pythia_neighbor_v0_4.yaml | awk '{print $1}')"
-
-spirallens faiss-range-preflight \
-  --protocol protocols/pythia_neighbor_v0_4.yaml \
-  --expected-protocol-sha256 "$DRAFT_SHA" \
-  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json
-```
-
-This receipt qualifies retrieval plumbing only. It never authorizes candidate
+The executed producer bound the generic v0.4 draft protocol SHA-256
+`c4c10eebc933d30c31cd7115ba6f23d5fc3aa8af07ff393c4150adc4bb3522cc`.
+Its output path is occupied by the tracked canonical receipt and must not be
+regenerated or overwritten. The receipt SHA-256 is
+`3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76`.
+It qualifies retrieval plumbing only. It never authorizes candidate
 persistence, and it contains no subject recall observation.
 
 ## 4. Bound identities
@@ -138,10 +138,10 @@ The audit uses a query subset. Persistence may change only
 backend, runtime, thresholds, drift values, candidate protocol, and rerank
 contract must remain identical.
 
-## 5. Trusted-digest workflow
+## 5. Historical trusted-digest workflow
 
-First compute the atlas-specific values without building an index or exposing
-audit results:
+Before the terminal v0.4 execution, the atlas-specific values were computed
+without building an index or exposing audit results:
 
 ```bash
 spirallens neighbor-audit \
@@ -151,7 +151,9 @@ spirallens neighbor-audit \
   --prepare-only
 ```
 
-Before a real audit, a separately reviewed protocol copy must bind the emitted
+This invocation is historical provenance and must not be rerun against the
+consumed Pythia-70M identity. Before a genuinely new audit, a separately
+reviewed protocol copy must bind the emitted
 `global_row_key_sha256` and `comparison_group`, set `status: frozen`, and be
 hashed out of band. The tracked draft must not be switched to promotion-ready
 until those atlas-specific bindings, its frozen candidate protocol, and the
@@ -190,11 +192,31 @@ shot is consumed, its marker is retained, and it is not retried. The v0.3
 producer remediation introduced a new backend version and preregistered
 neighbor protocol. Its receipt-v0.1 producer pass was observed, but the later
 consumer boundary aborted before a frozen neighbor protocol or execution
-freeze was issued and produced no subject outcome. The active v0.4 successor
-therefore preserves backend version 0.2 while using a distinct receipt schema,
-qualification path, neighbor protocol, execution freeze, and subject output.
+   freeze was issued and produced no subject outcome. The v0.4 successor
+   therefore preserved backend version 0.2 while using a distinct receipt
+   schema, qualification path, neighbor protocol, execution freeze, and subject
+   output.
 
-Once such a future protocol has been reviewed and frozen:
+The v0.4 successor then executed once under:
+
+- qualification receipt SHA-256
+  `3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76`;
+- frozen neighbor protocol SHA-256
+  `12f204db95a5e01687935304ab93d56e94bcb8d33e5653a56b18437badaa7ff7`;
+- execution-freeze SHA-256
+  `8060ae367075e3eeab6c6dc9f9e709b982840384b4bfd043e5af14204a2b8940`.
+
+Its terminal result was `insufficient`: all 1,000 selected queries had zero
+exact-reference retrieval and candidate support. Deterministic empty output
+passed, every recall quantity remained null, and no promotion receipt was
+issued. The output is not rerun or used to retune its boundary. The exact
+outcome witness is preserved in
+[`../protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml`](../protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml);
+its exact interpretation is recorded in the
+[Experiment Interpretation Ledger](EXPERIMENT_INTERPRETATION_LEDGER.md).
+
+For a genuinely new protocol with new identities and an unreserved output, the
+generic execution shape remains:
 
 ```bash
 NEIGHBOR_PROTOCOL_SHA="$(shasum -a 256 protocols/frozen-neighbor.yaml | awk '{print $1}')"
@@ -211,7 +233,8 @@ spirallens neighbor-audit \
   --output runs/pythia70-full/layer-0-neighbor-audit.json
 ```
 
-The command may emit `pass`, `fail`, or `insufficient`. Only a frozen,
+This example must not be substituted back into either consumed subject output
+path. The command may emit `pass`, `fail`, or `insufficient`. Only a frozen,
 deviation-free `pass` under a protocol that explicitly authorizes promotion
 can produce a verified receipt. The audit output prints its SHA-256; preserve
 that value outside the artifact before candidate extraction.
@@ -290,8 +313,13 @@ full-vocabulary audit. No approximate ledger is committed as evidence.
 Candidate-boundary recall measures retrieval coverage only. It does not prove
 semantic structure, topology, holonomy, phase, or causal relevance.
 
-The next promotion work is to bind a specific atlas row identity and layer,
-complete the frozen-protocol adversarial review, and only then execute the
-full-vocabulary Pythia audit. A frozen methodology is not an audit result.
-Only after a separately verified pass does the roadmap advance to
-deterministic candidate-graph and loop construction.
+The atlas-specific v0.4 row/layer binding, adversarial review, freeze, and
+one-shot execution are complete. The result was `insufficient`, so the backend
+was not promoted and that execution path is terminal.
+
+Separately, a post-outcome conceptual review established prospective
+order-parameter and graph-family gates for a new Level-0 question under the
+[Fundamental Frame](FUNDAMENTAL_FRAME.md). No inference from the audit status
+or empty support selected those objects. Even a future retrieval pass would
+authorize retrieval coverage only; geometry, defect, topology, and semantics
+retain their separate gates.

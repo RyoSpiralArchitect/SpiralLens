@@ -1,0 +1,61 @@
+schema_version: spirallens.subject-audit-outcome-observation.v0.1
+status: terminal_insufficient_observed
+record_authority: observation_only
+recorded_date: "2026-07-25"
+
+temporal_integrity:
+  execution_snapshot_commit: 23480d16f86f4e5616fa77c5b7ff93b2d6a5469d
+  subject_outcome_observed_before_this_record: true
+  fundamental_frame_adopted_after_subject_outcome: true
+  fundamental_frame_in_force_during_subject_execution: false
+  tuning_from_this_outcome_allowed: false
+
+frozen_inputs:
+  neighbor_protocol:
+    path: protocols/pythia70_slot_only_001_layer0_neighbor_v0_4.yaml
+    sha256: 12f204db95a5e01687935304ab93d56e94bcb8d33e5653a56b18437badaa7ff7
+  execution_freeze:
+    path: protocols/pythia70_slot_only_001_layer0_subject_audit_freeze_v0_3.yaml
+    sha256: 8060ae367075e3eeab6c6dc9f9e709b982840384b4bfd043e5af14204a2b8940
+  qualification_receipt:
+    path: protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json
+    sha256: 3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76
+
+original_artifact:
+  repository_relative_path: runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json
+  tracked_in_git: false
+  available_when_observation_recorded: true
+  artifact_reconstruction_claimed: false
+  schema_version: spirallens.neighbor-audit.v0.2
+  file_bytes_sha256: eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06
+  internal_audit_sha256: 6243ed459f250537ae154f14f58ce574d941063c559a750d20726baf7e573fa4
+  audit_identity_sha256: 6c3d51857f3cf8f2456dc0e7b80ccb558aa9c243b89a788745fc8c59fa7e2310
+  coverage_evidence_sha256: 94b45110a333885e8ef976fa5c87402b60be389f2ba61e7980ed1f893f622a55
+
+validation:
+  loader: spirallens.metrics.load_neighbor_audit_result
+  expected_internal_audit_sha256: 6243ed459f250537ae154f14f58ce574d941063c559a750d20726baf7e573fa4
+  expected_audit_identity_sha256: 6c3d51857f3cf8f2456dc0e7b80ccb558aa9c243b89a788745fc8c59fa7e2310
+  file_bytes_sha256_verified: true
+  typed_loader_validation_passed: true
+
+observed_outcome:
+  status: insufficient
+  selected_query_count: 1000
+  zero_reference_query_count: 1000
+  exact_reference_retrieval_pair_count: 0
+  exact_reference_candidate_count: 0
+  recall_estimable: false
+  aggregate_gate: insufficient
+  query_local_gate: insufficient
+  density_macro_gate: insufficient
+  density_boundary_joint_gate: insufficient
+  deterministic_cold_output: true
+  approximate_backend_promoted: false
+  persistence_receipt_issued: false
+
+authorization:
+  subject_rerun_authorized: false
+  threshold_retuning_from_this_outcome_allowed: false
+  approximate_candidate_persistence_authorized: false
+  backend_promotion_authorized: false
