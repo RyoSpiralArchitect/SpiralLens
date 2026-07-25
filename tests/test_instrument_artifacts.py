@@ -26,6 +26,8 @@ from spirallens.instrument_contracts.artifacts import (
     GraphConstructionSpec,
     GroundTruthAnchor,
     HypothesisDecision,
+    HypothesisFixedChoice,
+    HypothesisResolvedChoice,
     HypothesisRuleChoice,
     InheritedFieldGraphBinding,
     OrderParameterField,
@@ -126,6 +128,70 @@ def _fixed(family_id: str, selected_id: str) -> RuleChoice:
     )
 
 
+def _resolved(family_id: str, selected_id: str) -> RuleChoice:
+    return RuleChoice(
+        family_id=family_id,
+        resolution=ResolutionState.CALIBRATION_RESOLVED,
+        selected_id=selected_id,
+    )
+
+
+def _resolved_choices(
+    hypothesis_id: HypothesisId,
+    selections: dict[str, str],
+) -> tuple[HypothesisResolvedChoice, ...]:
+    return tuple(
+        HypothesisResolvedChoice(
+            hypothesis_id=hypothesis_id,
+            choice=_resolved(family_id, selected_id),
+        )
+        for family_id, selected_id in sorted(selections.items())
+    )
+
+
+def _f2_resolved_choices() -> tuple[HypothesisResolvedChoice, ...]:
+    return _resolved_choices(
+        HypothesisId.F2_LOCAL_COVARIANT_SECTION,
+        {
+            "architecture_accounting_rule": (
+                "explicit_component_accounting"
+            ),
+            "centering_rule": "global_centering",
+            "estimator": "cross_fitted_local_frame",
+            "fit_role": "calibration_selection",
+            "input_tensor": "accounted_response",
+            "interpolation_rule": (
+                "connection_transport_interpolation"
+            ),
+            "lift_rule": "connection_corrected_lift",
+            "observation_axis": "layer_index",
+            "reference_rule": "connection_defined_reference",
+            "residual_rule": "architecture_accounted_response",
+            "trivialization_rule": "local_frame_with_connection",
+        },
+    )
+
+
+def _f4_resolved_choices() -> tuple[HypothesisResolvedChoice, ...]:
+    return _resolved_choices(
+        HypothesisId.F4_SPIN_TWO_ANISOTROPY,
+        {
+            "architecture_accounting_rule": (
+                "explicit_component_accounting"
+            ),
+            "centering_rule": "global_centering",
+            "estimator": "local_traceless_tensor",
+            "fit_role": "calibration_selection",
+            "input_tensor": "accounted_response",
+            "interpolation_rule": "doubled_angle_geodesic",
+            "observation_axis": "layer_index",
+            "reference_rule": "doubled_angle_reference",
+            "residual_rule": "architecture_accounted_response",
+            "trivialization_rule": "director_bundle_trivialization",
+        },
+    )
+
+
 def _artifact_set() -> dict[str, object]:
     registry_ref = _ref(
         ArtifactType.HYPOTHESIS_REGISTRY,
@@ -184,9 +250,9 @@ def _artifact_set() -> dict[str, object]:
         artifact_id="field-graph-spec",
         substrate=substrate_ref,
         purpose="field_estimation",
-        family=_fixed("graph-family", "mutual-knn"),
-        metric=_fixed("graph-metric", "cosine"),
-        scale=_fixed("graph-scale", "local"),
+        family=_fixed("graph_family", "mutual-knn"),
+        metric=_fixed("graph_metric", "cosine"),
+        scale=_fixed("graph_scale", "local"),
         constructor_id="deterministic-graph-v1",
         deterministic_tie_policy="lexicographic-vertex-id",
         allowed_role=FitRole.CALIBRATION_SELECTION,
@@ -275,22 +341,22 @@ def _artifact_set() -> dict[str, object]:
         fit_receipt=_opaque("order-fit-receipt"),
         target_manifold_id="rp1",
         gauge_law_id="local-sign-gauge-v1",
-        charge_group=_fixed("charge-group", "z2"),
-        amplitude_rule=_fixed("amplitude-rule", "spectral-gap"),
+        charge_group=_fixed("charge_group", "z2"),
+        amplitude_rule=_fixed("amplitude_rule", "spectral-gap"),
         identifiability_rule=_fixed(
-            "identifiability-rule",
+            "identifiability_rule",
             "support-threshold",
         ),
         interpolation_rule=_fixed(
-            "interpolation-rule",
+            "interpolation_rule",
             "geodesic-shortest",
         ),
-        lift_rule=_fixed("lift-rule", "local-continuous-lift"),
+        lift_rule=_fixed("lift_rule", "local-continuous-lift"),
         trivialization_rule=_fixed(
-            "trivialization-rule",
+            "trivialization_rule",
             "edge-frame-v1",
         ),
-        reference_rule=_fixed("reference-rule", "canonical-first"),
+        reference_rule=_fixed("reference_rule", "canonical-first"),
         forbidden_labels=("concept", "oam", "phase", "vortex"),
         claim_ceiling=ClaimLevel.LEVEL_1D,
     )
@@ -500,6 +566,8 @@ def _artifact_set() -> dict[str, object]:
         selection_outputs=(support_ref,),
         source_commit_sha1="a" * 40,
         source_tree_sha256=_digest("source-tree-selection"),
+        fixed_choices=(),
+        resolved_choices=_f2_resolved_choices(),
         unresolved_choices=(
             HypothesisRuleChoice(
                 hypothesis_id=HypothesisId.F3_GLOBAL_PLANE_SECTION,
@@ -527,7 +595,7 @@ def _artifact_set() -> dict[str, object]:
         selection_decision=selection_ref,
         confirmation_cell_order_sha256=CALIBRATION_ORDER,
         confirmation_cells=_records("confirmation-cells"),
-        evidence_artifacts=(selection_ref,),
+        evidence_artifacts=(support_ref,),
         locked_result=GateState.INSUFFICIENT,
         unresolved_hypotheses=(
             HypothesisId.F2_LOCAL_COVARIANT_SECTION,
@@ -775,6 +843,126 @@ def test_level_2t_requires_typed_selection_authorization() -> None:
             artifacts["selection"],
             integer_output_authorizations=(),
         )
+    with pytest.raises(ContractValidationError, match="missing resolved"):
+        replace(
+            artifacts["selection"],
+            resolved_choices=artifacts["selection"].resolved_choices[:-1],
+        )
+    with pytest.raises(ContractValidationError, match="candidate set"):
+        replace(
+            artifacts["selection"],
+            resolved_choices=tuple(
+                replace(
+                    choice,
+                    choice=_resolved(
+                        "interpolation_rule",
+                        "outcome-invented-rule",
+                    ),
+                )
+                if choice.choice.family_id == "interpolation_rule"
+                else choice
+                for choice in artifacts["selection"].resolved_choices
+            ),
+        )
+    with pytest.raises(ContractValidationError, match="unexpected resolved"):
+        replace(
+            artifacts["selection"],
+            resolved_choices=tuple(
+                sorted(
+                    (
+                        *artifacts["selection"].resolved_choices,
+                        HypothesisResolvedChoice(
+                            hypothesis_id=(
+                                HypothesisId.F2_LOCAL_COVARIANT_SECTION
+                            ),
+                            choice=_resolved(
+                                "outcome_invented_family",
+                                "outcome-invented-rule",
+                            ),
+                        ),
+                    ),
+                    key=lambda value: (
+                        value.hypothesis_id.value,
+                        value.choice.family_id,
+                    ),
+                )
+            ),
+        )
+
+
+def test_f4_authorization_preserves_fixed_lift_provenance_and_all_choices() -> None:
+    selection = _artifact_set()["selection"]
+    decisions = tuple(
+        replace(
+            decision,
+            disposition=(
+                HypothesisDisposition.ADVANCE
+                if decision.hypothesis_id
+                is HypothesisId.F4_SPIN_TWO_ANISOTROPY
+                else HypothesisDisposition.RETAIN_DIAGNOSTIC
+            ),
+        )
+        for decision in selection.hypothesis_decisions
+    )
+    fixed_lift = HypothesisFixedChoice(
+        hypothesis_id=HypothesisId.F4_SPIN_TWO_ANISOTROPY,
+        choice=_fixed(
+            "lift_rule",
+            "spin_two_doubled_angle_lift",
+        ),
+    )
+    valid = replace(
+        selection,
+        hypothesis_decisions=decisions,
+        fixed_choices=(fixed_lift,),
+        resolved_choices=_f4_resolved_choices(),
+        integer_output_authorizations=(
+            HypothesisId.F4_SPIN_TWO_ANISOTROPY,
+        ),
+    )
+    assert valid.fixed_choices == (fixed_lift,)
+
+    with pytest.raises(
+        ContractValidationError,
+        match="hypothesis-fixed",
+    ):
+        replace(valid, fixed_choices=())
+    with pytest.raises(
+        ContractValidationError,
+        match="unexpected hypothesis-fixed",
+    ):
+        replace(
+            valid,
+            fixed_choices=tuple(
+                sorted(
+                    (
+                        fixed_lift,
+                        HypothesisFixedChoice(
+                            hypothesis_id=(
+                                HypothesisId.F4_SPIN_TWO_ANISOTROPY
+                            ),
+                            choice=_fixed(
+                                "outcome_invented_family",
+                                "outcome-invented-rule",
+                            ),
+                        ),
+                    ),
+                    key=lambda value: (
+                        value.hypothesis_id.value,
+                        value.choice.family_id,
+                    ),
+                )
+            ),
+        )
+    with pytest.raises(ContractValidationError, match="missing resolved"):
+        replace(
+            valid,
+            resolved_choices=tuple(
+                value
+                for value in valid.resolved_choices
+                if value.choice.family_id != "input_tensor"
+            ),
+        )
 
 
 def test_confirmation_schema_has_no_policy_override_field() -> None:
@@ -789,10 +977,44 @@ def test_confirmation_schema_has_no_policy_override_field() -> None:
     with pytest.raises(ContractValidationError, match="must be one of"):
         CalibrationConfirmationResult.from_dict(confirmation)
 
+    with pytest.raises(ContractValidationError):
+        replace(
+            _artifact_set()["confirmation"],
+            evidence_artifacts=(
+                _ref(
+                    ArtifactType.CALIBRATION_SELECTION_DECISION,
+                    "conflicting-selection",
+                ),
+            ),
+        )
+
+
+def test_named_rule_fields_reject_family_reclassification() -> None:
+    artifacts = _artifact_set()
+
+    with pytest.raises(ContractValidationError, match="family_id"):
+        replace(
+            artifacts["order_spec"],
+            reference_rule=_fixed(
+                "interpolation_rule",
+                "misclassified-reference",
+            ),
+        )
+    with pytest.raises(ContractValidationError, match="family_id"):
+        replace(
+            artifacts["graph_spec"],
+            family=_fixed("wrong_family", "mutual-knn"),
+        )
+
 
 def test_unresolved_choices_are_hypothesis_scoped_and_not_fixed() -> None:
     selection = _artifact_set()["selection"]
 
+    with pytest.raises(ContractValidationError, match="calibration_resolved"):
+        HypothesisResolvedChoice(
+            hypothesis_id=HypothesisId.F2_LOCAL_COVARIANT_SECTION,
+            choice=_fixed("interpolation_rule", "fixed-too-early"),
+        )
     with pytest.raises(
         ContractValidationError,
         match="must remain calibration_selection",
@@ -835,7 +1057,10 @@ def test_unresolved_choices_are_hypothesis_scoped_and_not_fixed() -> None:
     )
     assert len(scoped.unresolved_choices) == 2
 
-    with pytest.raises(ContractValidationError, match="unresolved choice"):
+    with pytest.raises(
+        ContractValidationError,
+        match="more than once|unresolved choice",
+    ):
         replace(
             selection,
             unresolved_choices=(

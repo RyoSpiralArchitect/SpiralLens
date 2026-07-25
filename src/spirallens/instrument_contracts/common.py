@@ -62,6 +62,7 @@ class FitRole(str, Enum):
 class ResolutionState(str, Enum):
     FIXED_BY_HYPOTHESIS = "fixed_by_hypothesis"
     CALIBRATION_SELECTION = "calibration_selection"
+    CALIBRATION_RESOLVED = "calibration_resolved"
     DISABLED = "disabled"
     NOT_APPLICABLE = "not_applicable"
 
@@ -384,10 +385,13 @@ class RuleChoice:
             raise ContractValidationError(
                 "selected_id and candidate_ids are mutually exclusive"
             )
-        if self.resolution is ResolutionState.FIXED_BY_HYPOTHESIS:
+        if self.resolution in {
+            ResolutionState.FIXED_BY_HYPOTHESIS,
+            ResolutionState.CALIBRATION_RESOLVED,
+        }:
             if not has_selected:
                 raise ContractValidationError(
-                    "fixed_by_hypothesis requires selected_id"
+                    f"{self.resolution.value} requires selected_id"
                 )
         elif self.resolution is ResolutionState.CALIBRATION_SELECTION:
             if not has_candidates:

@@ -181,6 +181,13 @@ def test_closed_enum_values_are_exact() -> None:
         "subject_discovery",
         "subject_confirmation",
     }
+    assert {item.value for item in ResolutionState} == {
+        "fixed_by_hypothesis",
+        "calibration_selection",
+        "calibration_resolved",
+        "disabled",
+        "not_applicable",
+    }
     assert {item.value for item in NeighborhoodMode} == {
         "graph_free",
         "inherit_field_estimation_graph",
@@ -220,6 +227,11 @@ def test_rule_choice_round_trip_for_every_resolution_state() -> None:
             family_id="covariance_estimator",
             resolution=ResolutionState.CALIBRATION_SELECTION,
             candidate_ids=("empirical", "shrinkage"),
+        ),
+        RuleChoice(
+            family_id="covariance_estimator",
+            resolution=ResolutionState.CALIBRATION_RESOLVED,
+            selected_id="shrinkage",
         ),
         RuleChoice(
             family_id="integer_output",

@@ -123,7 +123,6 @@ _CALIBRATION_INPUT_TYPES = {
 }
 _CONFIRMATION_EVIDENCE_TYPES = {
     *_CALIBRATION_EVIDENCE_TYPES,
-    ArtifactType.CALIBRATION_SELECTION_DECISION,
 }
 _ORDER_PARAMETER_HYPOTHESES = {
     HypothesisId.F2_LOCAL_COVARIANT_SECTION,
@@ -144,6 +143,85 @@ _DEFECT_CLAIMS_BY_HYPOTHESIS = {
         ClaimLevel.LEVEL_0,
         ClaimLevel.LEVEL_1D,
         ClaimLevel.LEVEL_2T,
+    },
+}
+_COMMON_INTEGER_CALIBRATION_SELECTIONS = {
+    "architecture_accounting_rule": {
+        "explicit_component_accounting",
+        "identity_no_subtraction",
+    },
+    "centering_rule": {
+        "global_centering",
+        "local_centering",
+        "no_centering",
+    },
+    "fit_role": {
+        "calibration_selection",
+        "instrument_dev",
+    },
+    "input_tensor": {
+        "accounted_response",
+        "raw_state",
+    },
+    "observation_axis": {
+        "layer_index",
+        "token_position",
+        "training_step",
+    },
+    "residual_rule": {
+        "architecture_accounted_response",
+        "centered_state",
+        "raw_state",
+    },
+}
+_INTEGER_REQUIRED_CALIBRATION_SELECTIONS = {
+    HypothesisId.F2_LOCAL_COVARIANT_SECTION: {
+        **_COMMON_INTEGER_CALIBRATION_SELECTIONS,
+        "estimator": {
+            "cross_fitted_local_frame",
+            "weighted_local_frame",
+        },
+        "interpolation_rule": {
+            "connection_transport_interpolation",
+            "piecewise_geodesic_interpolation",
+        },
+        "lift_rule": {
+            "connection_corrected_lift",
+            "global_trivialization_lift",
+        },
+        "reference_rule": {
+            "connection_defined_reference",
+            "frozen_global_reference",
+        },
+        "trivialization_rule": {
+            "frozen_global_trivialization",
+            "local_frame_with_connection",
+        },
+    },
+    HypothesisId.F4_SPIN_TWO_ANISOTROPY: {
+        **_COMMON_INTEGER_CALIBRATION_SELECTIONS,
+        "estimator": {
+            "local_traceless_tensor",
+            "weighted_traceless_tensor",
+        },
+        "interpolation_rule": {
+            "doubled_angle_geodesic",
+            "piecewise_director",
+        },
+        "reference_rule": {
+            "doubled_angle_reference",
+            "reflection_accounted_reference",
+        },
+        "trivialization_rule": {
+            "director_bundle_trivialization",
+            "spin_two_connection_trivialization",
+        },
+    },
+}
+_INTEGER_REQUIRED_FIXED_SELECTIONS = {
+    HypothesisId.F2_LOCAL_COVARIANT_SECTION: {},
+    HypothesisId.F4_SPIN_TWO_ANISOTROPY: {
+        "lift_rule": {"spin_two_doubled_angle_lift"},
     },
 }
 
@@ -593,6 +671,15 @@ class GraphConstructionSpec(_CanonicalArtifact):
         ):
             if not isinstance(choice, RuleChoice):
                 raise TypeError(f"{label} must be a RuleChoice")
+        for choice, expected_family_id in (
+            (self.family, "graph_family"),
+            (self.metric, "graph_metric"),
+            (self.scale, "graph_scale"),
+        ):
+            if choice.family_id != expected_family_id:
+                raise ContractValidationError(
+                    f"{expected_family_id} choice has the wrong family_id"
+                )
         require_slug(self.constructor_id, label="constructor_id")
         require_slug(
             self.deterministic_tie_policy,
@@ -1168,6 +1255,10 @@ class OrderParameterSpec(_CanonicalArtifact):
         ):
             if not isinstance(choice, RuleChoice):
                 raise TypeError(f"{label} must be a RuleChoice")
+            if choice.family_id != label:
+                raise ContractValidationError(
+                    f"{label} choice must use family_id={label!r}"
+                )
         _sorted_strings(
             self.forbidden_labels,
             label="forbidden_labels",
@@ -2998,6 +3089,104 @@ class HypothesisRuleChoice:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class HypothesisResolvedChoice:
+    """One selected rule keyed by hypothesis and frozen family."""
+
+    hypothesis_id: HypothesisId
+    choice: RuleChoice
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.hypothesis_id, HypothesisId):
+            raise TypeError("hypothesis_id must be a HypothesisId")
+        if not isinstance(self.choice, RuleChoice):
+            raise TypeError("choice must be a RuleChoice")
+        if self.choice.resolution is not ResolutionState.CALIBRATION_RESOLVED:
+            raise ContractValidationError(
+                "a resolved choice must be calibration_resolved"
+            )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "hypothesis_id": self.hypothesis_id.value,
+            "choice": self.choice.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> "HypothesisResolvedChoice":
+        document = require_mapping(value, label="hypothesis resolved choice")
+        exact_keys(
+            document,
+            {"hypothesis_id", "choice"},
+            label="hypothesis resolved choice",
+        )
+        return cls(
+            hypothesis_id=enum_from_value(
+                HypothesisId,
+                document["hypothesis_id"],
+                label="hypothesis_id",
+            ),
+            choice=RuleChoice.from_dict(
+                require_mapping(
+                    document["choice"],
+                    label="choice",
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class HypothesisFixedChoice:
+    """One registry rule fixed by the hypothesis rather than calibration."""
+
+    hypothesis_id: HypothesisId
+    choice: RuleChoice
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.hypothesis_id, HypothesisId):
+            raise TypeError("hypothesis_id must be a HypothesisId")
+        if not isinstance(self.choice, RuleChoice):
+            raise TypeError("choice must be a RuleChoice")
+        if self.choice.resolution is not ResolutionState.FIXED_BY_HYPOTHESIS:
+            raise ContractValidationError(
+                "a hypothesis-fixed choice must be fixed_by_hypothesis"
+            )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "hypothesis_id": self.hypothesis_id.value,
+            "choice": self.choice.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> "HypothesisFixedChoice":
+        document = require_mapping(value, label="hypothesis fixed choice")
+        exact_keys(
+            document,
+            {"hypothesis_id", "choice"},
+            label="hypothesis fixed choice",
+        )
+        return cls(
+            hypothesis_id=enum_from_value(
+                HypothesisId,
+                document["hypothesis_id"],
+                label="hypothesis_id",
+            ),
+            choice=RuleChoice.from_dict(
+                require_mapping(
+                    document["choice"],
+                    label="choice",
+                )
+            ),
+        )
+
+
 def _validate_decisions(
     values: tuple[HypothesisDecision, ...],
 ) -> tuple[HypothesisDecision, ...]:
@@ -3038,6 +3227,48 @@ def _validate_choices(
     return values
 
 
+def _validate_resolved_choices(
+    values: tuple[HypothesisResolvedChoice, ...],
+) -> tuple[HypothesisResolvedChoice, ...]:
+    if not isinstance(values, tuple):
+        raise TypeError("resolved_choices must be a tuple")
+    if any(not isinstance(value, HypothesisResolvedChoice) for value in values):
+        raise TypeError(
+            "resolved_choices must contain HypothesisResolvedChoice values"
+        )
+    keys = tuple(
+        (value.hypothesis_id.value, value.choice.family_id)
+        for value in values
+    )
+    if keys != tuple(sorted(set(keys))):
+        raise ContractValidationError(
+            "resolved_choices must be unique and sorted by "
+            "(hypothesis_id, family_id)"
+        )
+    return values
+
+
+def _validate_fixed_choices(
+    values: tuple[HypothesisFixedChoice, ...],
+) -> tuple[HypothesisFixedChoice, ...]:
+    if not isinstance(values, tuple):
+        raise TypeError("fixed_choices must be a tuple")
+    if any(not isinstance(value, HypothesisFixedChoice) for value in values):
+        raise TypeError(
+            "fixed_choices must contain HypothesisFixedChoice values"
+        )
+    keys = tuple(
+        (value.hypothesis_id.value, value.choice.family_id)
+        for value in values
+    )
+    if keys != tuple(sorted(set(keys))):
+        raise ContractValidationError(
+            "fixed_choices must be unique and sorted by "
+            "(hypothesis_id, family_id)"
+        )
+    return values
+
+
 def _validate_hypothesis_ids(
     values: tuple[HypothesisId, ...],
 ) -> tuple[HypothesisId, ...]:
@@ -3059,6 +3290,8 @@ def _validate_integer_authorizations(
     values: tuple[HypothesisId, ...],
     *,
     decisions: tuple[HypothesisDecision, ...],
+    fixed_choices: tuple[HypothesisFixedChoice, ...],
+    resolved_choices: tuple[HypothesisResolvedChoice, ...],
     unresolved_choices: tuple[HypothesisRuleChoice, ...],
     claim_ceiling: ClaimLevel,
 ) -> tuple[HypothesisId, ...]:
@@ -3088,6 +3321,61 @@ def _validate_integer_authorizations(
             "integer output authorization cannot retain an unresolved "
             "choice for the same hypothesis"
         )
+    for hypothesis_id in authorized:
+        resolved_by_family = {
+            value.choice.family_id: value.choice.selected_id
+            for value in resolved_choices
+            if value.hypothesis_id is hypothesis_id
+        }
+        allowed_selections = _INTEGER_REQUIRED_CALIBRATION_SELECTIONS[
+            hypothesis_id
+        ]
+        missing = set(allowed_selections) - set(resolved_by_family)
+        if missing:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} integer output authorization "
+                f"is missing resolved choices: {sorted(missing)}"
+            )
+        unexpected = set(resolved_by_family) - set(allowed_selections)
+        if unexpected:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} integer output authorization "
+                f"has unexpected resolved choices: {sorted(unexpected)}"
+            )
+        for family_id, allowed_selected_ids in allowed_selections.items():
+            selected_id = resolved_by_family[family_id]
+            if selected_id not in allowed_selected_ids:
+                raise ContractValidationError(
+                    f"{hypothesis_id.value}.{family_id} selected_id "
+                    "differs from the P0 registry candidate set"
+                )
+        fixed_by_family = {
+            value.choice.family_id: value.choice.selected_id
+            for value in fixed_choices
+            if value.hypothesis_id is hypothesis_id
+        }
+        allowed_fixed = _INTEGER_REQUIRED_FIXED_SELECTIONS[hypothesis_id]
+        missing_fixed = set(allowed_fixed) - set(fixed_by_family)
+        if missing_fixed:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} integer output authorization "
+                f"is missing hypothesis-fixed choices: "
+                f"{sorted(missing_fixed)}"
+            )
+        unexpected_fixed = set(fixed_by_family) - set(allowed_fixed)
+        if unexpected_fixed:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} integer output authorization "
+                f"has unexpected hypothesis-fixed choices: "
+                f"{sorted(unexpected_fixed)}"
+            )
+        for family_id, allowed_selected_ids in allowed_fixed.items():
+            selected_id = fixed_by_family[family_id]
+            if selected_id not in allowed_selected_ids:
+                raise ContractValidationError(
+                    f"{hypothesis_id.value}.{family_id} hypothesis-fixed "
+                    "selected_id differs from the P0 registry"
+                )
     if bool(authorized) != (claim_ceiling is ClaimLevel.LEVEL_2T):
         raise ContractValidationError(
             "Level 2T selection ceiling and integer output authorization "
@@ -3125,6 +3413,8 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
     selection_outputs: tuple[ArtifactRef, ...]
     source_commit_sha1: str
     source_tree_sha256: str
+    fixed_choices: tuple[HypothesisFixedChoice, ...]
+    resolved_choices: tuple[HypothesisResolvedChoice, ...]
     unresolved_choices: tuple[HypothesisRuleChoice, ...]
     integer_output_authorizations: tuple[HypothesisId, ...]
     confirmation_access_commitment: PayloadRef
@@ -3182,7 +3472,30 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
             self.source_tree_sha256,
             label="source_tree_sha256",
         )
+        _validate_fixed_choices(self.fixed_choices)
+        _validate_resolved_choices(self.resolved_choices)
         _validate_choices(self.unresolved_choices)
+        resolved_keys = {
+            (value.hypothesis_id, value.choice.family_id)
+            for value in self.resolved_choices
+        }
+        unresolved_keys = {
+            (value.hypothesis_id, value.choice.family_id)
+            for value in self.unresolved_choices
+        }
+        fixed_keys = {
+            (value.hypothesis_id, value.choice.family_id)
+            for value in self.fixed_choices
+        }
+        if (
+            fixed_keys & resolved_keys
+            or fixed_keys & unresolved_keys
+            or resolved_keys & unresolved_keys
+        ):
+            raise ContractValidationError(
+                "a hypothesis rule cannot be fixed, resolved, or unresolved "
+                "more than once"
+            )
         if self.sealed_before_confirmation_access is not True:
             raise ContractValidationError(
                 "selection must be sealed before confirmation access"
@@ -3200,6 +3513,8 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
         _validate_integer_authorizations(
             self.integer_output_authorizations,
             decisions=self.hypothesis_decisions,
+            fixed_choices=self.fixed_choices,
+            resolved_choices=self.resolved_choices,
             unresolved_choices=self.unresolved_choices,
             claim_ceiling=self.claim_ceiling,
         )
@@ -3228,6 +3543,12 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
             ],
             "source_commit_sha1": self.source_commit_sha1,
             "source_tree_sha256": self.source_tree_sha256,
+            "fixed_choices": [
+                value.to_dict() for value in self.fixed_choices
+            ],
+            "resolved_choices": [
+                value.to_dict() for value in self.resolved_choices
+            ],
             "unresolved_choices": [
                 value.to_dict() for value in self.unresolved_choices
             ],
@@ -3266,6 +3587,8 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
                 "selection_outputs",
                 "source_commit_sha1",
                 "source_tree_sha256",
+                "fixed_choices",
+                "resolved_choices",
                 "unresolved_choices",
                 "integer_output_authorizations",
                 "confirmation_access_commitment",
@@ -3279,6 +3602,8 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
                 "CalibrationSelectionDecision role is invalid"
             )
         raw_decisions = document["hypothesis_decisions"]
+        raw_fixed_choices = document["fixed_choices"]
+        raw_resolved_choices = document["resolved_choices"]
         raw_choices = document["unresolved_choices"]
         if not isinstance(raw_decisions, list):
             raise ContractValidationError(
@@ -3287,6 +3612,14 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
         if not isinstance(raw_choices, list):
             raise ContractValidationError(
                 "unresolved_choices must be a list"
+            )
+        if not isinstance(raw_resolved_choices, list):
+            raise ContractValidationError(
+                "resolved_choices must be a list"
+            )
+        if not isinstance(raw_fixed_choices, list):
+            raise ContractValidationError(
+                "fixed_choices must be a list"
             )
         return cls(
             artifact_id=artifact_id,
@@ -3342,6 +3675,24 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
             source_tree_sha256=require_sha256(
                 document["source_tree_sha256"],
                 label="source_tree_sha256",
+            ),
+            fixed_choices=tuple(
+                HypothesisFixedChoice.from_dict(
+                    require_mapping(
+                        item,
+                        label=f"fixed_choices[{index}]",
+                    )
+                )
+                for index, item in enumerate(raw_fixed_choices)
+            ),
+            resolved_choices=tuple(
+                HypothesisResolvedChoice.from_dict(
+                    require_mapping(
+                        item,
+                        label=f"resolved_choices[{index}]",
+                    )
+                )
+                for index, item in enumerate(raw_resolved_choices)
             ),
             unresolved_choices=tuple(
                 HypothesisRuleChoice.from_dict(

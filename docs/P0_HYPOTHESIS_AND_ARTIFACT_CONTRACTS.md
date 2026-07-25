@@ -141,9 +141,12 @@ The following distinctions are load-bearing:
 
 - `SupportDiagnostic` has no order-parameter, core, loop, winding, or charge
   reference. It cannot be deserialized or relabelled as `CoreScore`.
-- `CoreScore` is charge-blind and binds the exact
-  `OrderParameterSpec`/`OrderParameterField`, same substrate and row identity,
-  same-field singularity rule, and one explicit core-neighborhood mode.
+- `CoreScore` is charge-blind and carries typed, content-addressed
+  `OrderParameterSpec`/`OrderParameterField` references, its own substrate and
+  row identity, a declared singularity rule, and one explicit
+  core-neighborhood mode. Equality with the referenced spec/field substrate,
+  row identity, and singularity contract is a future bundle-validator check;
+  single-manifest validation does not claim it.
 - A core-neighborhood binding is exactly one of `graph_free`,
   `inherit_field_estimation_graph`, or `explicit_core_graph`. The latter two
   cannot collapse the field, core, and cycle graph axes into one unnamed
@@ -170,9 +173,19 @@ The following distinctions are load-bearing:
 - Still-unresolved selection choices are keyed by
   `(hypothesis_id, family_id)`, remain `calibration_selection`, and cannot be
   smuggled in as an arbitrary fixed choice.
+- Resolved selection choices are separately typed, keyed by the same pair, and
+  must be `calibration_resolved`; a named rule field cannot carry another
+  field's family ID.
+- Registry-fixed choices use a distinct `fixed_by_hypothesis` receipt, so a
+  frozen convention cannot be relabelled as calibration-selected.
 - A selection decision may authorize an integer path only for an advanced F2
   or F4 hypothesis, only together with its Level-2T ceiling, and never while
-  that hypothesis retains an unresolved rule choice. A loop's authorization
+  that hypothesis retains an unresolved rule choice. Every registry-delegated
+  input, axis, centering, residual, architecture-accounting, estimator,
+  fit-role, interpolation, trivialization, and reference choice—and F2's lift
+  choice—must be present with an allowed selected ID, with no invented extra
+  family. F4's fixed lift must instead retain its hypothesis-fixed provenance
+  and is its only fixed receipt. A loop's authorization
   reference is not accepted as bundle evidence until that decision is
   resolved and the hypothesis IDs agree.
 
