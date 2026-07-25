@@ -12,6 +12,8 @@ from spirallens.instrument_contracts.artifact_loader import (
     load_instrument_artifact,
 )
 from spirallens.instrument_contracts.artifacts import (
+    _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS,
+    _P0_FIXED_SELECTIONS_BY_HYPOTHESIS,
     CalibrationConfirmationResult,
     CalibrationSelectionDecision,
     CandidateGraph,
@@ -147,6 +149,67 @@ def _resolved_choices(
         )
         for family_id, selected_id in sorted(selections.items())
     )
+
+
+def _first_p0_resolved_choices(
+    hypothesis_id: HypothesisId,
+) -> tuple[HypothesisResolvedChoice, ...]:
+    return _resolved_choices(
+        hypothesis_id,
+        {
+            family_id: sorted(candidate_ids)[0]
+            for family_id, candidate_ids in (
+                _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS[
+                    hypothesis_id
+                ].items()
+            )
+        },
+    )
+
+
+def _p0_unresolved_choices(
+    *resolved_hypotheses: HypothesisId,
+) -> tuple[HypothesisRuleChoice, ...]:
+    resolved = set(resolved_hypotheses)
+    return tuple(
+        HypothesisRuleChoice(
+            hypothesis_id=hypothesis_id,
+            choice=RuleChoice(
+                family_id=family_id,
+                resolution=ResolutionState.CALIBRATION_SELECTION,
+                candidate_ids=tuple(sorted(candidate_ids)),
+            ),
+        )
+        for hypothesis_id in sorted(
+            HypothesisId,
+            key=lambda item: item.value,
+        )
+        if hypothesis_id not in resolved
+        for family_id, candidate_ids in sorted(
+            _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS[
+                hypothesis_id
+            ].items()
+        )
+    )
+
+
+def _p0_fixed_choices() -> tuple[HypothesisFixedChoice, ...]:
+    values: list[HypothesisFixedChoice] = []
+    for hypothesis_id in sorted(HypothesisId, key=lambda item: item.value):
+        for family_id, selected_ids in sorted(
+            _P0_FIXED_SELECTIONS_BY_HYPOTHESIS[hypothesis_id].items()
+        ):
+            assert len(selected_ids) == 1
+            values.append(
+                HypothesisFixedChoice(
+                    hypothesis_id=hypothesis_id,
+                    choice=_fixed(
+                        family_id,
+                        next(iter(selected_ids)),
+                    ),
+                )
+            )
+    return tuple(values)
 
 
 def _f2_resolved_choices() -> tuple[HypothesisResolvedChoice, ...]:
@@ -566,20 +629,10 @@ def _artifact_set() -> dict[str, object]:
         selection_outputs=(support_ref,),
         source_commit_sha1="a" * 40,
         source_tree_sha256=_digest("source-tree-selection"),
-        fixed_choices=(),
+        fixed_choices=_p0_fixed_choices(),
         resolved_choices=_f2_resolved_choices(),
-        unresolved_choices=(
-            HypothesisRuleChoice(
-                hypothesis_id=HypothesisId.F3_GLOBAL_PLANE_SECTION,
-                choice=RuleChoice(
-                    family_id="interpolation_rule",
-                    resolution=ResolutionState.CALIBRATION_SELECTION,
-                    candidate_ids=(
-                        "piecewise_linear_projection",
-                        "projection_geodesic",
-                    ),
-                ),
-            ),
+        unresolved_choices=_p0_unresolved_choices(
+            HypothesisId.F2_LOCAL_COVARIANT_SECTION
         ),
         integer_output_authorizations=(
             HypothesisId.F2_LOCAL_COVARIANT_SECTION,
@@ -843,7 +896,7 @@ def test_level_2t_requires_typed_selection_authorization() -> None:
             artifacts["selection"],
             integer_output_authorizations=(),
         )
-    with pytest.raises(ContractValidationError, match="missing resolved"):
+    with pytest.raises(ContractValidationError, match="missing choice receipts"):
         replace(
             artifacts["selection"],
             resolved_choices=artifacts["selection"].resolved_choices[:-1],
@@ -904,29 +957,37 @@ def test_f4_authorization_preserves_fixed_lift_provenance_and_all_choices() -> N
         )
         for decision in selection.hypothesis_decisions
     )
-    fixed_lift = HypothesisFixedChoice(
-        hypothesis_id=HypothesisId.F4_SPIN_TWO_ANISOTROPY,
-        choice=_fixed(
-            "lift_rule",
-            "spin_two_doubled_angle_lift",
-        ),
+    fixed_lift = next(
+        value
+        for value in selection.fixed_choices
+        if value.hypothesis_id
+        is HypothesisId.F4_SPIN_TWO_ANISOTROPY
     )
     valid = replace(
         selection,
         hypothesis_decisions=decisions,
-        fixed_choices=(fixed_lift,),
         resolved_choices=_f4_resolved_choices(),
+        unresolved_choices=_p0_unresolved_choices(
+            HypothesisId.F4_SPIN_TWO_ANISOTROPY
+        ),
         integer_output_authorizations=(
             HypothesisId.F4_SPIN_TWO_ANISOTROPY,
         ),
     )
-    assert valid.fixed_choices == (fixed_lift,)
+    assert fixed_lift in valid.fixed_choices
 
     with pytest.raises(
         ContractValidationError,
         match="hypothesis-fixed",
     ):
-        replace(valid, fixed_choices=())
+        replace(
+            valid,
+            fixed_choices=tuple(
+                value
+                for value in valid.fixed_choices
+                if value is not fixed_lift
+            ),
+        )
     with pytest.raises(
         ContractValidationError,
         match="unexpected hypothesis-fixed",
@@ -936,7 +997,7 @@ def test_f4_authorization_preserves_fixed_lift_provenance_and_all_choices() -> N
             fixed_choices=tuple(
                 sorted(
                     (
-                        fixed_lift,
+                        *valid.fixed_choices,
                         HypothesisFixedChoice(
                             hypothesis_id=(
                                 HypothesisId.F4_SPIN_TWO_ANISOTROPY
@@ -954,7 +1015,7 @@ def test_f4_authorization_preserves_fixed_lift_provenance_and_all_choices() -> N
                 )
             ),
         )
-    with pytest.raises(ContractValidationError, match="missing resolved"):
+    with pytest.raises(ContractValidationError, match="missing choice receipts"):
         replace(
             valid,
             resolved_choices=tuple(
@@ -1034,50 +1095,195 @@ def test_unresolved_choices_are_hypothesis_scoped_and_not_fixed() -> None:
             ),
         )
 
-    scoped = replace(
-        selection,
-        unresolved_choices=(
-            HypothesisRuleChoice(
-                hypothesis_id=HypothesisId.F3_GLOBAL_PLANE_SECTION,
-                choice=RuleChoice(
-                    family_id="estimator",
-                    resolution=ResolutionState.CALIBRATION_SELECTION,
-                    candidate_ids=("a", "b"),
-                ),
+    keys = {
+        (value.hypothesis_id, value.choice.family_id)
+        for value in selection.unresolved_choices
+    }
+    assert (
+        HypothesisId.F3_GLOBAL_PLANE_SECTION,
+        "estimator",
+    ) in keys
+    assert (
+        HypothesisId.F4_SPIN_TWO_ANISOTROPY,
+        "estimator",
+    ) in keys
+
+    with pytest.raises(ContractValidationError, match="candidate set"):
+        replace(
+            selection,
+            unresolved_choices=tuple(
+                replace(
+                    value,
+                    choice=RuleChoice(
+                        family_id="estimator",
+                        resolution=ResolutionState.CALIBRATION_SELECTION,
+                        candidate_ids=("invented-a", "invented-b"),
+                    ),
+                )
+                if (
+                    value.hypothesis_id
+                    is HypothesisId.F3_GLOBAL_PLANE_SECTION
+                    and value.choice.family_id == "estimator"
+                )
+                else value
+                for value in selection.unresolved_choices
             ),
-            HypothesisRuleChoice(
-                hypothesis_id=HypothesisId.F4_SPIN_TWO_ANISOTROPY,
-                choice=RuleChoice(
-                    family_id="estimator",
-                    resolution=ResolutionState.CALIBRATION_SELECTION,
-                    candidate_ids=("c", "d"),
-                ),
-            ),
-        ),
-    )
-    assert len(scoped.unresolved_choices) == 2
+        )
 
     with pytest.raises(
         ContractValidationError,
-        match="more than once|unresolved choice",
+        match="more than once",
     ):
-        replace(
-            selection,
-            unresolved_choices=(
-                HypothesisRuleChoice(
-                    hypothesis_id=(
-                        HypothesisId.F2_LOCAL_COVARIANT_SECTION
-                    ),
-                    choice=RuleChoice(
-                        family_id="interpolation_rule",
-                        resolution=(
-                            ResolutionState.CALIBRATION_SELECTION
-                        ),
-                        candidate_ids=("a", "b"),
-                    ),
+        duplicate = HypothesisRuleChoice(
+            hypothesis_id=HypothesisId.F2_LOCAL_COVARIANT_SECTION,
+            choice=RuleChoice(
+                family_id="interpolation_rule",
+                resolution=ResolutionState.CALIBRATION_SELECTION,
+                candidate_ids=tuple(
+                    sorted(
+                        _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS[
+                            HypothesisId.F2_LOCAL_COVARIANT_SECTION
+                        ]["interpolation_rule"]
+                    )
                 ),
             ),
         )
+        replace(
+            selection,
+            unresolved_choices=tuple(
+                sorted(
+                    (*selection.unresolved_choices, duplicate),
+                    key=lambda value: (
+                        value.hypothesis_id.value,
+                        value.choice.family_id,
+                    ),
+                )
+            ),
+        )
+
+
+def test_selection_choice_receipts_close_every_p0_hypothesis() -> None:
+    selection = _artifact_set()["selection"]
+
+    with pytest.raises(
+        ContractValidationError,
+        match="f0_support is missing choice receipts",
+    ):
+        replace(
+            selection,
+            unresolved_choices=tuple(
+                value
+                for value in selection.unresolved_choices
+                if not (
+                    value.hypothesis_id is HypothesisId.F0_SUPPORT
+                    and value.choice.family_id == "input_tensor"
+                )
+            ),
+        )
+
+    invented = HypothesisResolvedChoice(
+        hypothesis_id=HypothesisId.F1_PROJECTOR_CONNECTION,
+        choice=_resolved("invented_family", "invented-choice"),
+    )
+    with pytest.raises(
+        ContractValidationError,
+        match="f1_projector_connection has unexpected resolved",
+    ):
+        replace(
+            selection,
+            resolved_choices=tuple(
+                sorted(
+                    (*selection.resolved_choices, invented),
+                    key=lambda value: (
+                        value.hypothesis_id.value,
+                        value.choice.family_id,
+                    ),
+                )
+            ),
+        )
+
+    f3_lift = next(
+        value
+        for value in selection.fixed_choices
+        if value.hypothesis_id
+        is HypothesisId.F3_GLOBAL_PLANE_SECTION
+        and value.choice.family_id == "lift_rule"
+    )
+    with pytest.raises(
+        ContractValidationError,
+        match="f3_global_plane_section is missing hypothesis-fixed",
+    ):
+        replace(
+            selection,
+            fixed_choices=tuple(
+                value
+                for value in selection.fixed_choices
+                if value is not f3_lift
+            ),
+        )
+
+
+def test_advanced_hypothesis_cannot_retain_unresolved_choices() -> None:
+    selection = _artifact_set()["selection"]
+    f1_advanced = tuple(
+        replace(
+            decision,
+            disposition=(
+                HypothesisDisposition.ADVANCE
+                if decision.hypothesis_id
+                is HypothesisId.F1_PROJECTOR_CONNECTION
+                else HypothesisDisposition.RETAIN_DIAGNOSTIC
+            ),
+        )
+        for decision in selection.hypothesis_decisions
+    )
+
+    with pytest.raises(
+        ContractValidationError,
+        match="f1_projector_connection cannot advance with unresolved",
+    ):
+        replace(
+            selection,
+            hypothesis_decisions=f1_advanced,
+            resolved_choices=(),
+            unresolved_choices=_p0_unresolved_choices(),
+            integer_output_authorizations=(),
+            claim_ceiling=ClaimLevel.LEVEL_2G,
+        )
+
+
+def test_selection_claim_ceiling_requires_a_supporting_advanced_path() -> None:
+    selection = _artifact_set()["selection"]
+    f0_advanced = tuple(
+        replace(
+            decision,
+            disposition=(
+                HypothesisDisposition.ADVANCE
+                if decision.hypothesis_id is HypothesisId.F0_SUPPORT
+                else HypothesisDisposition.RETAIN_DIAGNOSTIC
+            ),
+        )
+        for decision in selection.hypothesis_decisions
+    )
+    valid = replace(
+        selection,
+        hypothesis_decisions=f0_advanced,
+        resolved_choices=_first_p0_resolved_choices(
+            HypothesisId.F0_SUPPORT
+        ),
+        unresolved_choices=_p0_unresolved_choices(
+            HypothesisId.F0_SUPPORT
+        ),
+        integer_output_authorizations=(),
+        claim_ceiling=ClaimLevel.LEVEL_1G,
+    )
+    assert valid.claim_ceiling is ClaimLevel.LEVEL_1G
+
+    with pytest.raises(
+        ContractValidationError,
+        match="do not support selection claim ceiling",
+    ):
+        replace(valid, claim_ceiling=ClaimLevel.LEVEL_2G)
 
 
 @pytest.mark.parametrize(

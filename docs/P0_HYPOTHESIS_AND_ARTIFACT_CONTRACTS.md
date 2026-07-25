@@ -178,9 +178,19 @@ The following distinctions are load-bearing:
   field's family ID.
 - Registry-fixed choices use a distinct `fixed_by_hypothesis` receipt, so a
   frozen convention cannot be relabelled as calibration-selected.
+- The selection decision carries an exhaustive F0--F4 choice partition.
+  Every registry-active calibration family appears exactly once as resolved
+  or unresolved, every registry-fixed family appears exactly once with its
+  fixed value, and non-applicable or invented families cannot acquire a
+  receipt. Non-advanced competitors therefore remain visible as complete,
+  typed selection outcomes rather than disappearing behind the winner. An
+  advanced hypothesis must have every calibration-active family resolved;
+  unresolved choices are allowed only on non-advanced competitors.
 - A selection decision may authorize an integer path only for an advanced F2
   or F4 hypothesis, only together with its Level-2T ceiling, and never while
-  that hypothesis retains an unresolved rule choice. Every registry-delegated
+  that hypothesis retains an unresolved rule choice. Any nonzero selection
+  claim ceiling must likewise be supported by at least one advanced
+  hypothesis whose frozen branch admits that level. Every registry-delegated
   input, axis, centering, residual, architecture-accounting, estimator,
   fit-role, interpolation, trivialization, and reference choice—and F2's lift
   choice—must be present with an allowed selected ID, with no invented extra

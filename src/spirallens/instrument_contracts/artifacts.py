@@ -145,7 +145,19 @@ _DEFECT_CLAIMS_BY_HYPOTHESIS = {
         ClaimLevel.LEVEL_2T,
     },
 }
-_COMMON_INTEGER_CALIBRATION_SELECTIONS = {
+_SELECTION_CLAIMS_BY_HYPOTHESIS = {
+    HypothesisId.F0_SUPPORT: {
+        ClaimLevel.LEVEL_0,
+        ClaimLevel.LEVEL_1G,
+    },
+    HypothesisId.F1_PROJECTOR_CONNECTION: {
+        ClaimLevel.LEVEL_0,
+        ClaimLevel.LEVEL_1G,
+        ClaimLevel.LEVEL_2G,
+    },
+    **_DEFECT_CLAIMS_BY_HYPOTHESIS,
+}
+_P0_COMMON_CALIBRATION_SELECTIONS = {
     "architecture_accounting_rule": {
         "explicit_component_accounting",
         "identity_no_subtraction",
@@ -174,9 +186,25 @@ _COMMON_INTEGER_CALIBRATION_SELECTIONS = {
         "raw_state",
     },
 }
-_INTEGER_REQUIRED_CALIBRATION_SELECTIONS = {
+_P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS = {
+    HypothesisId.F0_SUPPORT: {
+        **_P0_COMMON_CALIBRATION_SELECTIONS,
+        "estimator": {
+            "entropy_effective_rank",
+            "local_covariance_eigenvalues",
+            "spectral_gap",
+            "top_two_concentration",
+        },
+    },
+    HypothesisId.F1_PROJECTOR_CONNECTION: {
+        **_P0_COMMON_CALIBRATION_SELECTIONS,
+        "estimator": {
+            "local_rank_two_projector",
+            "weighted_rank_two_projector",
+        },
+    },
     HypothesisId.F2_LOCAL_COVARIANT_SECTION: {
-        **_COMMON_INTEGER_CALIBRATION_SELECTIONS,
+        **_P0_COMMON_CALIBRATION_SELECTIONS,
         "estimator": {
             "cross_fitted_local_frame",
             "weighted_local_frame",
@@ -198,8 +226,19 @@ _INTEGER_REQUIRED_CALIBRATION_SELECTIONS = {
             "local_frame_with_connection",
         },
     },
+    HypothesisId.F3_GLOBAL_PLANE_SECTION: {
+        **_P0_COMMON_CALIBRATION_SELECTIONS,
+        "estimator": {
+            "fit_split_global_plane",
+            "predeclared_fixed_plane",
+        },
+        "interpolation_rule": {
+            "piecewise_linear_projection",
+            "projection_geodesic",
+        },
+    },
     HypothesisId.F4_SPIN_TWO_ANISOTROPY: {
-        **_COMMON_INTEGER_CALIBRATION_SELECTIONS,
+        **_P0_COMMON_CALIBRATION_SELECTIONS,
         "estimator": {
             "local_traceless_tensor",
             "weighted_traceless_tensor",
@@ -218,8 +257,17 @@ _INTEGER_REQUIRED_CALIBRATION_SELECTIONS = {
         },
     },
 }
-_INTEGER_REQUIRED_FIXED_SELECTIONS = {
+_P0_FIXED_SELECTIONS_BY_HYPOTHESIS = {
+    HypothesisId.F0_SUPPORT: {},
+    HypothesisId.F1_PROJECTOR_CONNECTION: {},
     HypothesisId.F2_LOCAL_COVARIANT_SECTION: {},
+    HypothesisId.F3_GLOBAL_PLANE_SECTION: {
+        "lift_rule": {"global_plane_direct_lift"},
+        "reference_rule": {"fit_split_orientation_reference"},
+        "trivialization_rule": {
+            "global_or_fixed_plane_trivialization"
+        },
+    },
     HypothesisId.F4_SPIN_TWO_ANISOTROPY: {
         "lift_rule": {"spin_two_doubled_angle_lift"},
     },
@@ -3286,12 +3334,107 @@ def _validate_hypothesis_ids(
     return values
 
 
-def _validate_integer_authorizations(
-    values: tuple[HypothesisId, ...],
+def _validate_choice_closure(
     *,
     decisions: tuple[HypothesisDecision, ...],
     fixed_choices: tuple[HypothesisFixedChoice, ...],
     resolved_choices: tuple[HypothesisResolvedChoice, ...],
+    unresolved_choices: tuple[HypothesisRuleChoice, ...],
+) -> None:
+    advanced = {
+        decision.hypothesis_id
+        for decision in decisions
+        if decision.disposition is HypothesisDisposition.ADVANCE
+    }
+    for hypothesis_id in HypothesisId:
+        resolved_by_family = {
+            value.choice.family_id: value.choice.selected_id
+            for value in resolved_choices
+            if value.hypothesis_id is hypothesis_id
+        }
+        unresolved_by_family = {
+            value.choice.family_id: value.choice.candidate_ids
+            for value in unresolved_choices
+            if value.hypothesis_id is hypothesis_id
+        }
+        allowed_selections = _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS[
+            hypothesis_id
+        ]
+        unexpected_resolved = set(resolved_by_family) - set(
+            allowed_selections
+        )
+        if unexpected_resolved:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} has unexpected resolved choices: "
+                f"{sorted(unexpected_resolved)}"
+            )
+        unexpected_unresolved = set(unresolved_by_family) - set(
+            allowed_selections
+        )
+        if unexpected_unresolved:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} has unexpected unresolved choices: "
+                f"{sorted(unexpected_unresolved)}"
+            )
+        observed_selection_families = set(resolved_by_family) | set(
+            unresolved_by_family
+        )
+        missing = set(allowed_selections) - observed_selection_families
+        if missing:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} is missing choice receipts: "
+                f"{sorted(missing)}"
+            )
+        if hypothesis_id in advanced and unresolved_by_family:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} cannot advance with unresolved "
+                f"choices: {sorted(unresolved_by_family)}"
+            )
+        for family_id, selected_id in resolved_by_family.items():
+            allowed_selected_ids = allowed_selections[family_id]
+            if selected_id not in allowed_selected_ids:
+                raise ContractValidationError(
+                    f"{hypothesis_id.value}.{family_id} selected_id "
+                    "differs from the P0 registry candidate set"
+                )
+        for family_id, candidate_ids in unresolved_by_family.items():
+            if set(candidate_ids) != allowed_selections[family_id]:
+                raise ContractValidationError(
+                    f"{hypothesis_id.value}.{family_id} unresolved "
+                    "candidate_ids differ from the P0 registry candidate set"
+                )
+        fixed_by_family = {
+            value.choice.family_id: value.choice.selected_id
+            for value in fixed_choices
+            if value.hypothesis_id is hypothesis_id
+        }
+        allowed_fixed = _P0_FIXED_SELECTIONS_BY_HYPOTHESIS[hypothesis_id]
+        missing_fixed = set(allowed_fixed) - set(fixed_by_family)
+        if missing_fixed:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} is missing hypothesis-fixed choices: "
+                f"{sorted(missing_fixed)}"
+            )
+        unexpected_fixed = set(fixed_by_family) - set(allowed_fixed)
+        if unexpected_fixed:
+            raise ContractValidationError(
+                f"{hypothesis_id.value} has unexpected hypothesis-fixed "
+                "choices: "
+                f"{sorted(unexpected_fixed)}"
+            )
+        for family_id, allowed_selected_ids in allowed_fixed.items():
+            selected_id = fixed_by_family[family_id]
+            if selected_id not in allowed_selected_ids:
+                raise ContractValidationError(
+                    f"{hypothesis_id.value}.{family_id} hypothesis-fixed "
+                    "selected_id differs from the P0 registry"
+                )
+
+
+def _validate_integer_authorizations(
+    values: tuple[HypothesisId, ...],
+    *,
+    decisions: tuple[HypothesisDecision, ...],
     unresolved_choices: tuple[HypothesisRuleChoice, ...],
     claim_ceiling: ClaimLevel,
 ) -> tuple[HypothesisId, ...]:
@@ -3321,67 +3464,31 @@ def _validate_integer_authorizations(
             "integer output authorization cannot retain an unresolved "
             "choice for the same hypothesis"
         )
-    for hypothesis_id in authorized:
-        resolved_by_family = {
-            value.choice.family_id: value.choice.selected_id
-            for value in resolved_choices
-            if value.hypothesis_id is hypothesis_id
-        }
-        allowed_selections = _INTEGER_REQUIRED_CALIBRATION_SELECTIONS[
-            hypothesis_id
-        ]
-        missing = set(allowed_selections) - set(resolved_by_family)
-        if missing:
-            raise ContractValidationError(
-                f"{hypothesis_id.value} integer output authorization "
-                f"is missing resolved choices: {sorted(missing)}"
-            )
-        unexpected = set(resolved_by_family) - set(allowed_selections)
-        if unexpected:
-            raise ContractValidationError(
-                f"{hypothesis_id.value} integer output authorization "
-                f"has unexpected resolved choices: {sorted(unexpected)}"
-            )
-        for family_id, allowed_selected_ids in allowed_selections.items():
-            selected_id = resolved_by_family[family_id]
-            if selected_id not in allowed_selected_ids:
-                raise ContractValidationError(
-                    f"{hypothesis_id.value}.{family_id} selected_id "
-                    "differs from the P0 registry candidate set"
-                )
-        fixed_by_family = {
-            value.choice.family_id: value.choice.selected_id
-            for value in fixed_choices
-            if value.hypothesis_id is hypothesis_id
-        }
-        allowed_fixed = _INTEGER_REQUIRED_FIXED_SELECTIONS[hypothesis_id]
-        missing_fixed = set(allowed_fixed) - set(fixed_by_family)
-        if missing_fixed:
-            raise ContractValidationError(
-                f"{hypothesis_id.value} integer output authorization "
-                f"is missing hypothesis-fixed choices: "
-                f"{sorted(missing_fixed)}"
-            )
-        unexpected_fixed = set(fixed_by_family) - set(allowed_fixed)
-        if unexpected_fixed:
-            raise ContractValidationError(
-                f"{hypothesis_id.value} integer output authorization "
-                f"has unexpected hypothesis-fixed choices: "
-                f"{sorted(unexpected_fixed)}"
-            )
-        for family_id, allowed_selected_ids in allowed_fixed.items():
-            selected_id = fixed_by_family[family_id]
-            if selected_id not in allowed_selected_ids:
-                raise ContractValidationError(
-                    f"{hypothesis_id.value}.{family_id} hypothesis-fixed "
-                    "selected_id differs from the P0 registry"
-                )
     if bool(authorized) != (claim_ceiling is ClaimLevel.LEVEL_2T):
         raise ContractValidationError(
             "Level 2T selection ceiling and integer output authorization "
             "must be declared together"
         )
     return authorized
+
+
+def _validate_selection_claim(
+    decisions: tuple[HypothesisDecision, ...],
+    *,
+    claim_ceiling: ClaimLevel,
+) -> ClaimLevel:
+    allowed = {ClaimLevel.LEVEL_0}
+    for decision in decisions:
+        if decision.disposition is HypothesisDisposition.ADVANCE:
+            allowed.update(
+                _SELECTION_CLAIMS_BY_HYPOTHESIS[decision.hypothesis_id]
+            )
+    if claim_ceiling not in allowed:
+        raise ContractValidationError(
+            f"advanced hypotheses do not support selection claim ceiling "
+            f"{claim_ceiling.value!r}"
+        )
+    return claim_ceiling
 
 
 def _parse_hypothesis_ids(value: object) -> tuple[HypothesisId, ...]:
@@ -3496,6 +3603,12 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
                 "a hypothesis rule cannot be fixed, resolved, or unresolved "
                 "more than once"
             )
+        _validate_choice_closure(
+            decisions=self.hypothesis_decisions,
+            fixed_choices=self.fixed_choices,
+            resolved_choices=self.resolved_choices,
+            unresolved_choices=self.unresolved_choices,
+        )
         if self.sealed_before_confirmation_access is not True:
             raise ContractValidationError(
                 "selection must be sealed before confirmation access"
@@ -3510,11 +3623,13 @@ class CalibrationSelectionDecision(_CanonicalArtifact):
                 ClaimLevel.LEVEL_2T,
             },
         )
+        _validate_selection_claim(
+            self.hypothesis_decisions,
+            claim_ceiling=self.claim_ceiling,
+        )
         _validate_integer_authorizations(
             self.integer_output_authorizations,
             decisions=self.hypothesis_decisions,
-            fixed_choices=self.fixed_choices,
-            resolved_choices=self.resolved_choices,
             unresolved_choices=self.unresolved_choices,
             claim_ceiling=self.claim_ceiling,
         )

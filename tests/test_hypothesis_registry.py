@@ -7,6 +7,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from spirallens.instrument_contracts.artifacts import (
+    _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS,
+    _P0_FIXED_SELECTIONS_BY_HYPOTHESIS,
+)
 from spirallens.instrument_contracts.common import (
     ClaimLevel,
     HypothesisId,
@@ -102,6 +106,48 @@ def test_tracked_registry_is_exact_outcome_excluded_f0_through_f4() -> None:
     assert loaded.canonical_sha256 == registry.canonical_sha256
     assert len(loaded.canonical_sha256) == 64
     assert hypothesis_registry_from_dict(registry.to_dict()) == registry
+
+
+def test_artifact_choice_closure_policy_matches_tracked_registry() -> None:
+    registry = load_hypothesis_registry(TRACKED_REGISTRY).registry
+    choice_fields = (
+        "input_tensor",
+        "observation_axis",
+        "centering_rule",
+        "residual_rule",
+        "architecture_accounting_rule",
+        "estimator",
+        "fit_role",
+        "interpolation_rule",
+        "lift_rule",
+        "trivialization_rule",
+        "reference_rule",
+    )
+
+    for hypothesis_id in HypothesisId:
+        hypothesis = registry.require(hypothesis_id)
+        calibration = {
+            field_name: set(choice.candidate_ids)
+            for field_name in choice_fields
+            if (
+                choice := getattr(hypothesis, field_name)
+            ).resolution
+            is ResolutionState.CALIBRATION_SELECTION
+        }
+        fixed = {
+            field_name: {choice.selected_id}
+            for field_name in choice_fields
+            if (
+                choice := getattr(hypothesis, field_name)
+            ).resolution
+            is ResolutionState.FIXED_BY_HYPOTHESIS
+        }
+
+        assert (
+            _P0_CALIBRATION_SELECTIONS_BY_HYPOTHESIS[hypothesis_id]
+            == calibration
+        )
+        assert _P0_FIXED_SELECTIONS_BY_HYPOTHESIS[hypothesis_id] == fixed
 
 
 def test_registry_binds_chronology_without_storing_an_outcome_value() -> None:
