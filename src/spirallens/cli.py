@@ -759,6 +759,83 @@ def _run_context_bank_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_hypothesis_registry_validate(args: argparse.Namespace) -> int:
+    from spirallens.instrument_contracts.registry_loader import (
+        load_hypothesis_registry,
+    )
+
+    loaded = load_hypothesis_registry(
+        args.path,
+        expected_source_sha256=args.expected_source_sha256,
+        expected_canonical_sha256=args.expected_canonical_sha256,
+    )
+    registry = loaded.registry
+    _print_json(
+        {
+            "command": "hypothesis-registry validate",
+            "status": "valid",
+            "schema_version": registry.schema_version,
+            "registry_id": registry.registry_id,
+            "hypotheses": len(registry.hypotheses),
+            "hypothesis_ids": [
+                hypothesis.hypothesis_id.value
+                for hypothesis in registry.hypotheses
+            ],
+            "real_model_claim_state": (
+                registry.real_model_claim_state.value
+            ),
+            "winner_selected": registry.winner_selected,
+            "primary_integer_output_authorized": (
+                registry.primary_integer_output_authorized
+            ),
+            "subject_data_access_authorized": (
+                registry.subject_data_access_authorized
+            ),
+            "source_path": str(loaded.source_path),
+            "source_sha256": loaded.source_sha256,
+            "canonical_sha256": loaded.canonical_sha256,
+        }
+    )
+    return 0
+
+
+def _run_instrument_artifact_validate(args: argparse.Namespace) -> int:
+    from spirallens.instrument_contracts.artifact_loader import (
+        load_instrument_artifact,
+    )
+
+    loaded = load_instrument_artifact(
+        args.path,
+        expected_source_sha256=args.expected_source_sha256,
+        expected_canonical_sha256=args.expected_canonical_sha256,
+    )
+    artifact = loaded.artifact
+    claim_ceiling = getattr(artifact, "claim_ceiling", None)
+    _print_json(
+        {
+            "command": "instrument-artifact validate",
+            "status": "valid",
+            "artifact_type": artifact.artifact_type.value,
+            "schema_version": artifact.schema_version,
+            "artifact_id": artifact.artifact_id,
+            "claim_ceiling": (
+                None
+                if claim_ceiling is None
+                else claim_ceiling.value
+            ),
+            "source_path": str(loaded.source_path),
+            "source_sha256": loaded.source_sha256,
+            "canonical_sha256": loaded.canonical_sha256,
+            "payloads_dereferenced": False,
+            "subject_data_accessed": False,
+            "validation_scope": "single_manifest",
+            "references_resolved": False,
+            "bundle_validated": False,
+        }
+    )
+    return 0
+
+
 def _run_candidates(args: argparse.Namespace) -> int:
     from spirallens.metrics import (
         CandidateSearchConfig,
@@ -1686,6 +1763,44 @@ def _add_context_bank_parser(subparsers: Any) -> None:
     validate.set_defaults(handler=_run_context_bank_validate)
 
 
+def _add_hypothesis_registry_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "hypothesis-registry",
+        help="inspect the outcome-excluded P0 hypothesis registry",
+    )
+    commands = parser.add_subparsers(
+        dest="hypothesis_registry_command",
+        required=True,
+    )
+    validate = commands.add_parser(
+        "validate",
+        help="validate the strict F0-F4 registry and its canonical identity",
+    )
+    validate.add_argument("--path", type=Path, required=True)
+    validate.add_argument("--expected-source-sha256")
+    validate.add_argument("--expected-canonical-sha256")
+    validate.set_defaults(handler=_run_hypothesis_registry_validate)
+
+
+def _add_instrument_artifact_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "instrument-artifact",
+        help="inspect one canonical metadata-only instrument artifact",
+    )
+    commands = parser.add_subparsers(
+        dest="instrument_artifact_command",
+        required=True,
+    )
+    validate = commands.add_parser(
+        "validate",
+        help="validate exact schema, canonical bytes, and digest identity",
+    )
+    validate.add_argument("--path", type=Path, required=True)
+    validate.add_argument("--expected-source-sha256")
+    validate.add_argument("--expected-canonical-sha256")
+    validate.set_defaults(handler=_run_instrument_artifact_validate)
+
+
 def _add_candidates_parser(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "candidates",
@@ -1832,6 +1947,8 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_calibrate_parser(subparsers)
     _add_context_bank_parser(subparsers)
+    _add_hypothesis_registry_parser(subparsers)
+    _add_instrument_artifact_parser(subparsers)
     _add_atlas_parser(subparsers)
     _add_faiss_range_preflight_parser(subparsers)
     _add_neighbor_audit_parser(subparsers)

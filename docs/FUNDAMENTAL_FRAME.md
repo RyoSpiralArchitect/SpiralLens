@@ -350,10 +350,12 @@ support one branch, both branches, or neither. Some Level 1G support
 diagnostics have no promotion path by themselves; their role is to mark
 identifiability or block a later field claim.
 
-## 8. Future typed boundaries
+## 8. Experimental typed boundaries
 
-The following names describe intended experimental contracts, not implemented
-public APIs:
+The following names describe experimental contracts, not stable public APIs.
+Their metadata-only v0.1 schemas are implemented in
+`spirallens.instrument_contracts`; implementing those schemas does not mean
+that an estimator has emitted any of them:
 
 - `SubstrateBinding`
 - `SupportDiagnostic`
@@ -384,9 +386,12 @@ parameter. Its defect variant binds an `OrderParameterField`; it binds a
 `GroundTruthAnchor` remains calibration metadata and cannot substitute for an
 inferred core.
 
-Any future implementation must provide canonical hashing, exact field sets,
-tamper rejection, row-order checks, explicit `pass|fail|insufficient|not_run`
-states, and byte-replay tests before a subject protocol can depend on it.
+The v0.1 metadata implementation provides canonical hashing, exact field sets,
+tamper rejection, row-order bindings, explicit
+`pass|fail|insufficient|not_run` states, and byte-replay tests. A subject
+protocol still cannot depend on it until synthetic qualification D0-D8 is
+complete. See
+[P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ## 9. Historical and experimental consequences
 
