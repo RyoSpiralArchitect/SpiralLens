@@ -14,6 +14,7 @@ import platform
 import stat
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 import numpy as np
@@ -32,6 +33,9 @@ EXECUTION_FREEZE_SCHEMA_VERSION_V0_1 = (
 EXECUTION_FREEZE_SCHEMA_VERSION_V0_2 = (
     "spirallens.subject-audit-freeze.v0.2"
 )
+EXECUTION_FREEZE_SCHEMA_VERSION_V0_3 = (
+    "spirallens.subject-audit-freeze.v0.3"
+)
 # Kept as the historical default for callers that imported this name before
 # schema dispatch existed.
 EXECUTION_FREEZE_SCHEMA_VERSION = EXECUTION_FREEZE_SCHEMA_VERSION_V0_1
@@ -39,7 +43,20 @@ SUPPORTED_EXECUTION_FREEZE_SCHEMA_VERSIONS = frozenset(
     {
         EXECUTION_FREEZE_SCHEMA_VERSION_V0_1,
         EXECUTION_FREEZE_SCHEMA_VERSION_V0_2,
+        EXECUTION_FREEZE_SCHEMA_VERSION_V0_3,
     }
+)
+_QUALIFICATION_SCHEMA_VERSION_V0_1 = (
+    "spirallens.faiss-hnsw-range-qualification.v0.1"
+)
+_QUALIFICATION_SCHEMA_VERSION_V0_2 = (
+    "spirallens.faiss-hnsw-range-qualification.v0.2"
+)
+_QUALIFICATION_OBSERVATION_SCHEMA_VERSION = (
+    "spirallens.faiss-hnsw-qualification-predecessor-observation.v0.1"
+)
+_QUALIFICATION_PREDECESSOR_SCHEMA_VERSION = (
+    "spirallens.subject-audit-qualification-predecessor.v0.1"
 )
 _V0_2_PREDECESSOR_PROTOCOL_SHA256 = (
     "296609585f4f165e44a235d6a8af9416b840477313a63013414abb1ed9a55661"
@@ -49,6 +66,34 @@ _V0_2_PREDECESSOR_FREEZE_SHA256 = (
 )
 _V0_2_PREDECESSOR_MARKER_SHA256 = (
     "7255ca9e9c905a128348f7fc41ebf458c7e7feb233d3adcd5daebbaedf8be5cb"
+)
+_V0_3_OBSERVED_QUALIFICATION_SHA256 = (
+    "572bed090750a314d4415eeaaef3c2f96662a08442437616c9dc85823c2b33cb"
+)
+_V0_3_OBSERVED_FIXTURE_SHA256 = (
+    "5d365820e09ce33683bcf9d003a64f842bad89055a62088b64c3b6f8d28df58e"
+)
+_V0_3_OBSERVED_SEARCH_SHA256 = (
+    "b78b2f47d875be459dc451568876416339ad2f609c19087ca8a92e702d9b70ce"
+)
+_V0_3_OBSERVED_SOURCE_COMMIT = (
+    "dca11d116c2d5218d586bb5d089460d28e59e7d8"
+)
+_V0_3_OBSERVED_SOURCE_TREE = (
+    "d7003c09037cb34b9147a2992a4ae74c88f2e907"
+)
+_V0_3_OBSERVATION_RELATIVE_PATH = (
+    "protocols/"
+    "pythia70_slot_only_001_layer0_faiss_range_qualification_"
+    "v0_1_observation.yaml"
+)
+_V0_3_ACTIVE_QUALIFICATION_RELATIVE_PATH = (
+    "protocols/"
+    "pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json"
+)
+_V0_3_LOST_QUALIFICATION_RELATIVE_PATH = (
+    "protocols/"
+    "pythia70_slot_only_001_layer0_faiss_range_qualification_v0_1.json"
 )
 SELF_SHA256_PLACEHOLDER = "<SELF_SHA256>"
 _CAPABILITY_TOKEN = object()
@@ -308,50 +353,135 @@ def process_image_path() -> Path:
 def current_worker_runtime_contract(
     execution_freeze_sha256: str | None,
 ) -> dict[str, str]:
-    """Describe the exact code and native runtime imported by a Faiss worker."""
+    """Probe the exact Faiss runtime in one fresh reporter subprocess."""
 
-    import faiss
-    import faiss._swigfaiss as faiss_native
-
-    package_root = Path(__file__).resolve().parent
-    numpy_import = Path(np.__file__).resolve()
-    faiss_import = Path(faiss.__file__).resolve()
-    faiss_native_import = Path(faiss_native.__file__).resolve()
-    process_image = process_image_path()
-    contract = {
-        "faiss_compile_options": str(faiss.get_compile_options()),
-        "faiss_distribution_sha256": distribution_content_sha256(
-            "faiss-cpu"
-        ),
-        "faiss_hnsw_source_sha256": _sha256_file(
-            package_root / "neighbors" / "faiss_hnsw.py"
-        ),
-        "faiss_import_file": str(faiss_import),
-        "faiss_import_sha256": _sha256_file(faiss_import),
-        "faiss_native_file": str(faiss_native_import),
-        "faiss_native_sha256": _sha256_file(faiss_native_import),
-        "faiss_version": str(faiss.__version__),
-        "faiss_worker_source_sha256": _sha256_file(
-            package_root / "neighbors" / "_faiss_worker.py"
-        ),
-        "machine": platform.machine(),
-        "numpy_distribution_sha256": distribution_content_sha256(
-            "numpy"
-        ),
-        "numpy_import_file": str(numpy_import),
-        "numpy_import_sha256": _sha256_file(numpy_import),
-        "numpy_version": np.__version__,
-        "process_image": str(process_image),
-        "process_image_sha256": _sha256_file(process_image),
-        "python_version": platform.python_version(),
-        "system": platform.system(),
-    }
-    if execution_freeze_sha256 is not None:
-        contract["execution_freeze_sha256"] = _require_sha256(
+    freeze_digest = (
+        None
+        if execution_freeze_sha256 is None
+        else _require_sha256(
             execution_freeze_sha256,
             label="execution_freeze_sha256",
         )
-    return contract
+    )
+    allowed_environment = {
+        "PYTHONPATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPYCACHEPREFIX",
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TMPDIR",
+    }
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key in allowed_environment
+    }
+    environment.setdefault("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
+    environment.setdefault("LANG", "C")
+    environment.setdefault("LC_ALL", "C")
+    environment.setdefault("TMPDIR", tempfile.gettempdir())
+    command = [
+        sys.executable,
+        "-m",
+        "spirallens.neighbors._faiss_runtime_worker",
+    ]
+    if freeze_digest is not None:
+        command.extend(
+            ["--execution-freeze-sha256", freeze_digest]
+        )
+    completed = subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        env=environment,
+        timeout=120,
+    )
+    if completed.returncode != 0:
+        stderr = completed.stderr.decode("utf-8", errors="replace").strip()
+        stdout = completed.stdout.decode("utf-8", errors="replace").strip()
+        detail = stderr or stdout
+        raise RuntimeError(
+            "Faiss runtime reporter failed"
+            + (f": {detail}" if detail else "")
+        )
+
+    duplicate_key = False
+
+    def reject_duplicate_keys(
+        pairs: list[tuple[str, object]],
+    ) -> dict[str, object]:
+        nonlocal duplicate_key
+        payload: dict[str, object] = {}
+        for key, value in pairs:
+            if key in payload:
+                duplicate_key = True
+            payload[key] = value
+        return payload
+
+    try:
+        raw = json.loads(
+            completed.stdout,
+            object_pairs_hook=reject_duplicate_keys,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(
+            "Faiss runtime reporter returned invalid JSON"
+        ) from error
+    expected_fields = {
+        "faiss_compile_options",
+        "faiss_distribution_sha256",
+        "faiss_hnsw_source_sha256",
+        "faiss_import_file",
+        "faiss_import_sha256",
+        "faiss_native_file",
+        "faiss_native_sha256",
+        "faiss_runtime_worker_source_sha256",
+        "faiss_version",
+        "faiss_worker_source_sha256",
+        "machine",
+        "numpy_distribution_sha256",
+        "numpy_import_file",
+        "numpy_import_sha256",
+        "numpy_version",
+        "process_image",
+        "process_image_sha256",
+        "python_version",
+        "system",
+    }
+    if freeze_digest is not None:
+        expected_fields.add("execution_freeze_sha256")
+    if (
+        duplicate_key
+        or not isinstance(raw, dict)
+        or set(raw) != expected_fields
+        or any(
+            not isinstance(key, str)
+            or not key
+            or not isinstance(value, str)
+            or not value
+            for key, value in raw.items()
+        )
+    ):
+        raise ValueError("Faiss runtime reporter contract is invalid")
+    canonical = json.dumps(
+        raw,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    if canonical != completed.stdout:
+        raise ValueError(
+            "Faiss runtime reporter did not return canonical JSON"
+        )
+    if (
+        freeze_digest is not None
+        and raw["execution_freeze_sha256"] != freeze_digest
+    ):
+        raise ValueError(
+            "Faiss runtime reporter freeze digest differs"
+        )
+    return {str(key): str(value) for key, value in raw.items()}
 
 
 def _git_environment() -> dict[str, str]:
@@ -436,6 +566,95 @@ def _require_mapping(
     return value
 
 
+def _qualified_freeze_profile(
+    schema_version: object,
+) -> dict[str, str] | None:
+    """Return one exact qualified-freeze profile without rewriting history."""
+
+    if schema_version == EXECUTION_FREEZE_SCHEMA_VERSION_V0_2:
+        return {
+            "freeze_id": (
+                "pythia70-slot-only-001-layer0-subject-audit-v0.2"
+            ),
+            "freeze_filename_version": "v0_2",
+            "neighbor_parent_filename": "pythia_neighbor_v0_3.yaml",
+            "neighbor_frozen_filename": (
+                "pythia70_slot_only_001_layer0_neighbor_v0_3.yaml"
+            ),
+            "neighbor_schema_version": (
+                "spirallens.neighbor-audit-protocol.v0.3"
+            ),
+            "qualification_schema_version": (
+                _QUALIFICATION_SCHEMA_VERSION_V0_1
+            ),
+            # v0.2 historically accepted the in-repository path bound by the
+            # frozen protocol. Keep that behavior intact.
+            "qualification_relative_path": "",
+            "output_filename": "layer-0-neighbor-audit-v0-3.json",
+        }
+    if schema_version == EXECUTION_FREEZE_SCHEMA_VERSION_V0_3:
+        return {
+            "freeze_id": (
+                "pythia70-slot-only-001-layer0-subject-audit-v0.3"
+            ),
+            "freeze_filename_version": "v0_3",
+            "neighbor_parent_filename": "pythia_neighbor_v0_4.yaml",
+            "neighbor_frozen_filename": (
+                "pythia70_slot_only_001_layer0_neighbor_v0_4.yaml"
+            ),
+            "neighbor_schema_version": (
+                "spirallens.neighbor-audit-protocol.v0.4"
+            ),
+            "qualification_schema_version": (
+                _QUALIFICATION_SCHEMA_VERSION_V0_2
+            ),
+            "qualification_relative_path": (
+                _V0_3_ACTIVE_QUALIFICATION_RELATIVE_PATH
+            ),
+            "output_filename": "layer-0-neighbor-audit-v0-4.json",
+        }
+    return None
+
+
+def _execution_runtime_fields(schema_version: object) -> set[str]:
+    """Keep historical freeze field sets exact while extending v0.3."""
+
+    fields = {
+        "executable",
+        "executable_resolved",
+        "executable_sha256",
+        "process_image",
+        "process_image_sha256",
+        "python_implementation",
+        "python_version",
+        "platform",
+        "machine",
+        "system",
+        "spirallens_version",
+        "spirallens_import_file",
+        "numpy_version",
+        "numpy_distribution_sha256",
+        "numpy_import_file",
+        "numpy_import_sha256",
+        "faiss_distribution",
+        "faiss_version",
+        "faiss_distribution_sha256",
+        "faiss_import_file",
+        "faiss_import_sha256",
+        "faiss_native_file",
+        "faiss_native_sha256",
+        "faiss_compile_options",
+        "faiss_hnsw_source_sha256",
+        "faiss_worker_source_sha256",
+        "git_executable",
+        "git_executable_sha256",
+        "git_version",
+    }
+    if schema_version == EXECUTION_FREEZE_SCHEMA_VERSION_V0_3:
+        fields.add("faiss_runtime_worker_source_sha256")
+    return fields
+
+
 def _load_protocol_document(
     path: Path,
     *,
@@ -482,13 +701,28 @@ def _validate_neighbor_protocol_lineage(
     qualification_fixture_sha256: str | None = None,
 ) -> None:
     expected = copy.deepcopy(dict(parent))
-    qualified_protocol = (
-        expected.get("schema_version")
-        == "spirallens.neighbor-audit-protocol.v0.3"
-    )
+    protocol_schema = expected.get("schema_version")
+    protocol_versions = {
+        "spirallens.neighbor-audit-protocol.v0.2": "v0.2",
+        "spirallens.neighbor-audit-protocol.v0.3": "v0.3",
+        "spirallens.neighbor-audit-protocol.v0.4": "v0.4",
+    }
+    qualification_schemas = {
+        "spirallens.neighbor-audit-protocol.v0.3": (
+            _QUALIFICATION_SCHEMA_VERSION_V0_1
+        ),
+        "spirallens.neighbor-audit-protocol.v0.4": (
+            _QUALIFICATION_SCHEMA_VERSION_V0_2
+        ),
+    }
+    protocol_version = protocol_versions.get(protocol_schema)
+    if protocol_version is None:
+        raise ValueError("neighbor parent protocol schema is invalid")
+    qualification_schema = qualification_schemas.get(protocol_schema)
+    qualified_protocol = qualification_schema is not None
     expected["protocol_id"] = (
         "pythia70-slot-only-001-layer0-neighbor-"
-        f"{'v0.3' if qualified_protocol else 'v0.2'}"
+        f"{protocol_version}"
     )
     expected["status"] = "frozen"
     expected["audit_scope"] = {
@@ -511,9 +745,7 @@ def _validate_neighbor_protocol_lineage(
                 "qualified neighbor lineage lacks its receipt binding"
             )
         expected["backend_qualification"] = {
-            "schema_version": (
-                "spirallens.faiss-hnsw-range-qualification.v0.1"
-            ),
+            "schema_version": qualification_schema,
             "path": str(qualification_path.relative_to(repo_root)),
             "sha256": qualification_sha256,
             "fixture_sha256": qualification_fixture_sha256,
@@ -643,6 +875,330 @@ def _validate_predecessor_tombstone(
         )
 
 
+def _validate_qualification_predecessor(
+    value: object,
+    *,
+    repo_root: Path,
+    git_executable: Path,
+    repository: str,
+    branch: str,
+    active_preflight_commit: str,
+    active_preflight_tree: str,
+    implementation_commit: str,
+    active_receipt_path: Path,
+    active_receipt_sha256: str,
+) -> None:
+    """Bind logged v0.1 evidence without claiming the lost file survived."""
+
+    binding = _require_mapping(
+        value,
+        label="qualification_predecessor",
+        fields={
+            "schema_version",
+            "observation_path",
+            "observation_sha256",
+            "artifact_available",
+            "raw_receipt_bytes_preserved",
+            "record_is_original_receipt",
+            "observed_receipt_schema_version",
+            "observed_receipt_sha256",
+            "observed_source_implementation_commit",
+            "observed_source_package_tree",
+            "producer_status",
+            "consumer_binding_status",
+            "failure_stage",
+            "subject_audit_runs_observed",
+            "subject_outcome_observed",
+            "audit_artifact_written",
+            "promotion_receipt_issued",
+            "active_binding_allowed",
+            "successor_schema_version",
+            "successor_path",
+            "successor_sha256",
+        },
+    )
+    observation_path = repo_root / _V0_3_OBSERVATION_RELATIVE_PATH
+    observation_sha256 = _require_sha256(
+        binding.get("observation_sha256"),
+        label="qualification_predecessor.observation_sha256",
+    )
+    observation_bytes, observation_relative = _read_repo_regular_file(
+        Path(str(binding.get("observation_path"))),
+        repo_root=repo_root,
+        label="qualification predecessor observation",
+    )
+    active_receipt_expected = (
+        repo_root / _V0_3_ACTIVE_QUALIFICATION_RELATIVE_PATH
+    )
+    expected_binding = {
+        "schema_version": _QUALIFICATION_PREDECESSOR_SCHEMA_VERSION,
+        "observation_path": str(observation_path),
+        "observation_sha256": observation_sha256,
+        "artifact_available": False,
+        "raw_receipt_bytes_preserved": False,
+        "record_is_original_receipt": False,
+        "observed_receipt_schema_version": (
+            _QUALIFICATION_SCHEMA_VERSION_V0_1
+        ),
+        "observed_receipt_sha256": (
+            _V0_3_OBSERVED_QUALIFICATION_SHA256
+        ),
+        "observed_source_implementation_commit": (
+            _V0_3_OBSERVED_SOURCE_COMMIT
+        ),
+        "observed_source_package_tree": _V0_3_OBSERVED_SOURCE_TREE,
+        "producer_status": "pass",
+        "consumer_binding_status": "unbound_before_subject_audit",
+        "failure_stage": "prepare_only_consumer_validation",
+        "subject_audit_runs_observed": 0,
+        "subject_outcome_observed": False,
+        "audit_artifact_written": False,
+        "promotion_receipt_issued": False,
+        "active_binding_allowed": False,
+        "successor_schema_version": _QUALIFICATION_SCHEMA_VERSION_V0_2,
+        "successor_path": str(active_receipt_expected),
+        "successor_sha256": active_receipt_sha256,
+    }
+    lost_receipt_path = repo_root / _V0_3_LOST_QUALIFICATION_RELATIVE_PATH
+    if (
+        dict(binding) != expected_binding
+        or Path(str(binding.get("observation_path"))) != observation_path
+        or observation_relative != _V0_3_OBSERVATION_RELATIVE_PATH
+        or hashlib.sha256(observation_bytes).hexdigest()
+        != observation_sha256
+        or active_receipt_path != active_receipt_expected
+        or lost_receipt_path.exists()
+        or lost_receipt_path.is_symlink()
+    ):
+        raise ValueError(
+            "qualification predecessor binding or artifact boundary differs"
+        )
+
+    observation = _load_protocol_document(
+        observation_path,
+        label="qualification predecessor observation",
+    )
+    expected_observation_fields = {
+        "schema_version",
+        "status",
+        "qualification_schema_version",
+        "observed_receipt_sha256",
+        "observed_fixture_sha256",
+        "observed_search_sha256",
+        "observed_cold_process_runs",
+        "observed_raw_hit_count_per_run",
+        "observed_payload",
+        "source",
+        "consumer_preflight",
+        "artifact_recovery",
+        "authorization",
+    }
+    payload = observation.get("observed_payload")
+    observed_source = observation.get("source")
+    consumer_preflight = observation.get("consumer_preflight")
+    artifact_recovery = observation.get("artifact_recovery")
+    authorization = observation.get("authorization")
+    if (
+        set(observation) != expected_observation_fields
+        or not isinstance(payload, Mapping)
+        or not isinstance(observed_source, Mapping)
+        or not isinstance(consumer_preflight, Mapping)
+        or not isinstance(artifact_recovery, Mapping)
+        or not isinstance(authorization, Mapping)
+    ):
+        raise ValueError(
+            "qualification predecessor observation fields differ"
+        )
+    expected_source = {
+        "repository": repository,
+        "branch": branch,
+        "implementation_commit": _V0_3_OBSERVED_SOURCE_COMMIT,
+        "spirallens_package_tree": _V0_3_OBSERVED_SOURCE_TREE,
+    }
+    expected_consumer_preflight = {
+        "torch_loaded_parent_process": True,
+        "phase": "frozen_protocol_prepare_only",
+        "status": "infrastructure_abort_before_protocol_freeze",
+        "boundary": "in_process_fixture_normalization",
+        "unsafe_duplicate_openmp_override_used": False,
+    }
+    expected_artifact_recovery = {
+        "original_receipt_available": False,
+        "raw_receipt_bytes_preserved": False,
+        "reason": "volatile_untracked_worktree_removed_during_host_restart",
+        "provenance": "terminal_tool_log_complete_payload_and_sha256",
+        "reconstructed_receipt_claimed": False,
+    }
+    expected_authorization = {
+        "producer_qualification_pass_observed": True,
+        "consumer_binding_established": False,
+        "promotion_authorized": False,
+        "subject_data_observed": False,
+        "subject_audit_outcome_observed": False,
+        "subject_one_shot_consumed": False,
+        "superseded_by_qualification_schema_version": (
+            _QUALIFICATION_SCHEMA_VERSION_V0_2
+        ),
+    }
+    payload_fields = {
+        "schema_version",
+        "status",
+        "backend",
+        "source",
+        "fixture",
+        "fixture_sha256",
+        "search",
+        "runtime",
+        "cold_runs",
+    }
+    payload_fixture = payload.get("fixture")
+    payload_search = payload.get("search")
+    payload_runtime = payload.get("runtime")
+    payload_cold_runs = payload.get("cold_runs")
+    if (
+        observation.get("schema_version")
+        != _QUALIFICATION_OBSERVATION_SCHEMA_VERSION
+        or observation.get("status")
+        != "producer_pass_consumer_binding_unestablished"
+        or observation.get("qualification_schema_version")
+        != _QUALIFICATION_SCHEMA_VERSION_V0_1
+        or observation.get("observed_receipt_sha256")
+        != _V0_3_OBSERVED_QUALIFICATION_SHA256
+        or observation.get("observed_fixture_sha256")
+        != _V0_3_OBSERVED_FIXTURE_SHA256
+        or observation.get("observed_search_sha256")
+        != _V0_3_OBSERVED_SEARCH_SHA256
+        or observation.get("observed_cold_process_runs") != 2
+        or observation.get("observed_raw_hit_count_per_run") != 16_384
+        or dict(observed_source) != expected_source
+        or dict(consumer_preflight) != expected_consumer_preflight
+        or dict(artifact_recovery) != expected_artifact_recovery
+        or dict(authorization) != expected_authorization
+        or set(payload) != payload_fields
+        or payload.get("schema_version")
+        != _QUALIFICATION_SCHEMA_VERSION_V0_1
+        or payload.get("status") != "pass"
+        or payload.get("backend")
+        != {
+            "backend_id": "spirallens.faiss-hnsw-range",
+            "backend_version": "0.2",
+        }
+        or payload.get("source") != expected_source
+        or not isinstance(payload_fixture, Mapping)
+        or not isinstance(payload_search, Mapping)
+        or not isinstance(payload_runtime, Mapping)
+        or not payload_runtime
+        or not isinstance(payload_cold_runs, list)
+        or len(payload_cold_runs) != 2
+        or payload_cold_runs[0] != payload_cold_runs[1]
+        or any(
+            not isinstance(run, Mapping)
+            or run.get("raw_hit_count") != 16_384
+            for run in payload_cold_runs
+        )
+        or payload.get("fixture_sha256")
+        != _V0_3_OBSERVED_FIXTURE_SHA256
+        or canonical_json_sha256(dict(payload_fixture))
+        != _V0_3_OBSERVED_FIXTURE_SHA256
+        or canonical_json_sha256(dict(payload_search))
+        != _V0_3_OBSERVED_SEARCH_SHA256
+        or canonical_json_sha256(dict(payload))
+        != _V0_3_OBSERVED_QUALIFICATION_SHA256
+    ):
+        raise ValueError(
+            "qualification predecessor observation evidence differs"
+        )
+
+    raw_active_preflight = _git_bytes(
+        git_executable,
+        repo_root,
+        "cat-file",
+        "commit",
+        active_preflight_commit,
+    )
+    raw_parent_lines = [
+        line
+        for line in raw_active_preflight.split(b"\n\n", 1)[0].splitlines()
+        if line.startswith(b"parent ")
+    ]
+    observed_tree_from_git = _git_output(
+        git_executable,
+        repo_root,
+        "rev-parse",
+        f"{_V0_3_OBSERVED_SOURCE_COMMIT}:src/spirallens",
+    )
+    if (
+        raw_parent_lines
+        != [f"parent {_V0_3_OBSERVED_SOURCE_COMMIT}".encode("ascii")]
+        or observed_tree_from_git != _V0_3_OBSERVED_SOURCE_TREE
+        or active_preflight_tree == _V0_3_OBSERVED_SOURCE_TREE
+        or _git_bytes(
+            git_executable,
+            repo_root,
+            "show",
+            f"{active_preflight_commit}:{observation_relative}",
+        )
+        != observation_bytes
+        or _git_bytes(
+            git_executable,
+            repo_root,
+            "show",
+            f"{implementation_commit}:{observation_relative}",
+        )
+        != observation_bytes
+        or _git_output(
+            git_executable,
+            repo_root,
+            "ls-tree",
+            "--name-only",
+            active_preflight_commit,
+            "--",
+            _V0_3_LOST_QUALIFICATION_RELATIVE_PATH,
+        )
+        or _git_output(
+            git_executable,
+            repo_root,
+            "ls-tree",
+            "--name-only",
+            implementation_commit,
+            "--",
+            _V0_3_LOST_QUALIFICATION_RELATIVE_PATH,
+        )
+    ):
+        raise ValueError(
+            "qualification predecessor Git lineage or availability differs"
+        )
+
+
+def _validate_v0_3_implementation_delta(
+    *,
+    repo_root: Path,
+    git_executable: Path,
+    preflight_commit: str,
+    implementation_commit: str,
+    qualification_path: Path,
+    frozen_protocol_path: Path,
+) -> None:
+    expected = sorted(
+        {
+            qualification_path.relative_to(repo_root).as_posix(),
+            frozen_protocol_path.relative_to(repo_root).as_posix(),
+        }
+    )
+    actual = _git_output(
+        git_executable,
+        repo_root,
+        "diff",
+        "--name-only",
+        f"{preflight_commit}..{implementation_commit}",
+    ).splitlines()
+    if actual != expected:
+        raise ValueError(
+            "v0.3 implementation commit exceeds its receipt/protocol "
+            "allowlist"
+        )
+
+
 def _validate_backend_qualification(
     value: object,
     *,
@@ -656,7 +1212,9 @@ def _validate_backend_qualification(
     frozen_candidate: Mapping[str, Any],
     runtime: Mapping[str, Any],
     atlas_row_count: object,
-) -> tuple[Path, str, str, dict[str, object]]:
+    expected_schema_version: str = _QUALIFICATION_SCHEMA_VERSION_V0_1,
+    expected_relative_path: str | None = None,
+) -> tuple[Path, str, str, dict[str, object], str, str]:
     from spirallens.neighbors.faiss_qualification import (
         load_faiss_hnsw_qualification_receipt,
     )
@@ -678,10 +1236,7 @@ def _validate_backend_qualification(
             "preflight_package_tree",
         },
     )
-    if (
-        binding.get("schema_version")
-        != "spirallens.faiss-hnsw-range-qualification.v0.1"
-    ):
+    if binding.get("schema_version") != expected_schema_version:
         raise ValueError(
             "execution freeze backend qualification schema is invalid"
         )
@@ -691,6 +1246,13 @@ def _validate_backend_qualification(
         repo_root=repo_root,
         label="backend qualification receipt",
     )
+    if (
+        expected_relative_path is not None
+        and receipt_relative != expected_relative_path
+    ):
+        raise ValueError(
+            "execution freeze backend qualification path is invalid"
+        )
     receipt_sha256 = _require_sha256(
         binding.get("sha256"),
         label="backend_qualification.sha256",
@@ -789,9 +1351,7 @@ def _validate_backend_qualification(
             "qualified neighbor protocol backend declaration is invalid"
         )
     expected_protocol_qualification = {
-        "schema_version": (
-            "spirallens.faiss-hnsw-range-qualification.v0.1"
-        ),
+        "schema_version": expected_schema_version,
         "path": receipt_relative,
         "sha256": receipt_sha256,
         "fixture_sha256": fixture_sha256,
@@ -890,6 +1450,8 @@ def _validate_backend_qualification(
         receipt_sha256,
         fixture_sha256,
         backend_contract,
+        preflight_commit,
+        preflight_package_tree,
     )
 
 
@@ -920,8 +1482,6 @@ def _validate_freeze_core(
     dict[str, str],
     dict[str, object] | None,
 ]:
-    import faiss
-    import faiss._swigfaiss as faiss_native
     import spirallens
 
     expected_digest = _require_sha256(
@@ -933,9 +1493,12 @@ def _validate_freeze_core(
         raise ValueError(
             "execution freeze does not match its out-of-band SHA-256"
         )
+    isolated_worker_runtime = current_worker_runtime_contract(None)
     schema_version = document.get("schema_version")
-    qualified_freeze = (
-        schema_version == EXECUTION_FREEZE_SCHEMA_VERSION_V0_2
+    qualified_profile = _qualified_freeze_profile(schema_version)
+    qualified_freeze = qualified_profile is not None
+    v0_3_freeze = (
+        schema_version == EXECUTION_FREEZE_SCHEMA_VERSION_V0_3
     )
     expected_top_level = {
         "schema_version",
@@ -954,6 +1517,8 @@ def _validate_freeze_core(
         expected_top_level.update(
             {"backend_qualification", "predecessor_tombstone"}
         )
+    if v0_3_freeze:
+        expected_top_level.add("qualification_predecessor")
     if (
         set(document) != expected_top_level
         or schema_version
@@ -961,9 +1526,9 @@ def _validate_freeze_core(
         or not isinstance(document.get("freeze_id"), str)
         or not document["freeze_id"]
         or (
-            qualified_freeze
+            qualified_profile is not None
             and document.get("freeze_id")
-            != "pythia70-slot-only-001-layer0-subject-audit-v0.2"
+            != qualified_profile["freeze_id"]
         )
         or document.get("status") != "frozen_before_outcome"
     ):
@@ -1003,37 +1568,7 @@ def _validate_freeze_core(
     runtime = _require_mapping(
         document.get("runtime"),
         label="runtime",
-        fields={
-            "executable",
-            "executable_resolved",
-            "executable_sha256",
-            "process_image",
-            "process_image_sha256",
-            "python_implementation",
-            "python_version",
-            "platform",
-            "machine",
-            "system",
-            "spirallens_version",
-            "spirallens_import_file",
-            "numpy_version",
-            "numpy_distribution_sha256",
-            "numpy_import_file",
-            "numpy_import_sha256",
-            "faiss_distribution",
-            "faiss_version",
-            "faiss_distribution_sha256",
-            "faiss_import_file",
-            "faiss_import_sha256",
-            "faiss_native_file",
-            "faiss_native_sha256",
-            "faiss_compile_options",
-            "faiss_hnsw_source_sha256",
-            "faiss_worker_source_sha256",
-            "git_executable",
-            "git_executable_sha256",
-            "git_version",
-        },
+        fields=_execution_runtime_fields(schema_version),
     )
 
     freeze_path = source_path.resolve()
@@ -1092,21 +1627,27 @@ def _validate_freeze_core(
     repository = source.get("repository")
     allowed_head_diff = source.get("allowed_head_diff")
     git_executable = Path(str(runtime["git_executable"]))
+    freeze_filename_version = (
+        "v0_1"
+        if qualified_profile is None
+        else qualified_profile["freeze_filename_version"]
+    )
     expected_freeze_relative = (
         "protocols/"
         "pythia70_slot_only_001_layer0_subject_audit_freeze_"
-        f"{'v0_2' if qualified_freeze else 'v0_1'}.yaml"
+        f"{freeze_filename_version}.yaml"
     )
     if qualified_freeze:
+        assert qualified_profile is not None
         expected_protocol_path = (
             repo_root
             / "protocols"
-            / "pythia70_slot_only_001_layer0_neighbor_v0_3.yaml"
+            / qualified_profile["neighbor_frozen_filename"]
         )
         expected_output_path = Path(
             "/Users/ryohiga/SpiralReality/spirallens/runs/"
             "pythia70-full-slot-only-001/"
-            "layer-0-neighbor-audit-v0-3.json"
+            f"{qualified_profile['output_filename']}"
         )
         if (
             protocol_path != expected_protocol_path
@@ -1395,8 +1936,12 @@ def _validate_freeze_core(
     executable_resolved = executable.resolve()
     process_image = process_image_path()
     numpy_import = Path(np.__file__).resolve()
-    faiss_import = Path(faiss.__file__).resolve()
-    faiss_native_import = Path(faiss_native.__file__).resolve()
+    faiss_import = Path(
+        isolated_worker_runtime["faiss_import_file"]
+    ).resolve()
+    faiss_native_import = Path(
+        isolated_worker_runtime["faiss_native_file"]
+    ).resolve()
     numpy_owned = {
         path.resolve() for path in _distribution_files("numpy")
     }
@@ -1409,6 +1954,11 @@ def _validate_freeze_core(
     )
     faiss_worker_source = (
         current_import_file.parent / "neighbors" / "_faiss_worker.py"
+    )
+    faiss_runtime_worker_source = (
+        current_import_file.parent
+        / "neighbors"
+        / "_faiss_runtime_worker.py"
     )
     if (
         numpy_import not in numpy_owned
@@ -1452,7 +2002,8 @@ def _validate_freeze_core(
         )
         != _sha256_file(numpy_import)
         or runtime["faiss_distribution"] != "faiss-cpu"
-        or runtime["faiss_version"] != faiss.__version__
+        or runtime["faiss_version"]
+        != isolated_worker_runtime["faiss_version"]
         or _require_sha256(
             runtime["faiss_distribution_sha256"],
             label="runtime.faiss_distribution_sha256",
@@ -1472,12 +2023,20 @@ def _validate_freeze_core(
         )
         != _sha256_file(faiss_native_import)
         or runtime["faiss_compile_options"]
-        != faiss.get_compile_options()
+        != isolated_worker_runtime["faiss_compile_options"]
         or _require_sha256(
             runtime["faiss_hnsw_source_sha256"],
             label="runtime.faiss_hnsw_source_sha256",
         )
         != _sha256_file(faiss_hnsw_source)
+        or (
+            v0_3_freeze
+            and _require_sha256(
+                runtime["faiss_runtime_worker_source_sha256"],
+                label="runtime.faiss_runtime_worker_source_sha256",
+            )
+            != _sha256_file(faiss_runtime_worker_source)
+        )
         or _require_sha256(
             runtime["faiss_worker_source_sha256"],
             label="runtime.faiss_worker_source_sha256",
@@ -1592,14 +2151,15 @@ def _validate_freeze_core(
     candidate_parent_path = (
         repo_root / "protocols" / "pythia_candidate_v0_2.yaml"
     )
+    neighbor_parent_filename = (
+        "pythia_neighbor_v0_2.yaml"
+        if qualified_profile is None
+        else qualified_profile["neighbor_parent_filename"]
+    )
     neighbor_parent_path = (
         repo_root
         / "protocols"
-        / (
-            "pythia_neighbor_v0_3.yaml"
-            if qualified_freeze
-            else "pythia_neighbor_v0_2.yaml"
-        )
+        / neighbor_parent_filename
     )
     candidate_parent_sha256 = (
         "ce3e6b6ba7c6cac026ba74671faf5c800e3d21bfc6abbf2641b9d03a37ceb2d8"
@@ -1713,7 +2273,10 @@ def _validate_freeze_core(
     qualification_path: Path | None = None
     qualification_sha256: str | None = None
     qualification_fixture_sha256: str | None = None
+    qualification_preflight_commit: str | None = None
+    qualification_preflight_tree: str | None = None
     if qualified_freeze:
+        assert qualified_profile is not None
         for tracked_path, tracked_bytes, label in (
             (
                 neighbor_parent_path,
@@ -1742,6 +2305,8 @@ def _validate_freeze_core(
             qualification_sha256,
             qualification_fixture_sha256,
             backend_contract,
+            qualification_preflight_commit,
+            qualification_preflight_tree,
         ) = _validate_backend_qualification(
             document.get("backend_qualification"),
             repo_root=repo_root,
@@ -1754,6 +2319,42 @@ def _validate_freeze_core(
             frozen_candidate=frozen_candidate,
             runtime=runtime,
             atlas_row_count=expected_atlas["row_count"],
+            expected_schema_version=(
+                qualified_profile["qualification_schema_version"]
+            ),
+            expected_relative_path=(
+                qualified_profile["qualification_relative_path"] or None
+            ),
+        )
+    if v0_3_freeze:
+        if (
+            qualification_path is None
+            or qualification_sha256 is None
+            or qualification_preflight_commit is None
+            or qualification_preflight_tree is None
+        ):
+            raise ValueError(
+                "v0.3 execution freeze lacks active qualification lineage"
+            )
+        _validate_qualification_predecessor(
+            document.get("qualification_predecessor"),
+            repo_root=repo_root,
+            git_executable=git_executable,
+            repository=str(repository),
+            branch=str(branch),
+            active_preflight_commit=qualification_preflight_commit,
+            active_preflight_tree=qualification_preflight_tree,
+            implementation_commit=implementation_commit,
+            active_receipt_path=qualification_path,
+            active_receipt_sha256=qualification_sha256,
+        )
+        _validate_v0_3_implementation_delta(
+            repo_root=repo_root,
+            git_executable=git_executable,
+            preflight_commit=qualification_preflight_commit,
+            implementation_commit=implementation_commit,
+            qualification_path=qualification_path,
+            frozen_protocol_path=protocol_path,
         )
     _validate_candidate_protocol_lineage(
         parent=candidate_parent,
@@ -1923,15 +2524,21 @@ def _validate_freeze_core(
         )
 
     worker_runtime = current_worker_runtime_contract(actual_digest)
-    expected_worker_runtime = {
-        key: str(runtime[key])
-        for key in worker_runtime
+    comparable_worker_runtime = {
+        key: value
+        for key, value in worker_runtime.items()
         if key != "execution_freeze_sha256"
     }
-    if any(
-        worker_runtime[key] != expected
-        for key, expected in expected_worker_runtime.items()
-    ):
+    if not v0_3_freeze:
+        comparable_worker_runtime.pop(
+            "faiss_runtime_worker_source_sha256",
+            None,
+        )
+    expected_worker_runtime = {
+        key: str(runtime[key])
+        for key in comparable_worker_runtime
+    }
+    if comparable_worker_runtime != expected_worker_runtime:
         raise ValueError(
             "execution freeze worker runtime contract differs"
         )

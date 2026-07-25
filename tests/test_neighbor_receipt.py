@@ -57,6 +57,53 @@ def test_v03_draft_protocol_declares_pending_native_qualification() -> None:
     ] is False
 
 
+def test_v04_draft_pins_fresh_subprocess_qualification() -> None:
+    protocol_path = (
+        Path(__file__).resolve().parents[1]
+        / "protocols"
+        / "pythia_neighbor_v0_4.yaml"
+    )
+    protocol = yaml.safe_load(protocol_path.read_bytes())
+
+    validate_neighbor_protocol_static_contract(protocol)
+
+    assert protocol["subject_backend"]["backend_version"] == "0.2"
+    assert protocol["backend_qualification"] == {
+        "schema_version": (
+            "spirallens.faiss-hnsw-range-qualification.v0.2"
+        ),
+        "path": (
+            "protocols/"
+            "pythia70_slot_only_001_layer0_"
+            "faiss_range_qualification_v0_2.json"
+        ),
+        "sha256": None,
+        "fixture_sha256": None,
+        "binding_rule": "must_be_filled_before_status_frozen",
+    }
+    assert protocol["promotion_readiness"][
+        "production_shape_subprocess_qualified"
+    ] is False
+
+
+def test_v04_draft_rejects_alternate_qualification_path() -> None:
+    protocol_path = (
+        Path(__file__).resolve().parents[1]
+        / "protocols"
+        / "pythia_neighbor_v0_4.yaml"
+    )
+    protocol = yaml.safe_load(protocol_path.read_bytes())
+    protocol["backend_qualification"]["path"] = (
+        "protocols/selectable-qualification.json"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="backend qualification",
+    ):
+        validate_neighbor_protocol_static_contract(protocol)
+
+
 def test_v03_frozen_readiness_includes_production_qualification() -> None:
     assert _expected_promotion_readiness(
         qualified_protocol=True,
@@ -580,9 +627,13 @@ def test_receipt_authorizes_only_identical_full_input_index_group(
         NeighborAuditReceipt.from_dict(noncanonical)
 
 
-def test_v03_pass_loads_positive_qualification_and_issues_receipt(
+def _assert_qualified_pass_issues_verified_receipt(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    *,
+    protocol_schema_version: str,
+    qualification_schema_version: str,
+    qualification_relative_path: Path,
 ) -> None:
     (
         result,
@@ -593,7 +644,8 @@ def test_v03_pass_loads_positive_qualification_and_issues_receipt(
         protocol_path,
     ) = _frozen_result(tmp_path)
     protocol = yaml.safe_load(protocol_path.read_bytes())
-    qualification_path = tmp_path / "qualification.json"
+    qualification_path = tmp_path / qualification_relative_path
+    qualification_path.parent.mkdir(parents=True, exist_ok=True)
     qualification_bytes = b"{}"
     qualification_path.write_bytes(qualification_bytes)
     qualification_sha256 = hashlib.sha256(
@@ -614,14 +666,10 @@ def test_v03_pass_loads_positive_qualification_and_issues_receipt(
         "load_faiss_hnsw_qualification_receipt",
         lambda path, expected_sha256: fake_qualification,
     )
-    protocol["schema_version"] = (
-        "spirallens.neighbor-audit-protocol.v0.3"
-    )
+    protocol["schema_version"] = protocol_schema_version
     protocol["backend_qualification"] = {
-        "schema_version": (
-            "spirallens.faiss-hnsw-range-qualification.v0.1"
-        ),
-        "path": qualification_path.name,
+        "schema_version": qualification_schema_version,
+        "path": qualification_relative_path.as_posix(),
         "sha256": qualification_sha256,
         "fixture_sha256": fixture_sha256,
     }
@@ -718,6 +766,44 @@ def test_v03_pass_loads_positive_qualification_and_issues_receipt(
 
     assert receipt.verified is True
     receipt.validate_target(target)
+
+
+def test_v03_pass_loads_positive_qualification_and_issues_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _assert_qualified_pass_issues_verified_receipt(
+        tmp_path,
+        monkeypatch,
+        protocol_schema_version=(
+            "spirallens.neighbor-audit-protocol.v0.3"
+        ),
+        qualification_schema_version=(
+            "spirallens.faiss-hnsw-range-qualification.v0.1"
+        ),
+        qualification_relative_path=Path("qualification.json"),
+    )
+
+
+def test_v04_pass_loads_positive_qualification_and_issues_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _assert_qualified_pass_issues_verified_receipt(
+        tmp_path,
+        monkeypatch,
+        protocol_schema_version=(
+            "spirallens.neighbor-audit-protocol.v0.4"
+        ),
+        qualification_schema_version=(
+            "spirallens.faiss-hnsw-range-qualification.v0.2"
+        ),
+        qualification_relative_path=Path(
+            "protocols/"
+            "pythia70_slot_only_001_layer0_"
+            "faiss_range_qualification_v0_2.json"
+        ),
+    )
 
 
 def test_audit_result_rejects_query_selection_rewrite(

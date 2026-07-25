@@ -152,10 +152,16 @@ density-by-cosine-boundary recall across deterministic cold rebuilds. Empty or
 under-supported required cells are `insufficient`, never an automatic pass.
 The atlas-specific v0.2 declaration remains preserved at
 [`protocols/pythia_neighbor_v0_2.yaml`](protocols/pythia_neighbor_v0_2.yaml).
-The versioned native-call remediation is separately preregistered in
+The published native-call producer contract remains preserved as historical in
 [`protocols/pythia_neighbor_v0_3.yaml`](protocols/pythia_neighbor_v0_3.yaml);
 it keeps the outer query artifact batch at 512 while bounding each native
-Faiss range-search call to one query.
+Faiss range-search call to one query. Its bytes remain available for static
+inspection only; it cannot authorize preflight, subject execution, or
+approximate-candidate persistence. The active consumer-safe successor is
+separately preregistered in
+[`protocols/pythia_neighbor_v0_4.yaml`](protocols/pythia_neighbor_v0_4.yaml).
+It keeps backend version 0.2 but requires qualification receipt schema v0.2
+at one exact, non-selectable output path.
 Receipt-gated approximate persistence uses the separate typed candidate
 declaration
 [`protocols/pythia_candidate_v0_2.yaml`](protocols/pythia_candidate_v0_2.yaml);
@@ -194,7 +200,7 @@ a receipt loaded from persisted audit/protocol files against out-of-band
 SHA-256 digests. The audit query subset may expand to all query rows at
 persistence; no other target field may change.
 
-The tracked v0.3 draft deliberately has
+The tracked v0.4 draft deliberately has
 `issue_persistence_receipt_on_verified_pass: false` until its synthetic
 qualification receipt and atlas bindings are frozen. Aggregate recall can hide
 a query-local collapse, but freezing that measurement rule does not freeze a
@@ -209,20 +215,28 @@ audit outcome:
 spirallens neighbor-audit \
   --manifest runs/pythia70-full/manifest.json \
   --layer 0 \
-  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --protocol protocols/pythia_neighbor_v0_4.yaml \
   --prepare-only
 ```
 
-The v0.3 native path must first pass the separate subject-independent
+The v0.4 native path must first pass the separate subject-independent
 production-shape qualification. It accepts no atlas, token, drift, decoded
 string, or semantic input:
 
 ```bash
 spirallens faiss-range-preflight \
-  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --protocol protocols/pythia_neighbor_v0_4.yaml \
   --expected-protocol-sha256 "<trusted draft SHA-256>" \
-  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_1.json
+  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json
 ```
+
+An earlier receipt-v0.1 producer run was observed to return `pass`, but its
+volatile receipt was lost during reboot before it could be tracked. Loading
+that receipt after Torch had entered the process exposed an OpenMP collision,
+so consumer binding was never established. That observation is not a subject
+audit outcome, does not authorize promotion, and did not consume the subject
+one-shot. SpiralLens does not enable an unsafe duplicate-OpenMP environment
+workaround; receipt v0.2 moves consumer regeneration into a fresh subprocess.
 
 The complete freeze, audit, receipt, and persistence contract is documented in
 [Neighbor Audit and Receipt Contract](docs/neighbor_audit.md).

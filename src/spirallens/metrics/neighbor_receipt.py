@@ -42,10 +42,24 @@ NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
 QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
     "spirallens.neighbor-audit-protocol.v0.3"
 )
+FRESH_SUBPROCESS_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
+    "spirallens.neighbor-audit-protocol.v0.4"
+)
+QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS = {
+    QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+    FRESH_SUBPROCESS_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+}
 SUPPORTED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS = {
     NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
-    QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+    *QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS,
 }
+V0_4_QUALIFICATION_SCHEMA_VERSION = (
+    "spirallens.faiss-hnsw-range-qualification.v0.2"
+)
+V0_4_QUALIFICATION_PATH = (
+    "protocols/"
+    "pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json"
+)
 REQUIRED_COVERAGE_GATES = (
     "aggregate",
     "query_local",
@@ -54,6 +68,22 @@ REQUIRED_COVERAGE_GATES = (
     "determinism",
 )
 _VERIFIED_RECEIPT_TOKEN = object()
+
+
+def _qualification_contract(
+    schema_version: object,
+) -> tuple[str, str | None] | None:
+    if schema_version == QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION:
+        return (
+            "spirallens.faiss-hnsw-range-qualification.v0.1",
+            None,
+        )
+    if (
+        schema_version
+        == FRESH_SUBPROCESS_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+    ):
+        return V0_4_QUALIFICATION_SCHEMA_VERSION, V0_4_QUALIFICATION_PATH
+    return None
 
 
 def _expected_promotion_readiness(
@@ -552,10 +582,8 @@ def validate_neighbor_protocol_static_contract(
     """Reject ambiguous or contradictory neighbor protocol declarations."""
 
     schema_version = protocol.get("schema_version")
-    qualified_protocol = (
-        schema_version
-        == QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
-    )
+    qualification_contract = _qualification_contract(schema_version)
+    qualified_protocol = qualification_contract is not None
     expected_top_level = {
         "schema_version",
         "protocol_id",
@@ -778,25 +806,25 @@ def validate_neighbor_protocol_static_contract(
             )
     if qualified_protocol:
         qualification = protocol.get("backend_qualification")
+        assert qualification_contract is not None
+        qualification_schema_version, required_path = (
+            qualification_contract
+        )
         if not isinstance(qualification, Mapping):
             raise ValueError(
                 "neighbor protocol backend qualification is invalid"
             )
         if status == "preregistered-draft":
             expected_qualification = {
-                "schema_version": (
-                    "spirallens.faiss-hnsw-range-qualification.v0.1"
-                ),
-                "path": None,
+                "schema_version": qualification_schema_version,
+                "path": required_path,
                 "sha256": None,
                 "fixture_sha256": None,
                 "binding_rule": "must_be_filled_before_status_frozen",
             }
         else:
             expected_qualification = {
-                "schema_version": (
-                    "spirallens.faiss-hnsw-range-qualification.v0.1"
-                ),
+                "schema_version": qualification_schema_version,
                 "path": qualification.get("path"),
                 "sha256": qualification.get("sha256"),
                 "fixture_sha256": qualification.get(
@@ -809,6 +837,14 @@ def validate_neighbor_protocol_static_contract(
             ):
                 raise ValueError(
                     "frozen backend qualification path is invalid"
+                )
+            if (
+                required_path is not None
+                and qualification.get("path") != required_path
+            ):
+                raise ValueError(
+                    "frozen backend qualification path differs from "
+                    "the versioned contract"
                 )
             for field_name in ("sha256", "fixture_sha256"):
                 _require_sha256(
@@ -845,8 +881,7 @@ def _validate_promotion_protocol(
 
     validate_neighbor_protocol_static_contract(protocol)
     qualified_protocol = (
-        protocol.get("schema_version")
-        == QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+        _qualification_contract(protocol.get("schema_version")) is not None
     )
     expected_subject_backend_version = (
         "0.2" if qualified_protocol else "0.1"

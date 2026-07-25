@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import spirallens.execution_freeze as execution_freeze
+
 if importlib.util.find_spec("faiss") is None:
     pytest.skip("faiss optional dependency is absent", allow_module_level=True)
 
@@ -108,6 +110,10 @@ def _receipt_payload(
         "search": qualification._expected_search(),
         "runtime": runtime,
         "cold_runs": cold_runs,
+        "consumer_validation": {
+            "fixture_regeneration": "fresh_python_subprocess",
+            "worker_runtime_bound": True,
+        },
     }
 
 
@@ -115,16 +121,26 @@ def _fake_worker(
     *,
     change_second_run: bool = False,
 ):
-    calls = 0
+    preflight_calls = 0
 
     def run(arguments, *, runtime_contract):
-        nonlocal calls
-        calls += 1
+        nonlocal preflight_calls
         output_index = arguments.index("--output") + 1
         output = Path(arguments[output_index])
+        if arguments[0] == "fixture":
+            output.write_bytes(
+                _canonical_bytes(
+                    {
+                        "fixture": _fixture(),
+                        "runtime": dict(runtime_contract),
+                    }
+                )
+            )
+            return
+        preflight_calls += 1
         index_sha256 = (
             "8" * 64
-            if change_second_run and calls == 2
+            if change_second_run and preflight_calls == 2
             else "4" * 64
         )
         payload = {
@@ -144,7 +160,7 @@ def _patch_fixture_regeneration(
     monkeypatch.setattr(
         qualification,
         "_regenerated_fixture_digests",
-        lambda: {
+        lambda runtime_contract: {
             "states_sha256": "1" * 64,
             "normalized_states_sha256": "2" * 64,
             "query_indices_sha256": "3" * 64,
@@ -166,7 +182,6 @@ def test_qualification_run_is_exclusive_canonical_and_reloadable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _patch_fixture_regeneration(monkeypatch)
     _patch_source_capture(monkeypatch)
     monkeypatch.setattr(
         qualification,
@@ -238,12 +253,13 @@ def test_qualification_receipt_requires_git_source_identity() -> None:
 
 
 def test_qualification_receipt_validates_backend_contract(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_fixture_regeneration(monkeypatch)
     _patch_source_capture(monkeypatch)
     runtime = current_worker_runtime_contract(None)
-    receipt = FaissHNSWQualificationReceipt.from_payload(
+    structural = FaissHNSWQualificationReceipt.from_payload(
         _receipt_payload(runtime)
     )
     config = FaissHNSWConfig(
@@ -258,6 +274,20 @@ def test_qualification_receipt_validates_backend_contract(
         max_raw_hits=20_000_000,
     )
 
+    with pytest.raises(ValueError, match="consumer-validated"):
+        structural.validate_for_backend(
+            config=config,
+            row_count=QUALIFICATION_ROW_COUNT,
+            hidden_size=QUALIFICATION_HIDDEN_SIZE,
+            runtime_contract=runtime,
+        )
+
+    path = tmp_path / "qualification.json"
+    path.write_bytes(structural.canonical_bytes)
+    receipt = load_faiss_hnsw_qualification_receipt(
+        path,
+        structural.sha256,
+    )
     receipt.validate_for_backend(
         config=config,
         row_count=QUALIFICATION_ROW_COUNT,
@@ -279,6 +309,41 @@ def test_qualification_receipt_validates_backend_contract(
         )
 
 
+@pytest.mark.parametrize(
+    "consumer_validation",
+    [
+        None,
+        {
+            "fixture_regeneration": "in_process",
+            "worker_runtime_bound": True,
+        },
+        {
+            "fixture_regeneration": "fresh_python_subprocess",
+            "worker_runtime_bound": False,
+        },
+        {
+            "fixture_regeneration": "fresh_python_subprocess",
+            "worker_runtime_bound": True,
+            "extra": "not-allowed",
+        },
+    ],
+)
+def test_qualification_receipt_requires_exact_consumer_validation(
+    consumer_validation: object,
+) -> None:
+    payload = _receipt_payload(current_worker_runtime_contract(None))
+    if consumer_validation is None:
+        payload.pop("consumer_validation")
+    else:
+        payload["consumer_validation"] = consumer_validation
+
+    with pytest.raises(
+        ValueError,
+        match="receipt fields|consumer validation",
+    ):
+        FaissHNSWQualificationReceipt.from_payload(payload)
+
+
 def test_persisted_qualification_is_consumed_by_v02_backend(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -292,7 +357,6 @@ def test_persisted_qualification_is_consumed_by_v02_backend(
         "QUALIFICATION_MAX_NATIVE_CALL_HITS",
         5,
     )
-    _patch_fixture_regeneration(monkeypatch)
     _patch_source_capture(monkeypatch)
     monkeypatch.setattr(
         qualification,
@@ -363,25 +427,84 @@ def test_loader_rejects_runtime_drift_before_fixture_use(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def fixture_should_not_run() -> dict[str, str]:
-        raise AssertionError("fixture regeneration ran after runtime drift")
-
-    monkeypatch.setattr(
-        qualification,
-        "_regenerated_fixture_digests",
-        fixture_should_not_run,
-    )
     runtime = current_worker_runtime_contract(None)
     runtime["numpy_version"] = "forged"
+    worker_calls = 0
+
+    def reject_runtime(arguments, *, runtime_contract):
+        nonlocal worker_calls
+        worker_calls += 1
+        assert arguments[0] == "fixture"
+        assert runtime_contract == runtime
+        raise RuntimeError("Faiss worker failed: runtime differs")
+
+    def parent_probe_should_not_run(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("loader probed Faiss in its parent process")
+
+    monkeypatch.setattr(qualification, "_run_worker", reject_runtime)
+    monkeypatch.setattr(
+        execution_freeze,
+        "current_worker_runtime_contract",
+        parent_probe_should_not_run,
+    )
     source = _canonical_bytes(_receipt_payload(runtime))
     path = tmp_path / "forged-runtime.json"
     path.write_bytes(source)
 
-    with pytest.raises(ValueError, match="runtime differs"):
+    with pytest.raises(RuntimeError, match="runtime differs"):
         load_faiss_hnsw_qualification_receipt(
             path,
             hashlib.sha256(source).hexdigest(),
         )
+    assert worker_calls == 1
+
+
+def test_loader_binds_fixture_worker_to_receipt_runtime(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = current_worker_runtime_contract(None)
+    captured_runtime: list[dict[str, str]] = []
+
+    def fixture_worker(arguments, *, runtime_contract):
+        assert arguments[0] == "fixture"
+        captured_runtime.append(dict(runtime_contract))
+        output = Path(arguments[arguments.index("--output") + 1])
+        output.write_bytes(
+            _canonical_bytes(
+                {
+                    "fixture": _fixture(),
+                    "runtime": dict(runtime_contract),
+                }
+            )
+        )
+
+    def parent_probe_should_not_run(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("loader probed Faiss in its parent process")
+
+    monkeypatch.setattr(qualification, "_run_worker", fixture_worker)
+    monkeypatch.setattr(
+        execution_freeze,
+        "current_worker_runtime_contract",
+        parent_probe_should_not_run,
+    )
+    source = _canonical_bytes(_receipt_payload(runtime))
+    path = tmp_path / "receipt.json"
+    path.write_bytes(source)
+
+    loaded = load_faiss_hnsw_qualification_receipt(
+        path,
+        hashlib.sha256(source).hexdigest(),
+    )
+
+    assert captured_runtime == [runtime]
+    loaded.validate_search_radius(
+        cosine_min=0.995,
+        score_margin=0.0001,
+        radius=qualification._qualification_radius(),
+    )
 
 
 def test_loader_regenerates_and_rejects_fixture_drift(
@@ -431,6 +554,44 @@ def test_qualification_cold_run_mismatch_leaves_terminal_reservation(
         run_faiss_hnsw_qualification(output)
 
 
+def test_consumer_fixture_drift_blocks_receipt_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_source_capture(monkeypatch)
+    monkeypatch.setattr(
+        qualification,
+        "_run_worker",
+        _fake_worker(),
+    )
+
+    def drifted_fixture(
+        runtime_contract: dict[str, str],
+    ) -> dict[str, str]:
+        assert runtime_contract
+        return {
+            "states_sha256": "9" * 64,
+            "normalized_states_sha256": "2" * 64,
+            "query_indices_sha256": "3" * 64,
+        }
+
+    monkeypatch.setattr(
+        qualification,
+        "_regenerated_fixture_digests",
+        drifted_fixture,
+    )
+    output = tmp_path / "qualification.json"
+
+    with pytest.raises(ValueError, match="differs from regeneration"):
+        run_faiss_hnsw_qualification(output)
+
+    assert output.read_bytes() == (
+        b"spirallens-faiss-hnsw-qualification-reservation-v0.2\n"
+    )
+    with pytest.raises(FileExistsError):
+        run_faiss_hnsw_qualification(output)
+
+
 def test_loader_rejects_wrong_digest(
     tmp_path: Path,
 ) -> None:
@@ -453,4 +614,18 @@ def test_loader_rejects_symlink_receipt(
         load_faiss_hnsw_qualification_receipt(
             linked,
             hashlib.sha256(b"{}").hexdigest(),
+        )
+
+
+def test_qualification_output_rejects_symlink_parent(
+    tmp_path: Path,
+) -> None:
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="directory chain is unsafe"):
+        qualification._assert_safe_output_parent(
+            linked_parent / "qualification.json"
         )

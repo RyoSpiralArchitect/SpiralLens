@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 from numbers import Integral
@@ -24,7 +24,7 @@ from .faiss_hnsw import (
 
 
 QUALIFICATION_SCHEMA_VERSION = (
-    "spirallens.faiss-hnsw-range-qualification.v0.1"
+    "spirallens.faiss-hnsw-range-qualification.v0.2"
 )
 QUALIFICATION_FIXTURE_SCHEMA_VERSION = (
     "spirallens.faiss-hnsw-range-fixture.v0.1"
@@ -39,6 +39,11 @@ QUALIFICATION_MAX_NATIVE_CALL_HITS = QUALIFICATION_ROW_COUNT
 QUALIFICATION_MAX_RAW_HITS = 20_000_000
 QUALIFICATION_COSINE_MIN = 0.995
 QUALIFICATION_SCORE_MARGIN = 0.0001
+_CONSUMER_VALIDATED_TOKEN = object()
+_CONSUMER_VALIDATION = {
+    "fixture_regeneration": "fresh_python_subprocess",
+    "worker_runtime_bound": True,
+}
 
 
 def _qualification_radius() -> float:
@@ -302,33 +307,54 @@ def _expected_search() -> dict[str, object]:
     }
 
 
-def _regenerated_fixture_digests() -> dict[str, str]:
-    import faiss
-
-    cluster_count = QUALIFICATION_ROW_COUNT // QUALIFICATION_CLUSTER_SIZE
-    generator = np.random.Generator(
-        np.random.PCG64(QUALIFICATION_FIXTURE_SEED)
-    )
-    centers = generator.standard_normal(
-        (cluster_count, QUALIFICATION_HIDDEN_SIZE),
-        dtype=np.float32,
-    )
-    rows = np.repeat(centers, QUALIFICATION_CLUSTER_SIZE, axis=0)
-    states_sha256 = hashlib.sha256(
-        memoryview(np.ascontiguousarray(rows)).cast("B")
-    ).hexdigest()
-    faiss.normalize_L2(rows)
-    normalized_states_sha256 = hashlib.sha256(
-        memoryview(np.ascontiguousarray(rows)).cast("B")
-    ).hexdigest()
-    query_indices = np.arange(QUALIFICATION_QUERY_COUNT, dtype=np.int64)
-    query_indices_sha256 = hashlib.sha256(
-        memoryview(query_indices).cast("B")
-    ).hexdigest()
+def _regenerated_fixture_digests(
+    runtime_contract: Mapping[str, str],
+) -> dict[str, str]:
+    runtime = _require_runtime(runtime_contract)
+    with tempfile.TemporaryDirectory(
+        prefix="spirallens-faiss-fixture-validation-"
+    ) as directory:
+        output = Path(directory) / "fixture.json"
+        _run_worker(
+            [
+                "fixture",
+                "--output",
+                str(output),
+                "--fixture-schema-version",
+                QUALIFICATION_FIXTURE_SCHEMA_VERSION,
+                "--row-count",
+                str(QUALIFICATION_ROW_COUNT),
+                "--hidden-size",
+                str(QUALIFICATION_HIDDEN_SIZE),
+                "--cluster-size",
+                str(QUALIFICATION_CLUSTER_SIZE),
+                "--query-count",
+                str(QUALIFICATION_QUERY_COUNT),
+                "--fixture-seed",
+                str(QUALIFICATION_FIXTURE_SEED),
+            ],
+            runtime_contract=runtime,
+        )
+        payload = _parse_canonical_json(
+            output.read_bytes(),
+            label="Faiss qualification regenerated fixture",
+        )
+    if set(payload) != {"fixture", "runtime"}:
+        raise ValueError(
+            "Faiss qualification regenerated fixture fields differ"
+        )
+    fixture = _validate_fixture(payload.get("fixture"))
+    if _require_runtime(payload.get("runtime")) != runtime:
+        raise ValueError(
+            "Faiss qualification regenerated fixture runtime differs"
+        )
     return {
-        "states_sha256": states_sha256,
-        "normalized_states_sha256": normalized_states_sha256,
-        "query_indices_sha256": query_indices_sha256,
+        field_name: str(fixture[field_name])
+        for field_name in (
+            "states_sha256",
+            "normalized_states_sha256",
+            "query_indices_sha256",
+        )
     }
 
 
@@ -433,6 +459,7 @@ def _validate_receipt_payload(payload: Mapping[str, object]) -> None:
         "search",
         "runtime",
         "cold_runs",
+        "consumer_validation",
     }
     if set(payload) != expected_fields:
         raise ValueError("Faiss qualification receipt fields differ")
@@ -453,6 +480,17 @@ def _validate_receipt_payload(payload: Mapping[str, object]) -> None:
     if payload.get("search") != _expected_search():
         raise ValueError("Faiss qualification receipt search differs")
     _require_runtime(payload.get("runtime"))
+    consumer_validation = payload.get("consumer_validation")
+    if (
+        not isinstance(consumer_validation, Mapping)
+        or set(consumer_validation) != set(_CONSUMER_VALIDATION)
+        or consumer_validation.get("fixture_regeneration")
+        != _CONSUMER_VALIDATION["fixture_regeneration"]
+        or consumer_validation.get("worker_runtime_bound") is not True
+    ):
+        raise ValueError(
+            "Faiss qualification consumer validation differs"
+        )
     cold_runs = payload.get("cold_runs")
     if (
         not isinstance(cold_runs, list)
@@ -471,6 +509,12 @@ class FaissHNSWQualificationReceipt:
     """Strict, canonical receipt for the fixed native-call qualification."""
 
     _canonical_json: str
+    _consumer_validation_token: object | None = field(
+        default=None,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     def __post_init__(self) -> None:
         if not isinstance(self._canonical_json, str):
@@ -488,6 +532,29 @@ class FaissHNSWQualificationReceipt:
     ) -> FaissHNSWQualificationReceipt:
         _validate_receipt_payload(payload)
         return cls(_canonical_bytes(dict(payload)).decode("utf-8"))
+
+    @classmethod
+    def _from_consumer_validation(
+        cls,
+        receipt: FaissHNSWQualificationReceipt,
+        *,
+        token: object,
+    ) -> FaissHNSWQualificationReceipt:
+        if token is not _CONSUMER_VALIDATED_TOKEN:
+            raise TypeError("invalid Faiss qualification validation token")
+        validated = cls(receipt._canonical_json)
+        object.__setattr__(
+            validated,
+            "_consumer_validation_token",
+            token,
+        )
+        return validated
+
+    def _require_consumer_validation(self) -> None:
+        if self._consumer_validation_token is not _CONSUMER_VALIDATED_TOKEN:
+            raise ValueError(
+                "Faiss qualification receipt was not consumer-validated"
+            )
 
     def to_dict(self) -> dict[str, object]:
         return json.loads(self._canonical_json)
@@ -580,6 +647,7 @@ class FaissHNSWQualificationReceipt:
         hidden_size: int,
         runtime_contract: Mapping[str, str],
     ) -> None:
+        self._require_consumer_validation()
         payload = self.to_dict()
         fixture = payload["fixture"]
         search = payload["search"]
@@ -617,6 +685,7 @@ class FaissHNSWQualificationReceipt:
         score_margin: float,
         radius: float,
     ) -> None:
+        self._require_consumer_validation()
         search = self.to_dict()["search"]
         assert isinstance(search, dict)
         if (
@@ -629,15 +698,35 @@ class FaissHNSWQualificationReceipt:
             )
 
 
+def _consumer_validated_receipt(
+    receipt: FaissHNSWQualificationReceipt,
+) -> FaissHNSWQualificationReceipt:
+    """Issue a capability only after isolated fixture/runtime validation."""
+
+    fixture = receipt.to_dict()["fixture"]
+    assert isinstance(fixture, dict)
+    if any(
+        fixture.get(key) != value
+        for key, value in _regenerated_fixture_digests(
+            receipt.runtime
+        ).items()
+    ):
+        raise ValueError(
+            "Faiss qualification fixture differs from regeneration"
+        )
+    if receipt.fixture_sha256 != canonical_json_sha256(fixture):
+        raise ValueError("Faiss qualification fixture identity differs")
+    return FaissHNSWQualificationReceipt._from_consumer_validation(
+        receipt,
+        token=_CONSUMER_VALIDATED_TOKEN,
+    )
+
+
 def load_faiss_hnsw_qualification_receipt(
     path: str | Path,
     expected_sha256: str,
 ) -> FaissHNSWQualificationReceipt:
     """Load canonical bytes only when their out-of-band digest matches."""
-
-    from spirallens.execution_freeze import (
-        current_worker_runtime_contract,
-    )
 
     expected = _require_sha256(
         expected_sha256,
@@ -687,22 +776,7 @@ def load_faiss_hnsw_qualification_receipt(
     receipt = FaissHNSWQualificationReceipt.from_payload(payload)
     if receipt.canonical_bytes != source or receipt.sha256 != expected:
         raise ValueError("Faiss qualification receipt readback differs")
-    if receipt.runtime != current_worker_runtime_contract(None):
-        raise ValueError(
-            "Faiss qualification receipt runtime differs from current imports"
-        )
-    fixture = receipt.to_dict()["fixture"]
-    assert isinstance(fixture, dict)
-    if any(
-        fixture.get(key) != value
-        for key, value in _regenerated_fixture_digests().items()
-    ):
-        raise ValueError(
-            "Faiss qualification fixture differs from regeneration"
-        )
-    if receipt.fixture_sha256 != canonical_json_sha256(fixture):
-        raise ValueError("Faiss qualification fixture identity differs")
-    return receipt
+    return _consumer_validated_receipt(receipt)
 
 
 def _assert_safe_output_parent(path: Path) -> None:
@@ -780,7 +854,7 @@ def run_faiss_hnsw_qualification(
     try:
         _write_all(
             file_descriptor,
-            b"spirallens-faiss-hnsw-qualification-reservation-v0.1\n",
+            b"spirallens-faiss-hnsw-qualification-reservation-v0.2\n",
         )
         os.fsync(file_descriptor)
         with tempfile.TemporaryDirectory(
@@ -863,6 +937,7 @@ def run_faiss_hnsw_qualification(
                 "cold_runs": [
                     payload["result"] for payload in worker_payloads
                 ],
+                "consumer_validation": dict(_CONSUMER_VALIDATION),
             }
         )
         if (
@@ -885,6 +960,7 @@ def run_faiss_hnsw_qualification(
             raise ValueError(
                 "Faiss qualification output identity changed during execution"
             )
+        receipt = _consumer_validated_receipt(receipt)
         os.lseek(file_descriptor, 0, os.SEEK_SET)
         os.ftruncate(file_descriptor, 0)
         _write_all(file_descriptor, receipt.canonical_bytes)
@@ -942,4 +1018,4 @@ def run_faiss_hnsw_qualification(
         score_margin=QUALIFICATION_SCORE_MARGIN,
         radius=_qualification_radius(),
     )
-    return receipt
+    return loaded

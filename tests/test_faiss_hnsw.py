@@ -22,7 +22,6 @@ from spirallens.execution_freeze import (  # noqa: E402
 )
 from spirallens.neighbors._faiss_worker import (  # noqa: E402
     _range_search_in_calls,
-    _run_preflight,
 )
 from spirallens.neighbors import (  # noqa: E402
     FaissHNSWBackend,
@@ -433,31 +432,47 @@ def test_preflight_uses_production_build_search_and_readback(
 ) -> None:
     output = tmp_path / "preflight.json"
 
-    assert (
-        _run_preflight(
-            SimpleNamespace(
-                output=output,
-                fixture_schema_version="test-fixture-v0.1",
-                row_count=8,
-                hidden_size=4,
-                cluster_size=2,
-                query_count=4,
-                fixture_seed=1729,
-                m=2,
-                ef_construction=20,
-                ef_search=20,
-                seed=1729,
-                query_batch_size=4,
-                range_call_batch_size=1,
-                cosine_min=0.9,
-                score_margin=0.001,
-                radius=0.899,
-                max_native_call_hits=8,
-                max_raw_hits=100,
-                runtime_contract=current_worker_runtime_contract(None),
-            )
-        )
-        == 0
+    faiss_hnsw_module._run_worker(
+        [
+            "preflight",
+            "--output",
+            str(output),
+            "--fixture-schema-version",
+            "test-fixture-v0.1",
+            "--row-count",
+            "8",
+            "--hidden-size",
+            "4",
+            "--cluster-size",
+            "2",
+            "--query-count",
+            "4",
+            "--fixture-seed",
+            "1729",
+            "--m",
+            "2",
+            "--ef-construction",
+            "20",
+            "--ef-search",
+            "20",
+            "--seed",
+            "1729",
+            "--query-batch-size",
+            "4",
+            "--range-call-batch-size",
+            "1",
+            "--cosine-min",
+            "0.9",
+            "--score-margin",
+            "0.001",
+            "--radius",
+            "0.899",
+            "--max-native-call-hits",
+            "8",
+            "--max-raw-hits",
+            "100",
+        ],
+        runtime_contract=current_worker_runtime_contract(None),
     )
 
     payload = json.loads(output.read_text(encoding="utf-8"))

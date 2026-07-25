@@ -15,6 +15,25 @@ from typing import Any, Sequence
 from spirallens import __version__
 
 
+OBSERVATION_ONLY_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION = (
+    "spirallens.neighbor-audit-protocol.v0.3"
+)
+QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS = {
+    OBSERVATION_ONLY_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION,
+    "spirallens.neighbor-audit-protocol.v0.4",
+}
+ACTIVE_FAISS_PREFLIGHT_PROTOCOL_SCHEMA_VERSION = (
+    "spirallens.neighbor-audit-protocol.v0.4"
+)
+ACTIVE_FAISS_QUALIFICATION_SCHEMA_VERSION = (
+    "spirallens.faiss-hnsw-range-qualification.v0.2"
+)
+ACTIVE_FAISS_QUALIFICATION_PATH = (
+    "protocols/"
+    "pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json"
+)
+
+
 def _write_json_atomic(
     path: Path,
     payload: dict[str, Any],
@@ -122,6 +141,7 @@ def _faiss_config_from_neighbor_protocol(
     expected_backend_version = {
         "spirallens.neighbor-audit-protocol.v0.2": "0.1",
         "spirallens.neighbor-audit-protocol.v0.3": "0.2",
+        "spirallens.neighbor-audit-protocol.v0.4": "0.2",
     }.get(schema_version)
     if (
         expected_backend_version is None
@@ -329,6 +349,10 @@ def _run_faiss_range_preflight(args: argparse.Namespace) -> int:
         run_faiss_hnsw_qualification,
     )
 
+    repo_root = Path(__file__).resolve().parents[2]
+    expected_protocol_path = (
+        repo_root / "protocols" / "pythia_neighbor_v0_4.yaml"
+    )
     protocol_path = args.protocol.resolve()
     protocol_bytes, protocol = _load_yaml_mapping(
         protocol_path,
@@ -343,12 +367,38 @@ def _run_faiss_range_preflight(args: argparse.Namespace) -> int:
     validate_neighbor_protocol_static_contract(protocol)
     if (
         protocol.get("schema_version")
-        != "spirallens.neighbor-audit-protocol.v0.3"
+        != ACTIVE_FAISS_PREFLIGHT_PROTOCOL_SCHEMA_VERSION
         or protocol.get("status") != "preregistered-draft"
     ):
         raise ValueError(
-            "Faiss range preflight requires the v0.3 preregistered "
+            "Faiss range preflight requires the v0.4 preregistered "
             "draft protocol"
+        )
+    if protocol_path != expected_protocol_path:
+        raise ValueError(
+            "Faiss range preflight requires the canonical tracked v0.4 "
+            "protocol path"
+        )
+    qualification_binding = protocol.get("backend_qualification")
+    if (
+        not isinstance(qualification_binding, dict)
+        or qualification_binding.get("schema_version")
+        != ACTIVE_FAISS_QUALIFICATION_SCHEMA_VERSION
+        or qualification_binding.get("path")
+        != ACTIVE_FAISS_QUALIFICATION_PATH
+    ):
+        raise ValueError(
+            "Faiss range preflight qualification identity differs from "
+            "the v0.4 contract"
+        )
+    expected_output_path = Path(
+        os.path.abspath(repo_root / ACTIVE_FAISS_QUALIFICATION_PATH)
+    )
+    output_path = Path(os.path.abspath(args.output))
+    if output_path != expected_output_path:
+        raise ValueError(
+            "Faiss range preflight output must equal the v0.4 "
+            "qualification path"
         )
     faiss_config = _faiss_config_from_neighbor_protocol(protocol)
     expected_faiss_config = {
@@ -413,8 +463,16 @@ def _run_faiss_range_preflight(args: argparse.Namespace) -> int:
             "Faiss range preflight radius differs from the fixed "
             "qualification"
         )
-    output_path = Path(os.path.abspath(args.output))
     receipt = run_faiss_hnsw_qualification(output_path)
+    receipt_payload = receipt.to_dict()
+    if (
+        receipt_payload.get("schema_version")
+        != ACTIVE_FAISS_QUALIFICATION_SCHEMA_VERSION
+    ):
+        raise ValueError(
+            "Faiss range preflight receipt schema differs from the "
+            "v0.4 protocol"
+        )
     expected_search = {
         "m": faiss_config.m,
         "ef_construction": faiss_config.ef_construction,
@@ -840,13 +898,19 @@ def _run_candidates(args: argparse.Namespace) -> int:
                 "neighbor protocol does not match "
                 "--expected-neighbor-protocol-sha256"
             )
+        if neighbor_document.get("schema_version") == (
+            OBSERVATION_ONLY_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+        ):
+            raise ValueError(
+                "neighbor protocol v0.3 is observation-only and cannot "
+                "authorize candidate persistence; use v0.4"
+            )
         faiss_config = _faiss_config_from_neighbor_protocol(
             neighbor_document
         )
         qualification_receipt = None
-        if (
-            neighbor_document.get("schema_version")
-            == "spirallens.neighbor-audit-protocol.v0.3"
+        if neighbor_document.get("schema_version") in (
+            QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS
         ):
             from spirallens.neighbors.faiss_qualification import (
                 load_faiss_hnsw_qualification_receipt,
@@ -995,21 +1059,27 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
     protocol_id = document.get("protocol_id")
     protocol_status = document.get("status")
     protocol_schema_version = document.get("schema_version")
-    qualified_protocol = (
-        protocol_schema_version
-        == "spirallens.neighbor-audit-protocol.v0.3"
+    qualified_protocol = protocol_schema_version in (
+        QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS
     )
     if (
         protocol_schema_version
         not in {
             "spirallens.neighbor-audit-protocol.v0.2",
-            "spirallens.neighbor-audit-protocol.v0.3",
+            *QUALIFIED_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSIONS,
         }
         or not isinstance(protocol_id, str)
         or protocol_status not in {"preregistered-draft", "frozen"}
     ):
         raise ValueError("neighbor audit protocol identity is invalid")
     validate_neighbor_protocol_static_contract(document)
+    if protocol_schema_version == (
+        OBSERVATION_ONLY_NEIGHBOR_AUDIT_PROTOCOL_SCHEMA_VERSION
+    ) and (protocol_status == "frozen" or not args.prepare_only):
+        raise ValueError(
+            "neighbor protocol v0.3 is observation-only and cannot "
+            "authorize a subject audit; use v0.4"
+        )
     if protocol_status != "frozen" and not args.prepare_only:
         raise ValueError(
             "subject neighbor audits require a frozen protocol; "
@@ -1739,7 +1809,7 @@ def _add_faiss_range_preflight_parser(subparsers: Any) -> None:
     parser.add_argument(
         "--expected-protocol-sha256",
         required=True,
-        help="required out-of-band digest for the v0.3 draft protocol",
+        help="required out-of-band digest for the v0.4 draft protocol",
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.set_defaults(handler=_run_faiss_range_preflight)

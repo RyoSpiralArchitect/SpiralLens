@@ -1,6 +1,6 @@
 # Neighbor Audit and Receipt Contract
 
-- **Status:** recall methodology frozen; v0.3 mechanism implemented, production preflight/receipt/freeze and one-shot outcome pending
+- **Status:** recall methodology frozen; v0.3 producer preserved, v0.4 consumer-safe preflight/receipt/freeze and one-shot outcome pending
 - **Backend:** legacy `spirallens.faiss-hnsw-range@0.1`; qualified native-call path `@0.2`
 - **Distribution:** `faiss-cpu==1.14.3`
 - **Artifact maturity:** experimental, pre-1.0
@@ -25,6 +25,11 @@ side of the API. It is not an operating-system sandbox against malicious local
 Python code or a hostile user with filesystem access. Custom Python backends
 may be audited experimentally, but current candidate persistence authorizes
 only the built-in `FaissHNSWBackend`.
+
+Receipt v0.2 also regenerates and validates its synthetic fixture in a fresh
+Faiss subprocess. The Torch-bearing parent does not resolve an OpenMP collision
+by setting `KMP_DUPLICATE_LIB_OK` or any equivalent unsafe environment
+workaround.
 
 Backend v0.2 separates the outer `query_batch_size=512` artifact batch from
 `range_call_batch_size=1`. Before each native call, the worker proves that its
@@ -57,9 +62,15 @@ relative-density macro, and in every required density-by-cosine-boundary joint
 cell across both cold rebuilds. Zero denominators remain null and required
 cells below frozen support minima are `insufficient`.
 
-This does not freeze or pass the Pythia execution. The tracked v0.3 Pythia
-protocol binds the methodology digest but remains `preregistered-draft`, with
-null atlas row/group and qualification-receipt bindings and promotion disabled.
+This does not freeze or pass the Pythia execution. The active tracked v0.4
+Pythia protocol binds the methodology digest and exact future qualification
+path but remains `preregistered-draft`, with null atlas row/group and receipt
+digests and promotion disabled. The published v0.3 protocol bytes remain
+preserved for static parsing and historical inspection only. Because the
+receipt-v0.1 bytes were never tracked and consumer binding was never
+established, v0.3 cannot authorize preflight, subject execution, or
+approximate-candidate persistence. The only active path is v0.4 with
+qualification receipt schema v0.2.
 
 ## 3. Production-shape native qualification
 
@@ -74,13 +85,22 @@ It also records the exact clean, live-pushed preflight commit and the
 before replacing its exclusive reservation with the receipt. The results must
 be byte-repeatable.
 
+One receipt-v0.1 producer run was observed to return `pass`. Its volatile
+artifact was lost during reboot before it could be tracked, and consumer
+binding was not established: prepare-only loading after Torch had entered the
+process exposed an OpenMP collision. This is not a failed retrieval audit or a
+subject `pass`, `fail`, or `insufficient` outcome. It does not authorize
+promotion and did not consume the subject one-shot. Receipt v0.2 is a distinct
+schema and output identity; it moves consumer fixture regeneration across the
+fresh-process boundary instead of weakening the runtime safety policy.
+
 ```bash
-DRAFT_SHA="$(shasum -a 256 protocols/pythia_neighbor_v0_3.yaml | awk '{print $1}')"
+DRAFT_SHA="$(shasum -a 256 protocols/pythia_neighbor_v0_4.yaml | awk '{print $1}')"
 
 spirallens faiss-range-preflight \
-  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --protocol protocols/pythia_neighbor_v0_4.yaml \
   --expected-protocol-sha256 "$DRAFT_SHA" \
-  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_1.json
+  --output protocols/pythia70_slot_only_001_layer0_faiss_range_qualification_v0_2.json
 ```
 
 This receipt qualifies retrieval plumbing only. It never authorizes candidate
@@ -127,7 +147,7 @@ audit results:
 spirallens neighbor-audit \
   --manifest runs/pythia70-full/manifest.json \
   --layer 0 \
-  --protocol protocols/pythia_neighbor_v0_3.yaml \
+  --protocol protocols/pythia_neighbor_v0_4.yaml \
   --prepare-only
 ```
 
@@ -167,8 +187,12 @@ That v0.2 worker terminated after the observed native
 `RangeSearchResult.do_allocation` exception, before any scientific outcome;
 this identifies the failure boundary, not a proven upstream root cause. Its one
 shot is consumed, its marker is retained, and it is not retried. The v0.3
-remediation must use a new backend version, qualification receipt, neighbor
-protocol, execution freeze, and output path.
+producer remediation introduced a new backend version and preregistered
+neighbor protocol. Its receipt-v0.1 producer pass was observed, but the later
+consumer boundary aborted before a frozen neighbor protocol or execution
+freeze was issued and produced no subject outcome. The active v0.4 successor
+therefore preserves backend version 0.2 while using a distinct receipt schema,
+qualification path, neighbor protocol, execution freeze, and subject output.
 
 Once such a future protocol has been reviewed and frozen:
 

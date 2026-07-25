@@ -148,7 +148,8 @@ Delivered:
   full-index/subset-query audit receipts and strict ledger replay;
 - a versioned one-query native range-call path and the mechanism for a
   subject-independent, production-shape, two-cold-process qualification
-  receipt (production preflight and receipt still pending);
+  receipt, plus a versioned fresh-subprocess consumer-validation contract
+  (the active receipt-v0.2 preflight is still pending);
 - CLI commands for calibration, atlas capture, neighbor-audit preparation and
   execution, native range preflight, and candidate extraction.
 
@@ -500,6 +501,13 @@ The standalone recall methodology is frozen at
 Step 5 is not complete: the tracked Pythia protocol remains
 `preregistered-draft`, retains null atlas row/group bindings, explicitly
 forbids full-vocabulary promotion, and has no Pythia full-vocabulary pass.
+One receipt-v0.1 producer run was observed to pass before its volatile artifact
+was lost during reboot, but consumer binding remained unestablished after an
+OpenMP collision in the Torch-bearing process. This was infrastructure
+observation only: no subject outcome was produced and the subject one-shot was
+not consumed. The active v0.4 draft requires receipt schema v0.2 at one exact
+path and uses fresh-subprocess consumer regeneration; it does not enable an
+unsafe duplicate-OpenMP environment workaround.
 After adversarial review, one concrete execution must bind those identities
 before the subject audit runs. The detailed contract lives in
 [Neighbor Audit and Receipt Contract](neighbor_audit.md).

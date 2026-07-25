@@ -24,8 +24,8 @@ def _load_faiss():
 
 
 def _validated_runtime_contract() -> dict[str, str]:
-    from spirallens.execution_freeze import (
-        current_worker_runtime_contract,
+    from spirallens.neighbors._faiss_runtime_worker import (
+        _local_worker_runtime_contract,
     )
 
     raw = os.environ.get(
@@ -51,7 +51,7 @@ def _validated_runtime_contract() -> dict[str, str]:
         )
     ):
         raise ValueError("Faiss worker runtime contract is invalid")
-    actual = current_worker_runtime_contract(
+    actual = _local_worker_runtime_contract(
         expected.get("execution_freeze_sha256")
     )
     if actual != expected:
@@ -453,6 +453,52 @@ def _run_preflight(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_fixture(args: argparse.Namespace) -> int:
+    if (
+        args.row_count <= 0
+        or args.hidden_size <= 0
+        or args.query_count <= 0
+        or args.query_count > args.row_count
+        or args.cluster_size <= 0
+        or args.row_count % args.cluster_size != 0
+    ):
+        raise ValueError("Faiss fixture shape is invalid")
+    cluster_count = args.row_count // args.cluster_size
+    generator = np.random.Generator(np.random.PCG64(args.fixture_seed))
+    centers = generator.standard_normal(
+        (cluster_count, args.hidden_size),
+        dtype=np.float32,
+    )
+    rows = np.repeat(centers, args.cluster_size, axis=0)
+    states_sha256 = _array_sha256(rows)
+    query_indices = np.arange(args.query_count, dtype=np.int64)
+    query_indices_sha256 = _array_sha256(query_indices)
+    faiss = _load_faiss()
+    faiss.omp_set_num_threads(1)
+    faiss.normalize_L2(rows)
+    _atomic_json(
+        args.output,
+        {
+            "fixture": {
+                "schema_version": args.fixture_schema_version,
+                "generator": (
+                    "numpy.pcg64.standard_normal.float32.cluster-repeat"
+                ),
+                "seed": args.fixture_seed,
+                "row_count": args.row_count,
+                "hidden_size": args.hidden_size,
+                "cluster_size": args.cluster_size,
+                "query_count": args.query_count,
+                "states_sha256": states_sha256,
+                "normalized_states_sha256": _array_sha256(rows),
+                "query_indices_sha256": query_indices_sha256,
+            },
+            "runtime": args.runtime_contract,
+        },
+    )
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest="command", required=True)
@@ -501,6 +547,16 @@ def _parser() -> argparse.ArgumentParser:
     preflight.add_argument("--max-native-call-hits", type=int, required=True)
     preflight.add_argument("--max-raw-hits", type=int, required=True)
     preflight.set_defaults(handler=_run_preflight)
+
+    fixture = commands.add_parser("fixture")
+    fixture.add_argument("--output", type=Path, required=True)
+    fixture.add_argument("--fixture-schema-version", required=True)
+    fixture.add_argument("--row-count", type=int, required=True)
+    fixture.add_argument("--hidden-size", type=int, required=True)
+    fixture.add_argument("--cluster-size", type=int, required=True)
+    fixture.add_argument("--query-count", type=int, required=True)
+    fixture.add_argument("--fixture-seed", type=int, required=True)
+    fixture.set_defaults(handler=_run_fixture)
     return parser
 
 

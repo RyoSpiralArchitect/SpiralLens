@@ -10,7 +10,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 import hashlib
-import importlib.util
 import json
 from numbers import Integral, Real
 import os
@@ -51,14 +50,6 @@ def _require_sha256(value: object, *, label: str) -> str:
     ):
         raise ValueError(f"{label} must be a lowercase SHA-256 digest")
     return value
-
-
-def _require_faiss_distribution() -> None:
-    if importlib.util.find_spec("faiss") is None:
-        raise ImportError(
-            "Faiss HNSW requires the optional ANN dependency; install "
-            "with `pip install 'spirallens[ann]'`"
-        )
 
 
 def _run_worker(
@@ -227,7 +218,6 @@ class FaissHNSWBackend:
         settings = config or FaissHNSWConfig()
         if not isinstance(settings, FaissHNSWConfig):
             raise TypeError("config must be a FaissHNSWConfig")
-        _require_faiss_distribution()
         _require_sha256(
             row_identity_sha256,
             label="row_identity_sha256",

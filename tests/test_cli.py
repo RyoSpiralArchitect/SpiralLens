@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -354,17 +355,22 @@ def test_neighbor_audit_prepare_only_owns_optional_output() -> None:
 
 
 def test_faiss_range_preflight_requires_out_of_band_protocol_digest(
-    tmp_path: Path,
     capsys,
 ) -> None:
     root = Path(__file__).resolve().parents[1]
-    output = tmp_path / "qualification.json"
+    output = (
+        root
+        / "protocols"
+        / "pythia70_slot_only_001_layer0_"
+        "faiss_range_qualification_v0_2.json"
+    )
+    output_before = output.read_bytes() if output.is_file() else None
 
     exit_code = main(
         [
             "faiss-range-preflight",
             "--protocol",
-            str(root / "protocols" / "pythia_neighbor_v0_3.yaml"),
+            str(root / "protocols" / "pythia_neighbor_v0_4.yaml"),
             "--expected-protocol-sha256",
             "0" * 64,
             "--output",
@@ -373,34 +379,52 @@ def test_faiss_range_preflight_requires_out_of_band_protocol_digest(
     )
 
     assert exit_code == 1
-    assert not output.exists()
+    output_after = output.read_bytes() if output.is_file() else None
+    assert output_after == output_before
     assert "does not match" in capsys.readouterr().err
 
 
-def test_faiss_range_preflight_preserves_output_symlink_checks(
+def test_faiss_range_preflight_requires_exact_v04_output(
     tmp_path: Path,
     capsys,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root = Path(__file__).resolve().parents[1]
-    protocol = root / "protocols" / "pythia_neighbor_v0_3.yaml"
-    real_parent = tmp_path / "real"
-    real_parent.mkdir()
-    linked_parent = tmp_path / "linked"
-    linked_parent.symlink_to(real_parent, target_is_directory=True)
-    import spirallens.neighbors.faiss_qualification as qualification_module
+    protocol = root / "protocols" / "pythia_neighbor_v0_4.yaml"
+    output = tmp_path / "qualification.json"
 
-    monkeypatch.setattr(
-        qualification_module,
-        "_pushed_source_contract",
-        lambda *args, **kwargs: {
-            "repository": (
-                "https://github.com/RyoSpiralArchitect/SpiralLens.git"
-            ),
-            "branch": "SpiralReality/pythia70-subject-audit-v03",
-            "implementation_commit": "a" * 40,
-            "spirallens_package_tree": "b" * 40,
-        },
+    exit_code = main(
+        [
+            "faiss-range-preflight",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            hashlib.sha256(protocol.read_bytes()).hexdigest(),
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert exit_code == 1
+    assert not output.exists()
+    assert "must equal the v0.4 qualification path" in (
+        capsys.readouterr().err
+    )
+
+
+def test_faiss_range_preflight_rejects_relocated_v04_protocol(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    source = root / "protocols" / "pythia_neighbor_v0_4.yaml"
+    copied_protocols = tmp_path / "copy" / "protocols"
+    copied_protocols.mkdir(parents=True)
+    protocol = copied_protocols / source.name
+    protocol.write_bytes(source.read_bytes())
+    output = (
+        copied_protocols
+        / "pythia70_slot_only_001_layer0_"
+        "faiss_range_qualification_v0_2.json"
     )
 
     exit_code = main(
@@ -411,13 +435,175 @@ def test_faiss_range_preflight_preserves_output_symlink_checks(
             "--expected-protocol-sha256",
             hashlib.sha256(protocol.read_bytes()).hexdigest(),
             "--output",
-            str(linked_parent / "qualification.json"),
+            str(output),
         ]
     )
 
     assert exit_code == 1
-    assert not (real_parent / "qualification.json").exists()
-    assert "directory chain is unsafe" in capsys.readouterr().err
+    assert not output.exists()
+    assert "canonical tracked v0.4 protocol path" in (
+        capsys.readouterr().err
+    )
+
+
+def test_faiss_range_preflight_rejects_published_v03(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = root / "protocols" / "pythia_neighbor_v0_3.yaml"
+    output = tmp_path / "qualification.json"
+
+    exit_code = main(
+        [
+            "faiss-range-preflight",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            hashlib.sha256(protocol.read_bytes()).hexdigest(),
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert exit_code == 1
+    assert not output.exists()
+    assert "requires the v0.4 preregistered draft" in (
+        capsys.readouterr().err
+    )
+
+
+def test_neighbor_audit_rejects_observation_only_v03_subject_use(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = root / "protocols" / "pythia_neighbor_v0_3.yaml"
+
+    exit_code = main(
+        [
+            "neighbor-audit",
+            "--manifest",
+            str(tmp_path / "unused-atlas"),
+            "--layer",
+            "0",
+            "--protocol",
+            str(protocol),
+            "--output",
+            str(tmp_path / "audit.json"),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "v0.3 is observation-only" in capsys.readouterr().err
+
+
+def test_candidates_rejects_observation_only_v03_persistence(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    candidate = root / "protocols" / "pythia_candidate_v0_2.yaml"
+    neighbor = root / "protocols" / "pythia_neighbor_v0_3.yaml"
+
+    exit_code = main(
+        [
+            "candidates",
+            "--manifest",
+            str(tmp_path / "unused-manifest.json"),
+            "--output",
+            str(tmp_path / "candidates.jsonl"),
+            "--protocol",
+            str(candidate),
+            "--layers",
+            "0",
+            "--neighbor-backend",
+            "faiss-hnsw",
+            "--neighbor-audit",
+            str(tmp_path / "unused-audit.json"),
+            "--neighbor-audit-protocol",
+            str(neighbor),
+            "--expected-audit-sha256",
+            "a" * 64,
+            "--expected-neighbor-protocol-sha256",
+            hashlib.sha256(neighbor.read_bytes()).hexdigest(),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "v0.3 is observation-only" in capsys.readouterr().err
+    assert not (tmp_path / "candidates.jsonl").exists()
+
+
+def test_faiss_range_preflight_accepts_only_pinned_v04_identity(
+    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = root / "protocols" / "pythia_neighbor_v0_4.yaml"
+    output = (
+        root
+        / "protocols"
+        / "pythia70_slot_only_001_layer0_"
+        "faiss_range_qualification_v0_2.json"
+    )
+    captured: dict[str, Path] = {}
+    search = {
+        "m": 32,
+        "ef_construction": 200,
+        "ef_search": 256,
+        "seed": 1729,
+        "thread_count": 1,
+        "query_batch_size": 512,
+        "range_call_batch_size": 1,
+        "cosine_min": 0.995,
+        "score_margin": 0.0001,
+        "radius": 0.9948999285697937,
+        "max_native_call_hits": 50_304,
+        "max_raw_hits": 20_000_000,
+    }
+    fake_receipt = SimpleNamespace(
+        status="pass",
+        sha256="a" * 64,
+        fixture_sha256="b" * 64,
+        backend_version="0.2",
+        cold_process_runs=({}, {}),
+        implementation_commit="c" * 40,
+        spirallens_package_tree="d" * 40,
+        search=search,
+        to_dict=lambda: {
+            "schema_version": (
+                "spirallens.faiss-hnsw-range-qualification.v0.2"
+            )
+        },
+    )
+    import spirallens.neighbors.faiss_qualification as qualification_module
+
+    def fake_run(path: Path):
+        captured["path"] = path
+        return fake_receipt
+
+    monkeypatch.setattr(
+        qualification_module,
+        "run_faiss_hnsw_qualification",
+        fake_run,
+    )
+
+    exit_code = main(
+        [
+            "faiss-range-preflight",
+            "--protocol",
+            str(protocol),
+            "--expected-protocol-sha256",
+            hashlib.sha256(protocol.read_bytes()).hexdigest(),
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["path"] == output
+    assert json.loads(capsys.readouterr().out)["status"] == "pass"
 
 
 def test_frozen_neighbor_audit_refuses_overwrite(
