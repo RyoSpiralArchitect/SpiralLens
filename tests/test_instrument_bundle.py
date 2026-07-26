@@ -1266,6 +1266,32 @@ def test_loader_classifies_post_validation_member_read_failure(
     assert caught.value.code == "bundle_member_unreadable"
 
 
+@pytest.mark.parametrize(
+    "loader_name",
+    [
+        "load_instrument_artifact",
+        "load_hypothesis_registry",
+        "load_context_bank",
+    ],
+)
+def test_loader_preserves_missing_classification_at_member_read_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    loader_name: str,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def disappear(*args: object, **kwargs: object) -> object:
+        raise FileNotFoundError("simulated member disappearance")
+
+    monkeypatch.setattr(bundle_loader_module, loader_name, disappear)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_missing"
+
+
 def test_loader_does_not_launder_unexpected_member_loader_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1684,6 +1710,27 @@ def test_loader_classifies_post_validation_payload_read_failure(
         load_instrument_bundle(fixture.manifest_path)
 
     assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_preserves_missing_classification_at_payload_read_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def disappear(*args: object, **kwargs: object) -> tuple[int, str]:
+        raise FileNotFoundError("simulated payload disappearance")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_stream_payload_identity",
+        disappear,
+    )
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_missing"
 
 
 def test_loader_does_not_launder_unexpected_payload_reader_failure(

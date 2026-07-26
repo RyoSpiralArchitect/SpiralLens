@@ -341,6 +341,11 @@ def _load_instrument_entry(
             "instrument_member_invalid",
             f"{entry.path!r} is not the declared canonical instrument artifact",
         ) from error
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
+        ) from error
     except OSError as error:
         raise InstrumentBundleResolutionError(
             "bundle_member_unreadable",
@@ -386,6 +391,11 @@ def _load_registry_entry(
             "registry_member_invalid",
             f"{entry.path!r} is not the declared strict registry",
         ) from error
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
+        ) from error
     except OSError as error:
         raise InstrumentBundleResolutionError(
             "bundle_member_unreadable",
@@ -428,6 +438,11 @@ def _load_context_entry(
         raise InstrumentBundleSchemaError(
             "context_bank_member_invalid",
             f"{entry.path!r} is not the declared role-bound context bank",
+        ) from error
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
         ) from error
     except OSError as error:
         raise InstrumentBundleResolutionError(
@@ -792,6 +807,11 @@ def load_instrument_bundle(
                 payload_path,
                 expected_byte_length=entry.reference.byte_length,
             )
+        except FileNotFoundError as error:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_missing",
+                f"{entry.path!r} disappeared before it could be read",
+            ) from error
         except OSError as error:
             raise InstrumentBundleResolutionError(
                 "bundle_member_unreadable",
