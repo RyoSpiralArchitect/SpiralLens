@@ -590,9 +590,11 @@ below:
 1. adopt and review the Fundamental Frame, branched claim taxonomy, and
    historical interpretation ledger;
 2. register competing field hypotheses F0–F4 with transformation laws, fit
-   scopes, and claim ceilings;
+   scopes, and claim ceilings — implemented as the strict, outcome-excluded P0
+   registry;
 3. define canonical substrate, graph, support, geometry-field,
-   order-parameter, connection, discriminated loop, and calibration artifacts;
+   order-parameter, connection, discriminated loop, and calibration artifacts
+   — implemented as metadata-only experimental v0.1 schemas;
 4. build independent high-dimensional representation-shaped phantom families;
 5. implement deterministic mutual-kNN, fixed-radius, and shared-neighbor graph
    constructors plus diversity receipts for field, cycle, and any explicit
@@ -610,8 +612,10 @@ below:
 11. keep future discovery and confirmation roles separate and forbid
     Pythia-70M outcomes from selecting Pythia-160M choices.
 
-The current work stops after documentation and preparation design. It performs
-no new subject field estimation, graph construction, or outcome observation.
+The current work has advanced from documentation into metadata-contract
+implementation. It still performs no estimator execution, synthetic
+qualification, subject field estimation, graph construction, or outcome
+observation.
 The detailed preparation gates are in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
 

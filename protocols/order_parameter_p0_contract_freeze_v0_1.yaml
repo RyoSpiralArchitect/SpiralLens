@@ -1,0 +1,155 @@
+# This record freezes the reviewed P0 contract surface, not an execution.
+schema_version: spirallens.p0-contract-freeze.v0.1
+freeze_id: order-parameter-p0-contract-v0.1
+status: frozen_preparation
+freeze_kind: contract_surface_only
+issued_at_utc: "2026-07-25T17:30:33Z"
+not_an_execution_freeze: true
+
+source:
+  repository: https://github.com/RyoSpiralArchitect/SpiralLens
+  pull_request: https://github.com/RyoSpiralArchitect/SpiralLens/pull/2
+  branch: SpiralReality/p0-registry-artifact-schemas
+  reviewed_implementation_commit: cfb304f06806865a0b38cf8200fd0ff5b954754f
+  reviewed_implementation_parent: deac6355e4c0022ee3be4b2d07a74869e66b021c
+  pull_request_base_commit: eb8571d265ecfe89a7688e949e380382a61054aa
+  reviewed_repository_tree_sha1: 86f15f47e62120a43e9184e09056caf90423d3e0
+  instrument_contracts_tree_sha1: c35850a796f2e3ae1067374a5f1c271d534b62b5
+  instrument_contracts_listing_sha256: 4ede0596d7d46df74b32186b2ea3eefa716e23773148155d764978f11ab352cc
+  repository_listing_sha256: 4511e858559383edaf4905e919f062723ede7f662b004ac4190c6e23ba52e612
+  reviewed_worktree_clean: true
+  record_is_followup_to_reviewed_commit: true
+
+chronology:
+  historical_cutoff_commit: 23480d16f86f4e5616fa77c5b7ff93b2d6a5469d
+  historical_outcome_integration_commit: 403638bee75d87010b5f897392feb126c3911148
+  historical_outcome_record:
+    path: protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml
+    source_sha256: 7ac964b55fe226a1b2c4deaf757c96b14d5a1fe36f42363ca739dfe50fab44f5
+  historical_terminal_artifact:
+    path: runs/pythia70-full-slot-only-001/layer-0-neighbor-audit-v0-4.json
+    source_sha256: eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06
+  historical_cutoff_is_ancestor_of_outcome_integration: true
+  reviewed_commit_descends_from_outcome_integration: true
+  reviewed_commit_descends_from_pull_request_base: true
+  registry_postdates_prior_outcome: true
+  prior_outcome_allowed_for_selection: false
+
+registry:
+  path: protocols/order_parameter_hypothesis_registry_v0_1.yaml
+  source_sha256: 8a953bf7ee0772ffa6d6facf8a6088f06cc3ae9cd39b4a7f624c8caa4bcfbd07
+  canonical_sha256: 68d2869b87403f65b554b931b363446269e543661b598478233d536cb2fc9a93
+  schema_version: spirallens.hypothesis-registry.v0.1
+  registry_id: p0_order_parameter_hypotheses_v0_1
+  real_model_claim_state: level_0
+  winner_selected: false
+  primary_integer_output_authorized: false
+  subject_data_access_authorized: false
+
+choice_closure:
+  hypothesis_count: 5
+  calibration_active_family_counts:
+    f0_support: 7
+    f1_projector_connection: 7
+    f2_local_covariant_section: 11
+    f3_global_plane_section: 8
+    f4_spin_two_anisotropy: 10
+  fixed_family_counts:
+    f0_support: 0
+    f1_projector_connection: 0
+    f2_local_covariant_section: 0
+    f3_global_plane_section: 3
+    f4_spin_two_anisotropy: 1
+  exact_fixed_resolved_unresolved_partition_required: true
+  invented_or_missing_choice_receipts_rejected: true
+  advanced_hypothesis_requires_every_active_family_resolved: true
+  selected_claim_ceiling_requires_an_advanced_supporting_branch: true
+  level_2t_requires_advanced_resolved_f2_or_f4: true
+  primary_integer_authorization_requires_level_2t_and_advanced_resolved_f2_or_f4: true
+
+validation:
+  environment:
+    python: 3.13.13
+    pytest: 9.0.3
+    ruff: 0.15.21
+    operating_system: Darwin 25.2.0 arm64
+    git: 2.50.1 Apple Git-155
+  focused_contract_and_cli_tests:
+    command: >-
+      PYTHONPATH=src pytest -q
+      tests/test_instrument_contract_common.py
+      tests/test_hypothesis_registry.py
+      tests/test_instrument_artifacts.py
+      tests/test_cli.py
+    passed: 133
+    failed: 0
+  full_test_suite:
+    command: PYTHONPATH=src python3 -m pytest -q
+    passed: 371
+    failed: 0
+  ruff:
+    command: ruff check .
+    passed: true
+  diff_check:
+    command: git diff --check
+    passed: true
+  tracked_registry_cli_validation:
+    passed: true
+  choice_receipt_omission_matrix:
+    fixed_receipts: 4
+    resolved_receipts: 11
+    unresolved_receipts: 32
+    attempted: 47
+    rejected: 47
+  advance_subset_claim_ceiling_matrix:
+    attempted: 320
+    errors: 0
+
+review:
+  independent_stateful_review:
+    actionable_p0_findings: 0
+    actionable_p1_findings: 0
+  fresh_disk_blinded_review:
+    actionable_p0_findings: 0
+    actionable_p1_findings: 0
+    context_files_hidden: 0
+    thaw_succeeded: true
+  github_codex_review:
+    request_comment_id: 5079461003
+    result_comment_id: 5079474262
+    reviewed_commit: cfb304f06806865a0b38cf8200fd0ff5b954754f
+    result: no_major_issues
+    unresolved_review_threads: 0
+
+authorization:
+  estimator_execution_authorized: false
+  graph_construction_authorized: false
+  payload_access_authorized: false
+  model_access_authorized: false
+  subject_data_access_authorized: false
+  calibration_execution_authorized: false
+  primary_integer_output_authorized: false
+  subject_protocol_preparation_authorized: false
+  subject_protocol_execution_authorized: false
+
+claim_boundary:
+  establishes:
+    - reviewed_implementation_commit_identity
+    - tracked_registry_validity_at_the_reviewed_commit
+    - single_manifest_typed_and_canonical_behavior
+    - exact_p0_choice_closure_rules
+    - recorded_validation_and_review_results
+  does_not_establish:
+    - reference_or_payload_existence_or_digest_resolution
+    - actual_calibration_execution_or_empirical_choice
+    - cross_manifest_or_bundle_consistency
+    - cell_completeness
+    - scientific_topological_or_semantic_validity
+    - a_selected_winner
+    - current_integer_output_authorization
+    - subject_data_access
+
+self_binding:
+  self_sha256_embedded: false
+  reason: no_self_referential_digest
+  record_is_followup_to_reviewed_commit: true

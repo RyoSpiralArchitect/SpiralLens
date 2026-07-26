@@ -1,0 +1,607 @@
+# Post-outcome chronology is recorded; no observed outcome value is present.
+schema_version: spirallens.hypothesis-registry.v0.1
+registry_id: p0_order_parameter_hypotheses_v0_1
+status: preparation
+policy_version: spirallens.p0-registry-policy.v0.1
+historical_boundary:
+  historical_snapshot_id: pythia70_slot_only_001_layer0_subject_audit_v0_4
+  historical_cutoff_commit: 23480d16f86f4e5616fa77c5b7ff93b2d6a5469d
+  historical_outcome_integration_commit: 403638bee75d87010b5f897392feb126c3911148
+  historical_outcome_record_path: protocols/pythia70_slot_only_001_layer0_subject_audit_v0_4_outcome_observation.yaml
+  historical_outcome_record_source_sha256: 7ac964b55fe226a1b2c4deaf757c96b14d5a1fe36f42363ca739dfe50fab44f5
+  historical_outcome_artifact_source_sha256: eaad9dfd6652e854570edc8aaa5282d239d3c218a924a4498d480539bb02ee06
+  registry_postdates_prior_outcome: true
+  prior_outcome_allowed_for_selection: false
+  allowed_selection_evidence:
+    - independent_synthetic_calibration_selection
+    - mathematical_coherence
+    - prespecified_nuisance_coverage
+  forbidden_selection_inputs:
+    - prior_subject_candidate_values
+    - prior_subject_status
+    - prior_subject_support_counts
+    - retrospective_subject_analyses
+real_model_claim_state: level_0
+winner_selected: false
+primary_integer_output_authorized: false
+subject_data_access_authorized: false
+hypotheses:
+  - hypothesis_id: f0_support
+    branch: support
+    current_claim_level: level_0
+    claim_ceiling: level_1g
+    input_tensor:
+      family_id: input_tensor
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - accounted_response
+        - raw_state
+    observation_axis:
+      family_id: observation_axis
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - layer_index
+        - token_position
+        - training_step
+    centering_rule:
+      family_id: centering_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - global_centering
+        - local_centering
+        - no_centering
+    residual_rule:
+      family_id: residual_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - architecture_accounted_response
+        - centered_state
+        - raw_state
+    architecture_accounting_rule:
+      family_id: architecture_accounting_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - explicit_component_accounting
+        - identity_no_subtraction
+    estimator:
+      family_id: estimator
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - entropy_effective_rank
+        - local_covariance_eigenvalues
+        - spectral_gap
+        - top_two_concentration
+    fit_role:
+      family_id: fit_role
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - calibration_selection
+        - instrument_dev
+    domain_binding: vertex_neighborhood
+    substrate_binding: representation_shaped_discrete_substrate
+    rank_convention: not_applicable
+    gauge_law: basis_invariant_scalar_diagnostic
+    target_manifold: nonnegative_scalar_diagnostics
+    charge_group: none
+    amplitude_quantity: not_applicable
+    support_quantities:
+      - local_neighborhood_count
+      - local_weight_mass
+    identifiability_quantities:
+      - covariance_rank_stability
+      - spectrum_resolution
+    interpolation_rule:
+      family_id: interpolation_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    lift_rule:
+      family_id: lift_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    trivialization_rule:
+      family_id: trivialization_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    reference_rule:
+      family_id: reference_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    edge_connection_rule: not_applicable
+    allowed_observables:
+      - support_diagnostic
+    forbidden_labels:
+      - defect
+      - phase
+      - winding
+    required_controls:
+      - density_control
+      - neighborhood_support_control
+    winding_prerequisites: []
+    failure_reasons:
+      - insufficient_support
+      - invalid_accounting
+      - unresolved_spectrum
+    integer_output_authorized: false
+
+  - hypothesis_id: f1_projector_connection
+    branch: geometry
+    current_claim_level: level_0
+    claim_ceiling: level_2g
+    input_tensor:
+      family_id: input_tensor
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - accounted_response
+        - raw_state
+    observation_axis:
+      family_id: observation_axis
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - layer_index
+        - token_position
+        - training_step
+    centering_rule:
+      family_id: centering_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - global_centering
+        - local_centering
+        - no_centering
+    residual_rule:
+      family_id: residual_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - architecture_accounted_response
+        - centered_state
+        - raw_state
+    architecture_accounting_rule:
+      family_id: architecture_accounting_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - explicit_component_accounting
+        - identity_no_subtraction
+    estimator:
+      family_id: estimator
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - local_rank_two_projector
+        - weighted_rank_two_projector
+    fit_role:
+      family_id: fit_role
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - calibration_selection
+        - instrument_dev
+    domain_binding: vertex_neighborhood
+    substrate_binding: representation_shaped_discrete_substrate
+    rank_convention: rank_two
+    gauge_law: rank_two_projector_local_o2_frame
+    target_manifold: grassmannian_rank_two
+    charge_group: none
+    amplitude_quantity: not_applicable
+    support_quantities:
+      - edge_support
+      - local_neighborhood_count
+    identifiability_quantities:
+      - edge_coherence
+      - lambda2_lambda3_gap
+      - subspace_overlap
+    interpolation_rule:
+      family_id: interpolation_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    lift_rule:
+      family_id: lift_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    trivialization_rule:
+      family_id: trivialization_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    reference_rule:
+      family_id: reference_rule
+      resolution: not_applicable
+      selected_id: null
+      candidate_ids: []
+    edge_connection_rule: procrustes_links_required
+    allowed_observables:
+      - continuous_connection
+      - continuous_holonomy
+      - principal_angle_coherence
+      - projector_field
+    forbidden_labels:
+      - defect
+      - integer_charge_from_matrix_holonomy
+    required_controls:
+      - ambient_basis_control
+      - edge_coherence_control
+      - rank_identifiability_control
+    winding_prerequisites: []
+    failure_reasons:
+      - disconnected_support
+      - insufficient_support
+      - low_subspace_overlap
+      - unresolved_lambda2_lambda3_gap
+    integer_output_authorized: false
+
+  - hypothesis_id: f2_local_covariant_section
+    branch: defect
+    current_claim_level: level_0
+    claim_ceiling: level_2t
+    input_tensor:
+      family_id: input_tensor
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - accounted_response
+        - raw_state
+    observation_axis:
+      family_id: observation_axis
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - layer_index
+        - token_position
+        - training_step
+    centering_rule:
+      family_id: centering_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - global_centering
+        - local_centering
+        - no_centering
+    residual_rule:
+      family_id: residual_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - architecture_accounted_response
+        - centered_state
+        - raw_state
+    architecture_accounting_rule:
+      family_id: architecture_accounting_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - explicit_component_accounting
+        - identity_no_subtraction
+    estimator:
+      family_id: estimator
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - cross_fitted_local_frame
+        - weighted_local_frame
+    fit_role:
+      family_id: fit_role
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - calibration_selection
+        - instrument_dev
+    domain_binding: vertexwise_local_coordinates
+    substrate_binding: representation_shaped_discrete_substrate
+    rank_convention: rank_two
+    gauge_law: local_o2_covariant_two_channel_section
+    target_manifold: gauge_covariant_two_channel_section
+    charge_group: conditional_integer_z
+    amplitude_quantity: section_norm
+    support_quantities:
+      - edge_support
+      - loop_support
+    identifiability_quantities:
+      - frame_overlap
+      - orientation
+      - spectral_gap
+    interpolation_rule:
+      family_id: interpolation_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - connection_transport_interpolation
+        - piecewise_geodesic_interpolation
+    lift_rule:
+      family_id: lift_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - connection_corrected_lift
+        - global_trivialization_lift
+    trivialization_rule:
+      family_id: trivialization_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - frozen_global_trivialization
+        - local_frame_with_connection
+    reference_rule:
+      family_id: reference_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - connection_defined_reference
+        - frozen_global_reference
+    edge_connection_rule: required_for_vertex_local_coordinates
+    allowed_observables:
+      - conditional_sampled_winding
+      - continuous_connection
+      - gauge_covariant_section
+      - section_amplitude
+    forbidden_labels:
+      - integer_without_eligibility_gates
+      - matrix_holonomy_as_integer_charge
+    required_controls:
+      - branch_control
+      - gauge_metamorph_control
+      - sampling_control
+    winding_prerequisites:
+      - branch_gate_pass
+      - connection_gate_pass
+      - global_trivialization_reference_or_proven_connection_corrected_lift
+      - loop_section_nonzero
+      - orientable_bundle
+      - sampling_gate_pass
+    failure_reasons:
+      - branch_alias
+      - connection_gate_failed
+      - loop_section_zero
+      - non_orientable_bundle
+      - sampling_gate_failed
+    integer_output_authorized: false
+
+  - hypothesis_id: f3_global_plane_section
+    branch: defect
+    current_claim_level: level_0
+    claim_ceiling: level_1d
+    input_tensor:
+      family_id: input_tensor
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - accounted_response
+        - raw_state
+    observation_axis:
+      family_id: observation_axis
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - layer_index
+        - token_position
+        - training_step
+    centering_rule:
+      family_id: centering_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - global_centering
+        - local_centering
+        - no_centering
+    residual_rule:
+      family_id: residual_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - architecture_accounted_response
+        - centered_state
+        - raw_state
+    architecture_accounting_rule:
+      family_id: architecture_accounting_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - explicit_component_accounting
+        - identity_no_subtraction
+    estimator:
+      family_id: estimator
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - fit_split_global_plane
+        - predeclared_fixed_plane
+    fit_role:
+      family_id: fit_role
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - calibration_selection
+        - instrument_dev
+    domain_binding: fit_split_global_coordinates
+    substrate_binding: representation_shaped_discrete_substrate
+    rank_convention: oriented_two_channel_global_plane
+    gauge_law: projection_dependent_global_plane_coordinates
+    target_manifold: oriented_global_plane_section
+    charge_group: projection_dependent_candidate
+    amplitude_quantity: projected_section_norm
+    support_quantities:
+      - fit_split_support
+      - loop_support
+    identifiability_quantities:
+      - held_out_projection_stability
+      - plane_orientation_stability
+    interpolation_rule:
+      family_id: interpolation_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - piecewise_linear_projection
+        - projection_geodesic
+    lift_rule:
+      family_id: lift_rule
+      resolution: fixed_by_hypothesis
+      selected_id: global_plane_direct_lift
+      candidate_ids: []
+    trivialization_rule:
+      family_id: trivialization_rule
+      resolution: fixed_by_hypothesis
+      selected_id: global_or_fixed_plane_trivialization
+      candidate_ids: []
+    reference_rule:
+      family_id: reference_rule
+      resolution: fixed_by_hypothesis
+      selected_id: fit_split_orientation_reference
+      candidate_ids: []
+    edge_connection_rule: global_coordinates_no_local_edge_connection
+    allowed_observables:
+      - exploratory_sampled_winding_after_bound_field_observation
+      - projected_section
+      - section_amplitude
+    forbidden_labels:
+      - basis_invariant_charge
+      - level_2t_without_new_contract
+    required_controls:
+      - ambient_basis_control
+      - fit_leakage_control
+      - held_out_projection_control
+      - random_plane_ensemble_control
+      - reflection_control
+    winding_prerequisites:
+      - bound_replayed_field_observation
+      - loop_section_nonzero
+      - sampling_gate_pass
+    failure_reasons:
+      - fit_leakage_detected
+      - held_out_projection_failed
+      - loop_section_zero
+      - projection_instability
+      - sampling_gate_failed
+    integer_output_authorized: false
+
+  - hypothesis_id: f4_spin_two_anisotropy
+    branch: defect
+    current_claim_level: level_0
+    claim_ceiling: level_2t
+    input_tensor:
+      family_id: input_tensor
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - accounted_response
+        - raw_state
+    observation_axis:
+      family_id: observation_axis
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - layer_index
+        - token_position
+        - training_step
+    centering_rule:
+      family_id: centering_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - global_centering
+        - local_centering
+        - no_centering
+    residual_rule:
+      family_id: residual_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - architecture_accounted_response
+        - centered_state
+        - raw_state
+    architecture_accounting_rule:
+      family_id: architecture_accounting_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - explicit_component_accounting
+        - identity_no_subtraction
+    estimator:
+      family_id: estimator
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - local_traceless_tensor
+        - weighted_traceless_tensor
+    fit_role:
+      family_id: fit_role
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - calibration_selection
+        - instrument_dev
+    domain_binding: in_plane_symmetric_tensor
+    substrate_binding: representation_shaped_discrete_substrate
+    rank_convention: in_plane_traceless_symmetric_tensor
+    gauge_law: spin_two_doubled_angle
+    target_manifold: director_like_complex_section
+    charge_group: director_charge_convention
+    amplitude_quantity: anisotropy_amplitude
+    support_quantities:
+      - in_plane_tensor_support
+      - loop_support
+    identifiability_quantities:
+      - in_plane_anisotropy_gap
+      - reflection_behavior
+    interpolation_rule:
+      family_id: interpolation_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - doubled_angle_geodesic
+        - piecewise_director
+    lift_rule:
+      family_id: lift_rule
+      resolution: fixed_by_hypothesis
+      selected_id: spin_two_doubled_angle_lift
+      candidate_ids: []
+    trivialization_rule:
+      family_id: trivialization_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - director_bundle_trivialization
+        - spin_two_connection_trivialization
+    reference_rule:
+      family_id: reference_rule
+      resolution: calibration_selection
+      selected_id: null
+      candidate_ids:
+        - doubled_angle_reference
+        - reflection_accounted_reference
+    edge_connection_rule: spin_two_connection_required
+    allowed_observables:
+      - anisotropy_amplitude
+      - conditional_director_winding
+      - doubled_angle_direction
+    forbidden_labels:
+      - ordinary_vector_charge_convention
+      - undoubled_angle_direction
+    required_controls:
+      - conjugation_control
+      - reflection_control
+      - spin_two_gauge_control
+    winding_prerequisites:
+      - director_charge_convention_frozen
+      - loop_anisotropy_nonzero
+      - sampling_gate_pass
+    failure_reasons:
+      - anisotropy_zero_on_loop
+      - director_reference_unresolved
+      - reflection_convention_failed
+      - sampling_gate_failed
+    integer_output_authorized: false

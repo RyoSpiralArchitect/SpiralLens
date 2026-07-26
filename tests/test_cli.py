@@ -131,6 +131,154 @@ def test_context_bank_cli_rejects_role_mismatch(capsys) -> None:
     assert "not in explicitly allowed roles" in capsys.readouterr().err
 
 
+def test_hypothesis_registry_cli_validates_p0_without_subject_access(
+    capsys,
+) -> None:
+    repository_root = Path(__file__).resolve().parents[1]
+    registry_path = (
+        repository_root
+        / "protocols/order_parameter_hypothesis_registry_v0_1.yaml"
+    )
+
+    exit_code = main(
+        [
+            "hypothesis-registry",
+            "validate",
+            "--path",
+            str(registry_path),
+        ]
+    )
+
+    assert exit_code == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "valid"
+    assert summary["hypotheses"] == 5
+    assert summary["hypothesis_ids"] == [
+        "f0_support",
+        "f1_projector_connection",
+        "f2_local_covariant_section",
+        "f3_global_plane_section",
+        "f4_spin_two_anisotropy",
+    ]
+    assert summary["real_model_claim_state"] == "level_0"
+    assert summary["winner_selected"] is False
+    assert summary["primary_integer_output_authorized"] is False
+    assert summary["subject_data_access_authorized"] is False
+
+
+def test_hypothesis_registry_cli_rejects_wrong_expected_digest(
+    capsys,
+) -> None:
+    repository_root = Path(__file__).resolve().parents[1]
+    registry_path = (
+        repository_root
+        / "protocols/order_parameter_hypothesis_registry_v0_1.yaml"
+    )
+
+    exit_code = main(
+        [
+            "hypothesis-registry",
+            "validate",
+            "--path",
+            str(registry_path),
+            "--expected-canonical-sha256",
+            "0" * 64,
+        ]
+    )
+
+    assert exit_code == 1
+    assert "canonical SHA-256" in capsys.readouterr().err
+
+
+def test_instrument_artifact_cli_validates_metadata_without_payload_access(
+    tmp_path,
+    capsys,
+) -> None:
+    from spirallens.instrument_contracts import (
+        ArtifactRef,
+        ArtifactType,
+        FitRole,
+        GraphConstructionSpec,
+        ResolutionState,
+        RuleChoice,
+    )
+
+    artifact = GraphConstructionSpec(
+        artifact_id="graph-spec-cli-fixture",
+        substrate=ArtifactRef(
+            artifact_type=ArtifactType.SUBSTRATE_BINDING,
+            schema_version="spirallens.instrument.substrate-binding.v0.1",
+            artifact_id="substrate-cli-fixture",
+            canonical_sha256="a" * 64,
+        ),
+        purpose="field_estimation",
+        family=RuleChoice(
+            family_id="graph_family",
+            resolution=ResolutionState.FIXED_BY_HYPOTHESIS,
+            selected_id="mutual_knn",
+        ),
+        metric=RuleChoice(
+            family_id="graph_metric",
+            resolution=ResolutionState.FIXED_BY_HYPOTHESIS,
+            selected_id="cosine",
+        ),
+        scale=RuleChoice(
+            family_id="graph_scale",
+            resolution=ResolutionState.CALIBRATION_SELECTION,
+            candidate_ids=("scale_a", "scale_b"),
+        ),
+        constructor_id="mutual_knn_v0_1",
+        deterministic_tie_policy="row_identity_ascending",
+        allowed_role=FitRole.INSTRUMENT_DEV,
+    )
+    path = tmp_path / "graph-spec.json"
+    path.write_bytes(artifact.canonical_bytes)
+
+    exit_code = main(
+        [
+            "instrument-artifact",
+            "validate",
+            "--path",
+            str(path),
+            "--expected-source-sha256",
+            artifact.canonical_sha256,
+            "--expected-canonical-sha256",
+            artifact.canonical_sha256,
+        ]
+    )
+
+    assert exit_code == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "valid"
+    assert summary["artifact_type"] == "graph_construction_spec"
+    assert summary["artifact_id"] == "graph-spec-cli-fixture"
+    assert summary["payloads_dereferenced"] is False
+    assert summary["subject_data_accessed"] is False
+    assert summary["validation_scope"] == "single_manifest"
+    assert summary["references_resolved"] is False
+    assert summary["bundle_validated"] is False
+
+
+def test_instrument_artifact_cli_rejects_noncanonical_bytes(
+    tmp_path,
+    capsys,
+) -> None:
+    path = tmp_path / "artifact.json"
+    path.write_bytes(b'{"artifact_type":"unknown"}\n')
+
+    exit_code = main(
+        [
+            "instrument-artifact",
+            "validate",
+            "--path",
+            str(path),
+        ]
+    )
+
+    assert exit_code == 1
+    assert "not canonical JSON" in capsys.readouterr().err
+
+
 def test_atlas_cli_binds_context_bank_without_model_download(
     tmp_path,
     capsys,

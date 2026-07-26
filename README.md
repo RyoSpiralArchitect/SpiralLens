@@ -44,6 +44,7 @@ Read these documents before adding a field, graph, loop, or claim:
 - [Experiment Interpretation Ledger](docs/EXPERIMENT_INTERPRETATION_LEDGER.md)
 - [Branched Claim Taxonomy](docs/claim_ladder.md)
 - [Next Experiment Preparation](docs/NEXT_EXPERIMENT_PREPARATION.md)
+- [P0 Hypothesis and Artifact Contracts](docs/P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md)
 - [Research-to-Library Roadmap](docs/ROADMAP.md)
 
 ## Research pipeline
@@ -66,8 +67,11 @@ first scientific model family, but this frame does not authorize that run.
 SAE annotation, training-checkpoint trajectories, transfer operators, and
 natural-language interpretation are intentionally deferred.
 
-The executable path currently reaches step 3 through a state-only neighbor
-backend contract, a deterministic exact reference, and shared exact reranking.
+The subject-data executable path currently reaches step 3 through a state-only
+neighbor backend contract, a deterministic exact reference, and shared exact
+reranking. Separately, the metadata-only P0 implementation now validates the
+F0-F4 hypothesis registry and canonical instrument-artifact schemas without
+loading a model, payload, graph, estimator, or subject value.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
@@ -118,6 +122,18 @@ spirallens context-bank validate \
   --path protocols/context_bank_example_v0_1.yaml \
   --allow-role example
 ```
+
+Validate the post-outcome, outcome-excluded P0 hypothesis registry:
+
+```bash
+spirallens hypothesis-registry validate \
+  --path protocols/order_parameter_hypothesis_registry_v0_1.yaml
+```
+
+This command is read-only. It verifies that all F0-F4 families remain
+Level-0, no winner or integer output is authorized, and no prior subject
+outcome, subject identity, semantic label, or numeric threshold can enter the
+registry.
 
 The example bank contains only project-authored synthetic engineering fixtures.
 Every entry has `role=example` and `claim_eligible=false`. Scientific discovery
@@ -294,10 +310,10 @@ to become a general library.
   activation atlases, structural candidate ledgers, versioned provenance, and
   fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
   full-index/subset-query audits, and verified receipt plumbing.
-- **Next — synthetic field/graph qualification:** define substrate and
-  order-parameter contracts, compare competing field hypotheses on
-  representation-shaped phantoms, and qualify the full crossed graph-family
-  null before preparing another subject protocol.
+- **Next — synthetic field/graph qualification:** consume the implemented
+  experimental substrate/order-parameter metadata contracts, compare competing
+  field hypotheses on representation-shaped phantoms, and qualify the full
+  crossed graph-family null before preparing another subject protocol.
 - **Then — candidate-to-loop integration:** keep geometry/holonomy and
   field/defect paths separate, join them only through explicit same-substrate
   artifacts, and retain Pythia-70M as development material.
@@ -324,8 +340,9 @@ immediate next plan live in the single
 - `holonomy/` contains continuous closed-loop transport quantities.
 - `topology/` contains sampled-winding quantities and, later, topology
   promotion tests. A sampled charge is not a continuous-field certificate.
-- future substrate and order-parameter contracts remain experimental design
-  boundaries until synthetic qualification supports an implementation;
+- `instrument_contracts/` contains implemented experimental metadata
+  boundaries for the P0 registry and provisional canonical artifacts; it
+  contains no estimator, payload reader, graph constructor, or subject access;
 - future `graphs/` code will construct scientific graph families from verified
   structural inputs and remains separate from retrieval;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

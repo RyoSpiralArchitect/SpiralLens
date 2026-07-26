@@ -31,6 +31,10 @@ or preprocessing choice below.
 
 ## 2. Stage P0 — post-outcome, outcome-excluded hypothesis registry
 
+**Implementation status:** the strict, metadata-only v0.1 registry and P0
+policy validator are implemented. This completes representation of the
+families and their unresolved choices; it does not select or advance one.
+
 Before implementing a new estimator, create a registry that explicitly
 postdates the Pythia-70M outcome while excluding that outcome from selection.
 Mathematical coherence, independently generated synthetic
@@ -169,9 +173,11 @@ seeds of one closed form are not independent confirmation.
 
 ## 4. Stage P2 — experimental artifact boundaries
 
-The intended artifacts use the canonical future-type names from the
-Fundamental Frame. They are provisional experiment contracts, not stable
-public APIs.
+The intended artifacts use the canonical type names from the Fundamental
+Frame. Their metadata-only v0.1 schemas and strict canonical loader are
+implemented as provisional experiment contracts, not stable public APIs. No
+estimator, graph constructor, calibration result, or subject artifact is
+created by that implementation.
 
 ### `SubstrateBinding`
 
@@ -532,6 +538,11 @@ The following may be prepared without subject observation:
 - split/access policy;
 - preregistered selection rubric;
 - replay and adversarial-review checklist.
+
+The P0 registry and the metadata-only canonical schemas are now implemented
+under this allowance. Their exact boundary and remaining non-claims are
+recorded in
+[P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ## 11. Decisions that remain unresolved
 
