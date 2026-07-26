@@ -888,6 +888,17 @@ def _run_instrument_bundle_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_synthetic_bundle_generate(args: argparse.Namespace) -> int:
+    from spirallens.synthetic import emit_representation_phantom_bundle
+
+    emitted = emit_representation_phantom_bundle(
+        protocol_path=args.protocol,
+        output_dir=args.output_dir,
+    )
+    _print_json(emitted.to_dict())
+    return 0
+
+
 def _run_candidates(args: argparse.Namespace) -> int:
     from spirallens.metrics import (
         CandidateSearchConfig,
@@ -1875,6 +1886,29 @@ def _add_instrument_bundle_parser(subparsers: Any) -> None:
     validate.set_defaults(handler=_run_instrument_bundle_validate)
 
 
+def _add_synthetic_bundle_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "synthetic-bundle",
+        help=(
+            "generate a Level-0 representation-shaped development bundle"
+        ),
+    )
+    commands = parser.add_subparsers(
+        dest="synthetic_bundle_command",
+        required=True,
+    )
+    generate = commands.add_parser(
+        "generate",
+        help=(
+            "emit and self-validate a canonical closed-integrity bundle; "
+            "this does not qualify D0-D8"
+        ),
+    )
+    generate.add_argument("--protocol", type=Path, required=True)
+    generate.add_argument("--output-dir", type=Path, required=True)
+    generate.set_defaults(handler=_run_synthetic_bundle_generate)
+
+
 def _add_candidates_parser(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "candidates",
@@ -2024,6 +2058,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_hypothesis_registry_parser(subparsers)
     _add_instrument_artifact_parser(subparsers)
     _add_instrument_bundle_parser(subparsers)
+    _add_synthetic_bundle_parser(subparsers)
     _add_atlas_parser(subparsers)
     _add_faiss_range_preflight_parser(subparsers)
     _add_neighbor_audit_parser(subparsers)

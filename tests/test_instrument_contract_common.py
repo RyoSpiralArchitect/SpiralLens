@@ -170,6 +170,7 @@ def test_closed_enum_values_are_exact() -> None:
         "level_3",
     }
     assert {item.value for item in EvolutionAxis} == {
+        "synthetic_lattice",
         "token_position",
         "layer_index",
         "training_step",

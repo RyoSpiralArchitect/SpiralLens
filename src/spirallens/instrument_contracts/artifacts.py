@@ -590,6 +590,13 @@ class SubstrateBinding(_CanonicalArtifact):
             raise TypeError("role must be a FitRole")
         if not isinstance(self.evolution_axis, EvolutionAxis):
             raise TypeError("evolution_axis must be an EvolutionAxis")
+        if (
+            self.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
+            and self.role is not FitRole.INSTRUMENT_DEV
+        ):
+            raise ContractValidationError(
+                "synthetic_lattice is restricted to instrument_dev substrates"
+            )
         require_sha256(
             self.row_identity_sha256,
             label="row_identity_sha256",

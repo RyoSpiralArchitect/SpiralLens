@@ -463,10 +463,14 @@ _FORBIDDEN_SELECTION_INPUTS = frozenset(
 _P0_FIT_ROLES = frozenset(
     {FitRole.INSTRUMENT_DEV.value, FitRole.CALIBRATION_SELECTION.value}
 )
-_EVOLUTION_AXES = frozenset(axis.value for axis in EvolutionAxis)
+_P0_OBSERVATION_AXES = frozenset(
+    axis.value
+    for axis in EvolutionAxis
+    if axis is not EvolutionAxis.SYNTHETIC_LATTICE
+)
 _COMMON_CHOICE_CANDIDATES: Mapping[str, frozenset[str]] = {
     "input_tensor": frozenset({"accounted_response", "raw_state"}),
-    "observation_axis": _EVOLUTION_AXES,
+    "observation_axis": _P0_OBSERVATION_AXES,
     "centering_rule": frozenset(
         {"global_centering", "local_centering", "no_centering"}
     ),

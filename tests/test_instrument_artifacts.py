@@ -692,6 +692,28 @@ def test_all_fifteen_artifacts_round_trip_canonically() -> None:
         assert reconstructed.artifact_id == artifact.artifact_id
 
 
+def test_synthetic_lattice_axis_is_instrument_dev_only() -> None:
+    substrate = _artifact_set()["substrate"]
+    assert isinstance(substrate, SubstrateBinding)
+
+    development = replace(
+        substrate,
+        role=FitRole.INSTRUMENT_DEV,
+        evolution_axis=EvolutionAxis.SYNTHETIC_LATTICE,
+    )
+    assert development.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
+    assert SubstrateBinding.from_dict(development.to_dict()) == development
+
+    with pytest.raises(
+        ContractValidationError,
+        match="restricted to instrument_dev",
+    ):
+        replace(
+            substrate,
+            evolution_axis=EvolutionAxis.SYNTHETIC_LATTICE,
+        )
+
+
 def test_loader_checks_both_hashes_without_dereferencing_payloads(
     tmp_path,
 ) -> None:

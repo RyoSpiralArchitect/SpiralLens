@@ -46,6 +46,7 @@ class ClaimLevel(str, Enum):
 
 
 class EvolutionAxis(str, Enum):
+    SYNTHETIC_LATTICE = "synthetic_lattice"
     TOKEN_POSITION = "token_position"
     LAYER_INDEX = "layer_index"
     TRAINING_STEP = "training_step"
