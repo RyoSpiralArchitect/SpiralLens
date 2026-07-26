@@ -69,9 +69,14 @@ natural-language interpretation are intentionally deferred.
 
 The subject-data executable path currently reaches step 3 through a state-only
 neighbor backend contract, a deterministic exact reference, and shared exact
-reranking. Separately, the metadata-only P0 implementation now validates the
-F0-F4 hypothesis registry and canonical instrument-artifact schemas without
-loading a model, payload, graph, estimator, or subject value.
+reranking. Separately, the P0 contract layer now validates the F0-F4
+hypothesis registry and individual canonical instrument-artifact manifests.
+Its closed-integrity bundle validator additionally resolves exact
+content-addressed artifact references, rejects missing, extra, unreachable, or
+cyclic members, verifies opaque payload byte lengths and SHA-256 digests, and
+checks selected cross-manifest metadata joins. It does not decode payload
+values, recompute row identities from array contents, run an estimator or graph
+constructor, load a model, or access subject data.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
@@ -134,6 +139,42 @@ This command is read-only. It verifies that all F0-F4 families remain
 Level-0, no winner or integer output is authorized, and no prior subject
 outcome, subject identity, semantic label, or numeric threshold can enter the
 registry.
+
+Validate one generated canonical instrument manifest:
+
+```bash
+spirallens instrument-artifact validate \
+  --path path/to/canonical-artifact.json \
+  --expected-source-sha256 <sha256> \
+  --expected-canonical-sha256 <sha256>
+```
+
+This is deliberately a single-manifest check. It does not resolve referenced
+artifacts or payloads and reports `validation_scope=single_manifest`.
+
+Validate a canonical closed-world integrity bundle:
+
+```bash
+spirallens instrument-bundle validate \
+  --path path/to/instrument-bundle.json \
+  --expected-source-sha256 <sha256> \
+  --expected-canonical-sha256 <sha256>
+```
+
+The bundle command resolves every exact `ArtifactRef`, requires all indexed
+artifacts to be reachable from declared roots in an acyclic dependency graph,
+and requires at least one instrument artifact and instrument root. It requires
+exact `PayloadRef` closure and streams payload bytes only to verify declared
+length and SHA-256. It also validates the implemented cross-manifest metadata
+joins and each ContextBank's declared allowed role. It rejects subject fit
+roles and cannot authorize subject access or execution. It does not decode
+arrays, validate payload semantics, or qualify the bundle scientifically.
+Member loading is descriptor-relative and fail-closed: symlinks and files with
+multiple hard links are rejected, and platforms without the required
+`dir_fd`/no-follow support report `secure_member_open_unavailable` instead of
+falling back to pathname reopening. A returned `LoadedBundlePayload` is an
+integrity receipt only; it intentionally exposes no reusable payload path or
+handle.
 
 The example bank contains only project-authored synthetic engineering fixtures.
 Every entry has `role=example` and `claim_eligible=false`. Scientific discovery
@@ -341,8 +382,10 @@ immediate next plan live in the single
 - `topology/` contains sampled-winding quantities and, later, topology
   promotion tests. A sampled charge is not a continuous-field certificate.
 - `instrument_contracts/` contains implemented experimental metadata
-  boundaries for the P0 registry and provisional canonical artifacts; it
-  contains no estimator, payload reader, graph constructor, or subject access;
+  boundaries for the P0 registry, provisional canonical artifacts, and
+  closed-world integrity bundles. Its bundle loader reads opaque payload bytes
+  only for length and SHA-256 verification; it contains no payload semantic
+  decoder, estimator, graph constructor, or subject access;
 - future `graphs/` code will construct scientific graph families from verified
   structural inputs and remains separate from retrieval;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

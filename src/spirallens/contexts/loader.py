@@ -129,9 +129,7 @@ def _enum(enum_type: type[Any], value: object, *, label: str) -> Any:
         return enum_type(value)
     except ValueError as exc:
         allowed = ", ".join(item.value for item in enum_type)
-        raise ContextBankSchemaError(
-            f"{label} must be one of: {allowed}"
-        ) from exc
+        raise ContextBankSchemaError(f"{label} must be one of: {allowed}") from exc
 
 
 def _parse_model(value: object) -> ModelBinding:
@@ -173,9 +171,7 @@ def _parse_tokenizer(value: object) -> TokenizerBinding:
     )
     files = _mapping(tokenizer["files"], label="tokenizer.files")
     if not files:
-        raise ContextBankSchemaError(
-            "tokenizer.files must be a non-empty mapping"
-        )
+        raise ContextBankSchemaError("tokenizer.files must be a non-empty mapping")
     file_sha256 = tuple(
         (name, _string(files[name], label=f"tokenizer.files[{name!r}]"))
         for name in sorted(files)
@@ -274,9 +270,7 @@ def _parse_context(value: object, *, index: int) -> ContextSpec:
         ),
         family_id=_string(context["family_id"], label=f"{label}.family_id"),
         source_id=_string(context["source_id"], label=f"{label}.source_id"),
-        template_id=_string(
-            context["template_id"], label=f"{label}.template_id"
-        ),
+        template_id=_string(context["template_id"], label=f"{label}.template_id"),
         template_ids=tuple(template_ids),
         attention_mask=attention_mask,
         observation_position=_integer(
@@ -312,22 +306,17 @@ def _parse_bank(document: object) -> ContextBank:
     if not isinstance(raw_contexts, list) or not raw_contexts:
         raise ContextBankSchemaError("contexts must be a non-empty list")
     contexts = tuple(
-        _parse_context(value, index=index)
-        for index, value in enumerate(raw_contexts)
+        _parse_context(value, index=index) for index, value in enumerate(raw_contexts)
     )
     return ContextBank(
         bank_id=_string(root["bank_id"], label="bank_id"),
         status=_enum(BankStatus, root["status"], label="status"),
         license=_string(root["license"], label="license"),
-        claim_eligible=_boolean(
-            root["claim_eligible"], label="claim_eligible"
-        ),
+        claim_eligible=_boolean(root["claim_eligible"], label="claim_eligible"),
         source=_parse_source(root["source"]),
         model=_parse_model(root["model"]),
         tokenizer=_parse_tokenizer(root["tokenizer"]),
-        sweep_domain=_enum(
-            SweepDomain, root["sweep_domain"], label="sweep_domain"
-        ),
+        sweep_domain=_enum(SweepDomain, root["sweep_domain"], label="sweep_domain"),
         contexts=contexts,
     )
 
@@ -352,9 +341,7 @@ def _coerce_allowed_roles(
             try:
                 roles.add(ContextRole(value))
             except ValueError as exc:
-                raise ContextBankSchemaError(
-                    f"unknown allowed role {value!r}"
-                ) from exc
+                raise ContextBankSchemaError(f"unknown allowed role {value!r}") from exc
             continue
         raise TypeError("allowed_roles values must be ContextRole or str")
     if not roles:
@@ -378,15 +365,31 @@ def load_context_bank(
     source_path = Path(path).resolve()
     with source_path.open("rb") as handle:
         raw = handle.read(MAX_CONTEXT_BANK_BYTES + 1)
+    return _load_context_bank_from_bytes(
+        raw,
+        source_path=source_path,
+        allowed_roles=allowed_roles,
+        expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
+    )
+
+
+def _load_context_bank_from_bytes(
+    raw: bytes,
+    *,
+    source_path: Path,
+    allowed_roles: Collection[ContextRole | str],
+    expected_source_sha256: str | None = None,
+    expected_canonical_sha256: str | None = None,
+) -> LoadedContextBank:
+    """Validate already-opened ContextBank bytes without reopening their path."""
+
     if len(raw) > MAX_CONTEXT_BANK_BYTES:
         raise ContextBankSchemaError(
             f"context bank exceeds {MAX_CONTEXT_BANK_BYTES} bytes"
         )
     source_sha256 = hashlib.sha256(raw).hexdigest()
-    if (
-        expected_source_sha256 is not None
-        and source_sha256 != expected_source_sha256
-    ):
+    if expected_source_sha256 is not None and source_sha256 != expected_source_sha256:
         raise ContextBankIntegrityError(
             "context-bank source SHA-256 does not match the expected digest"
         )

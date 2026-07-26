@@ -53,9 +53,7 @@ class _StrictSafeLoader(yaml.SafeLoader):
 
     def compose_node(self, parent: Any, index: Any) -> Any:
         if self.check_event(AliasEvent):
-            raise HypothesisRegistrySchemaError(
-                "YAML aliases are not allowed"
-            )
+            raise HypothesisRegistrySchemaError("YAML aliases are not allowed")
         return super().compose_node(parent, index)
 
 
@@ -69,18 +67,12 @@ def _construct_mapping(
     mapping: dict[str, Any] = {}
     for key_node, value_node in node.value:
         if key_node.tag == "tag:yaml.org,2002:merge":
-            raise HypothesisRegistrySchemaError(
-                "YAML merge keys are not allowed"
-            )
+            raise HypothesisRegistrySchemaError("YAML merge keys are not allowed")
         key = loader.construct_object(key_node, deep=deep)
         if not isinstance(key, str):
-            raise HypothesisRegistrySchemaError(
-                "all YAML mapping keys must be strings"
-            )
+            raise HypothesisRegistrySchemaError("all YAML mapping keys must be strings")
         if key in mapping:
-            raise HypothesisRegistrySchemaError(
-                f"duplicate YAML key {key!r}"
-            )
+            raise HypothesisRegistrySchemaError(f"duplicate YAML key {key!r}")
         mapping[key] = loader.construct_object(value_node, deep=deep)
     return mapping
 
@@ -166,9 +158,7 @@ def _reject_numeric_scalars(value: object, *, path: str = "$") -> None:
     if isinstance(value, bool) or value is None or isinstance(value, str):
         return
     if isinstance(value, (int, float)):
-        raise HypothesisRegistrySchemaError(
-            f"{path} must not contain numeric values"
-        )
+        raise HypothesisRegistrySchemaError(f"{path} must not contain numeric values")
     if isinstance(value, Mapping):
         for key, item in value.items():
             _reject_numeric_scalars(item, path=f"{path}.{key}")
@@ -196,10 +186,7 @@ def _parse_boundary(value: object) -> HistoricalSelectionBoundary:
         ),
         historical_outcome_integration_commit=require_string(
             boundary["historical_outcome_integration_commit"],
-            label=(
-                "historical_boundary."
-                "historical_outcome_integration_commit"
-            ),
+            label=("historical_boundary.historical_outcome_integration_commit"),
         ),
         historical_outcome_record_path=require_string(
             boundary["historical_outcome_record_path"],
@@ -207,17 +194,11 @@ def _parse_boundary(value: object) -> HistoricalSelectionBoundary:
         ),
         historical_outcome_record_source_sha256=require_sha256(
             boundary["historical_outcome_record_source_sha256"],
-            label=(
-                "historical_boundary."
-                "historical_outcome_record_source_sha256"
-            ),
+            label=("historical_boundary.historical_outcome_record_source_sha256"),
         ),
         historical_outcome_artifact_source_sha256=require_sha256(
             boundary["historical_outcome_artifact_source_sha256"],
-            label=(
-                "historical_boundary."
-                "historical_outcome_artifact_source_sha256"
-            ),
+            label=("historical_boundary.historical_outcome_artifact_source_sha256"),
         ),
         registry_postdates_prior_outcome=require_bool(
             boundary["registry_postdates_prior_outcome"],
@@ -292,9 +273,7 @@ def _parse_hypothesis(value: object, *, index: int) -> HypothesisSpec:
         observation_axis=choice("observation_axis"),
         centering_rule=choice("centering_rule"),
         residual_rule=choice("residual_rule"),
-        architecture_accounting_rule=choice(
-            "architecture_accounting_rule"
-        ),
+        architecture_accounting_rule=choice("architecture_accounting_rule"),
         estimator=choice("estimator"),
         fit_role=choice("fit_role"),
         domain_binding=require_slug(
@@ -306,22 +285,16 @@ def _parse_hypothesis(value: object, *, index: int) -> HypothesisSpec:
         rank_convention=require_slug(
             item["rank_convention"], label=f"{label}.rank_convention"
         ),
-        gauge_law=require_slug(
-            item["gauge_law"], label=f"{label}.gauge_law"
-        ),
+        gauge_law=require_slug(item["gauge_law"], label=f"{label}.gauge_law"),
         target_manifold=require_slug(
             item["target_manifold"], label=f"{label}.target_manifold"
         ),
-        charge_group=require_slug(
-            item["charge_group"], label=f"{label}.charge_group"
-        ),
+        charge_group=require_slug(item["charge_group"], label=f"{label}.charge_group"),
         amplitude_quantity=require_slug(
             item["amplitude_quantity"], label=f"{label}.amplitude_quantity"
         ),
         support_quantities=identifiers("support_quantities"),
-        identifiability_quantities=identifiers(
-            "identifiability_quantities"
-        ),
+        identifiability_quantities=identifiers("identifiability_quantities"),
         interpolation_rule=choice("interpolation_rule"),
         lift_rule=choice("lift_rule"),
         trivialization_rule=choice("trivialization_rule"),
@@ -362,21 +335,15 @@ def hypothesis_registry_from_dict(
             )
         raw_hypotheses = document["hypotheses"]
         if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
-            raise HypothesisRegistrySchemaError(
-                "hypotheses must be a non-empty list"
-            )
+            raise HypothesisRegistrySchemaError("hypotheses must be a non-empty list")
         return HypothesisRegistry(
             schema_version=schema_version,
-            registry_id=require_slug(
-                document["registry_id"], label="registry_id"
-            ),
+            registry_id=require_slug(document["registry_id"], label="registry_id"),
             status=require_slug(document["status"], label="status"),
             policy_version=require_slug(
                 document["policy_version"], label="policy_version"
             ),
-            historical_boundary=_parse_boundary(
-                document["historical_boundary"]
-            ),
+            historical_boundary=_parse_boundary(document["historical_boundary"]),
             real_model_claim_state=enum_from_value(
                 ClaimLevel,
                 document["real_model_claim_state"],
@@ -417,16 +384,29 @@ def load_hypothesis_registry(
     source_path = Path(path).resolve()
     with source_path.open("rb") as handle:
         raw = handle.read(MAX_HYPOTHESIS_REGISTRY_BYTES + 1)
+    return _load_hypothesis_registry_from_bytes(
+        raw,
+        source_path=source_path,
+        expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
+    )
+
+
+def _load_hypothesis_registry_from_bytes(
+    raw: bytes,
+    *,
+    source_path: Path,
+    expected_source_sha256: str | None = None,
+    expected_canonical_sha256: str | None = None,
+) -> LoadedHypothesisRegistry:
+    """Validate already-opened registry bytes without reopening their path."""
+
     if len(raw) > MAX_HYPOTHESIS_REGISTRY_BYTES:
         raise HypothesisRegistrySchemaError(
-            "hypothesis registry exceeds "
-            f"{MAX_HYPOTHESIS_REGISTRY_BYTES} bytes"
+            f"hypothesis registry exceeds {MAX_HYPOTHESIS_REGISTRY_BYTES} bytes"
         )
     source_sha256 = sha256_bytes(raw)
-    if (
-        expected_source_sha256 is not None
-        and source_sha256 != expected_source_sha256
-    ):
+    if expected_source_sha256 is not None and source_sha256 != expected_source_sha256:
         raise HypothesisRegistryIntegrityError(
             "hypothesis-registry source SHA-256 does not match expected digest"
         )
@@ -447,9 +427,7 @@ def load_hypothesis_registry(
 
     _reject_numeric_scalars(document)
     if not isinstance(document, Mapping):
-        raise HypothesisRegistrySchemaError(
-            "hypothesis registry must be a mapping"
-        )
+        raise HypothesisRegistrySchemaError("hypothesis registry must be a mapping")
     registry = hypothesis_registry_from_dict(document)
     try:
         validate_p0_registry(registry)

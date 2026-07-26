@@ -1,7 +1,9 @@
 # P0 Hypothesis and Artifact Contracts
 
-- **Status:** implemented experimental contract; no estimator or subject access
+- **Status:** implemented experimental contract and integrity-bundle boundary;
+  no estimator or subject access
 - **Policy:** `spirallens.p0-registry-policy.v0.1`
+- **Bundle schema:** `spirallens.instrument-bundle.v0.1`
 - **Registry:** [`order_parameter_hypothesis_registry_v0_1.yaml`](../protocols/order_parameter_hypothesis_registry_v0_1.yaml)
 - **Depends on:** [Order-Parameter-First Fundamental Frame](FUNDAMENTAL_FRAME.md)
 
@@ -20,30 +22,35 @@ integration commit; repository ancestry is verified at freeze/review time,
 not by the YAML loader.
 
 P0 makes the research question representable without choosing its answer. It
-does not estimate a field, construct a graph, open calibration payloads, load a
-model, inspect a subject tensor, authorize an integer output, or promote any
-real-model claim beyond Level 0.
+does not estimate a field, construct a graph, decode calibration payload
+values, load a model, inspect a subject tensor, authorize an integer output, or
+promote any real-model claim beyond Level 0.
 
 ## 1. Implemented package boundary
 
-`spirallens.instrument_contracts` is a metadata-only experimental namespace.
-It is deliberately separate from:
+`spirallens.instrument_contracts` is an experimental contract namespace. It is
+deliberately separate from:
 
 - `spirallens.contracts`, which contains reusable mathematical primitives;
 - `spirallens.neighbors`, which remains a state-only retrieval boundary; and
 - estimator, graph-construction, model-adapter, and subject-execution code.
 
-Importing or validating these contracts does not dereference payloads or
-import Torch, Transformers, Faiss, or a model adapter.
+Importing the contracts and running single-manifest validation do not
+dereference payloads. Bundle validation streams indexed payload bytes only to
+verify byte length and SHA-256; it does not decode their values. None of these
+paths imports Torch, Transformers, Faiss, or a model adapter.
 
 The namespace provides:
 
 - closed control-flow enums and typed digest references;
 - a strict F0-F4 hypothesis registry;
 - provisional metadata schemas for instrument artifacts;
+- a canonical closed-world instrument-bundle manifest;
 - strict YAML loading for the human-authored registry;
-- strict canonical JSON loading for generated artifact manifests; and
-- source-byte and canonical-content SHA-256 verification.
+- strict canonical JSON loading for generated artifact manifests;
+- source-byte and canonical-content SHA-256 verification;
+- exact artifact and opaque-payload reference closure; and
+- selected cross-manifest metadata joins with subject-role rejection.
 
 These are experimental pre-1.0 contracts. Their existence is software
 evidence, not scientific evidence.
@@ -104,7 +111,9 @@ fewer bytes than their uncompressed values, and must agree on first-axis row
 count within an artifact's row-bound payload group. Calibration-cell manifests
 are structured records with explicit cell-order digests; supplied anchors are
 structured arrays with explicit substrate-row order. Paths are not canonical
-identity, and validation never opens a payload.
+identity. Single-manifest validation never opens a payload; closed-integrity
+bundle validation opens it only as opaque bytes for length and SHA-256
+verification.
 
 ## 4. Implemented artifact schemas
 
@@ -128,14 +137,43 @@ The metadata schemas cover:
 The schemas bind content-addressed references; they do not contain arrays,
 model values, or estimator execution.
 
-Validation is deliberately local to one manifest. It verifies the manifest's
-own exact schema, canonical bytes, typed reference kinds, content digests, and
-declared row/order identities, but it does not resolve referenced artifacts or
-payloads. Consequently, existence and digest resolution across a bundle,
-cross-manifest equality of row/vertex/edge/cycle/loop order digests, and
-selection/confirmation cell completeness remain unproved until a separate
-bundle validator is implemented. A collection of individually valid manifests
-must not be described as an internally consistent instrument bundle.
+There are now two deliberately different validation scopes.
+
+Single-manifest validation verifies one manifest's exact schema, canonical
+bytes, typed reference kinds, content digests, and declared row/order
+identities. It does not resolve any referenced artifact or payload, so a
+collection of individually valid manifests is not bundle evidence.
+
+Closed-integrity bundle validation requires one canonical bundle manifest with
+declared roots and a closed index of instrument artifacts, registries,
+ContextBanks, and opaque payloads. It:
+
+- requires at least one instrument artifact and one declared instrument root;
+- resolves every `ArtifactRef` by exact type, schema version, artifact ID, and
+  canonical digest;
+- rejects missing, extra or unreachable artifact entries and logical
+  dependency cycles;
+- requires exact `PayloadRef` closure, rejects conflicting reuse of one payload
+  digest, and streams each payload to verify its byte length and SHA-256;
+- opens every manifest, artifact, ContextBank, registry, and payload through
+  descriptor-relative no-follow traversal; rejects symlinks and multiply
+  linked files; and fails with `secure_member_open_unavailable` rather than
+  using an insecure fallback where that traversal is unsupported;
+- binds each indexed ContextBank to its explicitly declared allowed
+  `ContextRole`;
+- checks the implemented substrate, graph, field, core, loop, registry,
+  selection, and confirmation metadata joins; and
+- rejects `subject_discovery` and `subject_confirmation` fit roles, requires
+  `subject_data_access_authorized=false`, and performs no subject access or
+  execution.
+
+This establishes a closed, content-addressed **integrity bundle**, not a
+synthetic-qualified or scientific instrument bundle. The validator does not
+decode payloads, validate array layout or values, recompute row identities
+from payload content, map `ContextRole` to `FitRole`, prove calibration-cell
+completeness, or evaluate D0-D8. `LoadedBundlePayload` is only an integrity
+receipt and exposes no reusable pathname or descriptor; a future payload
+consumer must define its own secure reopen-and-reverify boundary.
 
 The following distinctions are load-bearing:
 
@@ -144,9 +182,9 @@ The following distinctions are load-bearing:
 - `CoreScore` is charge-blind and carries typed, content-addressed
   `OrderParameterSpec`/`OrderParameterField` references, its own substrate and
   row identity, a declared singularity rule, and one explicit
-  core-neighborhood mode. Equality with the referenced spec/field substrate,
-  row identity, and singularity contract is a future bundle-validator check;
-  single-manifest validation does not claim it.
+  core-neighborhood mode. Closed-integrity bundle validation checks its
+  implemented spec/field, substrate, row-identity, singularity, and graph
+  joins; single-manifest validation does not claim them.
 - A core-neighborhood binding is exactly one of `graph_free`,
   `inherit_field_estimation_graph`, or `explicit_core_graph`. The latter two
   cannot collapse the field, core, and cycle graph axes into one unnamed
@@ -165,8 +203,10 @@ The following distinctions are load-bearing:
   and F3 cannot declare a ceiling above Level 1D even before bundle joins are
   checked. A Level-2T loop additionally carries a typed, sealed
   `CalibrationSelectionDecision` authorization reference. That reference is
-  necessary but not sufficient: the future bundle validator must resolve it
-  and prove that the same hypothesis and locked integer path were advanced.
+  necessary but not sufficient: closed-integrity bundle validation resolves it
+  and checks that the same hypothesis and locked integer path were advanced,
+  but it does not prove that the underlying numerical or scientific
+  prerequisites succeeded.
 - A confirmation result binds a sealed selection decision and cannot contain
   replacement estimator, graph, threshold, coverage, abstention, or
   aggregation settings.
@@ -186,6 +226,16 @@ The following distinctions are load-bearing:
   typed selection outcomes rather than disappearing behind the winner. An
   advanced hypothesis must have every calibration-active family resolved;
   unresolved choices are allowed only on non-advanced competitors.
+- For a selected artifact that is uniquely traceable to F1--F4, bundle
+  validation follows that artifact back to its hypothesis and substrate. It
+  requires that hypothesis to be `ADVANCE`, checks the locked observation axis
+  and fit role, and for F2--F4 also checks the typed interpolation, lift,
+  trivialization, and reference conventions carried by the resolved
+  order-parameter specification. Non-selected crossed outputs remain
+  stage-safe competitors and are not falsely required to match the winning
+  receipt. Generic support, graph, substrate, and anchor artifacts have no
+  unique hypothesis binding in v0.1 and therefore receive only the stage-role
+  checks their schemas support.
 - A selection decision may authorize an integer path only for an advanced F2
   or F4 hypothesis, only together with its Level-2T ceiling, and never while
   that hypothesis retains an unresolved rule choice. Any nonzero selection
@@ -196,8 +246,13 @@ The following distinctions are load-bearing:
   choice—must be present with an allowed selected ID, with no invented extra
   family. F4's fixed lift must instead retain its hypothesis-fixed provenance
   and is its only fixed receipt. A loop's authorization
-  reference is not accepted as bundle evidence until that decision is
-  resolved and the hypothesis IDs agree.
+  reference is accepted as integrity-bundle metadata only when that decision
+  resolves, the hypothesis IDs and registry agree, its four typed
+  order-parameter conventions match, and its substrate role and observation
+  axis equal the locked receipts. The decision must also contain a selected
+  precursor that traces to that exact order-parameter specification; the final
+  Level-2T loop remains downstream of the decision, avoiding a
+  content-addressing cycle. This is not Level-2T evidence.
 
 Malformed, tampered, or leaky manifests are invalid inputs. They are not
 scientific `fail` or `insufficient` results. Valid gate states remain
@@ -221,11 +276,26 @@ spirallens instrument-artifact validate \
   --expected-canonical-sha256 <sha256>
 ```
 
-Both commands are read-only. They report identities and schema facts; they
-cannot write an artifact, select a hypothesis, access a payload, or prepare a
-subject run. Instrument-artifact output explicitly reports
+Validate a generated canonical closed-world integrity bundle:
+
+```bash
+spirallens instrument-bundle validate \
+  --path path/to/instrument-bundle.json \
+  --expected-source-sha256 <sha256> \
+  --expected-canonical-sha256 <sha256>
+```
+
+All three commands are read-only. They report identities and contract facts;
+they cannot write an artifact, select a hypothesis, prepare a subject run, or
+execute one. Instrument-artifact output explicitly reports
 `validation_scope=single_manifest`, `references_resolved=false`, and
 `bundle_validated=false`; `status=valid` means only that bounded scope.
+Instrument-bundle output reports
+`validation_scope=closed_integrity_bundle`,
+`bundle_integrity_validated=true`, and
+`payload_content_decoded=false`. It may read indexed payload bytes for
+integrity verification, but it cannot interpret their values or authorize
+subject access.
 
 ## 6. Explicitly deferred
 
@@ -235,17 +305,24 @@ This P0 implementation does not include:
 - phantom generation or hidden calibration data;
 - graph constructors, scales, or graph-family selection;
 - numerical floors, tolerances, or aggregation gates;
-- field-specific payload-layout schemas such as the exact tensor rank, trailing
-  dimensions, dtype class, and encoding for each estimator output (v0.1 binds
-  kind, media type, declared shape/dtype, minimum bytes, row identity, and
-  within-manifest row count only);
-- orientability, U(1), winding, or integer-output authorization;
+- payload semantic decoding and field-specific array validation, including the
+  exact tensor rank, trailing dimensions, dtype class, encoding, and
+  value-level constraints for each estimator output (v0.1 binds kind, media
+  type, declared shape/dtype, minimum bytes, row identity, and within-manifest
+  row count only);
+- row-identity recomputation from payload content;
+- numerical demonstration of orientability, U(1), winding, or scientific
+  authorization of an integer output;
 - an actual calibration selection or confirmation result;
-- referenced-artifact/payload resolution; registry-entry joins for selected
-  rules; referenced fit-role/split validation; cross-manifest identity checks;
-  or selection/confirmation cell-set completeness checks;
-- D1-D8 qualification or a validated instrument bundle;
-- `SubjectProtocolManifest`, subject `prepare-only`, or subject execution; or
+- a validated `ContextRole`-to-`FitRole` mapping or
+  selection/confirmation cell-set completeness checks;
+- application-level verification of selected input-tensor, centering,
+  residual, architecture-accounting, and estimator choices, because v0.1
+  artifacts bind those executions only through opaque input and fit receipts;
+- D0-D8 qualification or a synthetic-qualified/scientific instrument bundle;
+- scientific, topological, semantic, or causal claim promotion;
+- `SubjectProtocolManifest`, subject `prepare-only`, subject preparation, or
+  subject execution; or
 - a stable public API or migration guarantee.
 
 The next implementation step is synthetic, representation-shaped substrate

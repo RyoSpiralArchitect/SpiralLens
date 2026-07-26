@@ -32,8 +32,10 @@ or preprocessing choice below.
 ## 2. Stage P0 — post-outcome, outcome-excluded hypothesis registry
 
 **Implementation status:** the strict, metadata-only v0.1 registry and P0
-policy validator are implemented. This completes representation of the
-families and their unresolved choices; it does not select or advance one.
+policy validator are implemented, together with the canonical
+closed-integrity bundle boundary described in Stage P2. This completes
+representation and integrity checking of the families and their unresolved
+choices; it does not select or advance one.
 
 Before implementing a new estimator, create a registry that explicitly
 postdates the Pythia-70M outcome while excluding that outcome from selection.
@@ -177,7 +179,9 @@ The intended artifacts use the canonical type names from the Fundamental
 Frame. Their metadata-only v0.1 schemas and strict canonical loader are
 implemented as provisional experiment contracts, not stable public APIs. No
 estimator, graph constructor, calibration result, or subject artifact is
-created by that implementation.
+created by that implementation. A separate closed-integrity bundle validator
+now resolves these manifests and their opaque payload references without
+decoding payload values or qualifying an experiment.
 
 ### `SubstrateBinding`
 
@@ -306,6 +310,29 @@ digests. It may apply the selection decision but cannot select or amend it.
 
 Every artifact requires canonical ordering, exact field sets, tamper rejection,
 row-order mismatch rejection, and byte-identical replay.
+
+### Implemented closed-integrity bundle boundary
+
+One canonical bundle manifest declares roots and a closed index of instrument
+artifacts, P0 registries, ContextBanks, and opaque payloads. Validation:
+
+- resolves every `ArtifactRef` by exact type, schema version, artifact ID, and
+  canonical digest;
+- rejects missing, extra or unreachable artifact entries and dependency
+  cycles;
+- requires exact `PayloadRef` closure and verifies each payload's declared byte
+  length and SHA-256 by streaming its bytes without decoding values;
+- checks selected cross-manifest substrate, graph, field, core, loop,
+  registry, selection, and confirmation metadata joins;
+- loads each ContextBank under its explicitly indexed allowed `ContextRole`;
+  and
+- forbids subject fit roles, subject-data authorization, subject access, and
+  subject execution.
+
+This is an integrity and provenance boundary only. It does not validate array
+layout or payload semantics, recompute row identities from payload content,
+map `ContextRole` to `FitRole`, prove calibration-cell completeness, qualify
+D0-D8, or support scientific, topological, semantic, or causal claims.
 
 ## 5. Stage P3 — substrate and leakage binding
 
@@ -539,9 +566,9 @@ The following may be prepared without subject observation:
 - preregistered selection rubric;
 - replay and adversarial-review checklist.
 
-The P0 registry and the metadata-only canonical schemas are now implemented
-under this allowance. Their exact boundary and remaining non-claims are
-recorded in
+The P0 registry, metadata-only canonical schemas, and closed-integrity bundle
+validator are now implemented under this allowance. Their exact boundary and
+remaining non-claims are recorded in
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ## 11. Decisions that remain unresolved
