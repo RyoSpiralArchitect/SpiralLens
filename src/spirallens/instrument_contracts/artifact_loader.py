@@ -60,16 +60,39 @@ def load_instrument_artifact(
     source_path = Path(path).resolve()
     with source_path.open("rb") as handle:
         source = handle.read(MAX_INSTRUMENT_ARTIFACT_BYTES + 1)
+    return _load_instrument_artifact_from_bytes(
+        source,
+        source_path=source_path,
+        expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
+    )
+
+
+def _load_instrument_artifact_from_bytes(
+    source: bytes,
+    *,
+    source_path: Path,
+    expected_source_sha256: str | None = None,
+    expected_canonical_sha256: str | None = None,
+) -> LoadedInstrumentArtifact:
+    """Validate already-opened artifact bytes without reopening their path."""
+
+    if expected_source_sha256 is not None:
+        require_sha256(
+            expected_source_sha256,
+            label="expected_source_sha256",
+        )
+    if expected_canonical_sha256 is not None:
+        require_sha256(
+            expected_canonical_sha256,
+            label="expected_canonical_sha256",
+        )
     if len(source) > MAX_INSTRUMENT_ARTIFACT_BYTES:
         raise InstrumentArtifactSchemaError(
-            "instrument artifact exceeds "
-            f"{MAX_INSTRUMENT_ARTIFACT_BYTES} bytes"
+            f"instrument artifact exceeds {MAX_INSTRUMENT_ARTIFACT_BYTES} bytes"
         )
     source_sha256 = hashlib.sha256(source).hexdigest()
-    if (
-        expected_source_sha256 is not None
-        and source_sha256 != expected_source_sha256
-    ):
+    if expected_source_sha256 is not None and source_sha256 != expected_source_sha256:
         raise InstrumentArtifactIntegrityError(
             "instrument artifact source SHA-256 differs"
         )

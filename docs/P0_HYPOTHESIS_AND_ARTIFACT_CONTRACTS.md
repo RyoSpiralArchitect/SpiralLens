@@ -155,6 +155,10 @@ ContextBanks, and opaque payloads. It:
   dependency cycles;
 - requires exact `PayloadRef` closure, rejects conflicting reuse of one payload
   digest, and streams each payload to verify its byte length and SHA-256;
+- opens every manifest, artifact, ContextBank, registry, and payload through
+  descriptor-relative no-follow traversal; rejects symlinks and multiply
+  linked files; and fails with `secure_member_open_unavailable` rather than
+  using an insecure fallback where that traversal is unsupported;
 - binds each indexed ContextBank to its explicitly declared allowed
   `ContextRole`;
 - checks the implemented substrate, graph, field, core, loop, registry,
@@ -167,7 +171,9 @@ This establishes a closed, content-addressed **integrity bundle**, not a
 synthetic-qualified or scientific instrument bundle. The validator does not
 decode payloads, validate array layout or values, recompute row identities
 from payload content, map `ContextRole` to `FitRole`, prove calibration-cell
-completeness, or evaluate D0-D8.
+completeness, or evaluate D0-D8. `LoadedBundlePayload` is only an integrity
+receipt and exposes no reusable pathname or descriptor; a future payload
+consumer must define its own secure reopen-and-reverify boundary.
 
 The following distinctions are load-bearing:
 

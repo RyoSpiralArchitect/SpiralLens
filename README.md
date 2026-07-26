@@ -169,6 +169,12 @@ length and SHA-256. It also validates the implemented cross-manifest metadata
 joins and each ContextBank's declared allowed role. It rejects subject fit
 roles and cannot authorize subject access or execution. It does not decode
 arrays, validate payload semantics, or qualify the bundle scientifically.
+Member loading is descriptor-relative and fail-closed: symlinks and files with
+multiple hard links are rejected, and platforms without the required
+`dir_fd`/no-follow support report `secure_member_open_unavailable` instead of
+falling back to pathname reopening. A returned `LoadedBundlePayload` is an
+integrity receipt only; it intentionally exposes no reusable payload path or
+handle.
 
 The example bank contains only project-authored synthetic engineering fixtures.
 Every entry has `role=example` and `claim_eligible=false`. Scientific discovery

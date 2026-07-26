@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, replace
 import hashlib
@@ -42,6 +43,7 @@ from spirallens.instrument_contracts.bundle import (
 )
 from spirallens.instrument_contracts.bundle_loader import (
     InstrumentBundleConsistencyError,
+    InstrumentBundleError,
     InstrumentBundleIntegrityError,
     InstrumentBundleResolutionError,
     InstrumentBundleSchemaError,
@@ -142,6 +144,23 @@ class BundleFixture:
     artifacts: dict[str, object]
     artifact_entries: dict[str, BundleArtifactEntry]
     payload_entries: tuple[BundlePayloadEntry, ...]
+
+
+def _member_relative_path(
+    fixture: BundleFixture,
+    member_kind: str,
+) -> str:
+    if member_kind == "manifest":
+        return fixture.manifest_path.name
+    if member_kind == "instrument":
+        return fixture.manifest.instrument_artifacts[0].path
+    if member_kind == "registry":
+        return fixture.manifest.hypothesis_registries[0].path
+    if member_kind == "context_bank":
+        return fixture.manifest.context_banks[0].path
+    if member_kind == "payload":
+        return fixture.manifest.payloads[0].path
+    raise AssertionError(f"unknown member kind {member_kind!r}")
 
 
 def _root_sort_key(reference: ArtifactRef) -> tuple[str, ...]:
@@ -1118,6 +1137,7 @@ def test_loader_resolves_closed_bundle_and_reports_cli_ready_facts(
     assert loaded.canonical_sha256 == fixture.manifest.canonical_sha256
     assert len(loaded.artifacts) == 6
     assert len(loaded.payloads) == 17
+    assert all(not hasattr(payload, "source_path") for payload in loaded.payloads)
     assert loaded.artifact_reference_count == 6
     assert loaded.payload_reference_count == 17
     assert loaded.cross_manifest_join_count > 0
@@ -1250,46 +1270,33 @@ def test_loader_classifies_post_validation_member_read_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _build_bundle(tmp_path)
+    original_read = bundle_loader_module._read_descriptor_bytes
+    read_count = 0
 
-    def fail_read(*args: object, **kwargs: object) -> object:
-        raise PermissionError("simulated post-validation read failure")
+    def fail_second_read(
+        descriptor: int,
+        *,
+        maximum_bytes: int,
+    ) -> bytes:
+        nonlocal read_count
+        read_count += 1
+        if read_count == 2:
+            raise PermissionError("simulated descriptor read failure")
+        return original_read(
+            descriptor,
+            maximum_bytes=maximum_bytes,
+        )
 
     monkeypatch.setattr(
         bundle_loader_module,
-        "load_instrument_artifact",
-        fail_read,
+        "_read_descriptor_bytes",
+        fail_second_read,
     )
 
     with pytest.raises(InstrumentBundleResolutionError) as caught:
         load_instrument_bundle(fixture.manifest_path)
 
     assert caught.value.code == "bundle_member_unreadable"
-
-
-@pytest.mark.parametrize(
-    "loader_name",
-    [
-        "load_instrument_artifact",
-        "load_hypothesis_registry",
-        "load_context_bank",
-    ],
-)
-def test_loader_preserves_missing_classification_at_member_read_boundary(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    loader_name: str,
-) -> None:
-    fixture = _build_bundle(tmp_path)
-
-    def disappear(*args: object, **kwargs: object) -> object:
-        raise FileNotFoundError("simulated member disappearance")
-
-    monkeypatch.setattr(bundle_loader_module, loader_name, disappear)
-
-    with pytest.raises(InstrumentBundleResolutionError) as caught:
-        load_instrument_bundle(fixture.manifest_path)
-
-    assert caught.value.code == "bundle_member_missing"
 
 
 def test_loader_does_not_launder_unexpected_member_loader_failure(
@@ -1303,11 +1310,39 @@ def test_loader_does_not_launder_unexpected_member_loader_failure(
 
     monkeypatch.setattr(
         bundle_loader_module,
-        "load_instrument_artifact",
+        "_load_instrument_artifact_from_bytes",
         fail_internally,
     )
 
     with pytest.raises(RuntimeError, match="simulated internal loader defect"):
+        load_instrument_bundle(fixture.manifest_path)
+
+
+@pytest.mark.parametrize(
+    "parser_name",
+    [
+        "_load_instrument_artifact_from_bytes",
+        "_load_hypothesis_registry_from_bytes",
+        "_load_context_bank_from_bytes",
+    ],
+)
+def test_loader_does_not_launder_unexpected_member_parser_oserror(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    parser_name: str,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def fail_internally(*args: object, **kwargs: object) -> object:
+        raise OSError("simulated internal parser defect")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        parser_name,
+        fail_internally,
+    )
+
+    with pytest.raises(OSError, match="simulated internal parser defect"):
         load_instrument_bundle(fixture.manifest_path)
 
 
@@ -1323,52 +1358,26 @@ def test_loader_rejects_missing_artifact_member(tmp_path: Path) -> None:
         load_instrument_bundle(fixture.manifest_path)
 
 
-def test_loader_does_not_classify_member_resolve_permission_as_missing(
+def test_loader_classifies_member_open_permission_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _build_bundle(tmp_path)
-    target_path = fixture.root / fixture.manifest.instrument_artifacts[0].path
-    original_resolve = Path.resolve
+    target_name = Path(fixture.manifest.instrument_artifacts[0].path).name
+    original_open = os.open
 
-    def fail_target_resolve(
-        path: Path,
-        *args: object,
-        **kwargs: object,
-    ) -> Path:
-        strict = kwargs.get("strict", args[0] if args else False)
-        if path == target_path and strict is True:
-            raise PermissionError("simulated member resolve denial")
-        return original_resolve(path, *args, **kwargs)
+    def fail_target_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        if path == target_name and dir_fd is not None:
+            raise PermissionError("simulated member open denial")
+        return original_open(path, flags, mode, dir_fd=dir_fd)
 
-    monkeypatch.setattr(Path, "resolve", fail_target_resolve)
-
-    with pytest.raises(InstrumentBundleResolutionError) as caught:
-        load_instrument_bundle(fixture.manifest_path)
-
-    assert caught.value.code == "bundle_member_unreadable"
-
-
-def test_loader_classifies_member_stat_race(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = _build_bundle(tmp_path)
-    target_path = (
-        fixture.root / fixture.manifest.instrument_artifacts[0].path
-    ).resolve()
-    original_stat = Path.stat
-
-    def fail_target_stat(
-        path: Path,
-        *args: object,
-        **kwargs: object,
-    ) -> os.stat_result:
-        if path == target_path and kwargs.get("follow_symlinks") is not False:
-            raise PermissionError("simulated member stat denial")
-        return original_stat(path, *args, **kwargs)
-
-    monkeypatch.setattr(Path, "stat", fail_target_stat)
+    monkeypatch.setattr(os, "open", fail_target_open)
 
     with pytest.raises(InstrumentBundleResolutionError) as caught:
         load_instrument_bundle(fixture.manifest_path)
@@ -1381,21 +1390,19 @@ def test_loader_classifies_member_path_inspection_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _build_bundle(tmp_path)
-    target_path = (
-        fixture.root / fixture.manifest.instrument_artifacts[0].path
-    ).resolve()
-    original_stat = Path.stat
+    target_name = Path(fixture.manifest.instrument_artifacts[0].path).name
+    original_stat = os.stat
 
-    def fail_target_lstat(
-        path: Path,
+    def fail_target_stat(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
         *args: object,
         **kwargs: object,
     ) -> os.stat_result:
-        if path == target_path and kwargs.get("follow_symlinks") is False:
+        if path == target_name and kwargs.get("dir_fd") is not None:
             raise PermissionError("simulated member path inspection denial")
         return original_stat(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "stat", fail_target_lstat)
+    monkeypatch.setattr(os, "stat", fail_target_stat)
 
     with pytest.raises(InstrumentBundleResolutionError) as caught:
         load_instrument_bundle(fixture.manifest_path)
@@ -1403,29 +1410,221 @@ def test_loader_classifies_member_path_inspection_failure(
     assert caught.value.code == "bundle_member_unreadable"
 
 
-def test_loader_classifies_manifest_restat_race(
+@pytest.mark.parametrize(
+    "manifest_path",
+    [
+        Path(),
+        Path(Path.cwd().anchor),
+    ],
+)
+def test_loader_classifies_empty_name_manifest_paths(
+    manifest_path: Path,
+) -> None:
+    with pytest.raises(InstrumentBundleSchemaError) as caught:
+        load_instrument_bundle(manifest_path)
+
+    assert caught.value.code == "bundle_manifest_unreadable"
+
+
+@pytest.mark.parametrize(
+    ("member_kind", "expected_code"),
+    [
+        ("manifest", "bundle_manifest_symlink"),
+        ("instrument", "symlink_member_forbidden"),
+        ("registry", "symlink_member_forbidden"),
+        ("context_bank", "symlink_member_forbidden"),
+        ("payload", "symlink_member_forbidden"),
+    ],
+)
+def test_loader_rejects_symlink_inserted_immediately_before_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    member_kind: str,
+    expected_code: str,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    relative_path = _member_relative_path(fixture, member_kind)
+    target_path = fixture.root / relative_path
+    target_name = target_path.name
+    replacement_path = tmp_path / f"outside-{member_kind}-member"
+    replacement_path.write_bytes(target_path.read_bytes())
+    original_open = os.open
+    replaced = False
+
+    def replace_before_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal replaced
+        if path == target_name and dir_fd is not None and not replaced:
+            target_path.unlink()
+            target_path.symlink_to(replacement_path)
+            replaced = True
+        return original_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "open", replace_before_open)
+
+    with pytest.raises(InstrumentBundleError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert replaced is True
+    assert caught.value.code == expected_code
+
+
+@pytest.mark.parametrize(
+    "member_kind",
+    ["manifest", "instrument", "registry", "context_bank", "payload"],
+)
+def test_loader_consumes_opened_descriptor_after_path_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    member_kind: str,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    relative_path = _member_relative_path(fixture, member_kind)
+    target_path = fixture.root / relative_path
+    original_open_member = bundle_loader_module._open_bundle_member
+    replaced = False
+
+    @contextmanager
+    def replace_after_descriptor_open(**kwargs: object):
+        nonlocal replaced
+        with original_open_member(**kwargs) as opened:
+            if kwargs["relative_path"] == relative_path and not replaced:
+                corrupted = bytearray(target_path.read_bytes())
+                corrupted[-1] ^= 1
+                replacement = target_path.with_name(f"{target_path.name}.replacement")
+                replacement.write_bytes(corrupted)
+                os.replace(replacement, target_path)
+                replaced = True
+            yield opened
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_open_bundle_member",
+        replace_after_descriptor_open,
+    )
+
+    load_instrument_bundle(fixture.manifest_path)
+
+    assert replaced is True
+
+
+def test_loader_rejects_intermediate_directory_symlink(tmp_path: Path) -> None:
+    fixture = _build_bundle(tmp_path)
+    artifact_directory = fixture.root / "artifacts"
+    real_directory = fixture.root / "artifacts-real"
+    artifact_directory.rename(real_directory)
+    artifact_directory.symlink_to(real_directory, target_is_directory=True)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "symlink_member_forbidden"
+
+
+def test_loader_classifies_raced_intermediate_symlink_as_unreadable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = _build_bundle(tmp_path)
-    manifest_path = fixture.manifest_path.resolve()
-    original_stat = Path.stat
+    artifact_directory = fixture.root / "artifacts"
+    real_directory = fixture.root / "artifacts-real"
+    original_open = os.open
+    replaced = False
 
-    def fail_manifest_stat(
-        path: Path,
-        *args: object,
-        **kwargs: object,
+    def replace_directory_before_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal replaced
+        if path == "artifacts" and dir_fd is not None and not replaced:
+            artifact_directory.rename(real_directory)
+            artifact_directory.symlink_to(real_directory, target_is_directory=True)
+            replaced = True
+        return original_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "open", replace_directory_before_open)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert replaced is True
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_rejects_bundle_root_replacement_after_manifest_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    original_read_manifest = bundle_loader_module._read_bundle_manifest
+    replaced_root = tmp_path / "bundle-original"
+
+    def replace_root_after_read(*args: object, **kwargs: object):
+        result = original_read_manifest(*args, **kwargs)
+        fixture.root.rename(replaced_root)
+        fixture.root.mkdir()
+        return result
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_read_bundle_manifest",
+        replace_root_after_read,
+    )
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_classifies_manifest_descriptor_inspection_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    original_fstat = os.fstat
+    fstat_count = 0
+
+    def fail_manifest_fstat(
+        descriptor: int,
     ) -> os.stat_result:
-        if path == manifest_path and kwargs.get("follow_symlinks") is not False:
-            raise PermissionError("simulated manifest stat denial")
-        return original_stat(path, *args, **kwargs)
+        nonlocal fstat_count
+        fstat_count += 1
+        if fstat_count == 2:
+            raise PermissionError("simulated manifest descriptor denial")
+        return original_fstat(descriptor)
 
-    monkeypatch.setattr(Path, "stat", fail_manifest_stat)
+    monkeypatch.setattr(os, "fstat", fail_manifest_fstat)
 
     with pytest.raises(InstrumentBundleSchemaError) as caught:
         load_instrument_bundle(fixture.manifest_path)
 
     assert caught.value.code == "bundle_manifest_unreadable"
+
+
+def test_loader_reports_unavailable_secure_member_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_SUPPORTS_SECURE_DIR_FD",
+        False,
+    )
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "secure_member_open_unavailable"
 
 
 def test_loader_rejects_missing_artifact_reference_entry(
@@ -1614,6 +1813,20 @@ def test_loader_rejects_symlinked_payload_member(tmp_path: Path) -> None:
         match="symlink_member_forbidden",
     ):
         load_instrument_bundle(fixture.manifest_path)
+
+
+def test_loader_rejects_payload_with_external_hardlink(tmp_path: Path) -> None:
+    fixture = _build_bundle(tmp_path)
+    entry = fixture.payload_entries[0]
+    indexed_path = fixture.root / entry.path
+    outside_path = tmp_path / "outside-payload.bin"
+    indexed_path.rename(outside_path)
+    os.link(outside_path, indexed_path)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_alias"
 
 
 def test_loader_rejects_missing_payload_reference_entry(

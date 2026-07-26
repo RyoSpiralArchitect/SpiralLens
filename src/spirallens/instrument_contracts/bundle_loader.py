@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, fields, is_dataclass
+import errno
 import hashlib
+import os
 from pathlib import Path, PurePosixPath
 import stat
 from types import MappingProxyType
@@ -12,16 +15,18 @@ from typing import TypeAlias
 
 from spirallens.contexts import (
     CONTEXT_BANK_SCHEMA_VERSION,
+    MAX_CONTEXT_BANK_BYTES,
     ContextBank,
-    ContextContractError,
     ContextBankIntegrityError,
-    load_context_bank,
+    ContextContractError,
 )
+from spirallens.contexts.loader import _load_context_bank_from_bytes
 
 from .artifact_loader import (
+    MAX_INSTRUMENT_ARTIFACT_BYTES,
     InstrumentArtifactIntegrityError,
     InstrumentArtifactSchemaError,
-    load_instrument_artifact,
+    _load_instrument_artifact_from_bytes,
 )
 from .artifacts import InstrumentArtifactValue
 from .bundle import (
@@ -40,16 +45,25 @@ from .common import (
 )
 from .registry import HypothesisRegistry, HypothesisRegistryPolicyError
 from .registry_loader import (
+    MAX_HYPOTHESIS_REGISTRY_BYTES,
     HypothesisRegistryIntegrityError,
     HypothesisRegistrySchemaError,
-    load_hypothesis_registry,
+    _load_hypothesis_registry_from_bytes,
 )
 
 
 MAX_INSTRUMENT_BUNDLE_BYTES = 4 * 1024 * 1024
 _STREAM_CHUNK_BYTES = 1024 * 1024
+_SUPPORTS_SECURE_DIR_FD = (
+    hasattr(os, "O_NOFOLLOW")
+    and hasattr(os, "O_DIRECTORY")
+    and os.open in os.supports_dir_fd
+    and os.stat in os.supports_dir_fd
+    and os.stat in os.supports_follow_symlinks
+)
 
 ArtifactKey: TypeAlias = tuple[ArtifactType, str]
+FileIdentity: TypeAlias = tuple[int, int]
 ResolvedArtifactValue: TypeAlias = (
     InstrumentArtifactValue | HypothesisRegistry | ContextBank
 )
@@ -116,10 +130,19 @@ class LoadedBundleArtifact:
 
 @dataclass(frozen=True, slots=True)
 class LoadedBundlePayload:
-    """One opaque payload after streaming byte integrity validation."""
+    """Integrity receipt for opaque bytes, without a reusable path handle."""
 
     reference: PayloadRef
+
+
+@dataclass(frozen=True, slots=True)
+class _OpenedBundleMember:
+    """One no-follow regular file bound to the descriptor being consumed."""
+
     source_path: Path
+    descriptor: int
+    root_identity: FileIdentity
+    identity: FileIdentity
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,85 +273,307 @@ def iter_payload_reference_uses(
             yield use
 
 
-def _safe_member_path(
+def _secure_open_flags(*, directory: bool) -> int:
+    no_follow = getattr(os, "O_NOFOLLOW", None)
+    directory_only = getattr(os, "O_DIRECTORY", None)
+    if not _SUPPORTS_SECURE_DIR_FD:
+        raise InstrumentBundleResolutionError(
+            "secure_member_open_unavailable",
+            "this platform cannot enforce descriptor-relative no-follow loading",
+        )
+    assert no_follow is not None
+    assert directory_only is not None
+    flags = (
+        os.O_RDONLY
+        | no_follow
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+        | getattr(os, "O_NOCTTY", 0)
+    )
+    if directory:
+        flags |= directory_only
+    return flags
+
+
+def _raise_member_os_error(
+    *,
+    relative_path: str,
+    action: str,
+    error: OSError,
+) -> None:
+    if isinstance(error, FileNotFoundError):
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"bundle member {relative_path!r} disappeared during {action}",
+        ) from error
+    if error.errno == errno.ELOOP:
+        raise InstrumentBundleResolutionError(
+            "symlink_member_forbidden",
+            f"bundle member {relative_path!r} traverses a symlink",
+        ) from error
+    raise InstrumentBundleResolutionError(
+        "bundle_member_unreadable",
+        f"bundle member {relative_path!r} failed during {action}",
+    ) from error
+
+
+def _relative_component_stat(
+    *,
+    parent_descriptor: int,
+    component: str,
+    relative_path: str,
+) -> os.stat_result:
+    try:
+        component_stat = os.stat(
+            component,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+    except OSError as error:
+        _raise_member_os_error(
+            relative_path=relative_path,
+            action="path inspection",
+            error=error,
+        )
+    if stat.S_ISLNK(component_stat.st_mode):
+        raise InstrumentBundleResolutionError(
+            "symlink_member_forbidden",
+            f"bundle member {relative_path!r} traverses a symlink",
+        )
+    return component_stat
+
+
+def _open_relative_component(
+    *,
+    parent_descriptor: int,
+    component: str,
+    relative_path: str,
+    directory: bool,
+) -> int:
+    try:
+        return os.open(
+            component,
+            _secure_open_flags(directory=directory),
+            dir_fd=parent_descriptor,
+        )
+    except OSError as error:
+        if directory and error.errno in {errno.ELOOP, errno.ENOTDIR}:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_unreadable",
+                f"bundle member {relative_path!r} changed during traversal",
+            ) from error
+        _raise_member_os_error(
+            relative_path=relative_path,
+            action="descriptor open",
+            error=error,
+        )
+
+
+def _opened_identity(
+    *,
+    descriptor: int,
+    relative_path: str,
+) -> tuple[os.stat_result, FileIdentity]:
+    try:
+        opened_stat = os.fstat(descriptor)
+    except OSError as error:
+        _raise_member_os_error(
+            relative_path=relative_path,
+            action="descriptor inspection",
+            error=error,
+        )
+    return opened_stat, (opened_stat.st_dev, opened_stat.st_ino)
+
+
+def _close_descriptors(descriptors: list[int]) -> None:
+    for descriptor in reversed(descriptors):
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+
+
+@contextmanager
+def _open_bundle_member(
     *,
     bundle_root: Path,
     relative_path: str,
-    seen_files: dict[tuple[int, int], str],
-) -> Path:
-    candidate = bundle_root
-    for part in PurePosixPath(relative_path).parts:
-        candidate = candidate / part
+    expected_root_identity: FileIdentity | None,
+    seen_files: dict[FileIdentity, str],
+) -> Iterator[_OpenedBundleMember]:
+    parts = PurePosixPath(relative_path).parts
+    if not parts:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            "bundle member path must name a file",
+        )
+    descriptors: list[int] = []
+    try:
         try:
-            is_symlink = candidate.is_symlink()
-        except FileNotFoundError as error:
-            raise InstrumentBundleResolutionError(
-                "bundle_member_missing",
-                f"bundle member {relative_path!r} disappeared during path validation",
-            ) from error
+            root_before = bundle_root.stat()
+            root_descriptor = os.open(
+                bundle_root,
+                _secure_open_flags(directory=True),
+            )
         except OSError as error:
+            _raise_member_os_error(
+                relative_path=relative_path,
+                action="bundle-root open",
+                error=error,
+            )
+        descriptors.append(root_descriptor)
+        root_after, root_identity = _opened_identity(
+            descriptor=root_descriptor,
+            relative_path=relative_path,
+        )
+        root_before_identity = (root_before.st_dev, root_before.st_ino)
+        if (
+            not stat.S_ISDIR(root_after.st_mode)
+            or root_before_identity != root_identity
+            or (
+                expected_root_identity is not None
+                and expected_root_identity != root_identity
+            )
+        ):
             raise InstrumentBundleResolutionError(
                 "bundle_member_unreadable",
-                f"bundle member {relative_path!r} cannot be inspected",
-            ) from error
-        if is_symlink:
-            raise InstrumentBundleResolutionError(
-                "symlink_member_forbidden",
-                f"bundle member {relative_path!r} traverses a symlink",
+                f"bundle root changed while opening {relative_path!r}",
             )
-    try:
-        resolved = candidate.resolve(strict=True)
-    except FileNotFoundError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_missing",
-            f"bundle member {relative_path!r} does not resolve",
-        ) from error
-    except OSError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_unreadable",
-            f"bundle member {relative_path!r} cannot be resolved",
-        ) from error
-    if bundle_root != resolved and bundle_root not in resolved.parents:
-        raise InstrumentBundleResolutionError(
-            "bundle_path_escape",
-            f"bundle member {relative_path!r} escapes the bundle directory",
+
+        parent_descriptor = root_descriptor
+        for component in parts[:-1]:
+            before = _relative_component_stat(
+                parent_descriptor=parent_descriptor,
+                component=component,
+                relative_path=relative_path,
+            )
+            if not stat.S_ISDIR(before.st_mode):
+                raise InstrumentBundleResolutionError(
+                    "bundle_member_unreadable",
+                    f"bundle member {relative_path!r} has a non-directory parent",
+                )
+            directory_descriptor = _open_relative_component(
+                parent_descriptor=parent_descriptor,
+                component=component,
+                relative_path=relative_path,
+                directory=True,
+            )
+            descriptors.append(directory_descriptor)
+            after, after_identity = _opened_identity(
+                descriptor=directory_descriptor,
+                relative_path=relative_path,
+            )
+            before_identity = (before.st_dev, before.st_ino)
+            if not stat.S_ISDIR(after.st_mode) or before_identity != after_identity:
+                raise InstrumentBundleResolutionError(
+                    "bundle_member_unreadable",
+                    f"bundle member {relative_path!r} changed during traversal",
+                )
+            parent_descriptor = directory_descriptor
+
+        final_component = parts[-1]
+        before = _relative_component_stat(
+            parent_descriptor=parent_descriptor,
+            component=final_component,
+            relative_path=relative_path,
         )
-    try:
-        file_stat = resolved.stat()
-    except FileNotFoundError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_missing",
-            f"bundle member {relative_path!r} disappeared during validation",
-        ) from error
-    except OSError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_unreadable",
-            f"bundle member {relative_path!r} cannot be inspected",
-        ) from error
-    if not stat.S_ISREG(file_stat.st_mode):
-        raise InstrumentBundleResolutionError(
-            "bundle_member_not_regular_file",
-            f"bundle member {relative_path!r} is not a regular file",
+        member_descriptor = _open_relative_component(
+            parent_descriptor=parent_descriptor,
+            component=final_component,
+            relative_path=relative_path,
+            directory=False,
         )
-    inode = (file_stat.st_dev, file_stat.st_ino)
-    previous = seen_files.get(inode)
-    if previous is not None:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_alias",
-            f"{relative_path!r} aliases already indexed member {previous!r}",
+        descriptors.append(member_descriptor)
+        after, identity = _opened_identity(
+            descriptor=member_descriptor,
+            relative_path=relative_path,
         )
-    seen_files[inode] = relative_path
-    return resolved
+        before_identity = (before.st_dev, before.st_ino)
+        if before_identity != identity:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_unreadable",
+                f"bundle member {relative_path!r} changed while opening",
+            )
+        if not stat.S_ISREG(after.st_mode):
+            raise InstrumentBundleResolutionError(
+                "bundle_member_not_regular_file",
+                f"bundle member {relative_path!r} is not a regular file",
+            )
+        if after.st_nlink != 1:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_alias",
+                f"bundle member {relative_path!r} has multiple hard links",
+            )
+        previous = seen_files.get(identity)
+        if previous is not None:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_alias",
+                f"{relative_path!r} aliases already indexed member {previous!r}",
+            )
+        seen_files[identity] = relative_path
+        yield _OpenedBundleMember(
+            source_path=bundle_root.joinpath(*parts),
+            descriptor=member_descriptor,
+            root_identity=root_identity,
+            identity=identity,
+        )
+    finally:
+        _close_descriptors(descriptors)
+
+
+def _read_descriptor_bytes(
+    descriptor: int,
+    *,
+    maximum_bytes: int,
+) -> bytes:
+    chunks: list[bytes] = []
+    size = 0
+    read_limit = maximum_bytes + 1
+    while size < read_limit:
+        chunk = os.read(
+            descriptor,
+            min(_STREAM_CHUNK_BYTES, read_limit - size),
+        )
+        if not chunk:
+            break
+        chunks.append(chunk)
+        size += len(chunk)
+    return b"".join(chunks)
 
 
 def _load_instrument_entry(
     entry: BundleArtifactEntry,
     *,
-    path: Path,
+    bundle_root: Path,
+    expected_root_identity: FileIdentity,
+    seen_files: dict[FileIdentity, str],
 ) -> LoadedBundleArtifact:
     try:
-        loaded = load_instrument_artifact(
-            path,
+        with _open_bundle_member(
+            bundle_root=bundle_root,
+            relative_path=entry.path,
+            expected_root_identity=expected_root_identity,
+            seen_files=seen_files,
+        ) as opened:
+            source = _read_descriptor_bytes(
+                opened.descriptor,
+                maximum_bytes=MAX_INSTRUMENT_ARTIFACT_BYTES,
+            )
+            source_path = opened.source_path
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
+        ) from error
+    try:
+        loaded = _load_instrument_artifact_from_bytes(
+            source,
+            source_path=source_path,
             expected_source_sha256=entry.source_sha256,
         )
     except InstrumentArtifactIntegrityError as error:
@@ -340,16 +585,6 @@ def _load_instrument_entry(
         raise InstrumentBundleSchemaError(
             "instrument_member_invalid",
             f"{entry.path!r} is not the declared canonical instrument artifact",
-        ) from error
-    except FileNotFoundError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_missing",
-            f"{entry.path!r} disappeared before it could be read",
-        ) from error
-    except OSError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_unreadable",
-            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.artifact,
@@ -371,11 +606,36 @@ def _load_instrument_entry(
 def _load_registry_entry(
     entry: BundleArtifactEntry,
     *,
-    path: Path,
+    bundle_root: Path,
+    expected_root_identity: FileIdentity,
+    seen_files: dict[FileIdentity, str],
 ) -> LoadedBundleArtifact:
     try:
-        loaded = load_hypothesis_registry(
-            path,
+        with _open_bundle_member(
+            bundle_root=bundle_root,
+            relative_path=entry.path,
+            expected_root_identity=expected_root_identity,
+            seen_files=seen_files,
+        ) as opened:
+            source = _read_descriptor_bytes(
+                opened.descriptor,
+                maximum_bytes=MAX_HYPOTHESIS_REGISTRY_BYTES,
+            )
+            source_path = opened.source_path
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
+        ) from error
+    try:
+        loaded = _load_hypothesis_registry_from_bytes(
+            source,
+            source_path=source_path,
             expected_source_sha256=entry.source_sha256,
         )
     except HypothesisRegistryIntegrityError as error:
@@ -390,16 +650,6 @@ def _load_registry_entry(
         raise InstrumentBundleSchemaError(
             "registry_member_invalid",
             f"{entry.path!r} is not the declared strict registry",
-        ) from error
-    except FileNotFoundError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_missing",
-            f"{entry.path!r} disappeared before it could be read",
-        ) from error
-    except OSError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_unreadable",
-            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.registry,
@@ -421,11 +671,36 @@ def _load_registry_entry(
 def _load_context_entry(
     entry: BundleContextBankEntry,
     *,
-    path: Path,
+    bundle_root: Path,
+    expected_root_identity: FileIdentity,
+    seen_files: dict[FileIdentity, str],
 ) -> LoadedBundleArtifact:
     try:
-        loaded = load_context_bank(
-            path,
+        with _open_bundle_member(
+            bundle_root=bundle_root,
+            relative_path=entry.path,
+            expected_root_identity=expected_root_identity,
+            seen_files=seen_files,
+        ) as opened:
+            source = _read_descriptor_bytes(
+                opened.descriptor,
+                maximum_bytes=MAX_CONTEXT_BANK_BYTES,
+            )
+            source_path = opened.source_path
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"{entry.path!r} disappeared before it could be read",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
+        ) from error
+    try:
+        loaded = _load_context_bank_from_bytes(
+            source,
+            source_path=source_path,
             allowed_roles={entry.allowed_role},
             expected_source_sha256=entry.source_sha256,
         )
@@ -438,16 +713,6 @@ def _load_context_entry(
         raise InstrumentBundleSchemaError(
             "context_bank_member_invalid",
             f"{entry.path!r} is not the declared role-bound context bank",
-        ) from error
-    except FileNotFoundError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_missing",
-            f"{entry.path!r} disappeared before it could be read",
-        ) from error
-    except OSError as error:
-        raise InstrumentBundleResolutionError(
-            "bundle_member_unreadable",
-            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.bank,
@@ -534,20 +799,22 @@ def _reachable_from_roots(
 
 
 def _stream_payload_identity(
-    path: Path,
+    descriptor: int,
     *,
     expected_byte_length: int,
 ) -> tuple[int, str]:
     digest = hashlib.sha256()
     size = 0
     read_limit = expected_byte_length + 1
-    with path.open("rb") as handle:
-        while size < read_limit:
-            chunk = handle.read(min(_STREAM_CHUNK_BYTES, read_limit - size))
-            if not chunk:
-                break
-            size += len(chunk)
-            digest.update(chunk)
+    while size < read_limit:
+        chunk = os.read(
+            descriptor,
+            min(_STREAM_CHUNK_BYTES, read_limit - size),
+        )
+        if not chunk:
+            break
+        size += len(chunk)
+        digest.update(chunk)
     return size, digest.hexdigest()
 
 
@@ -556,7 +823,14 @@ def _read_bundle_manifest(
     *,
     expected_source_sha256: str | None,
     expected_canonical_sha256: str | None,
-) -> tuple[InstrumentBundleManifest, Path, str, str]:
+) -> tuple[
+    InstrumentBundleManifest,
+    Path,
+    str,
+    str,
+    FileIdentity,
+    FileIdentity,
+]:
     if expected_source_sha256 is not None:
         require_sha256(
             expected_source_sha256,
@@ -581,15 +855,40 @@ def _read_bundle_manifest(
             "bundle manifest path must not be a symlink",
         )
     try:
-        source_path = requested.resolve()
+        bundle_root = requested.parent.resolve(strict=True)
     except OSError as error:
         raise InstrumentBundleSchemaError(
             "bundle_manifest_unreadable",
-            "bundle manifest path cannot be resolved",
+            "bundle manifest parent cannot be resolved",
         ) from error
+    source_path = bundle_root / requested.name
+    manifest_seen_files: dict[FileIdentity, str] = {}
     try:
-        with source_path.open("rb") as handle:
-            source = handle.read(MAX_INSTRUMENT_BUNDLE_BYTES + 1)
+        with _open_bundle_member(
+            bundle_root=bundle_root,
+            relative_path=requested.name,
+            expected_root_identity=None,
+            seen_files=manifest_seen_files,
+        ) as opened:
+            source = _read_descriptor_bytes(
+                opened.descriptor,
+                maximum_bytes=MAX_INSTRUMENT_BUNDLE_BYTES,
+            )
+            source_path = opened.source_path
+            root_identity = opened.root_identity
+            manifest_identity = opened.identity
+    except InstrumentBundleResolutionError as error:
+        if error.code == "symlink_member_forbidden":
+            raise InstrumentBundleSchemaError(
+                "bundle_manifest_symlink",
+                "bundle manifest path must not be a symlink",
+            ) from error
+        if error.code == "secure_member_open_unavailable":
+            raise
+        raise InstrumentBundleSchemaError(
+            "bundle_manifest_unreadable",
+            "bundle manifest cannot be opened securely",
+        ) from error
     except OSError as error:
         raise InstrumentBundleSchemaError(
             "bundle_manifest_unreadable",
@@ -633,7 +932,14 @@ def _read_bundle_manifest(
             "bundle_canonical_digest_mismatch",
             "bundle manifest canonical SHA-256 differs",
         )
-    return manifest, source_path, source_sha256, canonical_sha256
+    return (
+        manifest,
+        source_path,
+        source_sha256,
+        canonical_sha256,
+        root_identity,
+        manifest_identity,
+    )
 
 
 def load_instrument_bundle(
@@ -649,44 +955,44 @@ def load_instrument_bundle(
         source_path,
         source_sha256,
         canonical_sha256,
+        root_identity,
+        manifest_identity,
     ) = _read_bundle_manifest(
         path,
         expected_source_sha256=expected_source_sha256,
         expected_canonical_sha256=expected_canonical_sha256,
     )
     bundle_root = source_path.parent
-    seen_files: dict[tuple[int, int], str] = {}
-    try:
-        manifest_stat = source_path.stat()
-    except OSError as error:
-        raise InstrumentBundleSchemaError(
-            "bundle_manifest_unreadable",
-            "bundle manifest cannot be inspected after reading",
-        ) from error
-    seen_files[(manifest_stat.st_dev, manifest_stat.st_ino)] = source_path.name
+    seen_files: dict[FileIdentity, str] = {manifest_identity: source_path.name}
 
     members: list[LoadedBundleArtifact] = []
     for entry in manifest.instrument_artifacts:
-        member_path = _safe_member_path(
-            bundle_root=bundle_root,
-            relative_path=entry.path,
-            seen_files=seen_files,
+        members.append(
+            _load_instrument_entry(
+                entry,
+                bundle_root=bundle_root,
+                expected_root_identity=root_identity,
+                seen_files=seen_files,
+            )
         )
-        members.append(_load_instrument_entry(entry, path=member_path))
     for entry in manifest.hypothesis_registries:
-        member_path = _safe_member_path(
-            bundle_root=bundle_root,
-            relative_path=entry.path,
-            seen_files=seen_files,
+        members.append(
+            _load_registry_entry(
+                entry,
+                bundle_root=bundle_root,
+                expected_root_identity=root_identity,
+                seen_files=seen_files,
+            )
         )
-        members.append(_load_registry_entry(entry, path=member_path))
     for entry in manifest.context_banks:
-        member_path = _safe_member_path(
-            bundle_root=bundle_root,
-            relative_path=entry.path,
-            seen_files=seen_files,
+        members.append(
+            _load_context_entry(
+                entry,
+                bundle_root=bundle_root,
+                expected_root_identity=root_identity,
+                seen_files=seen_files,
+            )
         )
-        members.append(_load_context_entry(entry, path=member_path))
 
     index = {member.logical_key: member for member in members}
     if len(index) != len(members):
@@ -797,16 +1103,17 @@ def load_instrument_bundle(
 
     loaded_payloads: list[LoadedBundlePayload] = []
     for entry in manifest.payloads:
-        payload_path = _safe_member_path(
-            bundle_root=bundle_root,
-            relative_path=entry.path,
-            seen_files=seen_files,
-        )
         try:
-            size, digest = _stream_payload_identity(
-                payload_path,
-                expected_byte_length=entry.reference.byte_length,
-            )
+            with _open_bundle_member(
+                bundle_root=bundle_root,
+                relative_path=entry.path,
+                expected_root_identity=root_identity,
+                seen_files=seen_files,
+            ) as opened:
+                size, digest = _stream_payload_identity(
+                    opened.descriptor,
+                    expected_byte_length=entry.reference.byte_length,
+                )
         except FileNotFoundError as error:
             raise InstrumentBundleResolutionError(
                 "bundle_member_missing",
@@ -830,7 +1137,6 @@ def load_instrument_bundle(
         loaded_payloads.append(
             LoadedBundlePayload(
                 reference=entry.reference,
-                source_path=payload_path,
             )
         )
 
