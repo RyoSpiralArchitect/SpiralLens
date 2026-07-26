@@ -836,6 +836,58 @@ def _run_instrument_artifact_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_instrument_bundle_validate(args: argparse.Namespace) -> int:
+    from spirallens.instrument_contracts.bundle_loader import (
+        load_instrument_bundle,
+    )
+
+    loaded = load_instrument_bundle(
+        args.path,
+        expected_source_sha256=args.expected_source_sha256,
+        expected_canonical_sha256=args.expected_canonical_sha256,
+    )
+    _print_json(
+        {
+            "command": "instrument-bundle validate",
+            "status": "valid",
+            "validation_scope": "closed_integrity_bundle",
+            "schema_version": loaded.manifest.schema_version,
+            "bundle_id": loaded.manifest.bundle_id,
+            "source_path": str(loaded.source_path),
+            "source_sha256": loaded.source_sha256,
+            "canonical_sha256": loaded.canonical_sha256,
+            "root_artifacts": len(loaded.manifest.roots),
+            "artifact_entries": len(loaded.artifacts),
+            "payload_entries": len(loaded.payloads),
+            "artifact_reference_count": loaded.artifact_reference_count,
+            "payload_reference_count": loaded.payload_reference_count,
+            "cross_manifest_join_count": (
+                loaded.cross_manifest_join_count
+            ),
+            "bundle_integrity_validated": True,
+            "artifact_references_resolved": True,
+            "payload_references_resolved": True,
+            "payload_bytes_read_for_integrity": bool(loaded.payloads),
+            "payload_content_decoded": False,
+            "row_identity_content_recomputed": False,
+            "dependency_graph_acyclic": True,
+            "unreferenced_entries": 0,
+            "cross_manifest_metadata_joins_validated": True,
+            "context_role_fit_role_mapping_validated": False,
+            "cell_completeness_validated": False,
+            "d0_d8_qualified": False,
+            "scientific_bundle_qualified": False,
+            "model_loaded": False,
+            "estimator_executed": False,
+            "graph_constructed": False,
+            "subject_roles_allowed": False,
+            "subject_data_accessed": False,
+            "subject_execution_performed": False,
+        }
+    )
+    return 0
+
+
 def _run_candidates(args: argparse.Namespace) -> int:
     from spirallens.metrics import (
         CandidateSearchConfig,
@@ -1801,6 +1853,28 @@ def _add_instrument_artifact_parser(subparsers: Any) -> None:
     validate.set_defaults(handler=_run_instrument_artifact_validate)
 
 
+def _add_instrument_bundle_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "instrument-bundle",
+        help="validate one canonical closed integrity bundle",
+    )
+    commands = parser.add_subparsers(
+        dest="instrument_bundle_command",
+        required=True,
+    )
+    validate = commands.add_parser(
+        "validate",
+        help=(
+            "resolve artifact/payload identities and cross-manifest "
+            "metadata joins without decoding payload values"
+        ),
+    )
+    validate.add_argument("--path", type=Path, required=True)
+    validate.add_argument("--expected-source-sha256")
+    validate.add_argument("--expected-canonical-sha256")
+    validate.set_defaults(handler=_run_instrument_bundle_validate)
+
+
 def _add_candidates_parser(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "candidates",
@@ -1949,6 +2023,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_context_bank_parser(subparsers)
     _add_hypothesis_registry_parser(subparsers)
     _add_instrument_artifact_parser(subparsers)
+    _add_instrument_bundle_parser(subparsers)
     _add_atlas_parser(subparsers)
     _add_faiss_range_preflight_parser(subparsers)
     _add_neighbor_audit_parser(subparsers)

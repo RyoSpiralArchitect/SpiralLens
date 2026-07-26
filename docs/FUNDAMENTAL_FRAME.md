@@ -373,6 +373,7 @@ that an estimator has emitted any of them:
 - `GraphFamilyNullResult`
 - `CalibrationSelectionDecision`
 - `CalibrationConfirmationResult`
+- `InstrumentBundleManifest`
 - `SubjectProtocolManifest`
 
 They should be persisted as sidecars bound to the immutable candidate-ledger
@@ -386,11 +387,15 @@ parameter. Its defect variant binds an `OrderParameterField`; it binds a
 `GroundTruthAnchor` remains calibration metadata and cannot substitute for an
 inferred core.
 
-The v0.1 metadata implementation provides canonical hashing, exact field sets,
+The v0.1 contract implementation provides canonical hashing, exact field sets,
 tamper rejection, row-order bindings, explicit
-`pass|fail|insufficient|not_run` states, and byte-replay tests. A subject
-protocol still cannot depend on it until synthetic qualification D0-D8 is
-complete. See
+`pass|fail|insufficient|not_run` states, and byte-replay tests. Its
+closed-integrity bundle boundary resolves exact artifact and payload
+identities, rejects unreachable or cyclic indexed artifacts, streams opaque
+payload bytes for length and digest checks, and validates the selected typed
+metadata joins. It does not decode payload values, recompute row identities,
+or qualify an instrument. A subject protocol still cannot depend on it until
+synthetic qualification D0-D8 is complete. See
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ## 9. Historical and experimental consequences

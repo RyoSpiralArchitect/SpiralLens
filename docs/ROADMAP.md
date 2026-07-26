@@ -133,6 +133,7 @@ The target is:
 | Boundary | Responsibility | Dependency policy |
 | --- | --- | --- |
 | `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
+| `instrument_contracts` | Provisional manifests, closed-world content-addressed integrity, and selected cross-manifest metadata joins | Core only; payload values remain opaque and subject roles are forbidden |
 | future `graphs` and order-parameter boundaries | Scientific graph families, field artifacts, core diagnostics, and matched-class controls | Experimental core only after synthetic qualification |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
@@ -208,9 +209,10 @@ What M0 does **not** prove:
 
 **Status:** in progress. Observation, ContextBank, retrieval, qualification,
 and recall-gate machinery exist. The first frozen consumer-safe Pythia-70M
-retrieval audit ended `insufficient` and did not promote the backend. The
-order-parameter-first preparation and graph-family qualification layer is not
-implemented.
+retrieval audit ended `insufficient` and did not promote the backend. The P0
+registry, provisional artifact schemas, and closed-integrity bundle validator
+are implemented; estimators, representation-shaped phantoms, graph
+constructors, and graph-family qualification are not.
 
 **Target release family:** `0.2.x`.
 
@@ -595,27 +597,35 @@ below:
 3. define canonical substrate, graph, support, geometry-field,
    order-parameter, connection, discriminated loop, and calibration artifacts
    — implemented as metadata-only experimental v0.1 schemas;
-4. build independent high-dimensional representation-shaped phantom families;
-5. implement deterministic mutual-kNN, fixed-radius, and shared-neighbor graph
+4. define a canonical closed-world bundle manifest, resolve exact artifact and
+   payload closure, and validate selected cross-manifest metadata joins —
+   implemented as a closed-integrity validator that streams opaque payload
+   bytes only for length and SHA-256 verification;
+5. build independent high-dimensional representation-shaped phantom families;
+6. implement deterministic mutual-kNN, fixed-radius, and shared-neighbor graph
    constructors plus diversity receipts for field, cycle, and any explicit
    core-estimation axis;
-6. qualify the full field-estimation-graph by cycle-graph matrix on
+7. qualify the full field-estimation-graph by cycle-graph matrix on
    calibration-selection phantoms;
-7. freeze nonnumeric failure semantics, coverage/abstention gates, core/anchor
+8. freeze nonnumeric failure semantics, coverage/abstention gates, core/anchor
    receipts, and all required strata;
-8. seal a `CalibrationSelectionDecision` before opening the independent
+9. seal a `CalibrationSelectionDecision` before opening the independent
    confirmation bundle;
-9. run one locked independent synthetic confirmation and require byte-identical
+10. run one locked independent synthetic confirmation and require byte-identical
    replay;
-10. only then prepare a new subject manifest with new IDs, freeze, and output
+11. only then prepare a new subject manifest with new IDs, freeze, and output
     path under the no-subject-value access boundary;
-11. keep future discovery and confirmation roles separate and forbid
+12. keep future discovery and confirmation roles separate and forbid
     Pythia-70M outcomes from selecting Pythia-160M choices.
 
 The current work has advanced from documentation into metadata-contract
-implementation. It still performs no estimator execution, synthetic
-qualification, subject field estimation, graph construction, or outcome
-observation.
+implementation and closed-world bundle integrity validation. It resolves exact
+artifact identities, verifies opaque payload bytes, and checks selected
+cross-manifest metadata joins, but does not decode payload semantics,
+recompute row identities from payload content, prove cell completeness, or
+qualify D0-D8. It still performs no estimator execution, synthetic
+qualification, subject preparation, subject field estimation, graph
+construction, subject execution, or outcome observation.
 The detailed preparation gates are in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
 
