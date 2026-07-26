@@ -6,6 +6,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields, is_dataclass
 import hashlib
 from pathlib import Path, PurePosixPath
+import stat
 from types import MappingProxyType
 from typing import TypeAlias
 
@@ -258,30 +259,58 @@ def _safe_member_path(
     candidate = bundle_root
     for part in PurePosixPath(relative_path).parts:
         candidate = candidate / part
-        if candidate.is_symlink():
+        try:
+            is_symlink = candidate.is_symlink()
+        except FileNotFoundError as error:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_missing",
+                f"bundle member {relative_path!r} disappeared during path validation",
+            ) from error
+        except OSError as error:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_unreadable",
+                f"bundle member {relative_path!r} cannot be inspected",
+            ) from error
+        if is_symlink:
             raise InstrumentBundleResolutionError(
                 "symlink_member_forbidden",
                 f"bundle member {relative_path!r} traverses a symlink",
             )
     try:
         resolved = candidate.resolve(strict=True)
-    except (FileNotFoundError, OSError) as error:
+    except FileNotFoundError as error:
         raise InstrumentBundleResolutionError(
             "bundle_member_missing",
             f"bundle member {relative_path!r} does not resolve",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"bundle member {relative_path!r} cannot be resolved",
         ) from error
     if bundle_root != resolved and bundle_root not in resolved.parents:
         raise InstrumentBundleResolutionError(
             "bundle_path_escape",
             f"bundle member {relative_path!r} escapes the bundle directory",
         )
-    if not resolved.is_file():
+    try:
+        file_stat = resolved.stat()
+    except FileNotFoundError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_missing",
+            f"bundle member {relative_path!r} disappeared during validation",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"bundle member {relative_path!r} cannot be inspected",
+        ) from error
+    if not stat.S_ISREG(file_stat.st_mode):
         raise InstrumentBundleResolutionError(
             "bundle_member_not_regular_file",
             f"bundle member {relative_path!r} is not a regular file",
         )
-    stat = resolved.stat()
-    inode = (stat.st_dev, stat.st_ino)
+    inode = (file_stat.st_dev, file_stat.st_ino)
     previous = seen_files.get(inode)
     if previous is not None:
         raise InstrumentBundleResolutionError(
@@ -524,12 +553,25 @@ def _read_bundle_manifest(
             label="expected_canonical_sha256",
         )
     requested = Path(path)
-    if requested.is_symlink():
+    try:
+        is_symlink = requested.is_symlink()
+    except OSError as error:
+        raise InstrumentBundleSchemaError(
+            "bundle_manifest_unreadable",
+            "bundle manifest path cannot be inspected",
+        ) from error
+    if is_symlink:
         raise InstrumentBundleSchemaError(
             "bundle_manifest_symlink",
             "bundle manifest path must not be a symlink",
         )
-    source_path = requested.resolve()
+    try:
+        source_path = requested.resolve()
+    except OSError as error:
+        raise InstrumentBundleSchemaError(
+            "bundle_manifest_unreadable",
+            "bundle manifest path cannot be resolved",
+        ) from error
     try:
         with source_path.open("rb") as handle:
             source = handle.read(MAX_INSTRUMENT_BUNDLE_BYTES + 1)
@@ -597,9 +639,15 @@ def load_instrument_bundle(
         expected_source_sha256=expected_source_sha256,
         expected_canonical_sha256=expected_canonical_sha256,
     )
-    bundle_root = source_path.parent.resolve()
+    bundle_root = source_path.parent
     seen_files: dict[tuple[int, int], str] = {}
-    manifest_stat = source_path.stat()
+    try:
+        manifest_stat = source_path.stat()
+    except OSError as error:
+        raise InstrumentBundleSchemaError(
+            "bundle_manifest_unreadable",
+            "bundle manifest cannot be inspected after reading",
+        ) from error
     seen_files[(manifest_stat.st_dev, manifest_stat.st_ino)] = source_path.name
 
     members: list[LoadedBundleArtifact] = []
@@ -739,10 +787,16 @@ def load_instrument_bundle(
             relative_path=entry.path,
             seen_files=seen_files,
         )
-        size, digest = _stream_payload_identity(
-            payload_path,
-            expected_byte_length=entry.reference.byte_length,
-        )
+        try:
+            size, digest = _stream_payload_identity(
+                payload_path,
+                expected_byte_length=entry.reference.byte_length,
+            )
+        except OSError as error:
+            raise InstrumentBundleResolutionError(
+                "bundle_member_unreadable",
+                f"{entry.path!r} could not be read after path validation",
+            ) from error
         if size != entry.reference.byte_length:
             raise InstrumentBundleIntegrityError(
                 "payload_byte_length_mismatch",

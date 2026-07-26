@@ -1297,6 +1297,111 @@ def test_loader_rejects_missing_artifact_member(tmp_path: Path) -> None:
         load_instrument_bundle(fixture.manifest_path)
 
 
+def test_loader_does_not_classify_member_resolve_permission_as_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    target_path = fixture.root / fixture.manifest.instrument_artifacts[0].path
+    original_resolve = Path.resolve
+
+    def fail_target_resolve(
+        path: Path,
+        *args: object,
+        **kwargs: object,
+    ) -> Path:
+        strict = kwargs.get("strict", args[0] if args else False)
+        if path == target_path and strict is True:
+            raise PermissionError("simulated member resolve denial")
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", fail_target_resolve)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_classifies_member_stat_race(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    target_path = (
+        fixture.root / fixture.manifest.instrument_artifacts[0].path
+    ).resolve()
+    original_stat = Path.stat
+
+    def fail_target_stat(
+        path: Path,
+        *args: object,
+        **kwargs: object,
+    ) -> os.stat_result:
+        if path == target_path and kwargs.get("follow_symlinks") is not False:
+            raise PermissionError("simulated member stat denial")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", fail_target_stat)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_classifies_member_path_inspection_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    target_path = (
+        fixture.root / fixture.manifest.instrument_artifacts[0].path
+    ).resolve()
+    original_stat = Path.stat
+
+    def fail_target_lstat(
+        path: Path,
+        *args: object,
+        **kwargs: object,
+    ) -> os.stat_result:
+        if path == target_path and kwargs.get("follow_symlinks") is False:
+            raise PermissionError("simulated member path inspection denial")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", fail_target_lstat)
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_classifies_manifest_restat_race(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    manifest_path = fixture.manifest_path.resolve()
+    original_stat = Path.stat
+
+    def fail_manifest_stat(
+        path: Path,
+        *args: object,
+        **kwargs: object,
+    ) -> os.stat_result:
+        if path == manifest_path and kwargs.get("follow_symlinks") is not False:
+            raise PermissionError("simulated manifest stat denial")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", fail_manifest_stat)
+
+    with pytest.raises(InstrumentBundleSchemaError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_manifest_unreadable"
+
+
 def test_loader_rejects_missing_artifact_reference_entry(
     tmp_path: Path,
 ) -> None:
@@ -1557,6 +1662,46 @@ def test_loader_rejects_missing_payload_file(tmp_path: Path) -> None:
         InstrumentBundleResolutionError,
         match="bundle_member_missing",
     ):
+        load_instrument_bundle(fixture.manifest_path)
+
+
+def test_loader_classifies_post_validation_payload_read_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def fail_read(*args: object, **kwargs: object) -> tuple[int, str]:
+        raise PermissionError("simulated post-validation payload read failure")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_stream_payload_identity",
+        fail_read,
+    )
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_does_not_launder_unexpected_payload_reader_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def fail_internally(*args: object, **kwargs: object) -> tuple[int, str]:
+        raise RuntimeError("simulated internal payload reader defect")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "_stream_payload_identity",
+        fail_internally,
+    )
+
+    with pytest.raises(RuntimeError, match="internal payload reader defect"):
         load_instrument_bundle(fixture.manifest_path)
 
 
