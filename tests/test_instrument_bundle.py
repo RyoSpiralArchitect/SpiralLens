@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import spirallens.instrument_contracts.bundle_loader as bundle_loader_module
 from spirallens.cli import main
 from spirallens.contexts import ContextRole, load_context_bank
 from spirallens.instrument_contracts.artifacts import (
@@ -1186,6 +1187,102 @@ def test_loader_rejects_wrong_expected_bundle_digests(tmp_path: Path) -> None:
             fixture.manifest_path,
             expected_canonical_sha256="0" * 64,
         )
+
+
+@pytest.mark.parametrize(
+    ("member_kind", "expected_code"),
+    [
+        ("instrument", "instrument_member_integrity_mismatch"),
+        ("registry", "registry_member_integrity_mismatch"),
+        ("context_bank", "context_bank_member_integrity_mismatch"),
+    ],
+)
+def test_loader_preserves_member_integrity_error_classification(
+    tmp_path: Path,
+    member_kind: str,
+    expected_code: str,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    if member_kind == "instrument":
+        relative_path = fixture.artifact_entries["graph_spec"].path
+    elif member_kind == "registry":
+        relative_path = fixture.manifest.hypothesis_registries[0].path
+    else:
+        relative_path = fixture.manifest.context_banks[0].path
+    member_path = fixture.root / relative_path
+    member_path.write_bytes(member_path.read_bytes() + b" ")
+
+    with pytest.raises(InstrumentBundleIntegrityError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == expected_code
+
+
+def test_loader_classifies_context_contract_violation_as_member_schema(
+    tmp_path: Path,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    entry = fixture.manifest.context_banks[0]
+    member_path = fixture.root / entry.path
+    invalid_source = member_path.read_bytes().replace(
+        b"template_ids: [null]",
+        b"template_ids: [null, null]",
+        1,
+    )
+    member_path.write_bytes(invalid_source)
+    invalid_entry = replace(
+        entry,
+        source_sha256=hashlib.sha256(invalid_source).hexdigest(),
+    )
+    _write_manifest(
+        fixture.manifest_path,
+        replace(fixture.manifest, context_banks=(invalid_entry,)),
+    )
+
+    with pytest.raises(InstrumentBundleSchemaError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "context_bank_member_invalid"
+
+
+def test_loader_classifies_post_validation_member_read_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def fail_read(*args: object, **kwargs: object) -> object:
+        raise PermissionError("simulated post-validation read failure")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "load_instrument_artifact",
+        fail_read,
+    )
+
+    with pytest.raises(InstrumentBundleResolutionError) as caught:
+        load_instrument_bundle(fixture.manifest_path)
+
+    assert caught.value.code == "bundle_member_unreadable"
+
+
+def test_loader_does_not_launder_unexpected_member_loader_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+
+    def fail_internally(*args: object, **kwargs: object) -> object:
+        raise RuntimeError("simulated internal loader defect")
+
+    monkeypatch.setattr(
+        bundle_loader_module,
+        "load_instrument_artifact",
+        fail_internally,
+    )
+
+    with pytest.raises(RuntimeError, match="simulated internal loader defect"):
+        load_instrument_bundle(fixture.manifest_path)
 
 
 def test_loader_rejects_missing_artifact_member(tmp_path: Path) -> None:

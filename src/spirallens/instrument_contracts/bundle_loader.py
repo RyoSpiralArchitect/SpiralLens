@@ -12,10 +12,16 @@ from typing import TypeAlias
 from spirallens.contexts import (
     CONTEXT_BANK_SCHEMA_VERSION,
     ContextBank,
+    ContextContractError,
+    ContextBankIntegrityError,
     load_context_bank,
 )
 
-from .artifact_loader import load_instrument_artifact
+from .artifact_loader import (
+    InstrumentArtifactIntegrityError,
+    InstrumentArtifactSchemaError,
+    load_instrument_artifact,
+)
 from .artifacts import InstrumentArtifactValue
 from .bundle import (
     BundleArtifactEntry,
@@ -31,8 +37,12 @@ from .common import (
     require_mapping,
     require_sha256,
 )
-from .registry import HypothesisRegistry
-from .registry_loader import load_hypothesis_registry
+from .registry import HypothesisRegistry, HypothesisRegistryPolicyError
+from .registry_loader import (
+    HypothesisRegistryIntegrityError,
+    HypothesisRegistrySchemaError,
+    load_hypothesis_registry,
+)
 
 
 MAX_INSTRUMENT_BUNDLE_BYTES = 4 * 1024 * 1024
@@ -292,10 +302,20 @@ def _load_instrument_entry(
             path,
             expected_source_sha256=entry.source_sha256,
         )
-    except Exception as error:
+    except InstrumentArtifactIntegrityError as error:
+        raise InstrumentBundleIntegrityError(
+            "instrument_member_integrity_mismatch",
+            f"{entry.path!r} differs from its declared content identity",
+        ) from error
+    except InstrumentArtifactSchemaError as error:
         raise InstrumentBundleSchemaError(
             "instrument_member_invalid",
             f"{entry.path!r} is not the declared canonical instrument artifact",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.artifact,
@@ -324,10 +344,23 @@ def _load_registry_entry(
             path,
             expected_source_sha256=entry.source_sha256,
         )
-    except Exception as error:
+    except HypothesisRegistryIntegrityError as error:
+        raise InstrumentBundleIntegrityError(
+            "registry_member_integrity_mismatch",
+            f"{entry.path!r} differs from its declared content identity",
+        ) from error
+    except (
+        HypothesisRegistrySchemaError,
+        HypothesisRegistryPolicyError,
+    ) as error:
         raise InstrumentBundleSchemaError(
             "registry_member_invalid",
             f"{entry.path!r} is not the declared strict registry",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.registry,
@@ -357,10 +390,20 @@ def _load_context_entry(
             allowed_roles={entry.allowed_role},
             expected_source_sha256=entry.source_sha256,
         )
-    except Exception as error:
+    except ContextBankIntegrityError as error:
+        raise InstrumentBundleIntegrityError(
+            "context_bank_member_integrity_mismatch",
+            f"{entry.path!r} differs from its declared content identity",
+        ) from error
+    except ContextContractError as error:
         raise InstrumentBundleSchemaError(
             "context_bank_member_invalid",
             f"{entry.path!r} is not the declared role-bound context bank",
+        ) from error
+    except OSError as error:
+        raise InstrumentBundleResolutionError(
+            "bundle_member_unreadable",
+            f"{entry.path!r} could not be read after path validation",
         ) from error
     actual = _artifact_ref_for(
         loaded.bank,
