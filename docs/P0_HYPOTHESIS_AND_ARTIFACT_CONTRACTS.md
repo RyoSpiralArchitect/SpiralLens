@@ -26,6 +26,16 @@ does not estimate a field, construct a graph, decode calibration payload
 values, load a model, inspect a subject tensor, authorize an integer output, or
 promote any real-model claim beyond Level 0.
 
+The later P1 instrument-development implementation lives under
+`spirallens.synthetic` and instantiates these contracts without changing that
+P0 claim. It generates and semantically self-audits one bounded F0/F1/F2
+positive/null development cell, then hands its artifacts to the unchanged
+closed-integrity validator. Its `SubstrateBinding` uses
+`evolution_axis=synthetic_lattice`, a value accepted only for
+`role=instrument_dev` and excluded from the P0 model observation-axis
+candidate set. It is not a token-position observation, calibration selection,
+or subject artifact.
+
 ## 1. Implemented package boundary
 
 `spirallens.instrument_contracts` is an experimental contract namespace. It is
@@ -136,6 +146,13 @@ The metadata schemas cover:
 
 The schemas bind content-addressed references; they do not contain arrays,
 model values, or estimator execution.
+
+`SubstrateBinding.evolution_axis` includes the development-only
+`synthetic_lattice` referent in addition to the three model observation axes.
+The constructor rejects that value for every fit role except
+`instrument_dev`; the F0-F4 P0 registry continues to expose only
+`token_position`, `layer_index`, and `training_step` as selectable model
+observation axes.
 
 There are now two deliberately different validation scopes.
 

@@ -71,6 +71,11 @@ The subject-data executable path currently reaches step 3 through a state-only
 neighbor backend contract, a deterministic exact reference, and shared exact
 reranking. Separately, the P0 contract layer now validates the F0-F4
 hypothesis registry and individual canonical instrument-artifact manifests.
+The first P1 development generator now emits one paired
+representation-shaped positive/null substrate through F0, F1, and F2 into a
+canonical closed bundle. It uses a dedicated synthetic ContextBank and the
+instrument-development-only `synthetic_lattice` axis; it does not load Pythia
+or reuse a model ContextBank.
 Its closed-integrity bundle validator additionally resolves exact
 content-addressed artifact references, rejects missing, extra, unreachable, or
 cyclic members, verifies opaque payload byte lengths and SHA-256 digests, and
@@ -139,6 +144,32 @@ This command is read-only. It verifies that all F0-F4 families remain
 Level-0, no winner or integer output is authorized, and no prior subject
 outcome, subject identity, semantic label, or numeric threshold can enter the
 registry.
+
+Generate the first tracked P1 instrument-development bundle:
+
+```bash
+spirallens synthetic-bundle generate \
+  --protocol protocols/p1_representation_phantom_v0_1.yaml \
+  --output-dir runs/p1-representation-dev-v0.1
+```
+
+The tracked protocol binds the exact generator commit and module SHA-256, the
+P0 registry source and canonical digests, the two fixed cases, and an execution
+boundary in which all model, subject, calibration-selection, and integer
+authorities are false. The emitter executes the bound source bytes, validates
+the generated numeric relations, round-trips every NPY payload, validates the
+staged closed bundle, reserves the destination without replacement, publishes
+the manifest last, and revalidates the published tree.
+
+The durable substrate preprocessing receipt records both
+`identity-no-preprocessing` and the complete non-qualification boundary:
+`qualification_status=not_evaluated`, `synthetic_qualified=false`, and D0-D8
+all `not_run`. The output contains no `CoreScore`, `CoreCandidate`,
+`EdgeConnection`, loop, winding, calibration-selection, or confirmation
+artifact. Its positive/null pair is a software-development cell, not an
+independent generator family and not synthetic qualification. Two cold
+emissions are required to be byte-identical in the executing environment;
+cross-environment numerical or byte identity is not yet claimed.
 
 Validate one generated canonical instrument manifest:
 

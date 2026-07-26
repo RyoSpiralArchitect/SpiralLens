@@ -211,8 +211,13 @@ What M0 does **not** prove:
 and recall-gate machinery exist. The first frozen consumer-safe Pythia-70M
 retrieval audit ended `insufficient` and did not promote the backend. The P0
 registry, provisional artifact schemas, and closed-integrity bundle validator
-are implemented; estimators, representation-shaped phantoms, graph
-constructors, and graph-family qualification are not.
+are implemented. A first bounded P1 instrument-development generator now
+emits paired representation-shaped positive/null substrates through F0/F1/F2,
+with an exact executed mutual-kNN cell, durable non-qualification receipt,
+source-commit/blob binding, current-environment byte-identical cold replay,
+and canonical closed-bundle publication. It is one generator family and does
+not qualify an estimator, select a graph family, run D0-D8, or satisfy
+graph-family qualification.
 
 **Target release family:** `0.2.x`.
 
@@ -601,8 +606,11 @@ below:
    payload closure, and validate selected cross-manifest metadata joins —
    implemented as a closed-integrity validator that streams opaque payload
    bytes only for length and SHA-256 verification;
-5. build independent high-dimensional representation-shaped phantom families;
-6. implement deterministic mutual-kNN, fixed-radius, and shared-neighbor graph
+5. extend the implemented first paired F0/F1/F2 development phantom into
+   independent high-dimensional generator families and the full declared
+   positive, null, metamorph, prerequisite-failure, and stress strata;
+6. retain the implemented exact mutual-kNN development cell and add
+   deterministic fixed-radius and shared-neighbor graph
    constructors plus diversity receipts for field, cycle, and any explicit
    core-estimation axis;
 7. qualify the full field-estimation-graph by cycle-graph matrix on

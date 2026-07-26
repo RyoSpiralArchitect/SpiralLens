@@ -140,11 +140,13 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   on every discovery row while bounding only the exact reference query rows.
   It is not an audit of a separately indexed subset.
 
-Three evolution axes must also remain explicit:
+The evolution referent must also remain explicit:
 
 - `token_position`: movement through a sequence;
 - `layer_index`: transport through model depth;
 - `training_step`: movement through model training.
+- `synthetic_lattice`: a representation-shaped development lattice, accepted
+  only for `instrument_dev` and never a model token-position claim.
 
 No unqualified field named `phase` or `time` should be added to a persisted
 artifact.

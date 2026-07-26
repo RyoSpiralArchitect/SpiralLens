@@ -127,6 +127,28 @@ Build high-dimensional, discrete substrates with known latent structure and
 random ambient embeddings. Independent generator families are required; new
 seeds of one closed form are not independent confirmation.
 
+**Implementation status — first instrument-development slice:** the tracked
+[`p1_representation_phantom_v0_1.yaml`](../protocols/p1_representation_phantom_v0_1.yaml)
+protocol now generates a shared 9-by-9 lattice embedded in 16 dimensions, with
+eight cross-fitted probes and an exact mutual-kNN development graph at
+\(k=6\). It emits one angular-section positive and one fixed-direction null
+through F0 support diagnostics, F1 local rank-two frames, and an F2
+gauge-covariant section. The canonical substrate uses the
+instrument-development-only `synthetic_lattice` axis rather than pretending
+that lattice addresses are model token positions.
+
+This slice is deliberately below the Stage P1 exit. Graph family, metric,
+scale, identifiability, interpolation, lift, trivialization, and reference
+choices remain unresolved for qualification even though the executed
+development cell binds its exact constructor ID. It emits no core score,
+localized core, connection, loop, winding, selection, confirmation, or integer
+result. Its paired cases are one analytic generator family, not independent
+confirmation. The durable preprocessing receipt binds
+`identity-no-preprocessing`, the full protocol content and digests,
+`qualification_status=not_evaluated`, `synthetic_qualified=false`, and D0-D8
+all `not_run`. Current-environment cold replay is byte-identical; portability
+has not yet been evaluated.
+
 ### Positive families
 
 - supplied section charges \(q=0,\pm1,\pm2\);
@@ -179,9 +201,12 @@ The intended artifacts use the canonical type names from the Fundamental
 Frame. Their metadata-only v0.1 schemas and strict canonical loader are
 implemented as provisional experiment contracts, not stable public APIs. No
 estimator, graph constructor, calibration result, or subject artifact is
-created by that implementation. A separate closed-integrity bundle validator
-now resolves these manifests and their opaque payload references without
-decoding payload values or qualifying an experiment.
+created merely by loading those schemas. A separate closed-integrity bundle
+validator resolves manifests and opaque payload references without decoding
+payload values or qualifying an experiment. The P1 development emitter now
+instantiates a bounded F0/F1/F2 cell, semantically self-audits its generated
+arrays before publication, and then uses that same closed-integrity validator.
+It does not change the validator into a scientific qualification gate.
 
 ### `SubstrateBinding`
 
@@ -195,6 +220,9 @@ Bind:
 - preprocessing fit receipt.
 
 No unqualified field named `phase` or `time` is permitted.
+`synthetic_lattice` is accepted only with `role=instrument_dev`; it is excluded
+from the P0 model observation-axis candidate set and cannot be laundered into a
+subject axis.
 
 ### `GraphConstructionSpec` and `CandidateGraph`
 
@@ -336,8 +364,10 @@ D0-D8, or support scientific, topological, semantic, or causal claims.
 
 ## 5. Stage P3 — substrate and leakage binding
 
-- Bind exactly one evolution axis: `token_position`, `layer_index`, or
-  `training_step`.
+- Bind exactly one evolution axis. Model observations use `token_position`,
+  `layer_index`, or `training_step`; representation-shaped development
+  phantoms use `synthetic_lattice`, which is forbidden outside
+  `instrument_dev`.
 - Graph construction sees only the frozen, declared unprojected state.
 - Field estimation sees only the declared accounted response.
 - A local covariance uses leave-one-out or fold-cross-fit estimation so a
