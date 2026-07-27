@@ -23,9 +23,22 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   a field or transport quantity is evaluated. It includes observation identity,
   row universe, tensors, metric/preprocessing, and any field-estimation
   neighborhood. It does not imply a physical medium.
-- **Substrate binding**: A future typed, content-addressed join between a
-  substrate and its source artifacts. The term describes a design boundary;
-  no stable public `SubstrateBinding` API exists yet.
+- **Substrate binding**: A typed, content-addressed join between a substrate
+  and its source artifacts. Experimental pre-1.0 `SubstrateBinding` and
+  `SyntheticLatticeSubstrateBinding` contracts exist, but neither is a stable
+  public API.
+- **Synthetic lattice context binding**: The model-free provenance embedded in
+  a `SyntheticLatticeSubstrateBinding`. It binds generator revision and
+  module/spec digests, protocol source/canonical digests, row identity,
+  two-dimensional lattice shape, and boundary rule. It is not a ContextBank,
+  `ModelBinding`, tokenizer binding, or token-position observation, and its
+  claim eligibility is always false.
+- **Level-0 development bundle**: A closed-integrity bundle whose visible
+  instrument-development calculations and numeric payload relations may have
+  been replayed and self-audited, but whose scientific qualification gates
+  remain unopened. The current P1 bundle has
+  `synthetic_qualified=false`, D0-D8 all `not_run`, and no model or subject
+  claim.
 - **Regime**: a metastable or operationally distinct region of a state space.
 - **Support diagnostic**: A field-unbound scalar such as local anisotropy,
   effective rank, eigengap, projected norm, density, or coherence. It may
@@ -74,6 +87,16 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Graph construction family**: A preregistered set of genuinely distinct
   adjacency mechanisms on the same declared substrate, such as mutual-kNN,
   fixed-radius, and shared-neighbor graphs.
+- **Instrument-development executed choice**: A `RuleChoice` with
+  `resolution=instrument_dev_executed` that records the exact family, metric,
+  or scale run by a visible development graph. It is not
+  `fixed_by_hypothesis`, `calibration_resolved`, calibration selection, or
+  graph-family qualification.
+- **Unconstructed cycle support**: The state in which cycle construction is
+  explicitly `not_run` and the current `CandidateGraph` carries the
+  schema-required empty `<i8`, shape `(0, 4)` cycle-support payload. It means
+  that no cycle support was supplied; it is not evidence that the graph is
+  cycleless.
 - **Graph-family invariance null**: A worst-case comparison of the same matched
   support or cycle class across required graph constructions. Determinism under
   one graph is not this null.
@@ -94,6 +117,17 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Subject prepare-only**: A future metadata-only validation boundary that
   cannot load subject activation values, construct a graph, inspect support,
   or localize a candidate. It is not subject execution authorization.
+- **Resource preflight guard**: A versioned conservative static estimate
+  checked before generator allocation. The current representation phantom
+  applies safety factor four and 256 MiB estimated peak/output caps. Its claim
+  is limited to guarding parameter-induced runaway allocation; it is not an
+  operating-system OOM guarantee.
+- **Exclusive bundle publication**: Publication of one complete validated
+  private staging directory by an atomic, no-replace namespace transition.
+  The current implementation requires Darwin `O_NOFOLLOW_ANY` and
+  `renameatx_np(RENAME_EXCL)` support and otherwise fails closed. Namespace
+  atomicity does not imply crash durability; the complete tree and parent
+  directory are not yet fsynced.
 - **Angular spectrum**: a Fourier decomposition around a preregistered loop.
   “OAM” is reserved for the motivating optical analogy.
 - **Candidate**: an observation that passed the stated structural gates. A

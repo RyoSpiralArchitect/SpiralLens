@@ -135,19 +135,40 @@ eight cross-fitted probes and an exact mutual-kNN development graph at
 through F0 support diagnostics, F1 local rank-two frames, and an F2
 gauge-covariant section. The canonical substrate uses the
 instrument-development-only `synthetic_lattice` axis rather than pretending
-that lattice addresses are model token positions.
+that lattice addresses are model token positions. Each
+`SyntheticLatticeSubstrateBinding` embeds a model-free
+`SyntheticLatticeContextBinding` that binds generator, protocol, row, lattice,
+and boundary provenance. The generated bundle has `context_banks=()` and
+contains no model, tokenizer, or Pythia binding.
 
 This slice is deliberately below the Stage P1 exit. Graph family, metric,
 scale, identifiability, interpolation, lift, trivialization, and reference
 choices remain unresolved for qualification even though the executed
-development cell binds its exact constructor ID. It emits no core score,
-localized core, connection, loop, winding, selection, confirmation, or integer
-result. Its paired cases are one analytic generator family, not independent
-confirmation. The durable preprocessing receipt binds
+development cell binds its exact constructor ID and records
+`resolution=instrument_dev_executed` for `mutual-knn`, `euclidean`, and
+`k-6`. This state records only what a visible instrument-development cell ran;
+it is neither hypothesis-fixed nor calibration-resolved, and it cannot qualify
+or calibration-select a graph family.
+
+Cycle construction is `not_run`. The `CandidateGraph` carries an empty
+`<i8`, shape `(0, 4)` cycle-support payload solely to satisfy the current
+schema. Empty support here means that no cycle support was constructed or
+supplied, not that the graph was evaluated and found to be cycleless. The slice
+emits no core score, localized core, connection, loop, winding, selection,
+confirmation, or integer result. Its paired cases are one analytic generator
+family, not independent confirmation. The durable preprocessing receipt binds
 `identity-no-preprocessing`, the full protocol content and digests,
 `qualification_status=not_evaluated`, `synthetic_qualified=false`, and D0-D8
-all `not_run`. Current-environment cold replay is byte-identical; portability
-has not yet been evaluated.
+all `not_run`.
+
+Before any generator allocation, a versioned conservative static estimator
+applies a safety factor of four and rejects estimated peak or output footprints
+above 256 MiB. The receipt persists the estimator ID, estimates, caps, safety
+factor, and
+`parameter-induced-runaway-allocation-guard-not-os-oom-guarantee` claim
+boundary. This is not an operating-system OOM guarantee. Current-environment
+cold replay is byte-identical; numerical portability and the Darwin-only
+exclusive publication path have not been evaluated elsewhere.
 
 ### Positive families
 
@@ -216,13 +237,20 @@ Bind:
 - exactly one declared evolution axis;
 - raw states and accounted response source;
 - masks, dtype, shape, and content digests;
-- ContextBank role and split;
 - preprocessing fit receipt.
 
-No unqualified field named `phase` or `time` is permitted.
-`synthetic_lattice` is accepted only with `role=instrument_dev`; it is excluded
-from the P0 model observation-axis candidate set and cannot be laundered into a
-subject axis.
+An ordinary model `SubstrateBinding` additionally binds a ContextBank role and
+split and rejects `synthetic_lattice`. A model-free development phantom instead
+uses `SyntheticLatticeSubstrateBinding`, which has no ContextBank, model, or
+tokenizer reference. Its embedded `SyntheticLatticeContextBinding` binds source
+ID, generator revision and module/spec digests, protocol source and canonical
+digests, row identity, lattice shape, boundary rule, and
+`claim_eligible=false`.
+
+No unqualified field named `phase` or `time` is permitted. A
+`SyntheticLatticeSubstrateBinding` requires both `role=instrument_dev` and
+`evolution_axis=synthetic_lattice`; the referent is excluded from the P0 model
+observation-axis candidate set and cannot be laundered into a subject axis.
 
 ### `GraphConstructionSpec` and `CandidateGraph`
 
@@ -232,6 +260,14 @@ rule, deterministic tie policy, and allowed role. The resulting graph binds:
 - canonical vertices, edges, and weights;
 - connected components, degree distribution, two-core, and cycle support;
 - substrate, specification, and graph digests.
+
+`instrument_dev_executed` is an execution receipt, not a scientific selection.
+When used, family, metric, and scale must all carry that resolution and the
+graph role must be `instrument_dev`. It cannot refine a registry
+`calibration_selection`, count as `calibration_resolved`, or qualify the
+constructor. In the first P1 slice the cycle-support field is an explicitly
+unconstructed empty payload paired with `cycle_construction_status=not_run`;
+it is not a cyclelessness diagnostic.
 
 ### `SupportDiagnostic`
 
@@ -361,6 +397,23 @@ This is an integrity and provenance boundary only. It does not validate array
 layout or payload semantics, recompute row identities from payload content,
 map `ContextRole` to `FitRole`, prove calibration-cell completeness, qualify
 D0-D8, or support scientific, topological, semantic, or causal claims.
+
+The P1 emitter is a separate producer above this generic validator. It executes
+the exact bound model-free generator, semantically recomputes the generated
+F0/F1/F2 array relations, and round-trips each NPY payload before calling the
+unchanged closed-integrity validator. Its manifest indexes no ContextBank;
+instead, bundle validation checks the embedded synthetic-context row identity,
+site count, and ineligible claim state.
+
+Publication is also an emitter boundary rather than a validator claim. The
+emitter writes `bundle.json` last inside a private staging directory, validates
+the complete staged tree, and publishes the whole directory with one Darwin
+`renameatx_np(RENAME_EXCL)` no-replace namespace transition before
+revalidation. Unsupported platforms or filesystems fail closed. This gives
+exclusive namespace atomicity, not crash durability; the implementation does
+not yet fsync the complete tree and parent directory. A tree already made
+public is retained for forensic inspection if post-publication validation
+fails.
 
 ## 5. Stage P3 — substrate and leakage binding
 
@@ -615,6 +668,10 @@ Until independent calibration, do not select:
 - holonomy or winding tolerances;
 - orientability and U(1) eligibility;
 - whether any integer output is authorized at all.
+
+The exact mutual-kNN/Euclidean/\(k=6\) cell above does not resolve these
+decisions. It is an `instrument_dev_executed` implementation cell only. No
+cycle constructor, radius, or loop sampling count was run in that cell.
 
 Subject model, context, layer, semantic interpretation, SAE comparison, and
 topology promotion remain outside this preparation document.

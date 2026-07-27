@@ -134,6 +134,7 @@ The target is:
 | --- | --- | --- |
 | `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
 | `instrument_contracts` | Provisional manifests, closed-world content-addressed integrity, and selected cross-manifest metadata joins | Core only; payload values remain opaque and subject roles are forbidden |
+| `synthetic` | Model-free development generators, numeric self-audit, resource preflight, exact executed development cells, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | future `graphs` and order-parameter boundaries | Scientific graph families, field artifacts, core diagnostics, and matched-class controls | Experimental core only after synthetic qualification |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
@@ -213,11 +214,23 @@ retrieval audit ended `insufficient` and did not promote the backend. The P0
 registry, provisional artifact schemas, and closed-integrity bundle validator
 are implemented. A first bounded P1 instrument-development generator now
 emits paired representation-shaped positive/null substrates through F0/F1/F2,
-with an exact executed mutual-kNN cell, durable non-qualification receipt,
-source-commit/blob binding, current-environment byte-identical cold replay,
-and canonical closed-bundle publication. It is one generator family and does
-not qualify an estimator, select a graph family, run D0-D8, or satisfy
-graph-family qualification.
+with a model-free `SyntheticLatticeContextBinding`, no indexed ContextBank or
+model/tokenizer binding, an exact
+`instrument_dev_executed` mutual-kNN/Euclidean/\(k=6\) cell, durable
+non-qualification and resource receipts, source-commit/blob binding,
+current-environment byte-identical cold replay, and canonical closed-bundle
+publication. The conservative resource preflight uses a versioned estimator,
+safety factor four, and 256 MiB estimated peak/output caps; it guards
+parameter-induced runaway allocation and is not an operating-system OOM
+guarantee.
+
+The current publisher validates a private staged tree and exposes the complete
+directory through one Darwin-only atomic, exclusive, no-replace namespace
+transition. Unsupported environments fail closed. This is namespace
+atomicity, not crash durability. The slice is one generator family and does
+not calibration-select or qualify an estimator or graph family, run D0-D8, or
+satisfy graph-family qualification. Cycle construction is `not_run`; its empty
+cycle-support payload means “not supplied,” not “observed cycleless.”
 
 **Target release family:** `0.2.x`.
 
@@ -626,14 +639,20 @@ below:
 12. keep future discovery and confirmation roles separate and forbid
     Pythia-70M outcomes from selecting Pythia-160M choices.
 
-The current work has advanced from documentation into metadata-contract
-implementation and closed-world bundle integrity validation. It resolves exact
-artifact identities, verifies opaque payload bytes, and checks selected
-cross-manifest metadata joins, but does not decode payload semantics,
-recompute row identities from payload content, prove cell completeness, or
-qualify D0-D8. It still performs no estimator execution, synthetic
-qualification, subject preparation, subject field estimation, graph
-construction, subject execution, or outcome observation.
+The current work has advanced from documentation and metadata-only contracts
+into one bounded, model-free P1 development producer. That producer executes
+the bound representation phantom, exact mutual-kNN development graph, and
+F0/F1/F2 estimators, then semantically self-audits the generated arrays before
+handing them to the generic closed-world validator. The generic validator
+itself still treats payload values as opaque: it resolves exact artifact
+identities, verifies payload bytes, and checks selected metadata joins without
+recomputing estimator values.
+
+This development execution does not qualify D0-D8, construct a cycle or loop,
+perform calibration selection or confirmation, prepare a subject, estimate a
+subject field or graph, execute a subject, or observe a subject outcome. All
+emitted observations remain Level 0 and the bundle remains
+`synthetic_qualified=false`.
 The detailed preparation gates are in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
 

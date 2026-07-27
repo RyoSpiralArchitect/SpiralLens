@@ -1,7 +1,7 @@
 # P0 Hypothesis and Artifact Contracts
 
-- **Status:** implemented experimental contract and integrity-bundle boundary;
-  no estimator or subject access
+- **Status:** implemented experimental P0 contract and integrity-bundle
+  boundary; the P0 loader runs no estimator and permits no subject access
 - **Policy:** `spirallens.p0-registry-policy.v0.1`
 - **Bundle schema:** `spirallens.instrument-bundle.v0.1`
 - **Registry:** [`order_parameter_hypothesis_registry_v0_1.yaml`](../protocols/order_parameter_hypothesis_registry_v0_1.yaml)
@@ -30,11 +30,27 @@ The later P1 instrument-development implementation lives under
 `spirallens.synthetic` and instantiates these contracts without changing that
 P0 claim. It generates and semantically self-audits one bounded F0/F1/F2
 positive/null development cell, then hands its artifacts to the unchanged
-closed-integrity validator. Its `SubstrateBinding` uses
-`evolution_axis=synthetic_lattice`, a value accepted only for
-`role=instrument_dev` and excluded from the P0 model observation-axis
-candidate set. It is not a token-position observation, calibration selection,
-or subject artifact.
+closed-integrity validator. Its model-free
+`SyntheticLatticeSubstrateBinding` embeds a
+`SyntheticLatticeContextBinding`; it indexes no ContextBank and binds no model
+or tokenizer. It requires `evolution_axis=synthetic_lattice` and
+`role=instrument_dev`, while that axis remains excluded from the P0 model
+observation-axis candidate set. It is not a token-position observation,
+calibration selection, or subject artifact.
+
+The P1 producer records the exact mutual-kNN/Euclidean/\(k=6\) development
+graph as `instrument_dev_executed`. That state reports an implementation that
+ran; it does not alter any unresolved registry choice, qualify a graph family,
+or count as calibration resolution. Cycle construction remains `not_run`, and
+all emitted F0/F1/F2 artifacts remain at Level 0.
+
+The producer also records a versioned, safety-factored static resource
+preflight whose claim is limited to guarding parameter-induced runaway
+allocation, not guaranteeing operating-system OOM behavior. After semantic and
+closed-integrity validation in private staging, the current Darwin-only
+publisher exposes the complete directory through one exclusive no-replace
+namespace transition. That atomic namespace property is not a claim of crash
+durability.
 
 ## 1. Implemented package boundary
 
@@ -130,6 +146,8 @@ verification.
 The metadata schemas cover:
 
 - `SubstrateBinding`
+- `SyntheticLatticeSubstrateBinding` with an embedded
+  `SyntheticLatticeContextBinding`
 - `GraphConstructionSpec`
 - `CandidateGraph`
 - `SupportDiagnostic`
@@ -144,15 +162,24 @@ The metadata schemas cover:
 - `CalibrationSelectionDecision`
 - `CalibrationConfirmationResult`
 
-The schemas bind content-addressed references; they do not contain arrays,
-model values, or estimator execution.
+The schemas bind content-addressed references and execution provenance; they do
+not contain array values or model values, and loading them does not run an
+estimator. `ArtifactType.SUBSTRATE_BINDING` currently admits two experimental
+schemas:
+`spirallens.instrument.substrate-binding.v0.1` for model-bound observations and
+`spirallens.instrument.synthetic-lattice-substrate-binding.v0.1` for
+model-free development lattices. The latter embeds
+`spirallens.instrument.synthetic-lattice-context-binding.v0.1`.
+These are pre-1.0 experimental contracts: this development slice refines the
+unreleased v0.1 surface in place, and no backward-reader or migration guarantee
+is claimed.
 
-`SubstrateBinding.evolution_axis` includes the development-only
-`synthetic_lattice` referent in addition to the three model observation axes.
-The constructor rejects that value for every fit role except
-`instrument_dev`; the F0-F4 P0 registry continues to expose only
-`token_position`, `layer_index`, and `training_step` as selectable model
-observation axes.
+The ordinary `SubstrateBinding` rejects `synthetic_lattice` and requires a
+ContextBank reference. Only `SyntheticLatticeSubstrateBinding` accepts the
+development referent, and it requires both `role=instrument_dev` and a
+model-free synthetic context whose claim eligibility is false. The F0-F4 P0
+registry continues to expose only `token_position`, `layer_index`, and
+`training_step` as selectable model observation axes.
 
 There are now two deliberately different validation scopes.
 
@@ -178,6 +205,9 @@ ContextBanks, and opaque payloads. It:
   using an insecure fallback where that traversal is unsupported;
 - binds each indexed ContextBank to its explicitly declared allowed
   `ContextRole`;
+- validates an embedded synthetic-lattice context without treating it as a
+  ContextBank, including its row-identity join, lattice site count, and
+  `claim_eligible=false` boundary;
 - checks the implemented substrate, graph, field, core, loop, registry,
   selection, and confirmation metadata joins; and
 - rejects `subject_discovery` and `subject_confirmation` fit roles, requires
@@ -235,6 +265,11 @@ The following distinctions are load-bearing:
   field's family ID.
 - Registry-fixed choices use a distinct `fixed_by_hypothesis` receipt, so a
   frozen convention cannot be relabelled as calibration-selected.
+- `instrument_dev_executed` is a separate receipt for the exact family,
+  metric, or scale run by a visible development graph. It is legal only when
+  all three graph choices carry that resolution under `role=instrument_dev`;
+  it cannot refine a registry `calibration_selection`, count as
+  `calibration_resolved`, or authorize promotion.
 - The selection decision carries an exhaustive F0--F4 choice partition.
   Every registry-active calibration family appears exactly once as resolved
   or unresolved, every registry-fixed family appears exactly once with its
@@ -316,7 +351,7 @@ subject access.
 
 ## 6. Explicitly deferred
 
-This P0 implementation does not include:
+The P0 contract and generic loader themselves do not include:
 
 - F0-F4 estimators or numerical mathematics;
 - phantom generation or hidden calibration data;
@@ -342,6 +377,9 @@ This P0 implementation does not include:
   subject execution; or
 - a stable public API or migration guarantee.
 
-The next implementation step is synthetic, representation-shaped substrate
-generation and analytic contract tests. It must consume these definitions
-without changing them in response to subject outcomes.
+The first synthetic, representation-shaped development slice now consumes
+these definitions without changing them in response to subject outcomes. It
+does not complete P1. The next work is to add independent generator families,
+genuinely distinct graph families, matched cycle construction, the full
+crossed null, D0-D8 qualification, and locked calibration
+selection/confirmation—still before any subject protocol is prepared.

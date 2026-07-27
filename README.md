@@ -73,9 +73,12 @@ reranking. Separately, the P0 contract layer now validates the F0-F4
 hypothesis registry and individual canonical instrument-artifact manifests.
 The first P1 development generator now emits one paired
 representation-shaped positive/null substrate through F0, F1, and F2 into a
-canonical closed bundle. It uses a dedicated synthetic ContextBank and the
-instrument-development-only `synthetic_lattice` axis; it does not load Pythia
-or reuse a model ContextBank.
+canonical closed bundle. It uses a model-free
+`SyntheticLatticeContextBinding` embedded in each
+`SyntheticLatticeSubstrateBinding` and the instrument-development-only
+`synthetic_lattice` axis. Its bundle indexes no ContextBank
+(`context_banks=()`), creates no `ModelBinding` or tokenizer binding, and does
+not load Pythia or reuse a model ContextBank.
 Its closed-integrity bundle validator additionally resolves exact
 content-addressed artifact references, rejects missing, extra, unreachable, or
 cyclic members, verifies opaque payload byte lengths and SHA-256 digests, and
@@ -158,18 +161,48 @@ P0 registry source and canonical digests, the two fixed cases, and an execution
 boundary in which all model, subject, calibration-selection, and integer
 authorities are false. The emitter executes the bound source bytes, validates
 the generated numeric relations, round-trips every NPY payload, validates the
-staged closed bundle, reserves the destination without replacement, publishes
-the manifest last, and revalidates the published tree.
+staged closed bundle, and revalidates the published tree. The manifest is
+written last inside a private staging directory. Publication then makes the
+complete validated directory visible in one atomic, exclusive, no-replace
+namespace transition using Darwin `renameatx_np(RENAME_EXCL)`; an existing
+destination is never replaced. This current implementation requires Darwin
+`O_NOFOLLOW_ANY`, directory-relative operations, and a filesystem supporting
+the exclusive rename. Unsupported environments fail closed. This is namespace
+atomicity, not a claim of crash durability: the publisher does not yet fsync
+the complete tree and parent directory. If post-publication validation fails,
+the published tree is retained for forensic inspection rather than
+destructively rolled back.
 
 The durable substrate preprocessing receipt records both
 `identity-no-preprocessing` and the complete non-qualification boundary:
 `qualification_status=not_evaluated`, `synthetic_qualified=false`, and D0-D8
-all `not_run`. The output contains no `CoreScore`, `CoreCandidate`,
-`EdgeConnection`, loop, winding, calibration-selection, or confirmation
-artifact. Its positive/null pair is a software-development cell, not an
-independent generator family and not synthetic qualification. Two cold
-emissions are required to be byte-identical in the executing environment;
-cross-environment numerical or byte identity is not yet claimed.
+all `not_run`. The same receipt records
+`context_kind=synthetic_lattice`,
+`synthetic_context_claim_eligible=false`,
+`cycle_construction_status=not_run`, and a versioned conservative resource
+guard. The guard uses estimator
+`representation-phantom-conservative-static-estimate-v0.1`, safety factor
+`4`, and 256 MiB estimated peak/output caps. It protects against
+parameter-induced runaway allocation; it is explicitly not an operating-system
+OOM guarantee.
+
+The executed development graph is recorded with
+`resolution=instrument_dev_executed` and exact
+`mutual-knn`/`euclidean`/`k-6` choices. That receipt states what this visible
+development cell ran; it is not `fixed_by_hypothesis`,
+`calibration_resolved`, calibration selection, or graph-family qualification.
+Cycle construction is not run. `CandidateGraph.cycle_support` therefore
+contains the schema-required empty `<i8` array of shape `(0, 4)`; this means
+that no cycle support was supplied, not that the graph was observed to be
+cycleless.
+
+The output contains no `CoreScore`, `CoreCandidate`, `EdgeConnection`, loop,
+winding, calibration-selection, or confirmation artifact. Every emitted
+F0/F1/F2 observation and supplied anchor remains at Level 0. Its positive/null
+pair is a software-development cell, not an independent generator family and
+not synthetic qualification. Two cold emissions are required to be
+byte-identical in the executing environment; cross-environment numerical,
+publication, or byte identity is not yet claimed.
 
 Validate one generated canonical instrument manifest:
 
@@ -207,9 +240,11 @@ falling back to pathname reopening. A returned `LoadedBundlePayload` is an
 integrity receipt only; it intentionally exposes no reusable payload path or
 handle.
 
-The example bank contains only project-authored synthetic engineering fixtures.
-Every entry has `role=example` and `claim_eligible=false`. Scientific discovery
-and held-out banks are separate frozen artifacts beginning in M2.
+The example bank used by the separate Pythia atlas path contains only
+project-authored synthetic engineering fixtures. It is not used by the
+model-free P1 representation phantom described above. Every bank entry has
+`role=example` and `claim_eligible=false`. Scientific discovery and held-out
+banks are separate frozen artifacts beginning in M2.
 
 Capture a bounded, bank-bound Pythia-70M plumbing atlas:
 
@@ -417,6 +452,10 @@ immediate next plan live in the single
   closed-world integrity bundles. Its bundle loader reads opaque payload bytes
   only for length and SHA-256 verification; it contains no payload semantic
   decoder, estimator, graph constructor, or subject access;
+- `synthetic/` contains the model-free, source-bound P1 development generator,
+  numeric self-audit, conservative resource preflight, exact executed
+  development graph, and current-environment exclusive bundle publisher. It is
+  not a calibration-selection or subject-execution boundary;
 - future `graphs/` code will construct scientific graph families from verified
   structural inputs and remains separate from retrieval;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

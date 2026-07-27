@@ -5,8 +5,8 @@ claim_ceiling: level_0
 qualification_status: not_evaluated
 source:
   repository: RyoSpiralArchitect/SpiralLens
-  generator_revision: 82111c6a2d194c90147c5f2e27bbfa38456a91c7
-  generator_module_sha256: 20ba1ac2e98e1cfa4eb04d12303f489db9178e5149411b213dd51ea2f709b48f
+  generator_revision: 67f285a4f6e775d50f2a33fdfda2bb2a9477a170
+  generator_module_sha256: 08325f28b87b0a895538a36a8d72a4fa2ef9ad7411d43995451cb36559b28ac3
 generator:
   seed: 1729
   grid_side: 9
@@ -27,8 +27,8 @@ registry:
   canonical_sha256: 68d2869b87403f65b554b931b363446269e543661b598478233d536cb2fc9a93
 execution:
   fit_role: instrument_dev
-  context_role: example
-  context_claim_eligible: false
+  context_kind: synthetic_lattice
+  synthetic_context_claim_eligible: false
   model_access_authorized: false
   subject_data_access_authorized: false
   subject_execution_authorized: false

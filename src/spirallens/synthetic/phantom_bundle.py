@@ -1088,10 +1088,13 @@ def _open_publication_workspace(value: Path) -> _PublicationWorkspace:
 def _remove_owned_staging(workspace: _PublicationWorkspace) -> None:
     """Best-effort removal of only this emitter's unpublished staging tree."""
 
-    current = _relative_stat(
-        workspace.parent_descriptor,
-        workspace.staging_leaf,
-    )
+    try:
+        current = _relative_stat(
+            workspace.parent_descriptor,
+            workspace.staging_leaf,
+        )
+    except OSError:
+        return
     if (
         current is None
         or not stat.S_ISDIR(current.st_mode)

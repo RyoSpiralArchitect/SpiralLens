@@ -792,6 +792,11 @@ def test_resource_budget_rejects_before_generator_or_output(
         "_bound_generator_module",
         forbidden_bound_generator,
     )
+    monkeypatch.setattr(
+        bundle_module,
+        "_open_publication_workspace",
+        forbidden_bound_generator,
+    )
 
     with pytest.raises(
         RepresentationPhantomProtocolSchemaError,
@@ -879,6 +884,43 @@ def test_generator_revision_accepts_matching_commit_and_rejects_wrong_blob(
             revision=revision,
             generator_module_sha256="0" * 64,
         )
+
+
+def test_tracked_protocol_executes_its_real_bound_revision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol_path = (
+        REPOSITORY_ROOT
+        / "protocols"
+        / "p1_representation_phantom_v0_1.yaml"
+    )
+    loaded = load_representation_phantom_protocol(protocol_path)
+    revision = loaded.protocol.source.generator_revision
+    commit_exists = subprocess.run(
+        ("git", "cat-file", "-e", f"{revision}^{{commit}}"),
+        cwd=REPOSITORY_ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if commit_exists.returncode != 0:
+        pytest.skip("tracked generator commit is absent from this checkout")
+
+    monkeypatch.setattr(
+        bundle_module,
+        "_verify_generator_revision",
+        _verify_generator_revision,
+    )
+    receipt = emit_representation_phantom_bundle(
+        protocol_path,
+        tmp_path / "tracked-bundle",
+    )
+
+    assert receipt.generator_module_sha256 == (
+        loaded.protocol.source.generator_module_sha256
+    )
+    assert receipt.protocol_source_sha256 == loaded.source_sha256
+    assert receipt.protocol_canonical_sha256 == loaded.canonical_sha256
 
 
 def test_emitter_executes_bound_source_not_cached_generator(
@@ -1007,6 +1049,23 @@ def test_exclusive_rename_uses_one_parent_fd_and_beneath_flags(
         | bundle_module._RENAME_NOFOLLOW_ANY
         | bundle_module._RENAME_RESOLVE_BENEATH
     )
+
+
+def test_exclusive_publication_has_no_non_darwin_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(bundle_module.sys, "platform", "linux")
+
+    with pytest.raises(
+        RepresentationPhantomBundleError,
+        match="requires Darwin",
+    ):
+        bundle_module._load_renameatx_np()
+    with pytest.raises(
+        RepresentationPhantomBundleError,
+        match="requires Darwin",
+    ):
+        bundle_module._secure_parent_open_flags()
 
 
 def test_parent_identity_replacement_is_rejected_before_publication(
