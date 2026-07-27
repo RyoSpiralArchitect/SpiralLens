@@ -14,6 +14,11 @@ Candidate-ledger and neighbor plumbing belong to the preserved historical
 retrieval path or synthetic/fake fixtures; they are not consumers of a new
 public-example engineering atlas.
 
+The frozen declaration is
+[`protocols/pythia70_public_example_plumbing_v0_1.yaml`](../../protocols/pythia70_public_example_plumbing_v0_1.yaml).
+Its no-overwrite canonical receipt is published under
+[`receipts/`](receipts/) only after checksum and reload validation.
+
 The receipt records `model_accessed=true` and
 `activation_values_persisted=true`, while keeping scientific claim eligibility
 false and D0-D8 plus candidate, graph, field, core, loop, semantic, SAE, and

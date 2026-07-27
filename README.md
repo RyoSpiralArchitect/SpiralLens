@@ -254,11 +254,18 @@ banks are separate frozen artifacts beginning in M2.
 Run the bounded, atlas-only Pythia-70M public-example plumbing cell:
 
 ```bash
+env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+HF_HUB_DISABLE_TELEMETRY=1 HF_HUB_DISABLE_IMPLICIT_TOKEN=1 \
 PYTHONPATH=src python3 -m spirallens public-example-plumbing run \
   --protocol protocols/pythia70_public_example_plumbing_v0_1.yaml \
   --output runs/pythia70-public-example-plumbing-v0.1 \
-  --receipt runs/pythia70-public-example-plumbing-v0.1-receipt.json
+  --receipt \
+    experiments/pythia/receipts/pythia70_public_example_plumbing_v0_1.json \
+  --expected-protocol-source-sha256 \
+    ef93891c7450ef13cc2c5da54bf1a80d4a0b679df2df04964f2cc505e00aaf4c \
+  --expected-protocol-canonical-sha256 \
+    968ad990e7c80ddae3cadcf71c5b39aa37f7b5cad88ea473df094cedb6b633d6
 ```
 
 The strict tracked protocol selects the exact model revision and cached model
