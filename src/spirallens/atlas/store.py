@@ -18,6 +18,10 @@ from numpy.lib.format import open_memmap
 import torch
 
 from spirallens.adapters import LOGIT_SUMMARY_COLUMNS, BatchObservation
+from spirallens.atlas.engineering_protocol import (
+    PublicExamplePlumbingProtocolError,
+    validate_engineering_request_binding,
+)
 from spirallens.contexts import ContextContractError, context_bank_from_dict
 
 
@@ -635,8 +639,8 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
     completed = progress.get("completed_rows")
     total = progress.get("total_rows")
     if (
-        not isinstance(completed, int)
-        or not isinstance(total, int)
+        type(completed) is not int
+        or type(total) is not int
         or total <= 0
         or not 0 <= completed <= total
     ):
@@ -706,6 +710,15 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
         request,
         manifest_model=manifest.get("model"),
     )
+    try:
+        validate_engineering_request_binding(
+            request,
+            manifest_model=manifest.get("model"),
+        )
+    except (PublicExamplePlumbingProtocolError, TypeError) as exc:
+        raise AtlasIntegrityError(
+            f"public-example engineering binding is invalid: {exc}"
+        ) from exc
 
     attempts = manifest.get("attempts")
     if not isinstance(attempts, list) or not attempts:
@@ -724,7 +737,7 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
     committed_batches = progress.get("committed_batches")
     batch_commits = manifest.get("batch_commits")
     if (
-        not isinstance(committed_batches, int)
+        type(committed_batches) is not int
         or committed_batches < 0
         or not isinstance(batch_commits, list)
         or committed_batches != len(batch_commits)
@@ -766,6 +779,20 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
         )
 
 
+def load_manifest_metadata(
+    output_dir: str | Path,
+) -> dict[str, Any]:
+    """Validate manifest metadata and bindings without opening atlas arrays."""
+
+    root = Path(output_dir)
+    manifest_path = root / "manifest.json"
+    if not manifest_path.is_file():
+        raise AtlasStateError(f"atlas manifest does not exist: {manifest_path}")
+    manifest = _strict_json_load(manifest_path)
+    _verify_manifest_structure(manifest)
+    return manifest
+
+
 def load_manifest(
     output_dir: str | Path,
     *,
@@ -778,11 +805,7 @@ def load_manifest(
     """
 
     root = Path(output_dir)
-    manifest_path = root / "manifest.json"
-    if not manifest_path.is_file():
-        raise AtlasStateError(f"atlas manifest does not exist: {manifest_path}")
-    manifest = _strict_json_load(manifest_path)
-    _verify_manifest_structure(manifest)
+    manifest = load_manifest_metadata(root)
     arrays: dict[str, np.memmap] = {}
     try:
         arrays = {

@@ -2322,8 +2322,19 @@ def extract_candidates_from_manifest(
     manifest_bytes_before = path.read_bytes()
     # Import lazily so the lightweight metric primitives do not require model
     # dependencies merely to be imported.
-    from spirallens.atlas import load_manifest
+    from spirallens.atlas import load_manifest, load_manifest_metadata
+    from spirallens.atlas.engineering_protocol import (
+        require_engineering_consumer_authorized,
+    )
 
+    metadata = load_manifest_metadata(path.parent)
+    metadata_request = metadata.get("request")
+    if not isinstance(metadata_request, Mapping):
+        raise ValueError("atlas manifest is missing request provenance")
+    require_engineering_consumer_authorized(
+        metadata_request,
+        "candidate_extraction",
+    )
     manifest = load_manifest(path.parent, verify_checksums=verify_checksums)
     manifest_bytes = path.read_bytes()
     if manifest_bytes != manifest_bytes_before:
@@ -2802,7 +2813,10 @@ def _audit_neighbor_backend_from_manifest(
 ) -> "NeighborAuditResult":
     """Audit one prepared full-input index on preregistered query rows."""
 
-    from spirallens.atlas import load_manifest
+    from spirallens.atlas import load_manifest, load_manifest_metadata
+    from spirallens.atlas.engineering_protocol import (
+        require_engineering_consumer_authorized,
+    )
     from spirallens.execution_freeze import (
         validated_execution_freeze_sha256,
     )
@@ -2857,6 +2871,14 @@ def _audit_neighbor_backend_from_manifest(
         else requested_path
     )
     manifest_bytes_before = path.read_bytes()
+    metadata = load_manifest_metadata(path.parent)
+    metadata_request = metadata.get("request")
+    if not isinstance(metadata_request, Mapping):
+        raise ValueError("atlas audit provenance is incomplete")
+    require_engineering_consumer_authorized(
+        metadata_request,
+        "neighbor_audit",
+    )
     manifest = load_manifest(
         path.parent,
         verify_checksums=verify_checksums,

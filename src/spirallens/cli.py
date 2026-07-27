@@ -717,6 +717,26 @@ def _run_atlas(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_public_example_plumbing(args: argparse.Namespace) -> int:
+    from spirallens.atlas.engineering_run import (
+        run_public_example_plumbing,
+    )
+
+    summary = run_public_example_plumbing(
+        protocol_path=args.protocol,
+        output_dir=args.output,
+        receipt_path=args.receipt,
+        expected_protocol_source_sha256=(
+            args.expected_protocol_source_sha256
+        ),
+        expected_protocol_canonical_sha256=(
+            args.expected_protocol_canonical_sha256
+        ),
+    )
+    _print_json(summary)
+    return 0
+
+
 def _run_context_bank_validate(args: argparse.Namespace) -> int:
     from spirallens.contexts import load_context_bank
 
@@ -1160,7 +1180,10 @@ def _run_candidates(args: argparse.Namespace) -> int:
 
 
 def _run_neighbor_audit(args: argparse.Namespace) -> int:
-    from spirallens.atlas import load_manifest
+    from spirallens.atlas import load_manifest, load_manifest_metadata
+    from spirallens.atlas.engineering_protocol import (
+        require_engineering_consumer_authorized,
+    )
     from spirallens.audit_output import reserve_audit_output
     from spirallens.execution_freeze import (
         validate_subject_audit_execution_freeze,
@@ -1407,6 +1430,14 @@ def _run_neighbor_audit(args: argparse.Namespace) -> int:
         else requested_manifest
     )
     manifest_bytes = manifest_path.read_bytes()
+    metadata = load_manifest_metadata(manifest_path.parent)
+    metadata_request = metadata.get("request")
+    if not isinstance(metadata_request, dict):
+        raise ValueError("atlas manifest audit provenance is invalid")
+    require_engineering_consumer_authorized(
+        metadata_request,
+        "neighbor_audit",
+    )
     manifest = load_manifest(
         manifest_path.parent,
         verify_checksums=not args.skip_checksums,
@@ -1798,6 +1829,37 @@ def _add_atlas_parser(subparsers: Any) -> None:
     parser.set_defaults(handler=_run_atlas)
 
 
+def _add_public_example_plumbing_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "public-example-plumbing",
+        help=(
+            "run one frozen atlas-only Pythia public-example engineering cell"
+        ),
+    )
+    commands = parser.add_subparsers(
+        dest="public_example_plumbing_command",
+        required=True,
+    )
+    run = commands.add_parser(
+        "run",
+        help="capture, checksum, reload, and receipt the bounded atlas",
+    )
+    run.add_argument("--protocol", type=Path, required=True)
+    run.add_argument("--output", type=Path, required=True)
+    run.add_argument("--receipt", type=Path, required=True)
+    run.add_argument(
+        "--expected-protocol-source-sha256",
+        required=True,
+        help="required out-of-band SHA-256 of the tracked YAML bytes",
+    )
+    run.add_argument(
+        "--expected-protocol-canonical-sha256",
+        required=True,
+        help="required out-of-band SHA-256 of canonical protocol content",
+    )
+    run.set_defaults(handler=_run_public_example_plumbing)
+
+
 def _add_context_bank_parser(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "context-bank",
@@ -2059,6 +2121,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_instrument_artifact_parser(subparsers)
     _add_instrument_bundle_parser(subparsers)
     _add_synthetic_bundle_parser(subparsers)
+    _add_public_example_plumbing_parser(subparsers)
     _add_atlas_parser(subparsers)
     _add_faiss_range_preflight_parser(subparsers)
     _add_neighbor_audit_parser(subparsers)

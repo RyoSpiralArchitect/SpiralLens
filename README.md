@@ -251,28 +251,36 @@ model-free P1 representation phantom described above. Every bank entry has
 `role=example` and `claim_eligible=false`. Scientific discovery and held-out
 banks are separate frozen artifacts beginning in M2.
 
-Capture a bounded, bank-bound Pythia-70M plumbing atlas:
+Run the bounded, atlas-only Pythia-70M public-example plumbing cell:
 
 ```bash
-spirallens atlas \
-  --output runs/pythia70-smoke \
-  --context-bank protocols/context_bank_example_v0_1.yaml \
-  --context-id synthetic-slot-only-001 \
-  --allow-role example \
-  --expected-context-bank-source-sha256 \
-    db9df614ad68bd20646da29740354624b8be075719e7ef4ca2ad8023d4dcef4f \
-  --expected-context-bank-canonical-sha256 \
-    46c23fb8f1c0f2136537bab5717473c2cc8b03a9121d89db267a29b89ef0a438 \
-  --max-tokens 32 \
-  --batch-size 8 \
-  --device auto
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+PYTHONPATH=src python3 -m spirallens public-example-plumbing run \
+  --protocol protocols/pythia70_public_example_plumbing_v0_1.yaml \
+  --output runs/pythia70-public-example-plumbing-v0.1 \
+  --receipt runs/pythia70-public-example-plumbing-v0.1-receipt.json
 ```
 
-The bank selects the exact model revision, structured slot, attention mask,
-sweep position, and observation position. Its raw and canonical SHA-256
-digests, ordered entries, role, tokenizer fingerprint, and token domain are
-bound into the run fingerprint; resume rejects a mismatch before appending an
-attempt.
+The strict tracked protocol selects the exact model revision and cached model
+file hashes, ContextBank source and canonical digests, structured slot, 32
+explicit row IDs, CPU/float32 runtime, resource ceilings, output identity, and
+source implementation. Network access is disabled and the model is loaded
+with local files only. The complete protocol content and identity are embedded
+in the atlas request and run fingerprint.
+
+The receipt records the access facts—`model_accessed=true` and
+`activation_values_persisted=true`—and independently binds the manifest and
+array hashes. It also records `scientific_claim_eligible=false`,
+`p1_instrument_consumed=false`, D0-D8 `not_run`, and every candidate, neighbor,
+graph, field, core, loop, holonomy, winding, semantic, SAE, and integer stage
+as `not_run`. The only authorized consumer is atlas integrity validation;
+downstream candidate and neighbor entry points reject this execution class
+before opening activation arrays.
+
+If atlas finalization succeeds but no receipt is published, that directory is
+terminally unreceipted: do not analyze or reuse it. Preserve it under a
+quarantine name for diagnosis, fix the publication failure, and rerun into the
+original frozen output ID from a fresh path.
 
 Low-level capture can still use `--context-ids` and `--position` directly.
 `--position` is the observed residual position and, by default, also the slot
@@ -281,15 +289,18 @@ mode is an engineering escape hatch and carries no ContextBank identity.
 
 This produces a fixed-context model-input-row activation atlas. It is not a
 language-space or semantic atlas: a row ID is an address in the model input
-embedding table, and SpiralLens attaches no decoded meaning or expected outcome
-to it during discovery.
+embedding table, and SpiralLens attaches no decoded meaning or expected
+outcome. It is also not a subject run, candidate source, model-bound
+instrument bundle, P1 execution, or progress on D0-D8.
 
-Then apply the tracked, semantics-free structural gates:
+The following command belongs to the preserved historical retrieval workflow,
+not to the public-example engineering atlas above. It can consume only an
+atlas whose own execution contract authorizes candidate extraction:
 
 ```bash
 spirallens candidates \
-  --manifest runs/pythia70-smoke/manifest.json \
-  --output runs/pythia70-smoke/candidates.jsonl \
+  --manifest runs/<retrieval-authorized-atlas>/manifest.json \
+  --output runs/<retrieval-authorized-atlas>/candidates.jsonl \
   --protocol protocols/pythia_v0_1.yaml
 ```
 

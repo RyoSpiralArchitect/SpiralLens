@@ -113,6 +113,23 @@ Any `SubstrateBinding` must bind the exact atlas, row universe, comparison
 group, state/update tensors, fit scope, metric, and field-estimation
 neighborhood.
 
+**Public-example engineering subtype**
+
+An atlas carrying a frozen `public_example_engineering` binding is narrower
+than the general atlas contract. It proves only that an exact cached model
+revision could be loaded, bounded residual observations could be persisted,
+and the journal, array checksums, manifest, and receipt could be reloaded.
+The access receipt must say `model_accessed=true` and
+`activation_values_persisted=true`; those facts do not make the run
+claim-eligible. Its only allowed consumer is atlas integrity validation.
+
+**Forbidden rereading**
+
+The public-example engineering atlas cannot be used to emit candidates or a
+neighbor audit, construct a model-bound `SubstrateBinding`, run F0-F4, select a
+layer or context, or support graph, field, core, loop, phase, holonomy,
+winding, semantic, SAE, causal, or integer claims.
+
 ### 3.3 High-cosine and divergent-update candidate rule
 
 **Original purpose**

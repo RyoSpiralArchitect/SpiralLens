@@ -36,6 +36,7 @@ dependencies = [
 
 [project.optional-dependencies]
 models = [
+  "huggingface-hub>=0.34",
   "torch>=2.2",
   "transformers>=4.40",
   "safetensors>=0.4",
