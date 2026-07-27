@@ -214,18 +214,18 @@ def test_instrument_artifact_cli_validates_metadata_without_payload_access(
         purpose="field_estimation",
         family=RuleChoice(
             family_id="graph_family",
-            resolution=ResolutionState.FIXED_BY_HYPOTHESIS,
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
             selected_id="mutual_knn",
         ),
         metric=RuleChoice(
             family_id="graph_metric",
-            resolution=ResolutionState.FIXED_BY_HYPOTHESIS,
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
             selected_id="cosine",
         ),
         scale=RuleChoice(
             family_id="graph_scale",
-            resolution=ResolutionState.CALIBRATION_SELECTION,
-            candidate_ids=("scale_a", "scale_b"),
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="scale_a",
         ),
         constructor_id="mutual_knn_v0_1",
         deterministic_tie_policy="row_identity_ascending",

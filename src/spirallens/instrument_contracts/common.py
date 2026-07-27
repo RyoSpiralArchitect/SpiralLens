@@ -46,6 +46,7 @@ class ClaimLevel(str, Enum):
 
 
 class EvolutionAxis(str, Enum):
+    SYNTHETIC_LATTICE = "synthetic_lattice"
     TOKEN_POSITION = "token_position"
     LAYER_INDEX = "layer_index"
     TRAINING_STEP = "training_step"
@@ -61,6 +62,7 @@ class FitRole(str, Enum):
 
 class ResolutionState(str, Enum):
     FIXED_BY_HYPOTHESIS = "fixed_by_hypothesis"
+    INSTRUMENT_DEV_EXECUTED = "instrument_dev_executed"
     CALIBRATION_SELECTION = "calibration_selection"
     CALIBRATION_RESOLVED = "calibration_resolved"
     DISABLED = "disabled"
@@ -85,6 +87,11 @@ class ArtifactType(str, Enum):
     DEFECT_LOOP_ESTIMATE = "defect_loop_estimate"
     CALIBRATION_SELECTION_DECISION = "calibration_selection_decision"
     CALIBRATION_CONFIRMATION_RESULT = "calibration_confirmation_result"
+
+
+SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION = (
+    "spirallens.instrument.synthetic-lattice-substrate-binding.v0.1"
+)
 
 
 ARTIFACT_SCHEMA_VERSION_BY_TYPE: Mapping[ArtifactType, str] = {
@@ -135,6 +142,25 @@ ARTIFACT_SCHEMA_VERSION_BY_TYPE: Mapping[ArtifactType, str] = {
     ArtifactType.CALIBRATION_CONFIRMATION_RESULT: (
         "spirallens.instrument.calibration-confirmation-result.v0.1"
     ),
+}
+
+ARTIFACT_SCHEMA_VERSIONS_BY_TYPE: Mapping[
+    ArtifactType,
+    frozenset[str],
+] = {
+    artifact_type: (
+        frozenset(
+            {
+                schema_version,
+                SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION,
+            }
+        )
+        if artifact_type is ArtifactType.SUBSTRATE_BINDING
+        else frozenset({schema_version})
+    )
+    for artifact_type, schema_version in (
+        ARTIFACT_SCHEMA_VERSION_BY_TYPE.items()
+    )
 }
 
 
@@ -387,6 +413,7 @@ class RuleChoice:
             )
         if self.resolution in {
             ResolutionState.FIXED_BY_HYPOTHESIS,
+            ResolutionState.INSTRUMENT_DEV_EXECUTED,
             ResolutionState.CALIBRATION_RESOLVED,
         }:
             if not has_selected:
@@ -469,13 +496,13 @@ class ArtifactRef:
         if not isinstance(self.artifact_type, ArtifactType):
             raise TypeError("artifact_type must be an ArtifactType")
         require_slug(self.schema_version, label="schema_version")
-        expected_schema_version = ARTIFACT_SCHEMA_VERSION_BY_TYPE[
+        expected_schema_versions = ARTIFACT_SCHEMA_VERSIONS_BY_TYPE[
             self.artifact_type
         ]
-        if self.schema_version != expected_schema_version:
+        if self.schema_version not in expected_schema_versions:
             raise ContractValidationError(
                 "schema_version does not match artifact_type: "
-                f"expected {expected_schema_version!r}"
+                f"expected one of {sorted(expected_schema_versions)!r}"
             )
         require_slug(self.artifact_id, label="artifact_id")
         require_sha256(

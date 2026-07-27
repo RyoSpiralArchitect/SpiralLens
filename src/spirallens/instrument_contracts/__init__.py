@@ -37,7 +37,10 @@ from .artifacts import (
     OrderParameterField,
     OrderParameterSpec,
     SubstrateBinding,
+    SubstrateBindingValue,
     SupportDiagnostic,
+    SyntheticLatticeContextBinding,
+    SyntheticLatticeSubstrateBinding,
     instrument_artifact_from_dict,
 )
 from .bundle import (
@@ -73,6 +76,8 @@ from .canonical import (
 )
 from .common import (
     ARTIFACT_SCHEMA_VERSION_BY_TYPE,
+    ARTIFACT_SCHEMA_VERSIONS_BY_TYPE,
+    SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION,
     ArtifactRef,
     ArtifactType,
     ClaimLevel,
@@ -107,6 +112,7 @@ from .registry_loader import (
 
 __all__ = [
     "ARTIFACT_SCHEMA_VERSION_BY_TYPE",
+    "ARTIFACT_SCHEMA_VERSIONS_BY_TYPE",
     "ARTIFACT_REFERENCE_POLICY",
     "INSTRUMENT_BUNDLE_SCHEMA_VERSION",
     "MAX_INSTRUMENT_BUNDLE_BYTES",
@@ -174,8 +180,12 @@ __all__ = [
     "ResolutionState",
     "RuleChoice",
     "ScientificBranch",
+    "SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION",
     "SubstrateBinding",
+    "SubstrateBindingValue",
     "SupportDiagnostic",
+    "SyntheticLatticeContextBinding",
+    "SyntheticLatticeSubstrateBinding",
     "canonical_json_bytes",
     "canonical_json_sha256",
     "hypothesis_registry_from_dict",

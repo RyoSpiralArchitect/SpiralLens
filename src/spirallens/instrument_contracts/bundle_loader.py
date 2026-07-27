@@ -823,6 +823,7 @@ def _read_bundle_manifest(
     *,
     expected_source_sha256: str | None,
     expected_canonical_sha256: str | None,
+    expected_root_identity: FileIdentity | None,
 ) -> tuple[
     InstrumentBundleManifest,
     Path,
@@ -867,7 +868,7 @@ def _read_bundle_manifest(
         with _open_bundle_member(
             bundle_root=bundle_root,
             relative_path=requested.name,
-            expected_root_identity=None,
+            expected_root_identity=expected_root_identity,
             seen_files=manifest_seen_files,
         ) as opened:
             source = _read_descriptor_bytes(
@@ -947,8 +948,25 @@ def load_instrument_bundle(
     *,
     expected_source_sha256: str | None = None,
     expected_canonical_sha256: str | None = None,
+    expected_root_identity: FileIdentity | None = None,
 ) -> LoadedInstrumentBundle:
-    """Validate a canonical closed bundle without decoding payload values."""
+    """Validate a canonical closed bundle without decoding payload values.
+
+    ``expected_root_identity`` lets a publisher bind validation to an already
+    opened bundle-directory inode instead of trusting a display path alone.
+    """
+
+    if expected_root_identity is not None and (
+        not isinstance(expected_root_identity, tuple)
+        or len(expected_root_identity) != 2
+        or any(
+            isinstance(value, bool) or not isinstance(value, int)
+            for value in expected_root_identity
+        )
+    ):
+        raise TypeError(
+            "expected_root_identity must be a (device, inode) integer tuple"
+        )
 
     (
         manifest,
@@ -961,6 +979,7 @@ def load_instrument_bundle(
         path,
         expected_source_sha256=expected_source_sha256,
         expected_canonical_sha256=expected_canonical_sha256,
+        expected_root_identity=expected_root_identity,
     )
     bundle_root = source_path.parent
     seen_files: dict[FileIdentity, str] = {manifest_identity: source_path.name}

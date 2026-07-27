@@ -14,6 +14,8 @@ from spirallens.instrument_contracts.canonical import (
 )
 from spirallens.instrument_contracts.common import (
     ARTIFACT_SCHEMA_VERSION_BY_TYPE,
+    ARTIFACT_SCHEMA_VERSIONS_BY_TYPE,
+    SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION,
     ArtifactRef,
     ArtifactType,
     ClaimLevel,
@@ -170,6 +172,7 @@ def test_closed_enum_values_are_exact() -> None:
         "level_3",
     }
     assert {item.value for item in EvolutionAxis} == {
+        "synthetic_lattice",
         "token_position",
         "layer_index",
         "training_step",
@@ -183,6 +186,7 @@ def test_closed_enum_values_are_exact() -> None:
     }
     assert {item.value for item in ResolutionState} == {
         "fixed_by_hypothesis",
+        "instrument_dev_executed",
         "calibration_selection",
         "calibration_resolved",
         "disabled",
@@ -222,6 +226,11 @@ def test_rule_choice_round_trip_for_every_resolution_state() -> None:
             family_id="target_rank",
             resolution=ResolutionState.FIXED_BY_HYPOTHESIS,
             selected_id="rank_two",
+        ),
+        RuleChoice(
+            family_id="graph_family",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="mutual-knn",
         ),
         RuleChoice(
             family_id="covariance_estimator",
@@ -367,6 +376,45 @@ def test_artifact_reference_round_trip_and_identity_digest() -> None:
                 ArtifactType.CORE_SCORE
             ],
         )
+
+
+def test_substrate_reference_accepts_only_declared_schema_variants() -> None:
+    legacy = ARTIFACT_SCHEMA_VERSION_BY_TYPE[
+        ArtifactType.SUBSTRATE_BINDING
+    ]
+    supported = ARTIFACT_SCHEMA_VERSIONS_BY_TYPE[
+        ArtifactType.SUBSTRATE_BINDING
+    ]
+
+    assert legacy == "spirallens.instrument.substrate-binding.v0.1"
+    assert supported == frozenset(
+        {
+            legacy,
+            SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION,
+        }
+    )
+    synthetic = ArtifactRef(
+        artifact_type=ArtifactType.SUBSTRATE_BINDING,
+        schema_version=(
+            SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION
+        ),
+        artifact_id="synthetic-substrate",
+        canonical_sha256=SHA_A,
+    )
+    assert ArtifactRef.from_dict(synthetic.to_dict()) == synthetic
+
+    with pytest.raises(
+        ContractValidationError,
+        match="does not match artifact_type",
+    ):
+        replace(
+            synthetic,
+            schema_version="spirallens.instrument.substrate-binding.v9",
+        )
+
+    for artifact_type, primary in ARTIFACT_SCHEMA_VERSION_BY_TYPE.items():
+        assert primary in ARTIFACT_SCHEMA_VERSIONS_BY_TYPE[artifact_type]
+    assert len(ArtifactType) == 17
 
 
 def test_payload_references_round_trip_for_every_kind() -> None:

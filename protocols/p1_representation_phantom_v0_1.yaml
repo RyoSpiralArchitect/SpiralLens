@@ -1,0 +1,37 @@
+schema_version: spirallens.representation-phantom-protocol.v0.1
+protocol_id: p1-representation-phantom-instrument-dev-v0.1
+status: instrument_dev
+claim_ceiling: level_0
+qualification_status: not_evaluated
+source:
+  repository: RyoSpiralArchitect/SpiralLens
+  generator_revision: 67f285a4f6e775d50f2a33fdfda2bb2a9477a170
+  generator_module_sha256: 08325f28b87b0a895538a36a8d72a4fa2ef9ad7411d43995451cb36559b28ac3
+generator:
+  seed: 1729
+  grid_side: 9
+  ambient_dimension: 16
+  probe_count: 8
+  neighbor_count: 6
+  radial_scale: 1.0
+  probe_scale: 0.5
+  nuisance_scale: 0.01
+cases:
+  - case_id: angular-section-positive
+    field_kind: angular-unit-vector
+  - case_id: fixed-direction-null
+    field_kind: fixed-unit-vector
+registry:
+  path: order_parameter_hypothesis_registry_v0_1.yaml
+  source_sha256: 8a953bf7ee0772ffa6d6facf8a6088f06cc3ae9cd39b4a7f624c8caa4bcfbd07
+  canonical_sha256: 68d2869b87403f65b554b931b363446269e543661b598478233d536cb2fc9a93
+execution:
+  fit_role: instrument_dev
+  context_kind: synthetic_lattice
+  synthetic_context_claim_eligible: false
+  model_access_authorized: false
+  subject_data_access_authorized: false
+  subject_execution_authorized: false
+  subject_protocol_preparation_authorized: false
+  calibration_selection_authorized: false
+  integer_output_authorized: false

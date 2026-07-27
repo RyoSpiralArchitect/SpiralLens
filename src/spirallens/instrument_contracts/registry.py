@@ -258,9 +258,18 @@ class HypothesisSpec:
             "trivialization_rule",
             "reference_rule",
         ):
-            if not isinstance(getattr(self, name), RuleChoice):
+            choice = getattr(self, name)
+            if not isinstance(choice, RuleChoice):
                 raise HypothesisRegistryError(
                     f"{name} must be a RuleChoice"
+                )
+            if (
+                choice.resolution
+                is ResolutionState.INSTRUMENT_DEV_EXECUTED
+            ):
+                raise HypothesisRegistryError(
+                    "instrument_dev_executed is reserved for graph "
+                    "construction artifacts"
                 )
         for name in (
             "domain_binding",
@@ -463,10 +472,14 @@ _FORBIDDEN_SELECTION_INPUTS = frozenset(
 _P0_FIT_ROLES = frozenset(
     {FitRole.INSTRUMENT_DEV.value, FitRole.CALIBRATION_SELECTION.value}
 )
-_EVOLUTION_AXES = frozenset(axis.value for axis in EvolutionAxis)
+_P0_OBSERVATION_AXES = frozenset(
+    axis.value
+    for axis in EvolutionAxis
+    if axis is not EvolutionAxis.SYNTHETIC_LATTICE
+)
 _COMMON_CHOICE_CANDIDATES: Mapping[str, frozenset[str]] = {
     "input_tensor": frozenset({"accounted_response", "raw_state"}),
-    "observation_axis": _EVOLUTION_AXES,
+    "observation_axis": _P0_OBSERVATION_AXES,
     "centering_rule": frozenset(
         {"global_centering", "local_centering", "no_centering"}
     ),

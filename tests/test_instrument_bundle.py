@@ -34,6 +34,8 @@ from spirallens.instrument_contracts.artifacts import (
     OrderParameterSpec,
     SubstrateBinding,
     SupportDiagnostic,
+    SyntheticLatticeContextBinding,
+    SyntheticLatticeSubstrateBinding,
 )
 from spirallens.instrument_contracts.bundle import (
     BundleArtifactEntry,
@@ -136,6 +138,21 @@ def _resolved(family_id: str, selected_id: str) -> RuleChoice:
     )
 
 
+def _synthetic_context_binding() -> SyntheticLatticeContextBinding:
+    return SyntheticLatticeContextBinding(
+        context_id="bundle-synthetic-lattice",
+        source_id="bundle-synthetic-protocol",
+        generator_revision="a" * 40,
+        generator_module_sha256=_digest("bundle-generator-module"),
+        generator_spec_sha256=_digest("bundle-generator-spec"),
+        protocol_source_sha256=_digest("bundle-protocol-source"),
+        protocol_canonical_sha256=_digest("bundle-protocol-canonical"),
+        row_identity_sha256=SUBSTRATE_ROWS,
+        lattice_shape=(2, 2),
+        boundary_rule="open",
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class BundleFixture:
     root: Path
@@ -202,6 +219,7 @@ def _build_bundle(
     level_2t_selection_role: FitRole | None = None,
     level_2t_selection_axis: EvolutionAxis | None = None,
     level_2t_selected_precursor: bool = True,
+    synthetic_substrate: bool = False,
 ) -> BundleFixture:
     root = tmp_path / "bundle"
     artifact_directory = root / "artifacts"
@@ -350,14 +368,26 @@ def _build_bundle(
         ),
         "preprocessing_fit": write_opaque("substrate-preprocessing-fit"),
     }
-    substrate = SubstrateBinding(
-        artifact_id="bundle-substrate",
-        role=substrate_role,
-        evolution_axis=substrate_axis,
-        row_identity_sha256=SUBSTRATE_ROWS,
-        context_bank=context_ref,
-        **substrate_payloads,
-    )
+    if synthetic_substrate:
+        substrate_role = FitRole.INSTRUMENT_DEV
+        substrate_axis = EvolutionAxis.SYNTHETIC_LATTICE
+        substrate = SyntheticLatticeSubstrateBinding(
+            artifact_id="bundle-substrate",
+            role=substrate_role,
+            evolution_axis=substrate_axis,
+            row_identity_sha256=SUBSTRATE_ROWS,
+            synthetic_context=_synthetic_context_binding(),
+            **substrate_payloads,
+        )
+    else:
+        substrate = SubstrateBinding(
+            artifact_id="bundle-substrate",
+            role=substrate_role,
+            evolution_axis=substrate_axis,
+            row_identity_sha256=SUBSTRATE_ROWS,
+            context_bank=context_ref,
+            **substrate_payloads,
+        )
     substrate_ref = _artifact_ref(substrate)
 
     secondary_substrate = replace(
@@ -369,18 +399,41 @@ def _build_bundle(
         if split_graph_spec_substrate
         else substrate_ref
     )
+    graph_role = (
+        substrate_role
+        if graph_allowed_role is None
+        else graph_allowed_role
+    )
+    if graph_role is FitRole.INSTRUMENT_DEV:
+        graph_family = RuleChoice(
+            family_id="graph_family",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="mutual-knn",
+        )
+        graph_metric = RuleChoice(
+            family_id="graph_metric",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="cosine",
+        )
+        graph_scale = RuleChoice(
+            family_id="graph_scale",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="local",
+        )
+    else:
+        graph_family = _fixed("graph_family", "mutual-knn")
+        graph_metric = _fixed("graph_metric", "cosine")
+        graph_scale = _fixed("graph_scale", "local")
     graph_spec = GraphConstructionSpec(
         artifact_id="bundle-graph-spec",
         substrate=graph_spec_substrate_ref,
         purpose="field_estimation",
-        family=_fixed("graph_family", "mutual-knn"),
-        metric=_fixed("graph_metric", "cosine"),
-        scale=_fixed("graph_scale", "local"),
+        family=graph_family,
+        metric=graph_metric,
+        scale=graph_scale,
         constructor_id="deterministic-graph-v1",
         deterministic_tie_policy="lexicographic-vertex-id",
-        allowed_role=(
-            substrate_role if graph_allowed_role is None else graph_allowed_role
-        ),
+        allowed_role=graph_role,
     )
     graph_spec_ref = _artifact_ref(graph_spec)
 
@@ -646,13 +699,33 @@ def _build_bundle(
                             )
                         )
 
+        if substrate_role is FitRole.INSTRUMENT_DEV:
+            cycle_graph_family = RuleChoice(
+                family_id="graph_family",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="mutual-knn",
+            )
+            cycle_graph_metric = RuleChoice(
+                family_id="graph_metric",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="cosine",
+            )
+            cycle_graph_scale = RuleChoice(
+                family_id="graph_scale",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="local",
+            )
+        else:
+            cycle_graph_family = _fixed("graph_family", "mutual-knn")
+            cycle_graph_metric = _fixed("graph_metric", "cosine")
+            cycle_graph_scale = _fixed("graph_scale", "local")
         cycle_graph_spec = GraphConstructionSpec(
             artifact_id="bundle-cycle-graph-spec",
             substrate=substrate_ref,
             purpose="cycle_construction",
-            family=_fixed("graph_family", "mutual-knn"),
-            metric=_fixed("graph_metric", "cosine"),
-            scale=_fixed("graph_scale", "local"),
+            family=cycle_graph_family,
+            metric=cycle_graph_metric,
+            scale=cycle_graph_scale,
             constructor_id="deterministic-cycle-graph-v1",
             deterministic_tie_policy="lexicographic-vertex-id",
             allowed_role=substrate_role,
@@ -1091,7 +1164,7 @@ def _build_bundle(
             )
         ),
         hypothesis_registries=(registry_entry,),
-        context_banks=(context_entry,),
+        context_banks=() if synthetic_substrate else (context_entry,),
         payloads=tuple(sorted(payload_entries, key=lambda entry: entry.sort_key)),
     )
     manifest_path = root / "bundle.json"
@@ -1120,6 +1193,27 @@ def test_bundle_manifest_round_trips_canonically(tmp_path: Path) -> None:
     assert not reconstructed.canonical_bytes.endswith(b"\n")
 
 
+def test_model_free_synthetic_substrate_closes_without_context_bank(
+    tmp_path: Path,
+) -> None:
+    fixture = _build_bundle(tmp_path, synthetic_substrate=True)
+
+    loaded = load_instrument_bundle(fixture.manifest_path)
+    substrate = loaded.resolve(_artifact_ref(fixture.artifacts["substrate"]))
+
+    assert isinstance(substrate, SyntheticLatticeSubstrateBinding)
+    assert substrate.artifact_type is ArtifactType.SUBSTRATE_BINDING
+    assert substrate.role is FitRole.INSTRUMENT_DEV
+    assert substrate.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
+    assert substrate.synthetic_context.site_count == 4
+    assert loaded.manifest.context_banks == ()
+    assert all(
+        member.reference.artifact_type is not ArtifactType.CONTEXT_BANK
+        for member in loaded.artifacts
+    )
+    assert loaded.cross_manifest_join_count > 0
+
+
 def test_loader_resolves_closed_bundle_and_reports_cli_ready_facts(
     tmp_path: Path,
 ) -> None:
@@ -1144,6 +1238,34 @@ def test_loader_resolves_closed_bundle_and_reports_cli_ready_facts(
     assert loaded.manifest.subject_data_access_authorized is False
     assert loaded.resolve(fixture.manifest.roots[-1]) == fixture.artifacts["support"]
     assert GRAPH_VERTICES != SUBSTRATE_ROWS
+
+
+def test_loader_can_bind_validation_to_an_opened_root_identity(
+    tmp_path: Path,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    root_stat = os.stat(fixture.root)
+    root_identity = (root_stat.st_dev, root_stat.st_ino)
+
+    loaded = load_instrument_bundle(
+        fixture.manifest_path,
+        expected_root_identity=root_identity,
+    )
+    assert loaded.manifest == fixture.manifest
+
+    with pytest.raises(
+        InstrumentBundleSchemaError,
+        match="bundle manifest cannot be opened securely",
+    ):
+        load_instrument_bundle(
+            fixture.manifest_path,
+            expected_root_identity=(root_identity[0], root_identity[1] + 1),
+        )
+    with pytest.raises(TypeError, match="expected_root_identity"):
+        load_instrument_bundle(
+            fixture.manifest_path,
+            expected_root_identity=("device", "inode"),  # type: ignore[arg-type]
+        )
 
 
 def test_instrument_bundle_cli_reports_closed_integrity_scope(

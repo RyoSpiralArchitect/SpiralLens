@@ -26,12 +26,15 @@ from .artifacts import (
     OrderParameterField,
     OrderParameterSpec,
     SubstrateBinding,
+    SubstrateBindingValue,
     SupportDiagnostic,
+    SyntheticLatticeSubstrateBinding,
 )
 from .common import (
     ArtifactRef,
     ArtifactType,
     ClaimLevel,
+    EvolutionAxis,
     FitRole,
     HypothesisDisposition,
     HypothesisId,
@@ -131,7 +134,9 @@ class _JoinValidator:
     def resolve(
         self,
         reference: ArtifactRef,
-        expected_type: type[ResolvedType],
+        expected_type: (
+            type[ResolvedType] | tuple[type[ResolvedType], ...]
+        ),
         *,
         label: str,
     ) -> ResolvedType:
@@ -204,8 +209,15 @@ class _JoinValidator:
         reference: ArtifactRef,
         *,
         label: str,
-    ) -> SubstrateBinding:
-        return self.resolve(reference, SubstrateBinding, label=label)
+    ) -> SubstrateBindingValue:
+        return self.resolve(
+            reference,
+            (
+                SubstrateBinding,
+                SyntheticLatticeSubstrateBinding,
+            ),
+            label=label,
+        )
 
     def graph(
         self,
@@ -259,7 +271,13 @@ class _JoinValidator:
     ) -> FitRole | None:
         member = self.index[(reference.artifact_type, reference.artifact_id)]
         value = member.value
-        if isinstance(value, SubstrateBinding):
+        if isinstance(
+            value,
+            (
+                SubstrateBinding,
+                SyntheticLatticeSubstrateBinding,
+            ),
+        ):
             return value.role
         if isinstance(value, GraphConstructionSpec):
             return value.allowed_role
@@ -793,6 +811,30 @@ def _validate_one(
     value: object,
 ) -> None:
     label = value.__class__.__name__
+
+    if isinstance(value, SyntheticLatticeSubstrateBinding):
+        validator.require(
+            value.role is FitRole.INSTRUMENT_DEV,
+            "synthetic_substrate_role_mismatch",
+            "synthetic lattice substrates must remain instrument_dev",
+        )
+        validator.require(
+            value.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE,
+            "synthetic_substrate_axis_mismatch",
+            "synthetic lattice substrates must retain their synthetic axis",
+        )
+        validator.require(
+            not value.synthetic_context.claim_eligible,
+            "synthetic_context_claim_eligible",
+            "synthetic lattice contexts cannot become claim eligible",
+        )
+        validator.require(
+            value.synthetic_context.row_identity_sha256
+            == value.row_identity_sha256,
+            "synthetic_context_row_identity_mismatch",
+            "synthetic lattice context row identity differs from its substrate",
+        )
+        return
 
     if isinstance(value, SubstrateBinding):
         validator.require(

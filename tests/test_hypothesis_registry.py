@@ -353,6 +353,26 @@ def test_f1_matrix_holonomy_cannot_authorize_an_integer(tmp_path: Path) -> None:
         load_hypothesis_registry(_write(tmp_path, document))
 
 
+def test_instrument_dev_execution_state_cannot_enter_the_registry(
+    tmp_path: Path,
+) -> None:
+    document = _document()
+    choice = _hypothesis(
+        document,
+        "f2_local_covariant_section",
+    )["input_tensor"]
+    assert isinstance(choice, dict)
+    choice["resolution"] = "instrument_dev_executed"
+    choice["selected_id"] = "raw_state"
+    choice["candidate_ids"] = []
+
+    with pytest.raises(
+        HypothesisRegistrySchemaError,
+        match="reserved for graph construction",
+    ):
+        load_hypothesis_registry(_write(tmp_path, document))
+
+
 def test_f2_requires_all_conditional_winding_prerequisites(tmp_path: Path) -> None:
     document = _document()
     f2 = _hypothesis(document, "f2_local_covariant_section")
