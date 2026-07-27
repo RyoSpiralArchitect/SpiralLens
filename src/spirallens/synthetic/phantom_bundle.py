@@ -18,7 +18,6 @@ import hashlib
 import io
 import os
 from pathlib import Path
-import shutil
 import stat
 import subprocess
 import sys
@@ -1085,33 +1084,6 @@ def _open_publication_workspace(value: Path) -> _PublicationWorkspace:
         raise
 
 
-def _remove_owned_staging(workspace: _PublicationWorkspace) -> None:
-    """Best-effort removal of only this emitter's unpublished staging tree."""
-
-    try:
-        current = _relative_stat(
-            workspace.parent_descriptor,
-            workspace.staging_leaf,
-        )
-    except OSError:
-        return
-    if (
-        current is None
-        or not stat.S_ISDIR(current.st_mode)
-        or _identity(current) != workspace.staging_identity
-        or not shutil.rmtree.avoids_symlink_attacks
-    ):
-        return
-    try:
-        shutil.rmtree(
-            workspace.staging_leaf,
-            dir_fd=workspace.parent_descriptor,
-        )
-    except OSError:
-        # Cleanup must never mask the validation or publication failure.
-        return
-
-
 def _load_renameatx_np() -> object:
     if sys.platform != "darwin":
         raise RepresentationPhantomBundleError(
@@ -1229,6 +1201,33 @@ def _publish_staging_no_replace(
     return workspace.staging_identity
 
 
+def _open_published_directory(
+    workspace: _PublicationWorkspace,
+) -> int:
+    """Retain the exact published inode through post-publication validation."""
+
+    try:
+        descriptor = os.open(
+            workspace.destination.name,
+            _secure_parent_open_flags(),
+            dir_fd=workspace.parent_descriptor,
+        )
+    except OSError as error:
+        raise RepresentationPhantomBundleError(
+            "published directory cannot be opened through the parent anchor"
+        ) from error
+    opened = os.fstat(descriptor)
+    if (
+        not stat.S_ISDIR(opened.st_mode)
+        or _identity(opened) != workspace.staging_identity
+    ):
+        os.close(descriptor)
+        raise RepresentationPhantomBundleError(
+            "published directory descriptor differs from staging"
+        )
+    return descriptor
+
+
 def emit_representation_phantom_bundle(
     protocol_path: Path,
     output_dir: Path,
@@ -1280,7 +1279,6 @@ def emit_representation_phantom_bundle(
     workspace = _open_publication_workspace(Path(output_dir))
     destination = workspace.destination
     staging_path = workspace.staging_path
-    published = False
     try:
         for name in ("artifacts", "external", "payloads"):
             (staging_path / name).mkdir()
@@ -1382,14 +1380,29 @@ def emit_representation_phantom_bundle(
         # Publication is a single exclusive namespace transition. From this
         # point onward the owned tree is preserved for forensic inspection if
         # the second validation fails; it is never recursively rolled back.
-        published = True
 
         published_manifest_path = destination / "bundle.json"
-        published_loaded = load_instrument_bundle(
-            published_manifest_path,
-            expected_source_sha256=manifest.canonical_sha256,
-            expected_canonical_sha256=manifest.canonical_sha256,
-        )
+        published_descriptor = _open_published_directory(workspace)
+        try:
+            published_loaded = load_instrument_bundle(
+                published_manifest_path,
+                expected_source_sha256=manifest.canonical_sha256,
+                expected_canonical_sha256=manifest.canonical_sha256,
+                expected_root_identity=workspace.staging_identity,
+            )
+            if (
+                _identity(os.fstat(published_descriptor))
+                != workspace.staging_identity
+            ):
+                raise RepresentationPhantomBundleError(
+                    "published directory identity changed during validation"
+                )
+            _verify_parent_display_identity(
+                destination.parent,
+                expected=workspace.parent_identity,
+            )
+        finally:
+            os.close(published_descriptor)
         if (
             published_loaded.canonical_sha256
             != staged_loaded.canonical_sha256
@@ -1439,6 +1452,7 @@ def emit_representation_phantom_bundle(
             ),
         )
     finally:
-        if not published:
-            _remove_owned_staging(workspace)
+        # Unpublished staging is intentionally retained on failure. A
+        # stat-then-rmtree cleanup cannot be made inode-bound against a
+        # concurrent staging-leaf replacement, so fail closed without delete.
         os.close(workspace.parent_descriptor)

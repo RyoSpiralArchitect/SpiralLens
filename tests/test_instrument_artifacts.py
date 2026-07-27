@@ -848,6 +848,33 @@ def test_instrument_dev_graph_execution_is_explicit_and_all_or_none() -> None:
     )
     assert GraphConstructionSpec.from_dict(executed.to_dict()) == executed
 
+    for relabelled in (
+        ResolutionState.FIXED_BY_HYPOTHESIS,
+        ResolutionState.CALIBRATION_RESOLVED,
+    ):
+        with pytest.raises(
+            ContractValidationError,
+            match="instrument_dev graphs must record",
+        ):
+            replace(
+                executed,
+                family=RuleChoice(
+                    family_id="graph_family",
+                    resolution=relabelled,
+                    selected_id="mutual-knn",
+                ),
+                metric=RuleChoice(
+                    family_id="graph_metric",
+                    resolution=relabelled,
+                    selected_id="euclidean",
+                ),
+                scale=RuleChoice(
+                    family_id="graph_scale",
+                    resolution=relabelled,
+                    selected_id="k-4",
+                ),
+            )
+
     with pytest.raises(
         ContractValidationError,
         match="must cover family, metric, and scale",

@@ -263,7 +263,9 @@ rule, deterministic tie policy, and allowed role. The resulting graph binds:
 
 `instrument_dev_executed` is an execution receipt, not a scientific selection.
 When used, family, metric, and scale must all carry that resolution and the
-graph role must be `instrument_dev`. It cannot refine a registry
+graph role must be `instrument_dev`; conversely every `instrument_dev` graph
+must use that resolution for all three choices and cannot be relabelled
+`fixed_by_hypothesis` or `calibration_resolved`. It cannot refine a registry
 `calibration_selection`, count as `calibration_resolved`, or qualify the
 constructor. In the first P1 slice the cycle-support field is an explicitly
 unconstructed empty payload paired with `cycle_construction_status=not_run`;
@@ -409,11 +411,14 @@ Publication is also an emitter boundary rather than a validator claim. The
 emitter writes `bundle.json` last inside a private staging directory, validates
 the complete staged tree, and publishes the whole directory with one Darwin
 `renameatx_np(RENAME_EXCL)` no-replace namespace transition before
-revalidation. Unsupported platforms or filesystems fail closed. This gives
-exclusive namespace atomicity, not crash durability; the implementation does
-not yet fsync the complete tree and parent directory. A tree already made
-public is retained for forensic inspection if post-publication validation
-fails.
+revalidation. The exact published directory descriptor remains open, and its
+`(device, inode)` identity is required by every secure loader traversal.
+Unsupported platforms or filesystems fail closed. This gives exclusive
+namespace atomicity, not crash durability; the implementation does not yet
+fsync the complete tree and parent directory. A tree already made public is
+retained for forensic inspection if post-publication validation fails. An
+unpublished private staging tree is also retained on failure instead of being
+recursively deleted through a raceable pathname.
 
 ## 5. Stage P3 — substrate and leakage binding
 

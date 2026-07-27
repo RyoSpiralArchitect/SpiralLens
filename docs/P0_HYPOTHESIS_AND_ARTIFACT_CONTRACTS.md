@@ -50,7 +50,8 @@ allocation, not guaranteeing operating-system OOM behavior. After semantic and
 closed-integrity validation in private staging, the current Darwin-only
 publisher exposes the complete directory through one exclusive no-replace
 namespace transition. That atomic namespace property is not a claim of crash
-durability.
+durability. Post-publication loading is bound to the retained published
+directory's `(device, inode)` identity rather than to the display path alone.
 
 ## 1. Implemented package boundary
 
@@ -267,8 +268,9 @@ The following distinctions are load-bearing:
   frozen convention cannot be relabelled as calibration-selected.
 - `instrument_dev_executed` is a separate receipt for the exact family,
   metric, or scale run by a visible development graph. It is legal only when
-  all three graph choices carry that resolution under `role=instrument_dev`;
-  it cannot refine a registry `calibration_selection`, count as
+  all three graph choices carry that resolution under `role=instrument_dev`,
+  and every graph with that role must use it rather than a scientific
+  resolution; it cannot refine a registry `calibration_selection`, count as
   `calibration_resolved`, or authorize promotion.
 - The selection decision carries an exhaustive F0--F4 choice partition.
   Every registry-active calibration family appears exactly once as resolved

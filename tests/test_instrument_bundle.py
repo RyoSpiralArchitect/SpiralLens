@@ -399,18 +399,41 @@ def _build_bundle(
         if split_graph_spec_substrate
         else substrate_ref
     )
+    graph_role = (
+        substrate_role
+        if graph_allowed_role is None
+        else graph_allowed_role
+    )
+    if graph_role is FitRole.INSTRUMENT_DEV:
+        graph_family = RuleChoice(
+            family_id="graph_family",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="mutual-knn",
+        )
+        graph_metric = RuleChoice(
+            family_id="graph_metric",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="cosine",
+        )
+        graph_scale = RuleChoice(
+            family_id="graph_scale",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="local",
+        )
+    else:
+        graph_family = _fixed("graph_family", "mutual-knn")
+        graph_metric = _fixed("graph_metric", "cosine")
+        graph_scale = _fixed("graph_scale", "local")
     graph_spec = GraphConstructionSpec(
         artifact_id="bundle-graph-spec",
         substrate=graph_spec_substrate_ref,
         purpose="field_estimation",
-        family=_fixed("graph_family", "mutual-knn"),
-        metric=_fixed("graph_metric", "cosine"),
-        scale=_fixed("graph_scale", "local"),
+        family=graph_family,
+        metric=graph_metric,
+        scale=graph_scale,
         constructor_id="deterministic-graph-v1",
         deterministic_tie_policy="lexicographic-vertex-id",
-        allowed_role=(
-            substrate_role if graph_allowed_role is None else graph_allowed_role
-        ),
+        allowed_role=graph_role,
     )
     graph_spec_ref = _artifact_ref(graph_spec)
 
@@ -676,13 +699,33 @@ def _build_bundle(
                             )
                         )
 
+        if substrate_role is FitRole.INSTRUMENT_DEV:
+            cycle_graph_family = RuleChoice(
+                family_id="graph_family",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="mutual-knn",
+            )
+            cycle_graph_metric = RuleChoice(
+                family_id="graph_metric",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="cosine",
+            )
+            cycle_graph_scale = RuleChoice(
+                family_id="graph_scale",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="local",
+            )
+        else:
+            cycle_graph_family = _fixed("graph_family", "mutual-knn")
+            cycle_graph_metric = _fixed("graph_metric", "cosine")
+            cycle_graph_scale = _fixed("graph_scale", "local")
         cycle_graph_spec = GraphConstructionSpec(
             artifact_id="bundle-cycle-graph-spec",
             substrate=substrate_ref,
             purpose="cycle_construction",
-            family=_fixed("graph_family", "mutual-knn"),
-            metric=_fixed("graph_metric", "cosine"),
-            scale=_fixed("graph_scale", "local"),
+            family=cycle_graph_family,
+            metric=cycle_graph_metric,
+            scale=cycle_graph_scale,
             constructor_id="deterministic-cycle-graph-v1",
             deterministic_tie_policy="lexicographic-vertex-id",
             allowed_role=substrate_role,
@@ -1195,6 +1238,34 @@ def test_loader_resolves_closed_bundle_and_reports_cli_ready_facts(
     assert loaded.manifest.subject_data_access_authorized is False
     assert loaded.resolve(fixture.manifest.roots[-1]) == fixture.artifacts["support"]
     assert GRAPH_VERTICES != SUBSTRATE_ROWS
+
+
+def test_loader_can_bind_validation_to_an_opened_root_identity(
+    tmp_path: Path,
+) -> None:
+    fixture = _build_bundle(tmp_path)
+    root_stat = os.stat(fixture.root)
+    root_identity = (root_stat.st_dev, root_stat.st_ino)
+
+    loaded = load_instrument_bundle(
+        fixture.manifest_path,
+        expected_root_identity=root_identity,
+    )
+    assert loaded.manifest == fixture.manifest
+
+    with pytest.raises(
+        InstrumentBundleSchemaError,
+        match="bundle manifest cannot be opened securely",
+    ):
+        load_instrument_bundle(
+            fixture.manifest_path,
+            expected_root_identity=(root_identity[0], root_identity[1] + 1),
+        )
+    with pytest.raises(TypeError, match="expected_root_identity"):
+        load_instrument_bundle(
+            fixture.manifest_path,
+            expected_root_identity=("device", "inode"),  # type: ignore[arg-type]
+        )
 
 
 def test_instrument_bundle_cli_reports_closed_integrity_scope(

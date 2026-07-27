@@ -125,9 +125,12 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Exclusive bundle publication**: Publication of one complete validated
   private staging directory by an atomic, no-replace namespace transition.
   The current implementation requires Darwin `O_NOFOLLOW_ANY` and
-  `renameatx_np(RENAME_EXCL)` support and otherwise fails closed. Namespace
-  atomicity does not imply crash durability; the complete tree and parent
-  directory are not yet fsynced.
+  `renameatx_np(RENAME_EXCL)` support and otherwise fails closed. The exact
+  published directory descriptor remains open during identity-bound
+  revalidation. Namespace atomicity does not imply crash durability; the
+  complete tree and parent directory are not yet fsynced. Failed private
+  staging and failed post-publication trees are retained rather than
+  recursively rolled back.
 - **Angular spectrum**: a Fourier decomposition around a preregistered loop.
   “OAM” is reserved for the motivating optical analogy.
 - **Candidate**: an observation that passed the stated structural gates. A

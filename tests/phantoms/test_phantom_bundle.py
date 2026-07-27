@@ -4,8 +4,10 @@ from collections import Counter
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -923,6 +925,59 @@ def test_tracked_protocol_executes_its_real_bound_revision(
     assert receipt.protocol_canonical_sha256 == loaded.canonical_sha256
 
 
+def test_tracked_protocol_is_byte_identical_across_cold_processes(
+    tmp_path: Path,
+) -> None:
+    protocol_path = (
+        REPOSITORY_ROOT
+        / "protocols"
+        / "p1_representation_phantom_v0_1.yaml"
+    )
+    revision = load_representation_phantom_protocol(
+        protocol_path
+    ).protocol.source.generator_revision
+    commit_exists = subprocess.run(
+        ("git", "cat-file", "-e", f"{revision}^{{commit}}"),
+        cwd=REPOSITORY_ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if commit_exists.returncode != 0:
+        pytest.skip("tracked generator commit is absent from this checkout")
+
+    command = (
+        "import sys; "
+        "from spirallens.cli import main; "
+        "raise SystemExit(main(["
+        "'synthetic-bundle','generate','--protocol',sys.argv[1],"
+        "'--output-dir',sys.argv[2]]))"
+    )
+    environment = {
+        **os.environ,
+        "PYTHONPATH": str(REPOSITORY_ROOT / "src"),
+    }
+    destinations = (tmp_path / "cold-a", tmp_path / "cold-b")
+    for destination in destinations:
+        subprocess.run(
+            (
+                sys.executable,
+                "-c",
+                command,
+                str(protocol_path),
+                str(destination),
+            ),
+            cwd=REPOSITORY_ROOT,
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    assert _tree_snapshot(destinations[0]) == _tree_snapshot(
+        destinations[1]
+    )
+
+
 def test_emitter_executes_bound_source_not_cached_generator(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1088,7 +1143,6 @@ def test_parent_identity_replacement_is_rejected_before_publication(
         assert not (parent / "bundle").exists()
         assert not (original_parent / "bundle").exists()
     finally:
-        bundle_module._remove_owned_staging(workspace)
         bundle_module.os.close(workspace.parent_descriptor)
 
 
@@ -1111,7 +1165,74 @@ def test_staging_identity_replacement_is_rejected(
         bundle_module.os.close(workspace.parent_descriptor)
 
 
-def test_publication_failure_leaves_no_public_destination(
+def test_published_validation_is_bound_to_the_staging_inode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol_path = _write_protocol(tmp_path / "protocol")
+    destination = tmp_path / "bundle"
+    real_loader = bundle_module.load_instrument_bundle
+    expected_root_identities: list[tuple[int, int] | None] = []
+
+    def recording_loader(*args: object, **kwargs: object) -> object:
+        expected = kwargs.get("expected_root_identity")
+        assert expected is None or isinstance(expected, tuple)
+        expected_root_identities.append(expected)
+        return real_loader(*args, **kwargs)
+
+    monkeypatch.setattr(
+        bundle_module,
+        "load_instrument_bundle",
+        recording_loader,
+    )
+    emit_representation_phantom_bundle(protocol_path, destination)
+
+    published = bundle_module.os.lstat(destination)
+    assert expected_root_identities == [
+        None,
+        (published.st_dev, published.st_ino),
+    ]
+
+
+def test_published_inode_replacement_is_rejected_and_preserved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol_path = _write_protocol(tmp_path / "protocol")
+    destination = tmp_path / "bundle"
+    original_destination = tmp_path / "owned-published-bundle"
+    real_open = bundle_module._open_published_directory
+
+    def replacing_open(
+        workspace: object,
+    ) -> int:
+        destination.rename(original_destination)
+        destination.mkdir()
+        (destination / "competitor.txt").write_text(
+            "competitor",
+            encoding="utf-8",
+        )
+        return real_open(workspace)
+
+    monkeypatch.setattr(
+        bundle_module,
+        "_open_published_directory",
+        replacing_open,
+    )
+
+    with pytest.raises(
+        RepresentationPhantomBundleError,
+        match="descriptor differs from staging",
+    ):
+        emit_representation_phantom_bundle(protocol_path, destination)
+
+    assert (destination / "competitor.txt").read_text(
+        encoding="utf-8"
+    ) == "competitor"
+    assert (original_destination / "bundle.json").is_file()
+
+
+def test_publication_failure_retains_private_staging_without_publication(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1136,7 +1257,9 @@ def test_publication_failure_leaves_no_public_destination(
         emit_representation_phantom_bundle(protocol_path, destination)
 
     assert not destination.exists()
-    assert not tuple(tmp_path.glob(".bundle.staging-*"))
+    staging = tuple(tmp_path.glob(".bundle.staging-*"))
+    assert len(staging) == 1
+    assert (staging[0] / "bundle.json").is_file()
 
 
 def test_publication_race_does_not_replace_competing_destination(
@@ -1171,7 +1294,9 @@ def test_publication_race_does_not_replace_competing_destination(
     assert (destination / "owner.txt").read_text(encoding="utf-8") == (
         "competing-owner"
     )
-    assert not tuple(tmp_path.glob(".bundle.staging-*"))
+    staging = tuple(tmp_path.glob(".bundle.staging-*"))
+    assert len(staging) == 1
+    assert (staging[0] / "bundle.json").is_file()
 
 
 def test_failed_published_revalidation_preserves_the_atomic_tree(

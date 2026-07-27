@@ -165,13 +165,18 @@ staged closed bundle, and revalidates the published tree. The manifest is
 written last inside a private staging directory. Publication then makes the
 complete validated directory visible in one atomic, exclusive, no-replace
 namespace transition using Darwin `renameatx_np(RENAME_EXCL)`; an existing
-destination is never replaced. This current implementation requires Darwin
+destination is never replaced. The publisher retains the exact published
+directory descriptor and passes its `(device, inode)` identity into the secure
+bundle loader, so post-publication validation cannot silently follow a
+replacement display path. This current implementation requires Darwin
 `O_NOFOLLOW_ANY`, directory-relative operations, and a filesystem supporting
 the exclusive rename. Unsupported environments fail closed. This is namespace
 atomicity, not a claim of crash durability: the publisher does not yet fsync
 the complete tree and parent directory. If post-publication validation fails,
 the published tree is retained for forensic inspection rather than
-destructively rolled back.
+destructively rolled back. Pre-publication failures likewise retain their
+private, random staging directory; the emitter never performs a recursive
+stat-then-delete cleanup that could race with a replacement directory.
 
 The durable substrate preprocessing receipt records both
 `identity-no-preprocessing` and the complete non-qualification boundary:

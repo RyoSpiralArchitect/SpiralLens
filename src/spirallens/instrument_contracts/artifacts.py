@@ -1074,9 +1074,17 @@ class GraphConstructionSpec(_CanonicalArtifact):
             choice.resolution is ResolutionState.INSTRUMENT_DEV_EXECUTED
             for choice in (self.family, self.metric, self.scale)
         )
-        if any(development_resolutions) and (
-            not all(development_resolutions)
-            or self.allowed_role is not FitRole.INSTRUMENT_DEV
+        if (
+            self.allowed_role is FitRole.INSTRUMENT_DEV
+            and not all(development_resolutions)
+        ):
+            raise ContractValidationError(
+                "instrument_dev graphs must record family, metric, and scale "
+                "as instrument_dev_executed"
+            )
+        if (
+            self.allowed_role is not FitRole.INSTRUMENT_DEV
+            and any(development_resolutions)
         ):
             raise ContractValidationError(
                 "instrument_dev_executed graph choices must cover family, "
