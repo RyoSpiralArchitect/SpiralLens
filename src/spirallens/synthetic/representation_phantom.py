@@ -47,6 +47,69 @@ _FLOAT_DTYPE = np.dtype("<f8")
 _INT64_DTYPE = np.dtype("<i8")
 _INT32_DTYPE = np.dtype("<i4")
 _BOOL_DTYPE = np.dtype("|b1")
+RESOURCE_BUDGET_ESTIMATOR_ID = (
+    "representation-phantom-conservative-static-estimate-v0.1"
+)
+RESOURCE_BUDGET_SAFETY_FACTOR = 4
+RESOURCE_BUDGET_CLAIM_BOUNDARY = (
+    "parameter-induced-runaway-allocation-guard-not-os-oom-guarantee"
+)
+MAX_ESTIMATED_PEAK_BYTES = 256 * 1024 * 1024
+MAX_ESTIMATED_OUTPUT_BYTES = 256 * 1024 * 1024
+
+
+def _resource_estimates(
+    *,
+    grid_side: int,
+    ambient_dimension: int,
+    probe_count: int,
+    neighbor_count: int,
+) -> tuple[int, int]:
+    rows = grid_side * grid_side
+    float_bytes = _FLOAT_DTYPE.itemsize
+    shared_bytes = (
+        rows * ambient_dimension * float_bytes
+        + ambient_dimension * ambient_dimension * float_bytes
+        + rows * 2 * float_bytes
+    )
+    numeric_pairwise_bytes = (
+        rows * rows * ambient_dimension * float_bytes
+        + rows * rows * float_bytes
+        + rows * rows * _INT64_DTYPE.itemsize
+        + rows * rows * 3 * _BOOL_DTYPE.itemsize
+        + rows * neighbor_count * _INT64_DTYPE.itemsize
+    )
+    graph_container_bytes = (
+        rows * neighbor_count * 96
+        + rows * neighbor_count * 40
+        + rows * 128
+    )
+    linear_algebra_scratch_bytes = (
+        ambient_dimension * ambient_dimension * float_bytes * 64
+    )
+    per_case_bytes = (
+        rows * probe_count * ambient_dimension * float_bytes
+        + rows * ambient_dimension * ambient_dimension * float_bytes
+        + rows * ambient_dimension * float_bytes
+        + rows * ambient_dimension * 2 * float_bytes
+        + rows * 24 * float_bytes
+        + rows * 16 * _INT64_DTYPE.itemsize
+    )
+    estimated_output = shared_bytes + 2 * per_case_bytes
+    estimated_peak = max(
+        (
+            shared_bytes
+            + numeric_pairwise_bytes
+            + graph_container_bytes
+            + linear_algebra_scratch_bytes
+        ),
+        estimated_output * 2,
+        estimated_output + per_case_bytes,
+    )
+    return (
+        estimated_peak * RESOURCE_BUDGET_SAFETY_FACTOR,
+        estimated_output * RESOURCE_BUDGET_SAFETY_FACTOR,
+    )
 
 
 def _integer(value: object, *, label: str, minimum: int) -> int:
@@ -121,6 +184,22 @@ class RepresentationPhantomSpec:
             raise ValueError("probe_count must be even and divisible by 4")
         if neighbor_count >= grid_side * grid_side:
             raise ValueError("neighbor_count must be smaller than row count")
+        estimated_peak_bytes, estimated_output_bytes = _resource_estimates(
+            grid_side=grid_side,
+            ambient_dimension=ambient_dimension,
+            probe_count=probe_count,
+            neighbor_count=neighbor_count,
+        )
+        if estimated_peak_bytes > MAX_ESTIMATED_PEAK_BYTES:
+            raise ValueError(
+                "estimated peak memory exceeds the representation phantom "
+                "resource budget"
+            )
+        if estimated_output_bytes > MAX_ESTIMATED_OUTPUT_BYTES:
+            raise ValueError(
+                "estimated output exceeds the representation phantom "
+                "resource budget"
+            )
 
         object.__setattr__(self, "seed", seed)
         object.__setattr__(self, "grid_side", grid_side)
@@ -159,6 +238,24 @@ class RepresentationPhantomSpec:
     def odd_probe_indices(self) -> tuple[int, ...]:
         return tuple(range(1, self.probe_count, 2))
 
+    @property
+    def estimated_peak_bytes(self) -> int:
+        return _resource_estimates(
+            grid_side=self.grid_side,
+            ambient_dimension=self.ambient_dimension,
+            probe_count=self.probe_count,
+            neighbor_count=self.neighbor_count,
+        )[0]
+
+    @property
+    def estimated_output_bytes(self) -> int:
+        return _resource_estimates(
+            grid_side=self.grid_side,
+            ambient_dimension=self.ambient_dimension,
+            probe_count=self.probe_count,
+            neighbor_count=self.neighbor_count,
+        )[1]
+
     def to_dict(self) -> dict[str, object]:
         return {
             "schema_version": self.schema_version,
@@ -176,6 +273,16 @@ class RepresentationPhantomSpec:
             "odd_probe_indices": list(self.odd_probe_indices),
             "even_probe_role": "rank-two-local-frame-fit",
             "odd_probe_role": "section-observation-mean",
+            "resource_budget": {
+                "claim_boundary": RESOURCE_BUDGET_CLAIM_BOUNDARY,
+                "estimator_id": RESOURCE_BUDGET_ESTIMATOR_ID,
+                "estimated_output_bytes": self.estimated_output_bytes,
+                "estimated_peak_bytes": self.estimated_peak_bytes,
+                "max_estimated_output_bytes": MAX_ESTIMATED_OUTPUT_BYTES,
+                "max_estimated_peak_bytes": MAX_ESTIMATED_PEAK_BYTES,
+                "preflight_status": "pass",
+                "safety_factor": RESOURCE_BUDGET_SAFETY_FACTOR,
+            },
         }
 
     @property
@@ -425,7 +532,6 @@ class PhantomCase:
             self.states,
             self.vertex_identities,
             neighbor_count=self.spec.neighbor_count,
-            grid_side=self.spec.grid_side,
         )
         graph_relations = {
             "neighbor_indices": graph.neighbor_indices,
@@ -501,7 +607,6 @@ class RepresentationPhantom:
             shared.states,
             shared.vertex_identities,
             neighbor_count=selected.neighbor_count,
-            grid_side=selected.grid_side,
         )
         cases = tuple(
             _build_case(
@@ -709,18 +814,6 @@ def _generate_shared(spec: RepresentationPhantomSpec) -> _Shared:
     )
 
 
-def _canonical_cycle(vertices: tuple[int, int, int, int]) -> tuple[int, ...]:
-    forward = [
-        vertices[index:] + vertices[:index] for index in range(len(vertices))
-    ]
-    reverse_vertices = tuple(reversed(vertices))
-    reverse = [
-        reverse_vertices[index:] + reverse_vertices[:index]
-        for index in range(len(reverse_vertices))
-    ]
-    return min((*forward, *reverse))
-
-
 def _component_labels(
     row_count: int,
     adjacency: list[list[int]],
@@ -764,37 +857,11 @@ def _two_core(
     return active
 
 
-def _grid_square_cycles(
-    grid_side: int,
-    edge_set: set[tuple[int, int]],
-) -> Int64Array:
-    cycles: list[tuple[int, ...]] = []
-    for row in range(grid_side - 1):
-        for column in range(grid_side - 1):
-            upper_left = row * grid_side + column
-            vertices = (
-                upper_left,
-                upper_left + 1,
-                upper_left + grid_side + 1,
-                upper_left + grid_side,
-            )
-            cycle_edges = tuple(
-                tuple(sorted((vertices[index], vertices[(index + 1) % 4])))
-                for index in range(4)
-            )
-            if all(edge in edge_set for edge in cycle_edges):
-                cycles.append(_canonical_cycle(vertices))
-    if not cycles:
-        return np.empty((0, 4), dtype="<i8")
-    return np.ascontiguousarray(sorted(cycles), dtype="<i8")
-
-
 def _build_mutual_knn(
     states: FloatArray,
     vertex_identities: Int64Array,
     *,
     neighbor_count: int,
-    grid_side: int,
 ) -> _Graph:
     row_count = states.shape[0]
     differences = states[:, None, :] - states[None, :, :]
@@ -840,7 +907,6 @@ def _build_mutual_knn(
     for items in adjacency:
         items.sort()
     degree = np.array([len(items) for items in adjacency], dtype="<i8")
-    edge_set = set(edges)
     return _Graph(
         neighbor_indices=directed,
         edges=edge_array,
@@ -848,7 +914,7 @@ def _build_mutual_knn(
         components=_component_labels(row_count, adjacency),
         degree=degree,
         two_core_mask=_two_core(row_count, adjacency),
-        cycle_support=_grid_square_cycles(grid_side, edge_set),
+        cycle_support=np.empty((0, 4), dtype="<i8"),
     )
 
 

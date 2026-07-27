@@ -55,8 +55,8 @@ def _document() -> dict[str, object]:
         },
         "execution": {
             "fit_role": "instrument_dev",
-            "context_role": "example",
-            "context_claim_eligible": False,
+            "context_kind": "synthetic_lattice",
+            "synthetic_context_claim_eligible": False,
             "model_access_authorized": False,
             "subject_data_access_authorized": False,
             "subject_execution_authorized": False,
@@ -112,8 +112,8 @@ def test_valid_protocol_has_source_and_canonical_identities(
         (("source", "repository"), "Other/Repository"),
         (("source", "generator_revision"), "A" * 40),
         (("execution", "fit_role"), "calibration_selection"),
-        (("execution", "context_role"), "subject"),
-        (("execution", "context_claim_eligible"), True),
+        (("execution", "context_kind"), "model_tokens"),
+        (("execution", "synthetic_context_claim_eligible"), True),
         (("execution", "model_access_authorized"), True),
     ),
 )
@@ -163,6 +163,26 @@ def test_unknown_missing_reordered_cases_and_unsafe_paths_are_rejected(
         )
 
 
+def test_legacy_context_bank_execution_fields_are_rejected(
+    tmp_path: Path,
+) -> None:
+    document = _document()
+    execution = document["execution"]
+    assert isinstance(execution, dict)
+    del execution["context_kind"]
+    del execution["synthetic_context_claim_eligible"]
+    execution["context_role"] = "example"
+    execution["context_claim_eligible"] = False
+
+    with pytest.raises(
+        RepresentationPhantomProtocolSchemaError,
+        match="fields differ",
+    ):
+        load_representation_phantom_protocol(
+            _write(tmp_path, document, name="legacy-context.yaml")
+        )
+
+
 def test_plain_numeric_and_boolean_scalars_are_enforced(
     tmp_path: Path,
 ) -> None:
@@ -184,7 +204,7 @@ def test_plain_numeric_and_boolean_scalars_are_enforced(
         )
 
     string_boolean = _document()
-    string_boolean["execution"]["context_claim_eligible"] = "false"  # type: ignore[index]
+    string_boolean["execution"]["synthetic_context_claim_eligible"] = "false"  # type: ignore[index]
     with pytest.raises(RepresentationPhantomProtocolSchemaError, match="boolean"):
         load_representation_phantom_protocol(
             _write(tmp_path, string_boolean, name="string-bool.yaml")

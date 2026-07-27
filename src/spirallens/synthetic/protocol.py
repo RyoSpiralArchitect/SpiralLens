@@ -69,8 +69,8 @@ _REGISTRY_KEYS = frozenset({"path", "source_sha256", "canonical_sha256"})
 _EXECUTION_KEYS = frozenset(
     {
         "fit_role",
-        "context_role",
-        "context_claim_eligible",
+        "context_kind",
+        "synthetic_context_claim_eligible",
         "model_access_authorized",
         "subject_data_access_authorized",
         "subject_execution_authorized",
@@ -363,8 +363,8 @@ class RepresentationPhantomExecutionBoundary:
     """Explicitly non-subject execution authority."""
 
     fit_role: str
-    context_role: str
-    context_claim_eligible: bool
+    context_kind: str
+    synthetic_context_claim_eligible: bool
     model_access_authorized: bool
     subject_data_access_authorized: bool
     subject_execution_authorized: bool
@@ -375,8 +375,10 @@ class RepresentationPhantomExecutionBoundary:
     def to_dict(self) -> dict[str, object]:
         return {
             "fit_role": self.fit_role,
-            "context_role": self.context_role,
-            "context_claim_eligible": self.context_claim_eligible,
+            "context_kind": self.context_kind,
+            "synthetic_context_claim_eligible": (
+                self.synthetic_context_claim_eligible
+            ),
             "model_access_authorized": self.model_access_authorized,
             "subject_data_access_authorized": (
                 self.subject_data_access_authorized
@@ -559,12 +561,14 @@ def _parse_execution(
         fit_role=_constant(
             item["fit_role"], "instrument_dev", label="execution.fit_role"
         ),
-        context_role=_constant(
-            item["context_role"], "example", label="execution.context_role"
+        context_kind=_constant(
+            item["context_kind"],
+            "synthetic_lattice",
+            label="execution.context_kind",
         ),
-        context_claim_eligible=_false(
-            item["context_claim_eligible"],
-            label="execution.context_claim_eligible",
+        synthetic_context_claim_eligible=_false(
+            item["synthetic_context_claim_eligible"],
+            label="execution.synthetic_context_claim_eligible",
         ),
         model_access_authorized=_false(
             item["model_access_authorized"],

@@ -258,9 +258,18 @@ class HypothesisSpec:
             "trivialization_rule",
             "reference_rule",
         ):
-            if not isinstance(getattr(self, name), RuleChoice):
+            choice = getattr(self, name)
+            if not isinstance(choice, RuleChoice):
                 raise HypothesisRegistryError(
                     f"{name} must be a RuleChoice"
+                )
+            if (
+                choice.resolution
+                is ResolutionState.INSTRUMENT_DEV_EXECUTED
+            ):
+                raise HypothesisRegistryError(
+                    "instrument_dev_executed is reserved for graph "
+                    "construction artifacts"
                 )
         for name in (
             "domain_binding",

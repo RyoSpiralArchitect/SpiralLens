@@ -1,15 +1,19 @@
 """Canonical closed-bundle emission for representation-shaped phantoms.
 
 The emitter is deliberately limited to instrument-development observations.
-It emits F0/F1/F2 artifacts at Level 0, but it does not select a graph family,
-qualify an instrument, localize a core, construct a loop, estimate winding,
-or authorize model or subject access.
+It emits F0/F1/F2 artifacts at Level 0 and records the executed development
+graph constructor, but it does not calibration-select or qualify that graph,
+qualify an instrument, localize a core, construct a loop, estimate winding, or
+authorize model or subject access.
 """
 
 from __future__ import annotations
 
 from contextlib import contextmanager
+import ctypes
+import ctypes.util
 from dataclasses import dataclass
+import errno
 import hashlib
 import io
 import os
@@ -18,7 +22,6 @@ import shutil
 import stat
 import subprocess
 import sys
-import tempfile
 from types import ModuleType
 from typing import TYPE_CHECKING, Iterator
 import uuid
@@ -26,23 +29,11 @@ import uuid
 import numpy as np
 from numpy.typing import NDArray
 
-from spirallens.contexts import (
-    BankStatus,
-    ContextBank,
-    ContextRole,
-    ContextSpec,
-    ModelBinding,
-    SourceBinding,
-    SweepDomain,
-    TokenizerBinding,
-    load_context_bank,
-)
 from spirallens.instrument_contracts import (
     ARTIFACT_SCHEMA_VERSION_BY_TYPE,
     ArtifactRef,
     ArtifactType,
     BundleArtifactEntry,
-    BundleContextBankEntry,
     BundlePayloadEntry,
     CandidateGraph,
     ClaimLevel,
@@ -59,7 +50,8 @@ from spirallens.instrument_contracts import (
     PayloadRef,
     ResolutionState,
     RuleChoice,
-    SubstrateBinding,
+    SyntheticLatticeContextBinding,
+    SyntheticLatticeSubstrateBinding,
     SupportDiagnostic,
     canonical_json_bytes,
     load_hypothesis_registry,
@@ -76,18 +68,15 @@ if TYPE_CHECKING:
     from .representation_phantom import PhantomCase
 
 
-PSEUDO_MODEL_ID = (
-    "spirallens.synthetic.representation-phantom-pseudo-model"
-)
-ADDRESS_INDEXER_ID = (
-    "spirallens.synthetic.representation-phantom-address-indexer"
-)
-CONTEXT_TO_FIT_ROLE = {
-    ContextRole.EXAMPLE: FitRole.INSTRUMENT_DEV,
-}
 _D0_D8 = tuple((f"d{index}", "not_run") for index in range(9))
 _GENERATOR_REPOSITORY_PATH = (
     "src/spirallens/synthetic/representation_phantom.py"
+)
+_RENAME_EXCL = 0x00000004
+_RENAME_NOFOLLOW_ANY = 0x00000010
+_RENAME_RESOLVE_BENEATH = 0x00000020
+_RENAME_PUBLICATION_FLAGS = (
+    _RENAME_EXCL | _RENAME_NOFOLLOW_ANY | _RENAME_RESOLVE_BENEATH
 )
 
 
@@ -113,6 +102,13 @@ class EmittedRepresentationPhantomBundle:
     artifact_count: int
     payload_count: int
     cross_manifest_join_count: int
+    resource_budget_estimator_id: str
+    resource_budget_safety_factor: int
+    estimated_peak_bytes: int
+    estimated_output_bytes: int
+    max_estimated_peak_bytes: int
+    max_estimated_output_bytes: int
+    resource_budget_claim_boundary: str
     validation_scope: str = "closed_integrity_bundle"
     qualification_status: str = "not_evaluated"
     synthetic_qualified: bool = False
@@ -146,16 +142,28 @@ class EmittedRepresentationPhantomBundle:
             "artifact_count": self.artifact_count,
             "payload_count": self.payload_count,
             "cross_manifest_join_count": self.cross_manifest_join_count,
+            "resource_budget": {
+                "claim_boundary": self.resource_budget_claim_boundary,
+                "estimator_id": self.resource_budget_estimator_id,
+                "estimated_output_bytes": self.estimated_output_bytes,
+                "estimated_peak_bytes": self.estimated_peak_bytes,
+                "max_estimated_output_bytes": (
+                    self.max_estimated_output_bytes
+                ),
+                "max_estimated_peak_bytes": self.max_estimated_peak_bytes,
+                "preflight_status": "pass",
+                "safety_factor": self.resource_budget_safety_factor,
+            },
             "validation_scope": self.validation_scope,
             "qualification_status": self.qualification_status,
             "synthetic_qualified": self.synthetic_qualified,
             "claim_ceiling": ClaimLevel.LEVEL_0.value,
             "fit_role": FitRole.INSTRUMENT_DEV.value,
-            "context_role": ContextRole.EXAMPLE.value,
-            "context_role_mapping": {
-                ContextRole.EXAMPLE.value: FitRole.INSTRUMENT_DEV.value,
-            },
+            "context_kind": "synthetic_lattice",
+            "synthetic_context_claim_eligible": False,
             "numeric_payloads_self_audited": True,
+            "cycle_construction_status": "not_run",
+            "loop_artifacts_emitted": False,
             "subject_protocol_preparation_authorized": (
                 self.subject_protocol_preparation_authorized
             ),
@@ -346,6 +354,17 @@ def _fixed(family_id: str, selected_id: str) -> RuleChoice:
     )
 
 
+def _instrument_dev_executed(
+    family_id: str,
+    selected_id: str,
+) -> RuleChoice:
+    return RuleChoice(
+        family_id=family_id,
+        resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+        selected_id=selected_id,
+    )
+
+
 class _PayloadWriter:
     """Content-addressed payload writer with semantic reclassification checks."""
 
@@ -493,80 +512,10 @@ def _resolve_registry_path(
     return next(iter(existing))
 
 
-def _generated_context_bank(
-    loaded: LoadedRepresentationPhantomProtocol,
-    *,
-    row_count: int,
-    generator_module_sha256: str,
-) -> ContextBank:
-    protocol = loaded.protocol
-    revision = protocol.source.generator_revision
-    bank_id = (
-        "representation-phantom-example-"
-        f"{loaded.canonical_sha256[:20]}"
-    )
-    bank = ContextBank(
-        bank_id=bank_id,
-        status=BankStatus.EXAMPLE,
-        license="Apache-2.0",
-        claim_eligible=False,
-        source=SourceBinding(
-            kind="project_authored_synthetic",
-            source_id=protocol.protocol_id,
-        ),
-        model=ModelBinding(
-            model_id=PSEUDO_MODEL_ID,
-            requested_revision=revision,
-            resolved_revision=revision,
-            vocab_size=row_count,
-        ),
-        tokenizer=TokenizerBinding(
-            tokenizer_id=ADDRESS_INDEXER_ID,
-            requested_revision=revision,
-            resolved_revision=revision,
-            addressable_size=row_count,
-            tokenizer_class="DeterministicAddressIndexer",
-            implementation="slow",
-            transformers_version="not-applicable",
-            tokenizers_version="not-applicable",
-            add_special_tokens=False,
-            file_sha256=(
-                (
-                    "representation_phantom.py",
-                    generator_module_sha256,
-                ),
-            ),
-        ),
-        sweep_domain=SweepDomain.TOKENIZER_ADDRESSABLE,
-        contexts=(
-            ContextSpec(
-                context_id="representation-phantom-address-only",
-                role=ContextRole.EXAMPLE,
-                family_id="synthetic-address-index",
-                source_id=protocol.protocol_id,
-                template_id="address-only",
-                template_ids=(None,),
-                attention_mask=(1,),
-                observation_position=0,
-            ),
-        ),
-    )
-    expected_fit_role = CONTEXT_TO_FIT_ROLE.get(bank.role)
-    if (
-        bank.role is not ContextRole.EXAMPLE
-        or bank.claim_eligible
-        or expected_fit_role is not FitRole.INSTRUMENT_DEV
-        or protocol.execution.context_role != bank.role.value
-        or protocol.execution.fit_role != expected_fit_role.value
-    ):
-        raise RepresentationPhantomBundleError(
-            "example context to instrument_dev mapping is not authorized"
-        )
-    return bank
-
-
 def _substrate_preprocessing_receipt_document(
     loaded: LoadedRepresentationPhantomProtocol,
+    *,
+    resource_budget: dict[str, object],
 ) -> dict[str, object]:
     """Bind no-preprocessing provenance and the durable execution boundary."""
 
@@ -591,9 +540,15 @@ def _substrate_preprocessing_receipt_document(
             "synthetic_qualified": False,
             "claim_ceiling": ClaimLevel.LEVEL_0.value,
             "fit_role": FitRole.INSTRUMENT_DEV.value,
-            "context_role": ContextRole.EXAMPLE.value,
-            "context_claim_eligible": False,
+            "context_kind": "synthetic_lattice",
+            "synthetic_context_claim_eligible": False,
             "numeric_payloads_self_audited": True,
+            "resource_budget": resource_budget,
+            "cycle_construction_status": "not_run",
+            "graph_choice_resolution": (
+                ResolutionState.INSTRUMENT_DEV_EXECUTED.value
+            ),
+            "loop_artifacts_emitted": False,
             "generator_revision_verified": True,
             "generator_execution_bound_to_source_bytes": True,
             "subject_protocol_preparation_authorized": False,
@@ -641,9 +596,10 @@ def _case_artifacts(
     payloads: _PayloadWriter,
     registry_ref: ArtifactRef,
     registry: object,
-    context_ref: ArtifactRef,
     substrate_preprocessing_receipt: PayloadRef,
     generator_module_sha256: str,
+    generator_revision: str,
+    protocol_id: str,
     protocol_source_sha256: str,
     protocol_canonical_sha256: str,
 ) -> tuple[tuple[tuple[str, object], ...], tuple[ArtifactRef, ...]]:
@@ -678,12 +634,28 @@ def _case_artifacts(
         "model_access_authorized": False,
         "subject_data_access_authorized": False,
     }
-    substrate = SubstrateBinding(
+    synthetic_context = SyntheticLatticeContextBinding(
+        context_id=(
+            "representation-phantom-lattice-"
+            f"{protocol_canonical_sha256[:20]}"
+        ),
+        source_id=protocol_id,
+        generator_revision=generator_revision,
+        generator_module_sha256=generator_module_sha256,
+        generator_spec_sha256=case.spec.canonical_sha256,
+        protocol_source_sha256=protocol_source_sha256,
+        protocol_canonical_sha256=protocol_canonical_sha256,
+        row_identity_sha256=row_identity,
+        lattice_shape=(case.spec.grid_side, case.spec.grid_side),
+        boundary_rule="open",
+        claim_eligible=False,
+    )
+    substrate = SyntheticLatticeSubstrateBinding(
         artifact_id=f"{case_id}-substrate",
         role=FitRole.INSTRUMENT_DEV,
         evolution_axis=EvolutionAxis.SYNTHETIC_LATTICE,
         row_identity_sha256=row_identity,
-        context_bank=context_ref,
+        synthetic_context=synthetic_context,
         vertex_identities=payloads.array(
             case.vertex_identities,
             row_identity_sha256=row_identity,
@@ -712,20 +684,17 @@ def _case_artifacts(
         artifact_id=f"{case_id}-field-estimation-graph-spec",
         substrate=substrate_ref,
         purpose="field_estimation",
-        family=_selection(
+        family=_instrument_dev_executed(
             "graph_family",
             "mutual-knn",
-            "symmetric-knn",
         ),
-        metric=_selection(
+        metric=_instrument_dev_executed(
             "graph_metric",
-            "cosine",
             "euclidean",
         ),
-        scale=_selection(
+        scale=_instrument_dev_executed(
             "graph_scale",
             f"k-{case.spec.neighbor_count}",
-            "radius-local",
         ),
         constructor_id=(
             "instrument-dev-mutual-knn-euclidean-"
@@ -965,79 +934,296 @@ def _case_artifacts(
     return artifacts, roots
 
 
+@dataclass(frozen=True, slots=True)
+class _PublicationWorkspace:
+    """Descriptor-anchored private staging state for one publication."""
+
+    destination: Path
+    parent_descriptor: int
+    parent_identity: tuple[int, int]
+    staging_leaf: str
+    staging_path: Path
+    staging_identity: tuple[int, int]
+
+
 def _safe_destination(value: Path) -> Path:
-    destination = value.absolute()
-    if destination.exists() or destination.is_symlink():
+    destination = Path(os.path.abspath(os.fspath(value)))
+    if destination.name in {"", ".", ".."}:
         raise RepresentationPhantomBundleError(
-            "output destination must not already exist"
+            "output destination must name one directory"
         )
-    parent = destination.parent
-    if not parent.exists() or not parent.is_dir():
-        raise RepresentationPhantomBundleError(
-            "output destination parent must be an existing directory"
-        )
-    cursor = parent
-    while True:
-        if cursor.is_symlink():
-            raise RepresentationPhantomBundleError(
-                "output destination parent chain must not contain symlinks"
-            )
-        if cursor == cursor.parent:
-            break
-        cursor = cursor.parent
     return destination
 
 
-def _remove_reserved_destination(
-    destination: Path,
+def _secure_parent_open_flags() -> int:
+    no_follow_any = getattr(os, "O_NOFOLLOW_ANY", None)
+    directory_only = getattr(os, "O_DIRECTORY", None)
+    if sys.platform != "darwin" or no_follow_any is None:
+        raise RepresentationPhantomBundleError(
+            "exclusive bundle publication requires Darwin O_NOFOLLOW_ANY"
+        )
+    if directory_only is None:
+        raise RepresentationPhantomBundleError(
+            "exclusive bundle publication requires directory-only opens"
+        )
+    return (
+        os.O_RDONLY
+        | directory_only
+        | no_follow_any
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+
+
+def _identity(value: os.stat_result) -> tuple[int, int]:
+    return value.st_dev, value.st_ino
+
+
+def _verify_parent_display_identity(
+    parent: Path,
     *,
-    identity: tuple[int, int],
+    expected: tuple[int, int],
 ) -> None:
-    """Remove only the exact directory inode reserved by this emitter."""
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(parent, _secure_parent_open_flags())
+        observed = _identity(os.fstat(descriptor))
+    except OSError as error:
+        raise RepresentationPhantomBundleError(
+            "output destination parent changed or became inaccessible"
+        ) from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    if observed != expected:
+        raise RepresentationPhantomBundleError(
+            "output destination parent identity changed"
+        )
+
+
+def _relative_stat(
+    parent_descriptor: int,
+    leaf: str,
+) -> os.stat_result | None:
+    try:
+        return os.stat(
+            leaf,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+    except FileNotFoundError:
+        return None
+
+
+def _open_publication_workspace(value: Path) -> _PublicationWorkspace:
+    destination = _safe_destination(value)
+    try:
+        parent_descriptor = os.open(
+            destination.parent,
+            _secure_parent_open_flags(),
+        )
+    except OSError as error:
+        raise RepresentationPhantomBundleError(
+            "output destination parent chain must not contain symlinks and "
+            "must name an existing real directory"
+        ) from error
 
     try:
-        current = os.lstat(destination)
-    except FileNotFoundError:
-        return
+        parent_stat = os.fstat(parent_descriptor)
+        if not stat.S_ISDIR(parent_stat.st_mode):
+            raise RepresentationPhantomBundleError(
+                "output destination parent must be a directory"
+            )
+        parent_identity = _identity(parent_stat)
+        _verify_parent_display_identity(
+            destination.parent,
+            expected=parent_identity,
+        )
+        if (
+            _relative_stat(parent_descriptor, destination.name)
+            is not None
+        ):
+            raise RepresentationPhantomBundleError(
+                "output destination must not already exist"
+            )
+
+        for _attempt in range(128):
+            staging_leaf = (
+                f".{destination.name}.staging-{uuid.uuid4().hex}"
+            )
+            try:
+                os.mkdir(
+                    staging_leaf,
+                    mode=0o700,
+                    dir_fd=parent_descriptor,
+                )
+            except FileExistsError:
+                continue
+            break
+        else:
+            raise RepresentationPhantomBundleError(
+                "could not allocate a private staging directory"
+            )
+
+        staging_stat = _relative_stat(parent_descriptor, staging_leaf)
+        if (
+            staging_stat is None
+            or not stat.S_ISDIR(staging_stat.st_mode)
+        ):
+            raise RepresentationPhantomBundleError(
+                "private staging directory identity is unavailable"
+            )
+        return _PublicationWorkspace(
+            destination=destination,
+            parent_descriptor=parent_descriptor,
+            parent_identity=parent_identity,
+            staging_leaf=staging_leaf,
+            staging_path=destination.parent / staging_leaf,
+            staging_identity=_identity(staging_stat),
+        )
+    except Exception:
+        os.close(parent_descriptor)
+        raise
+
+
+def _remove_owned_staging(workspace: _PublicationWorkspace) -> None:
+    """Best-effort removal of only this emitter's unpublished staging tree."""
+
+    current = _relative_stat(
+        workspace.parent_descriptor,
+        workspace.staging_leaf,
+    )
     if (
-        not stat.S_ISDIR(current.st_mode)
-        or (current.st_dev, current.st_ino) != identity
+        current is None
+        or not stat.S_ISDIR(current.st_mode)
+        or _identity(current) != workspace.staging_identity
+        or not shutil.rmtree.avoids_symlink_attacks
     ):
         return
-    shutil.rmtree(destination)
+    try:
+        shutil.rmtree(
+            workspace.staging_leaf,
+            dir_fd=workspace.parent_descriptor,
+        )
+    except OSError:
+        # Cleanup must never mask the validation or publication failure.
+        return
+
+
+def _load_renameatx_np() -> object:
+    if sys.platform != "darwin":
+        raise RepresentationPhantomBundleError(
+            "exclusive directory publication requires Darwin renameatx_np"
+        )
+    library = ctypes.util.find_library("System")
+    if library is None:
+        raise RepresentationPhantomBundleError(
+            "Darwin libSystem is unavailable"
+        )
+    libc = ctypes.CDLL(library, use_errno=True)
+    function = getattr(libc, "renameatx_np", None)
+    if function is None:
+        raise RepresentationPhantomBundleError(
+            "Darwin renameatx_np is unavailable"
+        )
+    function.argtypes = [
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    ]
+    function.restype = ctypes.c_int
+    return function
+
+
+def _renameatx_np_no_replace(
+    *,
+    parent_descriptor: int,
+    source_leaf: str,
+    destination_leaf: str,
+) -> None:
+    renameatx_np = _load_renameatx_np()
+    ctypes.set_errno(0)
+    result = renameatx_np(
+        parent_descriptor,
+        os.fsencode(source_leaf),
+        parent_descriptor,
+        os.fsencode(destination_leaf),
+        _RENAME_PUBLICATION_FLAGS,
+    )
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise RepresentationPhantomBundleError(
+            "output destination appeared before publication"
+        )
+    if error_number in {
+        errno.EINVAL,
+        getattr(errno, "ENOTSUP", errno.EINVAL),
+        getattr(errno, "ENOSYS", errno.EINVAL),
+    }:
+        raise RepresentationPhantomBundleError(
+            "filesystem does not support required exclusive publication"
+        )
+    raise RepresentationPhantomBundleError(
+        "exclusive directory publication failed"
+    ) from OSError(error_number, os.strerror(error_number))
 
 
 def _publish_staging_no_replace(
-    staging_path: Path,
-    destination: Path,
+    workspace: _PublicationWorkspace,
 ) -> tuple[int, int]:
-    """Reserve without replacement and publish the manifest entrypoint last."""
+    """Atomically publish a complete staging directory without replacement."""
 
-    try:
-        os.mkdir(destination, mode=0o700)
-    except FileExistsError as error:
+    _verify_parent_display_identity(
+        workspace.destination.parent,
+        expected=workspace.parent_identity,
+    )
+    staged = _relative_stat(
+        workspace.parent_descriptor,
+        workspace.staging_leaf,
+    )
+    if (
+        staged is None
+        or not stat.S_ISDIR(staged.st_mode)
+        or _identity(staged) != workspace.staging_identity
+    ):
         raise RepresentationPhantomBundleError(
-            "output destination appeared before publication"
-        ) from error
-    except OSError as error:
-        raise RepresentationPhantomBundleError(
-            "output destination reservation failed"
-        ) from error
-
-    reserved = os.lstat(destination)
-    identity = (reserved.st_dev, reserved.st_ino)
-    try:
-        for name in ("artifacts", "external", "payloads"):
-            os.rename(staging_path / name, destination / name)
-        os.rename(
-            staging_path / "bundle.json",
-            destination / "bundle.json",
+            "private staging directory identity changed before publication"
         )
-        os.rmdir(staging_path)
-    except Exception:
-        _remove_reserved_destination(destination, identity=identity)
-        raise
-    return identity
+    _renameatx_np_no_replace(
+        parent_descriptor=workspace.parent_descriptor,
+        source_leaf=workspace.staging_leaf,
+        destination_leaf=workspace.destination.name,
+    )
+    if (
+        _relative_stat(
+            workspace.parent_descriptor,
+            workspace.staging_leaf,
+        )
+        is not None
+    ):
+        raise RepresentationPhantomBundleError(
+            "staging directory remained visible after publication"
+        )
+    published = _relative_stat(
+        workspace.parent_descriptor,
+        workspace.destination.name,
+    )
+    if (
+        published is None
+        or not stat.S_ISDIR(published.st_mode)
+        or _identity(published) != workspace.staging_identity
+    ):
+        raise RepresentationPhantomBundleError(
+            "published directory identity differs from staging"
+        )
+    _verify_parent_display_identity(
+        workspace.destination.parent,
+        expected=workspace.parent_identity,
+    )
+    return workspace.staging_identity
 
 
 def emit_representation_phantom_bundle(
@@ -1088,15 +1274,10 @@ def emit_representation_phantom_bundle(
             "generated case order differs from the protocol"
         )
 
-    destination = _safe_destination(Path(output_dir))
-    staging_path = Path(
-        tempfile.mkdtemp(
-            prefix=f".{destination.name}.staging-",
-            dir=destination.parent,
-        )
-    )
+    workspace = _open_publication_workspace(Path(output_dir))
+    destination = workspace.destination
+    staging_path = workspace.staging_path
     published = False
-    reserved_destination_identity: tuple[int, int] | None = None
     try:
         for name in ("artifacts", "external", "payloads"):
             (staging_path / name).mkdir()
@@ -1116,38 +1297,17 @@ def emit_representation_phantom_bundle(
             reference=registry_ref,
         )
 
-        context_bank = _generated_context_bank(
-            loaded_protocol,
-            row_count=phantom.spec.row_count,
-            generator_module_sha256=generator_module_sha256,
-        )
-        context_bytes = canonical_json_bytes(context_bank.to_dict())
-        context_bundle_path = (
-            staging_path / "external" / "context-bank.json"
-        )
-        context_bundle_path.write_bytes(context_bytes)
-        context_source_sha256 = _sha256(context_bytes)
-        loaded_context = load_context_bank(
-            context_bundle_path,
-            allowed_roles={ContextRole.EXAMPLE},
-            expected_source_sha256=context_source_sha256,
-            expected_canonical_sha256=context_bank.sha256,
-        )
-        context_ref = _external_ref(
-            ArtifactType.CONTEXT_BANK,
-            artifact_id=context_bank.bank_id,
-            canonical_sha256=context_bank.sha256,
-        )
-        context_entry = BundleContextBankEntry(
-            path="external/context-bank.json",
-            source_sha256=loaded_context.source_sha256,
-            reference=context_ref,
-            allowed_role=ContextRole.EXAMPLE,
-        )
-
         payload_writer = _PayloadWriter(staging_path)
+        resource_budget = bound_spec.to_dict()["resource_budget"]
+        if not isinstance(resource_budget, dict):
+            raise RepresentationPhantomBundleError(
+                "bound generator resource budget must be a mapping"
+            )
         substrate_preprocessing_receipt = payload_writer.opaque_json(
-            _substrate_preprocessing_receipt_document(loaded_protocol)
+            _substrate_preprocessing_receipt_document(
+                loaded_protocol,
+                resource_budget=resource_budget,
+            )
         )
         artifact_entries: list[BundleArtifactEntry] = []
         roots: list[ArtifactRef] = []
@@ -1157,11 +1317,12 @@ def emit_representation_phantom_bundle(
                 payloads=payload_writer,
                 registry_ref=registry_ref,
                 registry=loaded_registry.registry,
-                context_ref=context_ref,
                 substrate_preprocessing_receipt=(
                     substrate_preprocessing_receipt
                 ),
                 generator_module_sha256=generator_module_sha256,
+                generator_revision=protocol.source.generator_revision,
+                protocol_id=protocol.protocol_id,
                 protocol_source_sha256=loaded_protocol.source_sha256,
                 protocol_canonical_sha256=loaded_protocol.canonical_sha256,
             )
@@ -1202,7 +1363,7 @@ def emit_representation_phantom_bundle(
                 )
             ),
             hypothesis_registries=(registry_entry,),
-            context_banks=(context_entry,),
+            context_banks=(),
             payloads=payload_writer.entries,
             subject_data_access_authorized=False,
         )
@@ -1214,10 +1375,11 @@ def emit_representation_phantom_bundle(
             expected_source_sha256=manifest.canonical_sha256,
             expected_canonical_sha256=manifest.canonical_sha256,
         )
-        reserved_destination_identity = _publish_staging_no_replace(
-            staging_path,
-            destination,
-        )
+        _publish_staging_no_replace(workspace)
+        # Publication is a single exclusive namespace transition. From this
+        # point onward the owned tree is preserved for forensic inspection if
+        # the second validation fails; it is never recursively rolled back.
+        published = True
 
         published_manifest_path = destination / "bundle.json"
         published_loaded = load_instrument_bundle(
@@ -1232,7 +1394,6 @@ def emit_representation_phantom_bundle(
             raise RepresentationPhantomBundleError(
                 "published bundle identity differs from staging"
             )
-        published = True
         return EmittedRepresentationPhantomBundle(
             manifest_path=published_manifest_path,
             canonical_sha256=published_loaded.canonical_sha256,
@@ -1252,15 +1413,29 @@ def emit_representation_phantom_bundle(
             cross_manifest_join_count=(
                 published_loaded.cross_manifest_join_count
             ),
+            resource_budget_estimator_id=str(
+                resource_budget["estimator_id"]
+            ),
+            resource_budget_safety_factor=int(
+                resource_budget["safety_factor"]
+            ),
+            estimated_peak_bytes=int(
+                resource_budget["estimated_peak_bytes"]
+            ),
+            estimated_output_bytes=int(
+                resource_budget["estimated_output_bytes"]
+            ),
+            max_estimated_peak_bytes=int(
+                resource_budget["max_estimated_peak_bytes"]
+            ),
+            max_estimated_output_bytes=int(
+                resource_budget["max_estimated_output_bytes"]
+            ),
+            resource_budget_claim_boundary=str(
+                resource_budget["claim_boundary"]
+            ),
         )
     finally:
-        if not published and staging_path.exists():
-            shutil.rmtree(staging_path)
-        if (
-            not published
-            and reserved_destination_identity is not None
-        ):
-            _remove_reserved_destination(
-                destination,
-                identity=reserved_destination_identity,
-            )
+        if not published:
+            _remove_owned_staging(workspace)
+        os.close(workspace.parent_descriptor)

@@ -15,6 +15,7 @@ from typing import ClassVar, Protocol, TypeAlias
 from .canonical import canonical_json_bytes, canonical_json_sha256
 from .common import (
     ARTIFACT_SCHEMA_VERSION_BY_TYPE,
+    SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION,
     ArtifactRef,
     ArtifactType,
     ClaimLevel,
@@ -34,6 +35,7 @@ from .common import (
     exact_keys,
     require_bool,
     require_mapping,
+    require_plain_int,
     require_sha256,
     require_slug,
     require_string,
@@ -100,6 +102,7 @@ _LOCALIZATION_MODES = {
     "inferred_core",
     "supplied_anchor",
 }
+_SYNTHETIC_LATTICE_BOUNDARY_RULES = {"open"}
 _GIT_SHA1 = re.compile(r"^[0-9a-f]{40}$")
 _CALIBRATION_EVIDENCE_TYPES = {
     ArtifactType.SUBSTRATE_BINDING,
@@ -568,6 +571,179 @@ def _require_payload_rows(
 
 
 @dataclass(frozen=True, slots=True)
+class SyntheticLatticeContextBinding:
+    """Model-free provenance and row identity for one synthetic lattice."""
+
+    context_id: str
+    source_id: str
+    generator_revision: str
+    generator_module_sha256: str
+    generator_spec_sha256: str
+    protocol_source_sha256: str
+    protocol_canonical_sha256: str
+    row_identity_sha256: str
+    lattice_shape: tuple[int, int]
+    boundary_rule: str
+    claim_eligible: bool = False
+
+    schema_version: ClassVar[str] = (
+        "spirallens.instrument.synthetic-lattice-context-binding.v0.1"
+    )
+    context_kind: ClassVar[str] = "synthetic_lattice"
+
+    def __post_init__(self) -> None:
+        require_slug(self.context_id, label="context_id")
+        require_slug(self.source_id, label="source_id")
+        _require_git_sha1(
+            self.generator_revision,
+            label="generator_revision",
+        )
+        for label, digest in (
+            ("generator_module_sha256", self.generator_module_sha256),
+            ("generator_spec_sha256", self.generator_spec_sha256),
+            ("protocol_source_sha256", self.protocol_source_sha256),
+            ("protocol_canonical_sha256", self.protocol_canonical_sha256),
+            ("row_identity_sha256", self.row_identity_sha256),
+        ):
+            require_sha256(digest, label=label)
+        if (
+            not isinstance(self.lattice_shape, tuple)
+            or len(self.lattice_shape) != 2
+        ):
+            raise ContractValidationError(
+                "lattice_shape must be a two-dimensional tuple"
+            )
+        for index, extent in enumerate(self.lattice_shape):
+            require_plain_int(
+                extent,
+                label=f"lattice_shape[{index}]",
+                minimum=1,
+            )
+        if self.boundary_rule not in _SYNTHETIC_LATTICE_BOUNDARY_RULES:
+            raise ContractValidationError(
+                "boundary_rule must be an explicitly supported synthetic "
+                "lattice boundary rule"
+            )
+        if self.claim_eligible is not False:
+            raise ContractValidationError(
+                "synthetic lattice contexts cannot be claim eligible"
+            )
+
+    @property
+    def site_count(self) -> int:
+        return self.lattice_shape[0] * self.lattice_shape[1]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "context_kind": self.context_kind,
+            "context_id": self.context_id,
+            "source_id": self.source_id,
+            "generator_revision": self.generator_revision,
+            "generator_module_sha256": self.generator_module_sha256,
+            "generator_spec_sha256": self.generator_spec_sha256,
+            "protocol_source_sha256": self.protocol_source_sha256,
+            "protocol_canonical_sha256": self.protocol_canonical_sha256,
+            "row_identity_sha256": self.row_identity_sha256,
+            "lattice_shape": list(self.lattice_shape),
+            "boundary_rule": self.boundary_rule,
+            "claim_eligible": self.claim_eligible,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> "SyntheticLatticeContextBinding":
+        document = require_mapping(
+            value,
+            label="SyntheticLatticeContextBinding",
+        )
+        exact_keys(
+            document,
+            {
+                "schema_version",
+                "context_kind",
+                "context_id",
+                "source_id",
+                "generator_revision",
+                "generator_module_sha256",
+                "generator_spec_sha256",
+                "protocol_source_sha256",
+                "protocol_canonical_sha256",
+                "row_identity_sha256",
+                "lattice_shape",
+                "boundary_rule",
+                "claim_eligible",
+            },
+            label="SyntheticLatticeContextBinding",
+        )
+        if document["schema_version"] != cls.schema_version:
+            raise ContractValidationError(
+                "SyntheticLatticeContextBinding schema_version is unsupported"
+            )
+        if document["context_kind"] != cls.context_kind:
+            raise ContractValidationError(
+                "SyntheticLatticeContextBinding context_kind is unsupported"
+            )
+        lattice_shape = document["lattice_shape"]
+        if not isinstance(lattice_shape, list) or len(lattice_shape) != 2:
+            raise ContractValidationError(
+                "lattice_shape must be a two-dimensional list"
+            )
+        return cls(
+            context_id=require_slug(
+                document["context_id"],
+                label="context_id",
+            ),
+            source_id=require_slug(
+                document["source_id"],
+                label="source_id",
+            ),
+            generator_revision=_require_git_sha1(
+                document["generator_revision"],
+                label="generator_revision",
+            ),
+            generator_module_sha256=require_sha256(
+                document["generator_module_sha256"],
+                label="generator_module_sha256",
+            ),
+            generator_spec_sha256=require_sha256(
+                document["generator_spec_sha256"],
+                label="generator_spec_sha256",
+            ),
+            protocol_source_sha256=require_sha256(
+                document["protocol_source_sha256"],
+                label="protocol_source_sha256",
+            ),
+            protocol_canonical_sha256=require_sha256(
+                document["protocol_canonical_sha256"],
+                label="protocol_canonical_sha256",
+            ),
+            row_identity_sha256=require_sha256(
+                document["row_identity_sha256"],
+                label="row_identity_sha256",
+            ),
+            lattice_shape=tuple(
+                require_plain_int(
+                    extent,
+                    label=f"lattice_shape[{index}]",
+                    minimum=1,
+                )
+                for index, extent in enumerate(lattice_shape)
+            ),
+            boundary_rule=require_slug(
+                document["boundary_rule"],
+                label="boundary_rule",
+            ),
+            claim_eligible=require_bool(
+                document["claim_eligible"],
+                label="claim_eligible",
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class SubstrateBinding(_CanonicalArtifact):
     artifact_id: str
     role: FitRole
@@ -590,12 +766,9 @@ class SubstrateBinding(_CanonicalArtifact):
             raise TypeError("role must be a FitRole")
         if not isinstance(self.evolution_axis, EvolutionAxis):
             raise TypeError("evolution_axis must be an EvolutionAxis")
-        if (
-            self.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
-            and self.role is not FitRole.INSTRUMENT_DEV
-        ):
+        if self.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE:
             raise ContractValidationError(
-                "synthetic_lattice is restricted to instrument_dev substrates"
+                "synthetic_lattice requires SyntheticLatticeSubstrateBinding"
             )
         require_sha256(
             self.row_identity_sha256,
@@ -694,6 +867,161 @@ class SubstrateBinding(_CanonicalArtifact):
 
 
 @dataclass(frozen=True, slots=True)
+class SyntheticLatticeSubstrateBinding(_CanonicalArtifact):
+    """Instrument-development substrate with no model or tokenizer binding."""
+
+    artifact_id: str
+    role: FitRole
+    evolution_axis: EvolutionAxis
+    row_identity_sha256: str
+    synthetic_context: SyntheticLatticeContextBinding
+    vertex_identities: PayloadRef
+    observation_identities: PayloadRef
+    states: PayloadRef
+    accounted_response: PayloadRef
+    mask: PayloadRef
+    preprocessing_fit: PayloadRef
+
+    schema_version: ClassVar[str] = (
+        SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION
+    )
+    artifact_type: ClassVar[ArtifactType] = ArtifactType.SUBSTRATE_BINDING
+
+    def __post_init__(self) -> None:
+        _validate_id(self.artifact_id)
+        if self.role is not FitRole.INSTRUMENT_DEV:
+            raise ContractValidationError(
+                "synthetic lattice substrates require role=instrument_dev"
+            )
+        if self.evolution_axis is not EvolutionAxis.SYNTHETIC_LATTICE:
+            raise ContractValidationError(
+                "synthetic lattice substrates require "
+                "evolution_axis=synthetic_lattice"
+            )
+        require_sha256(
+            self.row_identity_sha256,
+            label="row_identity_sha256",
+        )
+        if not isinstance(
+            self.synthetic_context,
+            SyntheticLatticeContextBinding,
+        ):
+            raise TypeError(
+                "synthetic_context must be a "
+                "SyntheticLatticeContextBinding"
+            )
+        if (
+            self.synthetic_context.row_identity_sha256
+            != self.row_identity_sha256
+        ):
+            raise ContractValidationError(
+                "synthetic_context must bind the substrate row identity"
+            )
+        _payload(self.preprocessing_fit, label="preprocessing_fit")
+        _require_payload_rows(
+            (
+                self.vertex_identities,
+                self.observation_identities,
+                self.states,
+                self.accounted_response,
+                self.mask,
+            ),
+            row_identity_sha256=self.row_identity_sha256,
+            label="substrate payloads",
+        )
+        assert self.states.shape is not None
+        if self.states.shape[0] != self.synthetic_context.site_count:
+            raise ContractValidationError(
+                "synthetic lattice site count must equal substrate row count"
+            )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            **self._header(),
+            "role": self.role.value,
+            "evolution_axis": self.evolution_axis.value,
+            "row_identity_sha256": self.row_identity_sha256,
+            "synthetic_context": self.synthetic_context.to_dict(),
+            "vertex_identities": self.vertex_identities.to_dict(),
+            "observation_identities": self.observation_identities.to_dict(),
+            "states": self.states.to_dict(),
+            "accounted_response": self.accounted_response.to_dict(),
+            "mask": self.mask.to_dict(),
+            "preprocessing_fit": self.preprocessing_fit.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> "SyntheticLatticeSubstrateBinding":
+        document = require_mapping(
+            value,
+            label="SyntheticLatticeSubstrateBinding",
+        )
+        artifact_id = _header_from_dict(
+            document,
+            schema_version=cls.schema_version,
+            artifact_type=cls.artifact_type,
+            fields={
+                "role",
+                "evolution_axis",
+                "row_identity_sha256",
+                "synthetic_context",
+                "vertex_identities",
+                "observation_identities",
+                "states",
+                "accounted_response",
+                "mask",
+                "preprocessing_fit",
+            },
+            label="SyntheticLatticeSubstrateBinding",
+        )
+        return cls(
+            artifact_id=artifact_id,
+            role=enum_from_value(FitRole, document["role"], label="role"),
+            evolution_axis=enum_from_value(
+                EvolutionAxis,
+                document["evolution_axis"],
+                label="evolution_axis",
+            ),
+            row_identity_sha256=require_sha256(
+                document["row_identity_sha256"],
+                label="row_identity_sha256",
+            ),
+            synthetic_context=SyntheticLatticeContextBinding.from_dict(
+                require_mapping(
+                    document["synthetic_context"],
+                    label="synthetic_context",
+                )
+            ),
+            vertex_identities=_payload(
+                document["vertex_identities"],
+                label="vertex_identities",
+            ),
+            observation_identities=_payload(
+                document["observation_identities"],
+                label="observation_identities",
+            ),
+            states=_payload(document["states"], label="states"),
+            accounted_response=_payload(
+                document["accounted_response"],
+                label="accounted_response",
+            ),
+            mask=_payload(document["mask"], label="mask"),
+            preprocessing_fit=_payload(
+                document["preprocessing_fit"],
+                label="preprocessing_fit",
+            ),
+        )
+
+
+SubstrateBindingValue: TypeAlias = (
+    SubstrateBinding | SyntheticLatticeSubstrateBinding
+)
+
+
+@dataclass(frozen=True, slots=True)
 class GraphConstructionSpec(_CanonicalArtifact):
     artifact_id: str
     substrate: ArtifactRef
@@ -742,6 +1070,18 @@ class GraphConstructionSpec(_CanonicalArtifact):
         )
         if not isinstance(self.allowed_role, FitRole):
             raise TypeError("allowed_role must be a FitRole")
+        development_resolutions = tuple(
+            choice.resolution is ResolutionState.INSTRUMENT_DEV_EXECUTED
+            for choice in (self.family, self.metric, self.scale)
+        )
+        if any(development_resolutions) and (
+            not all(development_resolutions)
+            or self.allowed_role is not FitRole.INSTRUMENT_DEV
+        ):
+            raise ContractValidationError(
+                "instrument_dev_executed graph choices must cover family, "
+                "metric, and scale on an instrument_dev graph"
+            )
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -1313,6 +1653,14 @@ class OrderParameterSpec(_CanonicalArtifact):
             if choice.family_id != label:
                 raise ContractValidationError(
                     f"{label} choice must use family_id={label!r}"
+                )
+            if (
+                choice.resolution
+                is ResolutionState.INSTRUMENT_DEV_EXECUTED
+            ):
+                raise ContractValidationError(
+                    "instrument_dev_executed is reserved for "
+                    "GraphConstructionSpec"
                 )
         _sorted_strings(
             self.forbidden_labels,
@@ -4023,6 +4371,7 @@ class CalibrationConfirmationResult(_CanonicalArtifact):
 
 InstrumentArtifactValue: TypeAlias = (
     SubstrateBinding
+    | SyntheticLatticeSubstrateBinding
     | GraphConstructionSpec
     | CandidateGraph
     | SupportDiagnostic
@@ -4044,6 +4393,7 @@ _SCHEMA_LOADERS = {
     artifact_type.schema_version: artifact_type.from_dict
     for artifact_type in (
         SubstrateBinding,
+        SyntheticLatticeSubstrateBinding,
         GraphConstructionSpec,
         CandidateGraph,
         SupportDiagnostic,

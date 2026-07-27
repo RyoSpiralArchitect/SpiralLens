@@ -35,6 +35,8 @@ from spirallens.instrument_contracts.artifacts import (
     OrderParameterField,
     OrderParameterSpec,
     SubstrateBinding,
+    SyntheticLatticeContextBinding,
+    SyntheticLatticeSubstrateBinding,
     SupportDiagnostic,
     core_graph_binding_from_dict,
     instrument_artifact_from_dict,
@@ -119,6 +121,27 @@ def _opaque(label: str) -> PayloadRef:
         sha256=_digest(f"payload:{label}"),
         byte_length=8,
         media_type="application/octet-stream",
+    )
+
+
+def _synthetic_context(
+    *,
+    row_identity: str = ROW,
+    lattice_shape: tuple[int, int] = (2, 2),
+) -> SyntheticLatticeContextBinding:
+    return SyntheticLatticeContextBinding(
+        context_id="representation-phantom-lattice",
+        source_id="p1-representation-phantom-v0.1",
+        generator_revision="a" * 40,
+        generator_module_sha256=_digest("synthetic-generator-module"),
+        generator_spec_sha256=_digest("synthetic-generator-spec"),
+        protocol_source_sha256=_digest("synthetic-protocol-source"),
+        protocol_canonical_sha256=_digest(
+            "synthetic-protocol-canonical"
+        ),
+        row_identity_sha256=row_identity,
+        lattice_shape=lattice_shape,
+        boundary_rule="open",
     )
 
 
@@ -692,25 +715,170 @@ def test_all_fifteen_artifacts_round_trip_canonically() -> None:
         assert reconstructed.artifact_id == artifact.artifact_id
 
 
-def test_synthetic_lattice_axis_is_instrument_dev_only() -> None:
+def test_synthetic_lattice_uses_a_separate_model_free_schema_variant() -> None:
     substrate = _artifact_set()["substrate"]
     assert isinstance(substrate, SubstrateBinding)
 
-    development = replace(
-        substrate,
+    synthetic = SyntheticLatticeSubstrateBinding(
+        artifact_id="synthetic-substrate",
         role=FitRole.INSTRUMENT_DEV,
         evolution_axis=EvolutionAxis.SYNTHETIC_LATTICE,
+        row_identity_sha256=substrate.row_identity_sha256,
+        synthetic_context=_synthetic_context(),
+        vertex_identities=substrate.vertex_identities,
+        observation_identities=substrate.observation_identities,
+        states=substrate.states,
+        accounted_response=substrate.accounted_response,
+        mask=substrate.mask,
+        preprocessing_fit=substrate.preprocessing_fit,
     )
-    assert development.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
-    assert SubstrateBinding.from_dict(development.to_dict()) == development
+    reconstructed = instrument_artifact_from_dict(synthetic.to_dict())
+
+    assert reconstructed == synthetic
+    assert isinstance(reconstructed, SyntheticLatticeSubstrateBinding)
+    assert reconstructed.artifact_type is ArtifactType.SUBSTRATE_BINDING
+    assert reconstructed.schema_version != substrate.schema_version
+    context_document = synthetic.to_dict()["synthetic_context"]
+    assert isinstance(context_document, dict)
+    assert "model" not in context_document
+    assert "tokenizer" not in context_document
+    assert "sweep_domain" not in context_document
 
     with pytest.raises(
         ContractValidationError,
-        match="restricted to instrument_dev",
+        match="requires SyntheticLatticeSubstrateBinding",
     ):
         replace(
             substrate,
+            role=FitRole.INSTRUMENT_DEV,
             evolution_axis=EvolutionAxis.SYNTHETIC_LATTICE,
+        )
+
+
+def test_synthetic_lattice_binding_rejects_contract_drift() -> None:
+    substrate = _artifact_set()["substrate"]
+    assert isinstance(substrate, SubstrateBinding)
+    context = _synthetic_context()
+    common = {
+        "artifact_id": "synthetic-substrate",
+        "role": FitRole.INSTRUMENT_DEV,
+        "evolution_axis": EvolutionAxis.SYNTHETIC_LATTICE,
+        "row_identity_sha256": substrate.row_identity_sha256,
+        "synthetic_context": context,
+        "vertex_identities": substrate.vertex_identities,
+        "observation_identities": substrate.observation_identities,
+        "states": substrate.states,
+        "accounted_response": substrate.accounted_response,
+        "mask": substrate.mask,
+        "preprocessing_fit": substrate.preprocessing_fit,
+    }
+
+    with pytest.raises(
+        ContractValidationError,
+        match="role=instrument_dev",
+    ):
+        SyntheticLatticeSubstrateBinding(
+            **{**common, "role": FitRole.CALIBRATION_SELECTION}
+        )
+    with pytest.raises(
+        ContractValidationError,
+        match="evolution_axis=synthetic_lattice",
+    ):
+        SyntheticLatticeSubstrateBinding(
+            **{**common, "evolution_axis": EvolutionAxis.LAYER_INDEX}
+        )
+    with pytest.raises(
+        ContractValidationError,
+        match="bind the substrate row identity",
+    ):
+        SyntheticLatticeSubstrateBinding(
+            **{
+                **common,
+                "synthetic_context": _synthetic_context(
+                    row_identity=_digest("different-rows")
+                ),
+            }
+        )
+    with pytest.raises(
+        ContractValidationError,
+        match="site count",
+    ):
+        SyntheticLatticeSubstrateBinding(
+            **{
+                **common,
+                "synthetic_context": _synthetic_context(
+                    lattice_shape=(2, 3)
+                ),
+            }
+        )
+    with pytest.raises(
+        ContractValidationError,
+        match="cannot be claim eligible",
+    ):
+        replace(context, claim_eligible=True)
+
+    context_document = context.to_dict()
+    context_document["model"] = {"id": "forbidden"}
+    with pytest.raises(ContractValidationError, match="unknown"):
+        SyntheticLatticeContextBinding.from_dict(context_document)
+
+
+def test_instrument_dev_graph_execution_is_explicit_and_all_or_none() -> None:
+    graph = _artifact_set()["graph_spec"]
+    assert isinstance(graph, GraphConstructionSpec)
+
+    executed = replace(
+        graph,
+        allowed_role=FitRole.INSTRUMENT_DEV,
+        family=RuleChoice(
+            family_id="graph_family",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="mutual-knn",
+        ),
+        metric=RuleChoice(
+            family_id="graph_metric",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="euclidean",
+        ),
+        scale=RuleChoice(
+            family_id="graph_scale",
+            resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+            selected_id="k-4",
+        ),
+    )
+    assert GraphConstructionSpec.from_dict(executed.to_dict()) == executed
+
+    with pytest.raises(
+        ContractValidationError,
+        match="must cover family, metric, and scale",
+    ):
+        replace(
+            graph,
+            family=executed.family,
+        )
+
+    with pytest.raises(
+        ContractValidationError,
+        match="instrument_dev graph",
+    ):
+        replace(
+            executed,
+            allowed_role=FitRole.CALIBRATION_SELECTION,
+        )
+
+    order_spec = _artifact_set()["order_spec"]
+    assert isinstance(order_spec, OrderParameterSpec)
+    with pytest.raises(
+        ContractValidationError,
+        match="reserved for GraphConstructionSpec",
+    ):
+        replace(
+            order_spec,
+            charge_group=RuleChoice(
+                family_id="charge_group",
+                resolution=ResolutionState.INSTRUMENT_DEV_EXECUTED,
+                selected_id="u1",
+            ),
         )
 
 

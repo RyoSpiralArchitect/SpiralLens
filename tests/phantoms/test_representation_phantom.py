@@ -65,7 +65,65 @@ def test_paired_cases_share_substrate_graph_and_fit_probes() -> None:
         positive.observation_identities,
         null.observation_identities,
     )
-    assert positive.cycle_support.shape[0] > 0
+    assert positive.cycle_support.shape == (0, 4)
+
+
+def test_graph_payload_is_exact_euclidean_mutual_knn_with_frozen_ties() -> None:
+    case = RepresentationPhantom.generate().angular_section_positive
+    differences = case.states[:, None, :] - case.states[None, :, :]
+    distances_squared = np.einsum(
+        "ijk,ijk->ij",
+        differences,
+        differences,
+        optimize=False,
+    )
+    np.fill_diagonal(distances_squared, np.inf)
+    expected_neighbors = np.array(
+        [
+            sorted(
+                range(case.spec.row_count),
+                key=lambda candidate: (
+                    distances_squared[row, candidate],
+                    case.vertex_identities[candidate],
+                    candidate,
+                ),
+            )[: case.spec.neighbor_count]
+            for row in range(case.spec.row_count)
+        ],
+        dtype="<i8",
+    )
+    assert np.array_equal(case.neighbor_indices, expected_neighbors)
+
+    memberships = np.zeros(
+        (case.spec.row_count, case.spec.row_count),
+        dtype="|b1",
+    )
+    memberships[
+        np.repeat(
+            np.arange(case.spec.row_count),
+            case.spec.neighbor_count,
+        ),
+        expected_neighbors.reshape(-1),
+    ] = True
+    expected_edges = np.array(
+        [
+            (left, right)
+            for left in range(case.spec.row_count)
+            for right in range(left + 1, case.spec.row_count)
+            if memberships[left, right] and memberships[right, left]
+        ],
+        dtype="<i8",
+    ).reshape(-1, 2)
+    assert np.array_equal(case.edges, expected_edges)
+    assert np.array_equal(
+        case.graph_weights,
+        np.sqrt(
+            distances_squared[
+                expected_edges[:, 0],
+                expected_edges[:, 1],
+            ]
+        ),
+    )
 
 
 def test_center_has_declared_amplitude_depression() -> None:
@@ -145,6 +203,11 @@ def test_validate_rejects_value_tamper_and_row_permutation() -> None:
     with pytest.raises(ValueError, match="canonical row order"):
         permuted.validate()
 
+    fabricated_cycle = np.array([[0, 1, 2, 3]], dtype="<i8")
+    fabricated_cycle.flags.writeable = False
+    with pytest.raises(ValueError, match="cycle_support"):
+        replace(case, cycle_support=fabricated_cycle).validate()
+
 
 @pytest.mark.parametrize(
     ("field", "value", "message"),
@@ -165,3 +228,10 @@ def test_spec_rejects_out_of_contract_values(
 ) -> None:
     with pytest.raises((TypeError, ValueError), match=message):
         RepresentationPhantomSpec(**{field: value})
+
+
+def test_spec_rejects_workloads_above_the_resource_budget() -> None:
+    with pytest.raises(ValueError, match="resource budget"):
+        RepresentationPhantomSpec(grid_side=129)
+    with pytest.raises(ValueError, match="resource budget"):
+        RepresentationPhantomSpec(grid_side=10**50 + 1)

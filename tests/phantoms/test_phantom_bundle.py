@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 import yaml
 
-from spirallens.contexts import ContextBank, ContextRole
 from spirallens.cli import main
 from spirallens.instrument_contracts import (
     ArtifactType,
@@ -26,7 +25,7 @@ from spirallens.instrument_contracts import (
     OrderParameterField,
     OrderParameterSpec,
     ResolutionState,
-    SubstrateBinding,
+    SyntheticLatticeSubstrateBinding,
     SupportDiagnostic,
     load_hypothesis_registry,
     load_instrument_bundle,
@@ -35,9 +34,6 @@ from spirallens.instrument_contracts import (
 from spirallens.synthetic import representation_phantom as phantom_module
 from spirallens.synthetic import phantom_bundle as bundle_module
 from spirallens.synthetic.phantom_bundle import (
-    ADDRESS_INDEXER_ID,
-    CONTEXT_TO_FIT_ROLE,
-    PSEUDO_MODEL_ID,
     EmittedRepresentationPhantomBundle,
     RepresentationPhantomBundleError,
     _ordered_content_sha256,
@@ -46,10 +42,17 @@ from spirallens.synthetic.phantom_bundle import (
     emit_representation_phantom_bundle,
 )
 from spirallens.synthetic.protocol import (
+    RepresentationPhantomProtocolSchemaError,
     load_representation_phantom_protocol,
 )
 from spirallens.synthetic.representation_phantom import (
+    MAX_ESTIMATED_OUTPUT_BYTES,
+    MAX_ESTIMATED_PEAK_BYTES,
+    RESOURCE_BUDGET_CLAIM_BOUNDARY,
+    RESOURCE_BUDGET_ESTIMATOR_ID,
+    RESOURCE_BUDGET_SAFETY_FACTOR,
     RepresentationPhantom,
+    RepresentationPhantomSpec,
 )
 
 
@@ -82,6 +85,7 @@ def _write_protocol(
     root: Path,
     *,
     seed: int = 1729,
+    grid_side: int = 7,
     protocol_id: str = "representation-phantom-instrument-dev-v0.1",
     generator_module_sha256: str | None = None,
 ) -> Path:
@@ -108,7 +112,7 @@ def _write_protocol(
         },
         "generator": {
             "seed": seed,
-            "grid_side": 7,
+            "grid_side": grid_side,
             "ambient_dimension": 12,
             "probe_count": 8,
             "neighbor_count": 4,
@@ -133,8 +137,8 @@ def _write_protocol(
         },
         "execution": {
             "fit_role": "instrument_dev",
-            "context_role": "example",
-            "context_claim_eligible": False,
+            "context_kind": "synthetic_lattice",
+            "synthetic_context_claim_eligible": False,
             "model_access_authorized": False,
             "subject_data_access_authorized": False,
             "subject_execution_authorized": False,
@@ -246,6 +250,11 @@ def test_cli_generates_bundle_and_reports_bounded_receipt(
     assert receipt["subject_execution_authorized"] is False
     assert receipt["calibration_selection_authorized"] is False
     assert receipt["integer_output_authorized"] is False
+    assert receipt["cycle_construction_status"] == "not_run"
+    assert receipt["loop_artifacts_emitted"] is False
+    assert receipt["resource_budget"] == (
+        RepresentationPhantomSpec().to_dict()["resource_budget"]
+    )
     assert receipt["d0_d8"] == {
         f"d{index}": "not_run" for index in range(9)
     }
@@ -273,6 +282,9 @@ def test_emitter_publishes_closed_level_zero_bundle(
     assert report["validation_scope"] == "closed_integrity_bundle"
     assert report["qualification_status"] == "not_evaluated"
     assert report["synthetic_qualified"] is False
+    assert report["resource_budget"] == (
+        RepresentationPhantomSpec().to_dict()["resource_budget"]
+    )
     assert report["subject_protocol_preparation_authorized"] is False
     assert report["model_access_authorized"] is False
     assert report["subject_data_access_authorized"] is False
@@ -313,7 +325,8 @@ def test_bundle_contains_exact_per_case_artifact_surface(
     } == expected_instrument_types
     assert all(type_counts[item] == 2 for item in expected_instrument_types)
     assert type_counts[ArtifactType.HYPOTHESIS_REGISTRY] == 1
-    assert type_counts[ArtifactType.CONTEXT_BANK] == 1
+    assert type_counts[ArtifactType.CONTEXT_BANK] == 0
+    assert loaded.manifest.context_banks == ()
     forbidden = {
         ArtifactType.CORE_SCORE,
         ArtifactType.CORE_CANDIDATE,
@@ -325,13 +338,28 @@ def test_bundle_contains_exact_per_case_artifact_surface(
     }
     assert not forbidden.intersection(type_counts)
 
-    for value in _artifact_values(loaded, SubstrateBinding):
+    for value in _artifact_values(
+        loaded,
+        SyntheticLatticeSubstrateBinding,
+    ):
         assert value.role is FitRole.INSTRUMENT_DEV
     for value in _artifact_values(loaded, GraphConstructionSpec):
         assert value.allowed_role is FitRole.INSTRUMENT_DEV
-        assert value.family.resolution is ResolutionState.CALIBRATION_SELECTION
-        assert value.metric.resolution is ResolutionState.CALIBRATION_SELECTION
-        assert value.scale.resolution is ResolutionState.CALIBRATION_SELECTION
+        assert (
+            value.family.resolution
+            is ResolutionState.INSTRUMENT_DEV_EXECUTED
+        )
+        assert value.family.selected_id == "mutual-knn"
+        assert (
+            value.metric.resolution
+            is ResolutionState.INSTRUMENT_DEV_EXECUTED
+        )
+        assert value.metric.selected_id == "euclidean"
+        assert (
+            value.scale.resolution
+            is ResolutionState.INSTRUMENT_DEV_EXECUTED
+        )
+        assert value.scale.selected_id == "k-4"
         assert value.constructor_id == (
             "instrument-dev-mutual-knn-euclidean-k-4-v0.1"
         )
@@ -572,7 +600,10 @@ def test_bundle_alone_preserves_nonqualification_boundary(
     _, receipt = _emit(tmp_path)
     loaded = load_instrument_bundle(receipt.manifest_path)
     bundle_root = receipt.manifest_path.parent
-    substrates = _artifact_values(loaded, SubstrateBinding)
+    substrates = _artifact_values(
+        loaded,
+        SyntheticLatticeSubstrateBinding,
+    )
     boundary_references = {
         substrate.preprocessing_fit for substrate in substrates
     }
@@ -609,6 +640,25 @@ def test_bundle_alone_preserves_nonqualification_boundary(
     assert boundary["synthetic_qualified"] is False
     assert boundary["generator_revision_verified"] is True
     assert boundary["generator_execution_bound_to_source_bytes"] is True
+    assert boundary["context_kind"] == "synthetic_lattice"
+    assert boundary["synthetic_context_claim_eligible"] is False
+    assert boundary["resource_budget"] == {
+        "claim_boundary": RESOURCE_BUDGET_CLAIM_BOUNDARY,
+        "estimator_id": RESOURCE_BUDGET_ESTIMATOR_ID,
+        "estimated_output_bytes": (
+            RepresentationPhantomSpec().estimated_output_bytes
+        ),
+        "estimated_peak_bytes": (
+            RepresentationPhantomSpec().estimated_peak_bytes
+        ),
+        "max_estimated_output_bytes": MAX_ESTIMATED_OUTPUT_BYTES,
+        "max_estimated_peak_bytes": MAX_ESTIMATED_PEAK_BYTES,
+        "preflight_status": "pass",
+        "safety_factor": RESOURCE_BUDGET_SAFETY_FACTOR,
+    }
+    assert boundary["cycle_construction_status"] == "not_run"
+    assert boundary["graph_choice_resolution"] == "instrument_dev_executed"
+    assert boundary["loop_artifacts_emitted"] is False
     assert boundary["model_access_authorized"] is False
     assert boundary["subject_data_access_authorized"] is False
     assert boundary["subject_execution_authorized"] is False
@@ -619,37 +669,44 @@ def test_bundle_alone_preserves_nonqualification_boundary(
     }
 
 
-def test_generated_context_is_example_pseudo_model_only(
+def test_generated_context_is_model_free_synthetic_lattice_only(
     tmp_path: Path,
 ) -> None:
     _, receipt = _emit(tmp_path)
     loaded = load_instrument_bundle(receipt.manifest_path)
-    context = next(
-        member.value
-        for member in loaded.artifacts
-        if isinstance(member.value, ContextBank)
+    substrates = _artifact_values(
+        loaded,
+        SyntheticLatticeSubstrateBinding,
     )
-    substrates = _artifact_values(loaded, SubstrateBinding)
 
-    assert context.role is ContextRole.EXAMPLE
-    assert context.claim_eligible is False
-    assert context.model.model_id == PSEUDO_MODEL_ID
-    assert context.tokenizer.tokenizer_id == ADDRESS_INDEXER_ID
-    assert context.model.resolved_revision == GENERATOR_REVISION
-    assert context.model.vocab_size == 49
-    assert context.tokenizer.addressable_size == 49
-    assert "pythia" not in context.model.model_id.lower()
-    assert "pythia" not in context.tokenizer.tokenizer_id.lower()
-    assert CONTEXT_TO_FIT_ROLE[context.role] is FitRole.INSTRUMENT_DEV
+    assert len(substrates) == 2
     assert all(item.role is FitRole.INSTRUMENT_DEV for item in substrates)
     assert all(
         item.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
         for item in substrates
     )
-    assert loaded.manifest.context_banks[0].allowed_role is ContextRole.EXAMPLE
-    assert receipt.to_dict()["context_role_mapping"] == {
-        "example": "instrument_dev"
-    }
+    assert all(
+        item.synthetic_context.context_kind == "synthetic_lattice"
+        and item.synthetic_context.claim_eligible is False
+        and item.synthetic_context.generator_revision == GENERATOR_REVISION
+        and item.synthetic_context.site_count == 49
+        for item in substrates
+    )
+    assert loaded.manifest.context_banks == ()
+    artifact_bytes = b"".join(
+        (receipt.manifest_path.parent / entry.path).read_bytes()
+        for entry in loaded.manifest.instrument_artifacts
+    )
+    for forbidden in (
+        b'"model"',
+        b'"tokenizer"',
+        b'"sweep_domain"',
+        b"tokenizer_addressable",
+    ):
+        assert forbidden not in artifact_bytes
+    report = receipt.to_dict()
+    assert report["context_kind"] == "synthetic_lattice"
+    assert report["synthetic_context_claim_eligible"] is False
 
 
 def test_bundle_payload_tamper_is_rejected(tmp_path: Path) -> None:
@@ -714,6 +771,34 @@ def test_generator_digest_mismatch_refuses_output(tmp_path: Path) -> None:
         match="generator module SHA-256 differs",
     ):
         emit_representation_phantom_bundle(protocol_path, destination)
+    assert not destination.exists()
+
+
+def test_resource_budget_rejects_before_generator_or_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol_path = _write_protocol(
+        tmp_path / "protocol",
+        grid_side=129,
+    )
+    destination = tmp_path / "bundle"
+
+    def forbidden_bound_generator(**_kwargs: object) -> object:
+        raise AssertionError("generator must not be entered")
+
+    monkeypatch.setattr(
+        bundle_module,
+        "_bound_generator_module",
+        forbidden_bound_generator,
+    )
+
+    with pytest.raises(
+        RepresentationPhantomProtocolSchemaError,
+        match="resource budget",
+    ):
+        emit_representation_phantom_bundle(protocol_path, destination)
+
     assert not destination.exists()
 
 
@@ -819,62 +904,176 @@ def test_emitter_executes_bound_source_not_cached_generator(
     assert receipt.manifest_path.is_file()
 
 
-def test_publication_moves_manifest_entrypoint_last(
+def test_publication_atomically_renames_the_complete_staging_tree(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    staging = tmp_path / "staging"
-    staging.mkdir()
-    for name in ("artifacts", "external", "payloads"):
-        child = staging / name
-        child.mkdir()
-        (child / "member").write_bytes(name.encode("ascii"))
-    (staging / "bundle.json").write_bytes(b"manifest")
     destination = tmp_path / "bundle"
-    original_rename = bundle_module.os.rename
-    moves: list[tuple[str, str]] = []
+    workspace = bundle_module._open_publication_workspace(destination)
+    (workspace.staging_path / "artifacts").mkdir()
+    (workspace.staging_path / "artifacts" / "member").write_bytes(b"artifact")
+    (workspace.staging_path / "bundle.json").write_bytes(b"manifest")
+    real_rename = bundle_module._renameatx_np_no_replace
+    calls: list[tuple[int, str, str]] = []
 
     def recording_rename(
-        source: str | bytes | Path,
-        target: str | bytes | Path,
+        *,
+        parent_descriptor: int,
+        source_leaf: str,
+        destination_leaf: str,
     ) -> None:
-        moves.append((Path(source).name, Path(target).name))
-        original_rename(source, target)
+        calls.append(
+            (parent_descriptor, source_leaf, destination_leaf)
+        )
+        real_rename(
+            parent_descriptor=parent_descriptor,
+            source_leaf=source_leaf,
+            destination_leaf=destination_leaf,
+        )
 
-    monkeypatch.setattr(bundle_module.os, "rename", recording_rename)
-
-    identity = _publish_staging_no_replace(staging, destination)
+    monkeypatch.setattr(
+        bundle_module,
+        "_renameatx_np_no_replace",
+        recording_rename,
+    )
+    try:
+        identity = _publish_staging_no_replace(workspace)
+    finally:
+        bundle_module.os.close(workspace.parent_descriptor)
 
     published = bundle_module.os.lstat(destination)
     assert identity == (published.st_dev, published.st_ino)
-    assert [source for source, _target in moves] == [
-        "artifacts",
-        "external",
-        "payloads",
-        "bundle.json",
+    assert identity == workspace.staging_identity
+    assert calls == [
+        (
+            workspace.parent_descriptor,
+            workspace.staging_leaf,
+            destination.name,
+        )
     ]
+    assert not workspace.staging_path.exists()
+    assert (destination / "artifacts" / "member").read_bytes() == b"artifact"
     assert (destination / "bundle.json").read_bytes() == b"manifest"
 
 
-def test_mid_transfer_rename_failure_rolls_back_publication(
+def test_exclusive_rename_uses_one_parent_fd_and_beneath_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[int, bytes, int, bytes, int]] = []
+
+    class FakeRenameAt:
+        def __call__(
+            self,
+            source_descriptor: int,
+            source_leaf: bytes,
+            destination_descriptor: int,
+            destination_leaf: bytes,
+            flags: int,
+        ) -> int:
+            calls.append(
+                (
+                    source_descriptor,
+                    source_leaf,
+                    destination_descriptor,
+                    destination_leaf,
+                    flags,
+                )
+            )
+            return 0
+
+    monkeypatch.setattr(
+        bundle_module,
+        "_load_renameatx_np",
+        lambda: FakeRenameAt(),
+    )
+
+    bundle_module._renameatx_np_no_replace(
+        parent_descriptor=17,
+        source_leaf=".bundle.staging-owned",
+        destination_leaf="bundle",
+    )
+
+    assert calls == [
+        (
+            17,
+            b".bundle.staging-owned",
+            17,
+            b"bundle",
+            bundle_module._RENAME_PUBLICATION_FLAGS,
+        )
+    ]
+    assert bundle_module._RENAME_PUBLICATION_FLAGS == (
+        bundle_module._RENAME_EXCL
+        | bundle_module._RENAME_NOFOLLOW_ANY
+        | bundle_module._RENAME_RESOLVE_BENEATH
+    )
+
+
+def test_parent_identity_replacement_is_rejected_before_publication(
+    tmp_path: Path,
+) -> None:
+    parent = tmp_path / "anchored-parent"
+    parent.mkdir()
+    workspace = bundle_module._open_publication_workspace(
+        parent / "bundle"
+    )
+    original_parent = tmp_path / "original-parent"
+    parent.rename(original_parent)
+    parent.mkdir()
+    try:
+        with pytest.raises(
+            RepresentationPhantomBundleError,
+            match="parent identity changed",
+        ):
+            _publish_staging_no_replace(workspace)
+        assert not (parent / "bundle").exists()
+        assert not (original_parent / "bundle").exists()
+    finally:
+        bundle_module._remove_owned_staging(workspace)
+        bundle_module.os.close(workspace.parent_descriptor)
+
+
+def test_staging_identity_replacement_is_rejected(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "bundle"
+    workspace = bundle_module._open_publication_workspace(destination)
+    bundle_module.os.rmdir(workspace.staging_path)
+    workspace.staging_path.mkdir()
+    try:
+        with pytest.raises(
+            RepresentationPhantomBundleError,
+            match="staging directory identity changed",
+        ):
+            _publish_staging_no_replace(workspace)
+        assert not destination.exists()
+        assert workspace.staging_path.is_dir()
+    finally:
+        bundle_module.os.close(workspace.parent_descriptor)
+
+
+def test_publication_failure_leaves_no_public_destination(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     protocol_path = _write_protocol(tmp_path / "protocol")
     destination = tmp_path / "bundle"
-    original_rename = bundle_module.os.rename
 
-    def failing_rename(
-        source: str | bytes | Path,
-        target: str | bytes | Path,
-    ) -> None:
-        if Path(source).name == "external":
-            raise OSError("injected mid-transfer failure")
-        original_rename(source, target)
+    def failing_rename(**_kwargs: object) -> None:
+        raise RepresentationPhantomBundleError(
+            "injected exclusive publication failure"
+        )
 
-    monkeypatch.setattr(bundle_module.os, "rename", failing_rename)
+    monkeypatch.setattr(
+        bundle_module,
+        "_renameatx_np_no_replace",
+        failing_rename,
+    )
 
-    with pytest.raises(OSError, match="injected mid-transfer failure"):
+    with pytest.raises(
+        RepresentationPhantomBundleError,
+        match="injected exclusive publication failure",
+    ):
         emit_representation_phantom_bundle(protocol_path, destination)
 
     assert not destination.exists()
@@ -887,20 +1086,21 @@ def test_publication_race_does_not_replace_competing_destination(
 ) -> None:
     protocol_path = _write_protocol(tmp_path / "protocol")
     destination = tmp_path / "bundle"
-    original_mkdir = bundle_module.os.mkdir
+    real_rename = bundle_module._renameatx_np_no_replace
 
-    def racing_mkdir(
-        path: str | bytes | Path,
-        mode: int = 0o777,
-        *,
-        dir_fd: int | None = None,
-    ) -> None:
-        if Path(path) == destination:
-            original_mkdir(path, mode, dir_fd=dir_fd)
-            raise FileExistsError
-        original_mkdir(path, mode, dir_fd=dir_fd)
+    def racing_rename(**kwargs: object) -> None:
+        destination.mkdir()
+        (destination / "owner.txt").write_text(
+            "competing-owner",
+            encoding="utf-8",
+        )
+        real_rename(**kwargs)
 
-    monkeypatch.setattr(bundle_module.os, "mkdir", racing_mkdir)
+    monkeypatch.setattr(
+        bundle_module,
+        "_renameatx_np_no_replace",
+        racing_rename,
+    )
 
     with pytest.raises(
         RepresentationPhantomBundleError,
@@ -909,10 +1109,13 @@ def test_publication_race_does_not_replace_competing_destination(
         emit_representation_phantom_bundle(protocol_path, destination)
 
     assert destination.is_dir()
-    assert list(destination.iterdir()) == []
+    assert (destination / "owner.txt").read_text(encoding="utf-8") == (
+        "competing-owner"
+    )
+    assert not tuple(tmp_path.glob(".bundle.staging-*"))
 
 
-def test_failed_published_revalidation_removes_owned_destination(
+def test_failed_published_revalidation_preserves_the_atomic_tree(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -944,4 +1147,6 @@ def test_failed_published_revalidation_removes_owned_destination(
         emit_representation_phantom_bundle(protocol_path, destination)
 
     assert call_count == 2
-    assert not destination.exists()
+    assert destination.is_dir()
+    assert (destination / "bundle.json").is_file()
+    assert not tuple(tmp_path.glob(".bundle.staging-*"))

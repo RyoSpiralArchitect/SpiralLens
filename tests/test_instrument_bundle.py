@@ -34,6 +34,8 @@ from spirallens.instrument_contracts.artifacts import (
     OrderParameterSpec,
     SubstrateBinding,
     SupportDiagnostic,
+    SyntheticLatticeContextBinding,
+    SyntheticLatticeSubstrateBinding,
 )
 from spirallens.instrument_contracts.bundle import (
     BundleArtifactEntry,
@@ -136,6 +138,21 @@ def _resolved(family_id: str, selected_id: str) -> RuleChoice:
     )
 
 
+def _synthetic_context_binding() -> SyntheticLatticeContextBinding:
+    return SyntheticLatticeContextBinding(
+        context_id="bundle-synthetic-lattice",
+        source_id="bundle-synthetic-protocol",
+        generator_revision="a" * 40,
+        generator_module_sha256=_digest("bundle-generator-module"),
+        generator_spec_sha256=_digest("bundle-generator-spec"),
+        protocol_source_sha256=_digest("bundle-protocol-source"),
+        protocol_canonical_sha256=_digest("bundle-protocol-canonical"),
+        row_identity_sha256=SUBSTRATE_ROWS,
+        lattice_shape=(2, 2),
+        boundary_rule="open",
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class BundleFixture:
     root: Path
@@ -202,6 +219,7 @@ def _build_bundle(
     level_2t_selection_role: FitRole | None = None,
     level_2t_selection_axis: EvolutionAxis | None = None,
     level_2t_selected_precursor: bool = True,
+    synthetic_substrate: bool = False,
 ) -> BundleFixture:
     root = tmp_path / "bundle"
     artifact_directory = root / "artifacts"
@@ -350,14 +368,26 @@ def _build_bundle(
         ),
         "preprocessing_fit": write_opaque("substrate-preprocessing-fit"),
     }
-    substrate = SubstrateBinding(
-        artifact_id="bundle-substrate",
-        role=substrate_role,
-        evolution_axis=substrate_axis,
-        row_identity_sha256=SUBSTRATE_ROWS,
-        context_bank=context_ref,
-        **substrate_payloads,
-    )
+    if synthetic_substrate:
+        substrate_role = FitRole.INSTRUMENT_DEV
+        substrate_axis = EvolutionAxis.SYNTHETIC_LATTICE
+        substrate = SyntheticLatticeSubstrateBinding(
+            artifact_id="bundle-substrate",
+            role=substrate_role,
+            evolution_axis=substrate_axis,
+            row_identity_sha256=SUBSTRATE_ROWS,
+            synthetic_context=_synthetic_context_binding(),
+            **substrate_payloads,
+        )
+    else:
+        substrate = SubstrateBinding(
+            artifact_id="bundle-substrate",
+            role=substrate_role,
+            evolution_axis=substrate_axis,
+            row_identity_sha256=SUBSTRATE_ROWS,
+            context_bank=context_ref,
+            **substrate_payloads,
+        )
     substrate_ref = _artifact_ref(substrate)
 
     secondary_substrate = replace(
@@ -1091,7 +1121,7 @@ def _build_bundle(
             )
         ),
         hypothesis_registries=(registry_entry,),
-        context_banks=(context_entry,),
+        context_banks=() if synthetic_substrate else (context_entry,),
         payloads=tuple(sorted(payload_entries, key=lambda entry: entry.sort_key)),
     )
     manifest_path = root / "bundle.json"
@@ -1118,6 +1148,27 @@ def test_bundle_manifest_round_trips_canonically(tmp_path: Path) -> None:
         == hashlib.sha256(reconstructed.canonical_bytes).hexdigest()
     )
     assert not reconstructed.canonical_bytes.endswith(b"\n")
+
+
+def test_model_free_synthetic_substrate_closes_without_context_bank(
+    tmp_path: Path,
+) -> None:
+    fixture = _build_bundle(tmp_path, synthetic_substrate=True)
+
+    loaded = load_instrument_bundle(fixture.manifest_path)
+    substrate = loaded.resolve(_artifact_ref(fixture.artifacts["substrate"]))
+
+    assert isinstance(substrate, SyntheticLatticeSubstrateBinding)
+    assert substrate.artifact_type is ArtifactType.SUBSTRATE_BINDING
+    assert substrate.role is FitRole.INSTRUMENT_DEV
+    assert substrate.evolution_axis is EvolutionAxis.SYNTHETIC_LATTICE
+    assert substrate.synthetic_context.site_count == 4
+    assert loaded.manifest.context_banks == ()
+    assert all(
+        member.reference.artifact_type is not ArtifactType.CONTEXT_BANK
+        for member in loaded.artifacts
+    )
+    assert loaded.cross_manifest_join_count > 0
 
 
 def test_loader_resolves_closed_bundle_and_reports_cli_ready_facts(
