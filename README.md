@@ -251,7 +251,8 @@ model-free P1 representation phantom described above. Every bank entry has
 `role=example` and `claim_eligible=false`. Scientific discovery and held-out
 banks are separate frozen artifacts beginning in M2.
 
-Run the bounded, atlas-only Pythia-70M public-example plumbing cell:
+The canonical receipt was produced by the following historical, bounded,
+atlas-only Pythia-70M public-example plumbing invocation:
 
 ```bash
 env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN \
@@ -267,6 +268,19 @@ PYTHONPATH=src python3 -m spirallens public-example-plumbing run \
   --expected-protocol-canonical-sha256 \
     968ad990e7c80ddae3cadcf71c5b39aa37f7b5cad88ea473df094cedb6b633d6
 ```
+
+This is provenance, not a rerun command. The tracked receipt now occupies the
+shown no-overwrite path, and the generated atlas may occupy the shown output
+path in the execution workspace. Any independent replay must use fresh parent
+directories while retaining the frozen output basename
+`pythia70-public-example-plumbing-v0.1`; it must not replace the canonical
+receipt.
+
+The frozen protocol also binds implementation commit
+`de24a2b73fa408d49ed4252c8a18332554978296`, and the runner requires that commit
+to remain an ancestor of the execution checkout. Integration therefore must
+preserve the PR commit ancestry; squash or rebase integration is incompatible
+with this frozen engineering cell and fails closed.
 
 The strict tracked protocol selects the exact model revision and cached model
 file hashes, ContextBank source and canonical digests, structured slot, 32
