@@ -253,6 +253,20 @@ This library slice does not reinterpret the frozen bundle. Instead:
 No existing P1 protocol, bundle schema, artifact schema, or frozen Pythia
 protocol/receipt bytes are migrated by these additions.
 
+The provisional [`spirallens.graphs`](src/spirallens/graphs) foundation now
+adds three deterministic, exhaustive rounded-float64 adjacency
+mechanisms—mutual-kNN, inclusive fixed-radius, and all-pair
+shared-neighbor—plus structural diversity measurement. A graph-independent
+`DiscreteDomainComplex` supplies an exact
+integer oriented triangular complex, and `CycleClassBinding` can certify one
+narrow relation: a graph cycle refines the same caller-declared, induced support
+boundary exactly once. These records are in-memory fingerprints, not
+persistence schemas, and do not verify when or why the caller selected that
+support or refinement rule. The matched relation is not generic homology, a
+latent manifold topology, a core, winding, graph-family cycle invariance, or
+D4 qualification. See
+[Graph and discrete-domain foundation](docs/GRAPH_AND_DISCRETE_DOMAIN_BOUNDARY.md).
+
 Validate one generated canonical instrument manifest:
 
 ```bash
@@ -551,8 +565,10 @@ immediate next plan live in the single
   conservative resource preflight, exact executed development graph, and
   current-environment exclusive bundle publisher. It is not a
   calibration-selection or subject-execution boundary;
-- future `graphs/` code will construct scientific graph families from verified
-  structural inputs and remains separate from retrieval;
+- `graphs/` constructs provisional model-free rounded-float64 graph families
+  and a graph-independent discrete-domain foundation from supplied numerical
+  inputs. It remains separate from retrieval and does not qualify a scientific
+  graph, field, core, loop, or topology claim;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
 - `neighbors/` retrieves row-index pairs from unprojected states only; it never

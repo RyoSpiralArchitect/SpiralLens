@@ -31,7 +31,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
-| `spirallens.synthetic`, future `graphs`, qualification and subject APIs | provisional | model-free generator-family contracts and controls until their declared gates pass |
+| `spirallens.synthetic`, `spirallens.graphs`, future qualification and subject APIs | provisional | model-free generator-family controls plus in-memory exact graph/domain fingerprints; no graph qualification or persistence authority |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
 
@@ -52,6 +52,8 @@ Every PR that grows the research-to-library surface must include:
 
 1. a typed Python entry point independent of `argparse`;
 2. an exact schema and canonical round-trip/tamper test for persisted data;
+   an intentionally in-memory-only record must instead declare that scope,
+   expose no parser/writer, and test immutable fingerprint behavior;
 3. an explicit `__all__` update and export snapshot test;
 4. this document and the schema-change record updated for public changes;
 5. a clean wheel installed into a fresh virtual environment;

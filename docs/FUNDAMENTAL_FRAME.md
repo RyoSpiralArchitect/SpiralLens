@@ -173,6 +173,19 @@ orientation, or localized point core. In that case SpiralLens may report a
 sampled graph-cycle winding or cohomology index, but not a localized
 topological charge around a core.
 
+The provisional graph/domain foundation makes a narrower prerequisite
+executable without weakening this rule. A graph-independent
+`DiscreteDomainComplex` verifies an exact finite integer chain complex, and a
+`BoundaryCycleClassSpec` may declare the oriented boundary induced by an exact
+face support. A `CycleClassBinding` then proves only that a graph cycle refines
+that same combinatorial boundary exactly once. It does not infer faces from a
+neighbor graph, prove latent-manifold topology, claim a nontrivial homology
+class, or identify the support boundary with a core. The records read no field
+or loop observable, but they do not certify the caller's prior selection
+history or outcome blindness. A later sealed protocol must supply that
+provenance. Common-boundary availability across graph families is not yet
+graph-family cycle invariance, and these records do not advance D4.
+
 ## 3. Two scientific branches
 
 ### 3.1 Geometry and transport branch

@@ -165,6 +165,20 @@ recovery gate, and binds the canonical controls back to the declared spec.
 This second family is a development foundation, not an integrated
 qualification cell, independent confirmation, or D0/D1 pass.
 
+**Implementation status — graph and discrete-domain foundation:** the
+provisional `spirallens.graphs` namespace now implements deterministic,
+exhaustive rounded-float64 mutual-kNN, inclusive fixed-radius, and all-pair
+shared-neighbor adjacency on one bound numerical input. It measures pairwise
+edge, degree, component, and two-core relations without setting a diversity
+threshold or gate result. A
+graph-independent oriented triangular `DiscreteDomainComplex` verifies exact
+integer boundary operators, and a `CycleClassBinding` may prove that a graph
+cycle refines one caller-declared face-support boundary exactly once. These are
+immutable in-memory fingerprints only and do not verify caller-side selection
+history or outcome blindness. Same induced support boundary is not generic
+homology, a core, winding, graph-family cycle invariance, topology promotion,
+or D4 qualification.
+
 This slice is deliberately below the Stage P1 exit. Graph family, metric,
 scale, identifiability, interpolation, lift, trivialization, and reference
 choices remain unresolved for qualification even though the executed
@@ -480,6 +494,12 @@ Prepare genuinely distinct same-vertex constructions:
 3. shared-nearest-neighbor or neighborhood-overlap graph;
 4. an optional preregistered diffusion-distance adversary.
 
+The first three deterministic constructors and a structural-diversity receipt
+now exist as a model-free foundation. Their family labels and measured
+adjacency differences are not an adequacy decision or evidence of independent
+failure modes. The qualification thresholds, scale selection, crossed cells,
+and required-family gate in this stage remain unimplemented.
+
 Metric changes, such as cosine versus frozen-whitened Euclidean distance, form
 a separate null.
 
@@ -615,8 +635,9 @@ transport conventions, outputs, and claim ceilings are complete.
 
 The pointwise-referent subset is now executable and content-bound, including
 F2/F3 same-object vectors and the F4 doubled-angle tensor convention. D0
-nevertheless remains `not_run`: substrate field binding, graph/domain,
-interpolation/transport, numeric tolerance, required-cell, and
+nevertheless remains `not_run`: the standalone discrete-domain foundation is
+not bound to an order-parameter field; interpolation/transport, numeric
+tolerance, required-cell, and
 qualification-run contracts are not all sealed by this library slice.
 
 ### D1 — analytic correctness
@@ -646,6 +667,11 @@ full crossed matrix qualifies on selection phantoms. Core and anchor receipts
 are sealed before any loop observable is computed. A graph-based core
 estimator either inherits the bound field graph or passes its declared
 three-axis core-by-field-by-cycle design.
+
+The standalone constructors, diversity measurements, domain, and exact
+support-boundary refinement are implemented prerequisites only. They set no
+adequacy threshold, execute no crossed matrix, read no field/core/loop value,
+and leave D4 `not_run`.
 
 ### D5 — specificity and coverage
 

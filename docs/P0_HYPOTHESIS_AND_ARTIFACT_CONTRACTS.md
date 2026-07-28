@@ -388,7 +388,14 @@ The first synthetic, representation-shaped development slice now consumes
 these definitions without changing them in response to subject outcomes. It
 does not complete P1. A second, spectral-moment construction-family foundation
 and a secure numeric payload consumer now exist separately; they are not yet a
-qualification bundle or a D1 result. The next work is to integrate independent
-families with genuinely distinct graph families, matched cycle construction,
-the full crossed null, D0-D8 qualification, and locked calibration
-selection/confirmation—still before any subject protocol is prepared.
+qualification bundle or a D1 result. A standalone graph/domain foundation now
+implements three deterministic exhaustive rounded-float64 adjacency
+mechanisms, structural-diversity
+measurement, an exact finite chain complex, and one narrow
+same-induced-support-boundary binding. Those in-memory fingerprints do not
+alter the persisted P0 schemas, bind a field/core/loop, establish topology, or
+qualify D4. The next work is to integrate the declared construction-family
+foundations with the matched graph/domain foundation, seal selection
+provenance, run the full crossed null, complete D0-D8 qualification, and lock
+calibration selection/confirmation—still before any subject protocol is
+prepared.

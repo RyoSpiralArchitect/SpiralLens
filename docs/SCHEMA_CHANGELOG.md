@@ -4,6 +4,46 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-29 — PR #8 graph and discrete-domain foundation
+
+### Added
+
+- Provisional `spirallens.graphs` in-memory fingerprints for one exact
+  numerical input, three graph specifications and construction receipts,
+  pairwise structural-diversity measurements, an oriented triangular
+  `DiscreteDomainComplex`, a declared face-support boundary, and exact graph
+  refinement of that boundary.
+- Exhaustive rounded-float64 mutual-kNN, inclusive fixed-radius, and
+  all-unordered-pair shared-neighbor constructors with deterministic
+  tie/order rules, immutable array backing, derived structural audits,
+  arithmetic-collapse rejection, and conservative pre-allocation resource
+  limits.
+- Exact integer boundary matrices and the finite-chain identity
+  `boundary_1 @ boundary_2 == 0`.
+
+### Compatibility and claim boundary
+
+- Every new versioned mapping declares
+  `record_scope=in-memory-fingerprint-only` and
+  `persistence_round_trip_supported=false`. No parser, loader, writer, or
+  payload-backed persistence schema is introduced.
+- Existing P1 graph artifacts and their empty, unconstructed cycle-support
+  field are not reinterpreted or migrated. The P1 producer/protocol and frozen
+  Pythia protocol/receipt remain byte-identical.
+- `same-induced-support-boundary` means exact refinement of one supplied
+  combinatorial boundary only. It is not generic homology, homotopy,
+  continuous topology, latent-manifold triangulation, a core, winding, or
+  charge.
+- The API accepts no field/core/loop observable, but it does not verify the
+  caller's support/rule selection history or a pre-observation seal.
+  Cross-family matches establish common-boundary availability only, not D4
+  graph-family cycle invariance.
+- Graph diversity is measured without a threshold or gate result. Graph cells
+  are repeated measurements of one primary unit, not independent statistical
+  replicates.
+- No field, core, holonomy, winding, semantic, subject, Level 2T, or D0-D8
+  state is read or promoted.
+
 ## 2026-07-29 — PR #7 referent and numeric foundation
 
 ### Added
