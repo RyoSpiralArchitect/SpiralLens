@@ -64,8 +64,10 @@ deliberately separate from:
 
 Importing the contracts and running single-manifest validation do not
 dereference payloads. Bundle validation streams indexed payload bytes only to
-verify byte length and SHA-256; it does not decode their values. None of these
-paths imports Torch, Transformers, Faiss, or a model adapter.
+verify byte length and SHA-256; it does not decode their values. A separate
+authorization-bound numeric session is now the first value-reading consumer;
+it is not invoked by either manifest loader. None of these paths imports
+Torch, Transformers, Faiss, or a model adapter.
 
 The namespace provides:
 
@@ -220,8 +222,11 @@ synthetic-qualified or scientific instrument bundle. The validator does not
 decode payloads, validate array layout or values, recompute row identities
 from payload content, map `ContextRole` to `FitRole`, prove calibration-cell
 completeness, or evaluate D0-D8. `LoadedBundlePayload` is only an integrity
-receipt and exposes no reusable pathname or descriptor; a future payload
-consumer must define its own secure reopen-and-reverify boundary.
+receipt and exposes no reusable pathname or descriptor. The separate numeric
+consumer retains only explicitly requested descriptors from the same secure
+validation transaction, re-hashes those descriptors, and decodes immutable
+NPY snapshots without pathname reopening. It still does not qualify an
+estimator, graph, referent, or D gate.
 
 The following distinctions are load-bearing:
 
@@ -381,7 +386,9 @@ The P0 contract and generic loader themselves do not include:
 
 The first synthetic, representation-shaped development slice now consumes
 these definitions without changing them in response to subject outcomes. It
-does not complete P1. The next work is to add independent generator families,
-genuinely distinct graph families, matched cycle construction, the full
-crossed null, D0-D8 qualification, and locked calibration
+does not complete P1. A second, spectral-moment construction-family foundation
+and a secure numeric payload consumer now exist separately; they are not yet a
+qualification bundle or a D1 result. The next work is to integrate independent
+families with genuinely distinct graph families, matched cycle construction,
+the full crossed null, D0-D8 qualification, and locked calibration
 selection/confirmation—still before any subject protocol is prepared.

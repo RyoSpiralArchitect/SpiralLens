@@ -27,16 +27,24 @@ stable software contract cannot promote a scientific claim.
 | --- | --- | --- |
 | `spirallens.__version__` | supported root surface | single package version |
 | `spirallens.core.canonical` | stable candidate | canonical bytes and legacy `instrument_contracts.canonical` compatibility |
-| `spirallens.access` | provisional | typed access, pre-observation descriptor, and execution-lifecycle contracts |
-| `spirallens.instrument_contracts` | provisional | versioned v0.x artifact schemas and canonical bytes |
+| `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
+| `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
+| `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
-| `spirallens.synthetic`, future `graphs`, qualification and subject APIs | provisional | model-free or metadata-only until their declared gates pass |
+| `spirallens.synthetic`, future `graphs`, qualification and subject APIs | provisional | model-free generator-family contracts and controls until their declared gates pass |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
 module imports remain internal.
+
+The ordinary `load_instrument_bundle()` API remains value-opaque: it exposes
+manifest path metadata but retains no payload descriptor and returns no bytes
+or decoded array. `open_numeric_payload_session()` is a separate explicit
+value consumer with a trusted parent-policy digest, strict payload request,
+and bounded session lifetime. This separation is part of the provisional
+compatibility contract.
 
 ## Compatibility gates for PR #6 onward
 

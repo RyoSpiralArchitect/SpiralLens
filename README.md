@@ -47,6 +47,7 @@ Read these documents before adding a field, graph, loop, or claim:
 - [P0 Hypothesis and Artifact Contracts](docs/P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md)
 - [Research-to-Library Roadmap](docs/ROADMAP.md)
 - [Access, Provenance, and Lifecycle Boundary](docs/ACCESS_BOUNDARY.md)
+- [Pointwise Referents and Numeric Payload Boundary](docs/REFERENT_AND_NUMERIC_BOUNDARY.md)
 - [API Maturity and Compatibility Status](docs/API_STATUS.md)
 - [Schema and Compatibility Change Record](docs/SCHEMA_CHANGELOG.md)
 
@@ -88,6 +89,34 @@ cyclic members, verifies opaque payload byte lengths and SHA-256 digests, and
 checks selected cross-manifest metadata joins. It does not decode payload
 values, recompute row identities from array contents, run an estimator or graph
 constructor, load a model, or access subject data.
+The separate, explicitly authorized numeric consumer now retains only requested
+payload descriptors from the same secure bundle-validation transaction,
+re-hashes those exact descriptors, strictly decodes bounded numeric NPY v1/v2
+snapshots, derives row identity from content, and can verify a frozen L2
+amplitude relation. Calling the ordinary bundle loader still retains no
+payload descriptor and returns no payload bytes or decoded array. Bundle
+member paths remain visible as manifest metadata and are not an access-control
+boundary.
+
+The provisional `spirallens.referents` namespace now fixes the F0-F4
+pointwise-referent contract. F0 support diagnostics and the F1 projector are
+explicitly not order parameters. F2 and F3 derive amplitude and direction from
+the same pointwise vector, while F4 derives both from the same pointwise
+traceless spin-two tensor. No substrate field or interpolation is bound, so
+these formulas are not yet order parameters.
+The tracked P0 registry produces referent-contract digest
+`4108ccda4f2a76920091bf2bf422b97297fe4d91ee54f14e2b03362e53e358f2`.
+This is a software and construct-definition identity, not evidence that any
+model contains the referent.
+
+A typed generator-family identity now distinguishes a mathematical
+construction from a seed, source digest, or implementation label. The new
+spectral-moment quadrature family declares a separate mathematical
+construction from the existing representation phantom and supplies separated
+F2/F4 positive/null/prerequisite-failure development controls. Distinct family
+metadata is necessary but does not prove epistemic or implementation
+independence. It is not yet wired into a qualification bundle and does not
+advance D0-D8.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
@@ -211,6 +240,18 @@ pair is a software-development cell, not an independent generator family and
 not synthetic qualification. Two cold emissions are required to be
 byte-identical in the executing environment; cross-environment numerical,
 publication, or byte identity is not yet claimed.
+
+This library slice does not reinterpret the frozen bundle. Instead:
+
+- `spirallens.referents` declares the exact F0-F4 pointwise objects and
+  same-object amplitude/direction laws while keeping field binding false;
+- `open_numeric_payload_session()` is the first value-reading consumer, gated
+  by a trusted parent-policy digest and one-consumer lineage; and
+- `SpectralMomentGenerator` supplies a second construction-family foundation
+  with disjoint fit/evaluation quadrature and separated oracle truth.
+
+No existing P1 protocol, bundle schema, artifact schema, or frozen Pythia
+protocol/receipt bytes are migrated by these additions.
 
 Validate one generated canonical instrument manifest:
 
@@ -490,20 +531,26 @@ immediate next plan live in the single
 - `core/` contains framework-neutral stable-candidate primitives. Its
   compatibility tests have begun, but it is not yet a 1.0-stable API.
 - `access/` contains provisional typed provenance, descriptor-only prepare
-  access, consumer authorization, and execution lifecycle contracts. It
-  imports no model or numeric framework.
+  access, consumer authorization, value-access lineage, and execution
+  lifecycle contracts. It imports no model or numeric framework.
+- `referents/` contains the provisional F0-F4 pointwise-referent contract and
+  model-free same-object vector/spin-two numeric relations. Successful checks
+  establish neither a substrate-bound field nor model-side construct validity.
 - `holonomy/` contains continuous closed-loop transport quantities.
 - `topology/` contains sampled-winding quantities and, later, topology
   promotion tests. A sampled charge is not a continuous-field certificate.
 - `instrument_contracts/` contains implemented experimental metadata
   boundaries for the P0 registry, provisional canonical artifacts, and
-  closed-world integrity bundles. Its bundle loader reads opaque payload bytes
-  only for length and SHA-256 verification; it contains no payload semantic
-  decoder, estimator, graph constructor, or subject access;
+  closed-world integrity bundles. Its ordinary bundle loader reads opaque
+  payload bytes only for length and SHA-256 verification. A separate
+  authorization-bound numeric session decodes declared arrays and validates
+  closed numeric relations; neither path runs an estimator, graph constructor,
+  or subject access;
 - `synthetic/` contains the model-free, source-bound P1 development generator,
-  numeric self-audit, conservative resource preflight, exact executed
-  development graph, and current-environment exclusive bundle publisher. It is
-  not a calibration-selection or subject-execution boundary;
+  a distinct spectral-moment generator-family foundation, numeric self-audit,
+  conservative resource preflight, exact executed development graph, and
+  current-environment exclusive bundle publisher. It is not a
+  calibration-selection or subject-execution boundary;
 - future `graphs/` code will construct scientific graph families from verified
   structural inputs and remains separate from retrieval;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

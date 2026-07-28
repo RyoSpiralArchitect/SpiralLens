@@ -8,16 +8,15 @@ taints, but it may not broaden access or relabel the origin.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
-import re
 
 from spirallens.core.canonical import (
     canonical_json_bytes,
     canonical_json_sha256,
 )
-
 
 ATLAS_PREPARATION_DESCRIPTOR_SCHEMA_VERSION = (
     "spirallens.atlas-preparation-descriptor.v0.1"
@@ -43,6 +42,7 @@ class AtlasConsumer(str, Enum):
     """Closed identifiers for consumers of persisted atlas observations."""
 
     ATLAS_INTEGRITY_VALIDATION = "atlas_integrity_validation"
+    NUMERIC_PAYLOAD_VALIDATION = "numeric_payload_validation"
     SUBJECT_PROTOCOL_PREPARATION = "subject_protocol_preparation"
     SUBJECT_EXECUTION = "subject_execution"
     INSTRUMENT_BUNDLE_CONVERSION = "instrument_bundle_conversion"
@@ -269,7 +269,7 @@ class AtlasAccessPolicy:
     def from_dict(
         cls,
         value: Mapping[str, object],
-    ) -> "AtlasAccessPolicy":
+    ) -> AtlasAccessPolicy:
         item = _mapping(value, label="access_policy")
         _exact_keys(
             item,
@@ -451,7 +451,7 @@ class AttemptPolicy:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "AttemptPolicy":
+    def from_dict(cls, value: Mapping[str, object]) -> AttemptPolicy:
         item = _mapping(value, label="attempt_policy")
         fields = {
             "resume_same_attempt_authorized",
@@ -494,7 +494,7 @@ class ProtocolIdentity:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "ProtocolIdentity":
+    def from_dict(cls, value: Mapping[str, object]) -> ProtocolIdentity:
         item = _mapping(value, label="protocol")
         fields = {
             "schema_version",
@@ -572,7 +572,7 @@ class ModelIdentity:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "ModelIdentity":
+    def from_dict(cls, value: Mapping[str, object]) -> ModelIdentity:
         item = _mapping(value, label="model")
         _exact_keys(
             item,
@@ -621,7 +621,7 @@ class ContextIdentity:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "ContextIdentity":
+    def from_dict(cls, value: Mapping[str, object]) -> ContextIdentity:
         item = _mapping(value, label="context")
         _exact_keys(
             item,
@@ -661,7 +661,7 @@ class RowDomainIdentity:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "RowDomainIdentity":
+    def from_dict(cls, value: Mapping[str, object]) -> RowDomainIdentity:
         item = _mapping(value, label="row_domain")
         _exact_keys(
             item,
@@ -708,7 +708,7 @@ class CaptureDeclaration:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "CaptureDeclaration":
+    def from_dict(cls, value: Mapping[str, object]) -> CaptureDeclaration:
         item = _mapping(value, label="capture")
         fields = {"output_id", "device", "dtype", "observation_contract"}
         _exact_keys(item, fields, label="capture")
@@ -751,7 +751,7 @@ class InterpretationContract:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "InterpretationContract":
+    def from_dict(cls, value: Mapping[str, object]) -> InterpretationContract:
         item = _mapping(value, label="interpretation_contract")
         fields = {
             "language_space_atlas",
@@ -871,7 +871,7 @@ class AtlasPreparationDescriptor:
         return canonical_json_sha256(self.to_dict())
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "AtlasPreparationDescriptor":
+    def from_dict(cls, value: Mapping[str, object]) -> AtlasPreparationDescriptor:
         item = _mapping(value, label="atlas preparation descriptor")
         fields = {
             "schema_version",

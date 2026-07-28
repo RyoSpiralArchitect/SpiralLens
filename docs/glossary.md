@@ -54,6 +54,19 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Order-parameter field**: A replayable complex, oriented, director, or
   bundle-valued section created by an order-parameter specification. Its
   amplitude and phase-like direction belong to the same declared object.
+- **Pointwise referent contract**: The registry-bound declaration of what
+  mathematical object F0-F4 would observe at one row, how it transforms, how
+  same-object amplitude/direction are derived, and what labels remain
+  forbidden. Its digest makes the definition replayable. Without a bound
+  substrate field and interpolation it is not an order parameter, and it does
+  not establish model-side existence or scientific qualification.
+- **Same-object section rule**: The requirement that amplitude and normalized
+  direction are both computed from one vector section or one traceless
+  spin-two tensor. A scalar diagnostic and an unrelated transport angle cannot
+  be joined into an order parameter.
+- **Spin-two section**: The two-component representation of an in-plane
+  traceless symmetric tensor. Its direction transforms at doubled angle and
+  remains distinct from the ordinary-vector convention used by F2.
 - **Core candidate**: A candidate singular or unresolved set whose relation to
   an order-parameter field is explicit. It remains a candidate and cannot be
   localized by maximizing an observed winding after the fact.
@@ -125,6 +138,20 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   state that restricts eligible consumers and claims. Derivation can add a
   taint or narrow consumers but cannot erase taints or promote
   claim-ineligible engineering values.
+- **Value-access lineage**: A canonical one-consumer policy derivation that
+  binds an out-of-band trusted parent-policy digest and appends
+  `value_derived` plus `outcome_exposed`. A parsed lineage is not trusted until
+  it is re-derived from that parent.
+- **Numeric payload session**: A bounded value-reading capability that is
+  authorized before file access, retains requested payload descriptors from
+  the same secure bundle-validation transaction, re-hashes them, and returns
+  C-contiguous arrays with immutable `bytes` backing after strict NPY and
+  row-identity checks. The ordinary bundle loader does not expose this
+  capability.
+- **Construction-family identity**: A canonical distinction between the
+  mathematical data-generating construction and its seed, source digest,
+  implementation, or display label. Seed or source changes alone do not count
+  as an independent generator family.
 - **Prepare-only noninterference**: The requirement that payloads and
   data-derived manifest fields can change without changing prepare-only output
   or its descriptor-only read trace.
@@ -139,8 +166,9 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   cannot be repaired or relabelled into scientific evidence.
 - **Resource preflight guard**: A versioned conservative static estimate
   checked before generator allocation. The current representation phantom
-  applies safety factor four and 256 MiB estimated peak/output caps. Its claim
-  is limited to guarding parameter-induced runaway allocation; it is not an
+  and spectral-moment development generator each apply safety factor four and
+  a 256 MiB estimated cap under their own estimator IDs. The claim is limited
+  to guarding parameter-induced runaway allocation; it is not an
   operating-system OOM guarantee.
 - **Exclusive bundle publication**: Publication of one complete validated
   private staging directory by an atomic, no-replace namespace transition.

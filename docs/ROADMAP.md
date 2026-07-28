@@ -133,10 +133,11 @@ The target is:
 | Boundary | Responsibility | Dependency policy |
 | --- | --- | --- |
 | `core` | Stable-candidate canonical codecs and future framework-neutral status/error primitives | Standard library only; promotion still requires two independent consumers |
-| `access` | Provisional provenance, consumer authorization, pre-observation descriptors, and attempt lifecycle | Standard library plus `core`; never reads model values |
+| `access` | Provisional provenance, consumer authorization, value lineage, pre-observation descriptors, and attempt lifecycle | Standard library plus `core`; never reads model values |
 | `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
-| `instrument_contracts` | Provisional manifests, closed-world content-addressed integrity, and selected cross-manifest metadata joins | Core only; payload values remain opaque and subject roles are forbidden |
-| `synthetic` | Model-free development generators, numeric self-audit, resource preflight, exact executed development cells, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
+| `referents` | Provisional F0-F4 pointwise objects, transformation laws, fit/evaluation partitions, and same-object relations | NumPy plus contract enums; no substrate field or model-side existence claim |
+| `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
+| `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | future `graphs` and order-parameter boundaries | Scientific graph families, field artifacts, core diagnostics, and matched-class controls | Experimental core only after synthetic qualification |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
@@ -656,6 +657,21 @@ handing them to the generic closed-world validator. The generic validator
 itself still treats payload values as opaque: it resolves exact artifact
 identities, verifies payload bytes, and checks selected metadata joins without
 recomputing estimator values.
+
+This library slice adds, without changing that generic behavior:
+
+- a registry-bound canonical F0-F4 pointwise-referent set;
+- executable F2/F3 same-vector and F4 same-tensor relations;
+- content-derived fit/evaluation partition receipts;
+- out-of-band-parent-bound value-access lineage;
+- a descriptor-retaining strict NPY consumer with row and L2 checks; and
+- a second spectral-moment construction-family foundation whose estimator
+  inputs and oracle truth are separated.
+
+These capabilities make the pointwise same-object and value-validation
+obligations testable. They do not bind an order-parameter field, integrate the
+second family into the P1 bundle, close the graph/domain gap, or change any
+D0-D8 state.
 
 This development execution does not qualify D0-D8, construct a cycle or loop,
 perform calibration selection or confirmation, prepare a subject, estimate a

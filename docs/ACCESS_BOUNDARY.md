@@ -37,17 +37,24 @@ independent boolean that could drift from the allowlist.
 
 A freely constructed or parsed `AtlasAccessPolicy` is a declaration, not proof
 that it descended from another policy. Python code can always construct a new
-object. Persisted derived products therefore still need a trusted artifact
-digest and an explicit parent-policy binding; that lineage schema is deferred
-until the first value-decoding consumer in PR #7. This package supplies the
-monotone transition and fail-closed consumer check, not an ambient security
-sandbox. Referencing an independently qualified artifact by digest is not
-value derivation; future subject manifests must represent that distinction
+object. The first value-decoding consumer therefore uses
+`spirallens.value-access-lineage.v0.1`: it requires an out-of-band trusted
+parent-policy digest, derives an exact one-consumer policy, and appends both
+`value_derived` and `outcome_exposed`. A parsed lineage remains a declaration
+until `reverify_value_access_lineage()` reconstructs it from the trusted parent.
+This is a content-bound library correctness contract, not an ambient security
+sandbox. Referencing an independently qualified artifact by digest is not value
+derivation; future subject manifests must represent that distinction
 explicitly.
 
 The public-example engineering adapter remains restricted to atlas integrity
 validation. Existing frozen protocol, receipt, and manifest bytes do not
 change when the generic policy service is introduced.
+
+`numeric_payload_validation` is a separate typed consumer. Public-example
+engineering provenance cannot authorize it because that origin remains
+integrity-only. The secure numeric session checks this authorization and the
+trusted parent digest before inspecting any bundle path or opening any file.
 
 ## 3. Prepare-only is descriptor-only
 

@@ -45,12 +45,20 @@ from .lifecycle import (
     AttemptTerminalState,
     QuarantineDisposition,
 )
+from .lineage import (
+    VALUE_ACCESS_LINEAGE_SCHEMA_VERSION,
+    ValueAccessLineage,
+    ValueAccessTransition,
+    bind_value_access_lineage,
+    reverify_value_access_lineage,
+)
 
 __all__ = [
     "ATLAS_PREPARATION_DESCRIPTOR_SCHEMA_VERSION",
     "ATLAS_PREPARATION_VIEW_SCHEMA_VERSION",
     "ATTEMPT_TERMINAL_RECORD_SCHEMA_VERSION",
     "MAX_ATLAS_PREPARATION_DESCRIPTOR_BYTES",
+    "VALUE_ACCESS_LINEAGE_SCHEMA_VERSION",
     "AtlasAccessContractError",
     "AtlasAccessPolicy",
     "AtlasConsumer",
@@ -74,9 +82,13 @@ __all__ = [
     "ProvenanceTaint",
     "QuarantineDisposition",
     "RowDomainIdentity",
+    "ValueAccessLineage",
+    "ValueAccessTransition",
+    "bind_value_access_lineage",
     "load_atlas_preparation_descriptor",
     "prepare_descriptor_only_view",
     "require_atlas_consumer",
     "restrict_atlas_access",
+    "reverify_value_access_lineage",
     "write_atlas_preparation_descriptor",
 ]

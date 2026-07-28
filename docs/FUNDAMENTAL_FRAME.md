@@ -125,6 +125,17 @@ The existing raw-array winding API is a mathematical primitive. Supplying it
 with an array does not establish that the array is a model-derived order
 parameter.
 
+The provisional pointwise-referent contract now makes one prerequisite of this
+frame executable. It declares that F0 support and the F1 projector are not
+order parameters; F2 and F3 obtain amplitude and direction from the same
+pointwise vector; and F4 obtains both from the same pointwise traceless
+spin-two tensor under a distinct doubled-angle convention. The contract is
+bound to the P0 registry by content digest and explicitly leaves substrate
+field and interpolation binding false. A pointwise fiber formula is not an
+order parameter under the definition above. The discrete domain,
+interpolation, matched-cycle, model-side construct-validity, and promotion
+evidence remain separate obligations.
+
 ### 2.4 Connection and transport
 
 A connection describes how a vector, frame, or subspace is transported between
@@ -394,8 +405,13 @@ closed-integrity bundle boundary resolves exact artifact and payload
 identities, rejects unreachable or cyclic indexed artifacts, streams opaque
 payload bytes for length and digest checks, and validates the selected typed
 metadata joins. It does not decode payload values, recompute row identities,
-or qualify an instrument. A subject protocol still cannot depend on it until
-synthetic qualification D0-D8 is complete. See
+or qualify an instrument. A separate authorization-bound numeric consumer may
+retain selected descriptors during that same secure validation transaction,
+strictly decode their numeric snapshots, derive row identity from content, and
+verify closed value relations. That consumer does not change the ordinary
+loader's scope and does not qualify a referent, graph, or instrument. A subject
+protocol still cannot depend on either path until synthetic qualification
+D0-D8 is complete. See
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ## 9. Historical and experimental consequences
