@@ -141,6 +141,30 @@ that lattice addresses are model token positions. Each
 and boundary provenance. The generated bundle has `context_banks=()` and
 contains no model, tokenizer, or Pythia binding.
 
+**Implementation status — pointwise referent and second-family foundation:**
+the provisional `spirallens.referents` namespace now freezes the pointwise
+F0-F4 objects against the tracked registry. F0 and F1 are explicitly
+non-order-parameter referents. F2/F3 derive amplitude and direction from the
+same pointwise vector; F4 derives both from the same pointwise traceless
+spin-two tensor and keeps the doubled-angle convention distinct. Substrate
+field and interpolation binding remain false, so F2-F4 are formulas from which
+a later field may be built, not order parameters in this slice. The
+registry-bound contract-set digest is
+`4108ccda4f2a76920091bf2bf422b97297fe4d91ee54f14e2b03362e53e358f2`.
+
+The first separate value consumer now derives content row identity and validates
+bounded numeric NPY payloads and a predeclared, tolerance-bound L2-amplitude
+relation from descriptors retained during secure bundle validation. The
+ordinary bundle validator remains opaque. A separate
+spectral-moment/Fourier-quadrature construction supplies typed F2/F4 positive,
+fixed-null, and prerequisite-failure controls with disjoint fit/evaluation
+samples and oracle truth excluded from estimator inputs. It applies a
+conservative pre-allocation resource cap and harmonic resolvability floors,
+recomputes moment/truth linkage on both splits with a non-vacuous relative
+recovery gate, and binds the canonical controls back to the declared spec.
+This second family is a development foundation, not an integrated
+qualification cell, independent confirmation, or D0/D1 pass.
+
 This slice is deliberately below the Stage P1 exit. Graph family, metric,
 scale, identifiability, interpolation, lift, trivialization, and reference
 choices remain unresolved for qualification even though the executed
@@ -228,6 +252,14 @@ payload values or qualifying an experiment. The P1 development emitter now
 instantiates a bounded F0/F1/F2 cell, semantically self-audits its generated
 arrays before publication, and then uses that same closed-integrity validator.
 It does not change the validator into a scientific qualification gate.
+
+The separate `open_numeric_payload_session()` path is not part of ordinary
+bundle validation. It requires a trusted parent-policy digest and exact
+`numeric_payload_validation` authorization before any path inspection, retains
+only requested descriptors from the same validation transaction, re-hashes
+them, and returns owned read-only arrays after strict NPY and row-identity
+checks. Value-contract failures are hard failures rather than scientific
+`insufficient` results.
 
 ### `SubstrateBinding`
 
@@ -580,6 +612,12 @@ bundle before preparing any subject manifest.
 
 All F0–F4 inputs, transformations, targets, charge groups, interpolation or
 transport conventions, outputs, and claim ceilings are complete.
+
+The pointwise-referent subset is now executable and content-bound, including
+F2/F3 same-object vectors and the F4 doubled-angle tensor convention. D0
+nevertheless remains `not_run`: substrate field binding, graph/domain,
+interpolation/transport, numeric tolerance, required-cell, and
+qualification-run contracts are not all sealed by this library slice.
 
 ### D1 — analytic correctness
 

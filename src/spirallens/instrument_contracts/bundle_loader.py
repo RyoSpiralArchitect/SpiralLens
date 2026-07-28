@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
-from dataclasses import dataclass, fields, is_dataclass
 import errno
 import hashlib
 import os
-from pathlib import Path, PurePosixPath
 import stat
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from dataclasses import dataclass, fields, is_dataclass
+from pathlib import Path, PurePosixPath
 from types import MappingProxyType
 from typing import TypeAlias
 
@@ -50,7 +50,6 @@ from .registry_loader import (
     HypothesisRegistrySchemaError,
     _load_hypothesis_registry_from_bytes,
 )
-
 
 MAX_INSTRUMENT_BUNDLE_BYTES = 4 * 1024 * 1024
 _STREAM_CHUNK_BYTES = 1024 * 1024
@@ -943,19 +942,28 @@ def _read_bundle_manifest(
     )
 
 
-def load_instrument_bundle(
+def _load_instrument_bundle_retaining_payloads(
     path: str | Path,
     *,
     expected_source_sha256: str | None = None,
     expected_canonical_sha256: str | None = None,
     expected_root_identity: FileIdentity | None = None,
-) -> LoadedInstrumentBundle:
-    """Validate a canonical closed bundle without decoding payload values.
+    retained_payload_refs: frozenset[PayloadRef] = frozenset(),
+) -> tuple[LoadedInstrumentBundle, dict[PayloadRef, int]]:
+    """Validate a bundle and retain selected already-verified payload fds.
 
     ``expected_root_identity`` lets a publisher bind validation to an already
     opened bundle-directory inode instead of trusting a display path alone.
+    Retained descriptors are an internal capability for value consumers.  They
+    refer to the exact files whose bytes were verified in this transaction.
     """
 
+    if not isinstance(retained_payload_refs, frozenset) or any(
+        not isinstance(reference, PayloadRef) for reference in retained_payload_refs
+    ):
+        raise TypeError(
+            "retained_payload_refs must be a frozenset of PayloadRef values"
+        )
     if expected_root_identity is not None and (
         not isinstance(expected_root_identity, tuple)
         or len(expected_root_identity) != 2
@@ -1112,6 +1120,12 @@ def load_instrument_bundle(
             "unreferenced_payload_entry",
             f"{len(extra_payloads)} payload entries are not referenced",
         )
+    unavailable_retained = retained_payload_refs - indexed_payloads
+    if unavailable_retained:
+        raise InstrumentBundleResolutionError(
+            "retained_payload_reference_missing",
+            f"{len(unavailable_retained)} retained payload references are not indexed",
+        )
 
     from .bundle_validation import validate_bundle_cross_manifest
 
@@ -1121,45 +1135,54 @@ def load_instrument_bundle(
     )
 
     loaded_payloads: list[LoadedBundlePayload] = []
-    for entry in manifest.payloads:
-        try:
-            with _open_bundle_member(
-                bundle_root=bundle_root,
-                relative_path=entry.path,
-                expected_root_identity=root_identity,
-                seen_files=seen_files,
-            ) as opened:
-                size, digest = _stream_payload_identity(
-                    opened.descriptor,
-                    expected_byte_length=entry.reference.byte_length,
+    retained_descriptors: dict[PayloadRef, int] = {}
+    try:
+        for entry in manifest.payloads:
+            try:
+                with _open_bundle_member(
+                    bundle_root=bundle_root,
+                    relative_path=entry.path,
+                    expected_root_identity=root_identity,
+                    seen_files=seen_files,
+                ) as opened:
+                    size, digest = _stream_payload_identity(
+                        opened.descriptor,
+                        expected_byte_length=entry.reference.byte_length,
+                    )
+                    if size != entry.reference.byte_length:
+                        raise InstrumentBundleIntegrityError(
+                            "payload_byte_length_mismatch",
+                            f"payload {entry.path!r} byte length differs",
+                        )
+                    if digest != entry.reference.sha256:
+                        raise InstrumentBundleIntegrityError(
+                            "payload_digest_mismatch",
+                            f"payload {entry.path!r} SHA-256 differs",
+                        )
+                    if entry.reference in retained_payload_refs:
+                        retained_descriptors[entry.reference] = os.dup(
+                            opened.descriptor
+                        )
+            except FileNotFoundError as error:
+                raise InstrumentBundleResolutionError(
+                    "bundle_member_missing",
+                    f"{entry.path!r} disappeared before it could be read",
+                ) from error
+            except OSError as error:
+                raise InstrumentBundleResolutionError(
+                    "bundle_member_unreadable",
+                    f"{entry.path!r} could not be read after path validation",
+                ) from error
+            loaded_payloads.append(
+                LoadedBundlePayload(
+                    reference=entry.reference,
                 )
-        except FileNotFoundError as error:
-            raise InstrumentBundleResolutionError(
-                "bundle_member_missing",
-                f"{entry.path!r} disappeared before it could be read",
-            ) from error
-        except OSError as error:
-            raise InstrumentBundleResolutionError(
-                "bundle_member_unreadable",
-                f"{entry.path!r} could not be read after path validation",
-            ) from error
-        if size != entry.reference.byte_length:
-            raise InstrumentBundleIntegrityError(
-                "payload_byte_length_mismatch",
-                f"payload {entry.path!r} byte length differs",
             )
-        if digest != entry.reference.sha256:
-            raise InstrumentBundleIntegrityError(
-                "payload_digest_mismatch",
-                f"payload {entry.path!r} SHA-256 differs",
-            )
-        loaded_payloads.append(
-            LoadedBundlePayload(
-                reference=entry.reference,
-            )
-        )
+    except BaseException:
+        _close_descriptors(list(retained_descriptors.values()))
+        raise
 
-    return LoadedInstrumentBundle(
+    loaded = LoadedInstrumentBundle(
         manifest=manifest,
         source_path=source_path,
         source_sha256=source_sha256,
@@ -1186,3 +1209,28 @@ def load_instrument_bundle(
         payload_reference_count=len(payload_uses),
         cross_manifest_join_count=cross_manifest_join_count,
     )
+    return loaded, retained_descriptors
+
+
+def load_instrument_bundle(
+    path: str | Path,
+    *,
+    expected_source_sha256: str | None = None,
+    expected_canonical_sha256: str | None = None,
+    expected_root_identity: FileIdentity | None = None,
+) -> LoadedInstrumentBundle:
+    """Validate a canonical closed bundle without decoding payload values.
+
+    The public integrity loader deliberately retains no payload descriptor and
+    returns no payload bytes or decoded array. Manifest member paths remain
+    visible as metadata and are not an access-control boundary.
+    """
+
+    loaded, retained_descriptors = _load_instrument_bundle_retaining_payloads(
+        path,
+        expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
+        expected_root_identity=expected_root_identity,
+    )
+    assert not retained_descriptors
+    return loaded

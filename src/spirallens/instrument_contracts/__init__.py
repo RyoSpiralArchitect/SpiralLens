@@ -1,8 +1,10 @@
-"""Experimental metadata contracts for the order-parameter-first instrument.
+"""Experimental contracts for the order-parameter-first instrument.
 
-This namespace validates identities and manifests only.  Importing it does not
-load model frameworks, dereference payloads, run estimators, or authorize
-subject access.  The API is provisional before SpiralLens 1.0.
+The ordinary loaders validate identities and manifests only.  The explicitly
+named numeric payload session is a separate lineage-gated value consumer;
+importing this namespace does not dereference payloads, run estimators, load
+model frameworks, or authorize subject access.  The API is provisional before
+SpiralLens 1.0.
 """
 
 from __future__ import annotations
@@ -94,6 +96,21 @@ from .common import (
     RuleChoice,
     ScientificBranch,
 )
+from .numeric_payload import (
+    MAX_NPY_HEADER_BYTES,
+    MAX_NUMERIC_PAYLOAD_BYTES,
+    SUPPORTED_NPY_VERSIONS,
+    DecodedNumericArray,
+    L2AmplitudeRelation,
+    L2AmplitudeValidation,
+    NumericArrayContract,
+    NumericPayloadError,
+    NumericPayloadSession,
+    NumericValueRule,
+    RowIdentityContract,
+    VerifiedRowIdentity,
+    open_numeric_payload_session,
+)
 from .registry import (
     HistoricalSelectionBoundary,
     HypothesisRegistry,
@@ -111,12 +128,16 @@ from .registry_loader import (
 )
 
 __all__ = [
-    "ARTIFACT_SCHEMA_VERSION_BY_TYPE",
-    "ARTIFACT_SCHEMA_VERSIONS_BY_TYPE",
     "ARTIFACT_REFERENCE_POLICY",
+    "ARTIFACT_SCHEMA_VERSIONS_BY_TYPE",
+    "ARTIFACT_SCHEMA_VERSION_BY_TYPE",
     "INSTRUMENT_BUNDLE_SCHEMA_VERSION",
     "MAX_INSTRUMENT_BUNDLE_BYTES",
+    "MAX_NPY_HEADER_BYTES",
+    "MAX_NUMERIC_PAYLOAD_BYTES",
     "PAYLOAD_REFERENCE_POLICY",
+    "SUPPORTED_NPY_VERSIONS",
+    "SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION",
     "ArtifactRef",
     "ArtifactReferenceUse",
     "ArtifactType",
@@ -131,6 +152,7 @@ __all__ = [
     "ContractValidationError",
     "CoreCandidate",
     "CoreScore",
+    "DecodedNumericArray",
     "DefectCoordinateBinding",
     "DefectLocalizationBinding",
     "DefectLoopEstimate",
@@ -146,16 +168,16 @@ __all__ = [
     "GroundTruthAnchor",
     "HistoricalSelectionBoundary",
     "HypothesisDecision",
-    "HypothesisFixedChoice",
-    "HypothesisResolvedChoice",
-    "HypothesisRuleChoice",
     "HypothesisDisposition",
+    "HypothesisFixedChoice",
     "HypothesisId",
     "HypothesisRegistry",
     "HypothesisRegistryError",
     "HypothesisRegistryIntegrityError",
     "HypothesisRegistryPolicyError",
     "HypothesisRegistrySchemaError",
+    "HypothesisResolvedChoice",
+    "HypothesisRuleChoice",
     "HypothesisSpec",
     "InheritedFieldGraphBinding",
     "InstrumentArtifactIntegrityError",
@@ -166,26 +188,33 @@ __all__ = [
     "InstrumentBundleManifest",
     "InstrumentBundleResolutionError",
     "InstrumentBundleSchemaError",
+    "L2AmplitudeRelation",
+    "L2AmplitudeValidation",
     "LoadedBundleArtifact",
     "LoadedBundlePayload",
     "LoadedHypothesisRegistry",
     "LoadedInstrumentArtifact",
     "LoadedInstrumentBundle",
     "NeighborhoodMode",
+    "NumericArrayContract",
+    "NumericPayloadError",
+    "NumericPayloadSession",
+    "NumericValueRule",
     "OrderParameterField",
     "OrderParameterSpec",
     "PayloadKind",
-    "PayloadReferenceUse",
     "PayloadRef",
+    "PayloadReferenceUse",
     "ResolutionState",
+    "RowIdentityContract",
     "RuleChoice",
     "ScientificBranch",
-    "SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION",
     "SubstrateBinding",
     "SubstrateBindingValue",
     "SupportDiagnostic",
     "SyntheticLatticeContextBinding",
     "SyntheticLatticeSubstrateBinding",
+    "VerifiedRowIdentity",
     "canonical_json_bytes",
     "canonical_json_sha256",
     "hypothesis_registry_from_dict",
@@ -195,6 +224,7 @@ __all__ = [
     "load_hypothesis_registry",
     "load_instrument_artifact",
     "load_instrument_bundle",
+    "open_numeric_payload_session",
     "parse_canonical_json",
     "validate_p0_registry",
 ]

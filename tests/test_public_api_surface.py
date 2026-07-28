@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import spirallens
-import spirallens.access as access
-import spirallens.core as core
+from spirallens import access, core, instrument_contracts, synthetic
 from spirallens.core import canonical as core_canonical
 from spirallens.instrument_contracts import canonical as legacy_canonical
-
 
 EXPECTED_CORE_EXPORTS = [
     "CanonicalJsonError",
@@ -28,6 +26,7 @@ EXPECTED_ACCESS_EXPORTS = [
     "ATLAS_PREPARATION_VIEW_SCHEMA_VERSION",
     "ATTEMPT_TERMINAL_RECORD_SCHEMA_VERSION",
     "MAX_ATLAS_PREPARATION_DESCRIPTOR_BYTES",
+    "VALUE_ACCESS_LINEAGE_SCHEMA_VERSION",
     "AtlasAccessContractError",
     "AtlasAccessPolicy",
     "AtlasConsumer",
@@ -51,11 +50,152 @@ EXPECTED_ACCESS_EXPORTS = [
     "ProvenanceTaint",
     "QuarantineDisposition",
     "RowDomainIdentity",
+    "ValueAccessLineage",
+    "ValueAccessTransition",
+    "bind_value_access_lineage",
     "load_atlas_preparation_descriptor",
     "prepare_descriptor_only_view",
     "require_atlas_consumer",
     "restrict_atlas_access",
+    "reverify_value_access_lineage",
     "write_atlas_preparation_descriptor",
+]
+
+EXPECTED_INSTRUMENT_CONTRACT_EXPORTS = [
+    "ARTIFACT_REFERENCE_POLICY",
+    "ARTIFACT_SCHEMA_VERSIONS_BY_TYPE",
+    "ARTIFACT_SCHEMA_VERSION_BY_TYPE",
+    "INSTRUMENT_BUNDLE_SCHEMA_VERSION",
+    "MAX_INSTRUMENT_BUNDLE_BYTES",
+    "MAX_NPY_HEADER_BYTES",
+    "MAX_NUMERIC_PAYLOAD_BYTES",
+    "PAYLOAD_REFERENCE_POLICY",
+    "SUPPORTED_NPY_VERSIONS",
+    "SYNTHETIC_LATTICE_SUBSTRATE_BINDING_SCHEMA_VERSION",
+    "ArtifactRef",
+    "ArtifactReferenceUse",
+    "ArtifactType",
+    "BundleArtifactEntry",
+    "BundleContextBankEntry",
+    "BundlePayloadEntry",
+    "CalibrationConfirmationResult",
+    "CalibrationSelectionDecision",
+    "CandidateGraph",
+    "CanonicalJsonError",
+    "ClaimLevel",
+    "ContractValidationError",
+    "CoreCandidate",
+    "CoreScore",
+    "DecodedNumericArray",
+    "DefectCoordinateBinding",
+    "DefectLocalizationBinding",
+    "DefectLoopEstimate",
+    "EdgeConnection",
+    "EvolutionAxis",
+    "ExplicitCoreGraphBinding",
+    "FitRole",
+    "GateState",
+    "GeometricFieldEstimate",
+    "GeometryLoopEstimate",
+    "GraphConstructionSpec",
+    "GraphFreeBinding",
+    "GroundTruthAnchor",
+    "HistoricalSelectionBoundary",
+    "HypothesisDecision",
+    "HypothesisDisposition",
+    "HypothesisFixedChoice",
+    "HypothesisId",
+    "HypothesisRegistry",
+    "HypothesisRegistryError",
+    "HypothesisRegistryIntegrityError",
+    "HypothesisRegistryPolicyError",
+    "HypothesisRegistrySchemaError",
+    "HypothesisResolvedChoice",
+    "HypothesisRuleChoice",
+    "HypothesisSpec",
+    "InheritedFieldGraphBinding",
+    "InstrumentArtifactIntegrityError",
+    "InstrumentArtifactSchemaError",
+    "InstrumentBundleConsistencyError",
+    "InstrumentBundleError",
+    "InstrumentBundleIntegrityError",
+    "InstrumentBundleManifest",
+    "InstrumentBundleResolutionError",
+    "InstrumentBundleSchemaError",
+    "L2AmplitudeRelation",
+    "L2AmplitudeValidation",
+    "LoadedBundleArtifact",
+    "LoadedBundlePayload",
+    "LoadedHypothesisRegistry",
+    "LoadedInstrumentArtifact",
+    "LoadedInstrumentBundle",
+    "NeighborhoodMode",
+    "NumericArrayContract",
+    "NumericPayloadError",
+    "NumericPayloadSession",
+    "NumericValueRule",
+    "OrderParameterField",
+    "OrderParameterSpec",
+    "PayloadKind",
+    "PayloadRef",
+    "PayloadReferenceUse",
+    "ResolutionState",
+    "RowIdentityContract",
+    "RuleChoice",
+    "ScientificBranch",
+    "SubstrateBinding",
+    "SubstrateBindingValue",
+    "SupportDiagnostic",
+    "SyntheticLatticeContextBinding",
+    "SyntheticLatticeSubstrateBinding",
+    "VerifiedRowIdentity",
+    "canonical_json_bytes",
+    "canonical_json_sha256",
+    "hypothesis_registry_from_dict",
+    "instrument_artifact_from_dict",
+    "iter_artifact_reference_uses",
+    "iter_payload_reference_uses",
+    "load_hypothesis_registry",
+    "load_instrument_artifact",
+    "load_instrument_bundle",
+    "open_numeric_payload_session",
+    "parse_canonical_json",
+    "validate_p0_registry",
+]
+
+EXPECTED_SYNTHETIC_EXPORTS = [
+    "ANGULAR_SECTION_POSITIVE",
+    "FIXED_DIRECTION_NULL",
+    "GENERATOR_FAMILY_IDENTITY_SCHEMA_VERSION",
+    "REPRESENTATION_PHANTOM_PROTOCOL_SCHEMA_VERSION",
+    "SPECTRAL_MOMENT_FIXED_NULL",
+    "SPECTRAL_MOMENT_PHANTOM_RECEIPT_VERSION",
+    "SPECTRAL_MOMENT_POSITIVE",
+    "SPECTRAL_MOMENT_PREREQUISITE_FAILURE",
+    "EmittedRepresentationPhantomBundle",
+    "ExpectedControlDisposition",
+    "GeneratorFamilyContractError",
+    "GeneratorFamilyIdentity",
+    "GeneratorProtocol",
+    "LoadedRepresentationPhantomProtocol",
+    "PhantomCase",
+    "RepresentationPhantom",
+    "RepresentationPhantomBundleError",
+    "RepresentationPhantomProtocol",
+    "RepresentationPhantomProtocolError",
+    "RepresentationPhantomProtocolIntegrityError",
+    "RepresentationPhantomProtocolSchemaError",
+    "RepresentationPhantomSpec",
+    "SpectralMomentCase",
+    "SpectralMomentEstimatorInputs",
+    "SpectralMomentGenerator",
+    "SpectralMomentOracleTruth",
+    "SpectralMomentPhantom",
+    "SpectralMomentPhantomSpec",
+    "emit_representation_phantom_bundle",
+    "load_representation_phantom_protocol",
+    "representation_phantom_family_identity",
+    "require_distinct_construction_families",
 ]
 
 
@@ -63,6 +203,8 @@ def test_curated_public_export_snapshots_are_exact() -> None:
     assert spirallens.__all__ == ["__version__"]
     assert core.__all__ == EXPECTED_CORE_EXPORTS
     assert access.__all__ == EXPECTED_ACCESS_EXPORTS
+    assert instrument_contracts.__all__ == EXPECTED_INSTRUMENT_CONTRACT_EXPORTS
+    assert synthetic.__all__ == EXPECTED_SYNTHETIC_EXPORTS
 
 
 def test_legacy_canonical_module_is_an_identity_preserving_reexport() -> None:
