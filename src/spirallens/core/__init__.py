@@ -1,8 +1,13 @@
-"""Compatibility exports for the framework-neutral canonical JSON codec."""
+"""Framework-neutral primitives intended to mature into SpiralLens core APIs.
+
+The symbols in this namespace are stable candidates, not stable 1.0
+commitments. Scientific artifacts and experiment orchestration remain
+provisional elsewhere in the package.
+"""
 
 from __future__ import annotations
 
-from spirallens.core.canonical import (
+from .canonical import (
     CanonicalJsonError,
     JsonScalar,
     JsonValue,

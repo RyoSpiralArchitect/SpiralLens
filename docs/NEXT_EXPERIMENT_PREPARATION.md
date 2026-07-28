@@ -706,6 +706,31 @@ estimate a field, construct a subject graph, inspect support or eigenspectra,
 localize a core, or observe a candidate. Subject-data access requires a
 separate, explicit execution authorization after manifest review and freeze.
 
+Prepare-only consumes only a canonical descriptor created before observation.
+It does not read an atlas manifest and redact it: a manifest contains
+outcome-bearing summaries, run state, array digests, and other data-derived
+facts. Paired canary payloads with the same descriptor must produce
+byte-identical preparation output and a read trace containing only that
+descriptor. The provisional framework-neutral implementation lives in
+`spirallens.access`; it establishes an access mechanism, not a
+`SubjectProtocolManifest` or subject-preparation authorization.
+
+Value-derived provenance uses a monotone restriction operation. Any authorized
+product that consumes values from the public-example engineering lane must
+retain its claim-ineligible engineering taint. A free-standing policy object is
+not lineage proof; the first numeric consumer must persist an explicit
+parent-policy digest so copying or reserialization cannot masquerade as a
+verified derivation.
+
+Execution lifecycle is independent from D0-D8 gate state. The protocol freezes
+same-attempt resume, output reuse, fresh replay, post-outcome retry, and
+relabel policy separately. Once a hidden outcome is opened, correction
+requires a new protocol identity and unopened family; a completed but
+unreceipted atlas is terminally quarantined rather than repaired into evidence.
+The PR #6 primitive enforces one transition within one in-memory lifecycle
+capability. A durable run store must enforce unique attempt publication before
+this rule can govern multi-process execution.
+
 This section defines a future access boundary only. It does not create a
 subject manifest or choose a subject in the present work.
 

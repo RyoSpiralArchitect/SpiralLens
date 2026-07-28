@@ -117,6 +117,26 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Subject prepare-only**: A future metadata-only validation boundary that
   cannot load subject activation values, construct a graph, inspect support,
   or localize a candidate. It is not subject execution authorization.
+- **Pre-observation descriptor**: A canonical artifact created before model or
+  payload observation. It contains only declared identities, scope, access,
+  attempt, and interpretation policy. It is the sole input to the provisional
+  prepare-only reader and is not reconstructed from an outcome manifest.
+- **Provenance taint**: An append-only statement about value origin or terminal
+  state that restricts eligible consumers and claims. Derivation can add a
+  taint or narrow consumers but cannot erase taints or promote
+  claim-ineligible engineering values.
+- **Prepare-only noninterference**: The requirement that payloads and
+  data-derived manifest fields can change without changing prepare-only output
+  or its descriptor-only read trace.
+- **Fresh replay**: A new attempt and output namespace under an unchanged
+  protocol. It is distinct from resuming or retrying a terminal attempt.
+- **Terminally quarantined**: A generic terminal provenance state for a
+  partial payload, unknown interruption, failed receipt publication, or failed
+  publication validation. It permits at most integrity inspection and does
+  not imply that a complete payload or receipt exists.
+- **Terminally unreceipted**: A completed payload whose required receipt was
+  not published or validated. It is a terminally quarantined subtype and
+  cannot be repaired or relabelled into scientific evidence.
 - **Resource preflight guard**: A versioned conservative static estimate
   checked before generator allocation. The current representation phantom
   applies safety factor four and 256 MiB estimated peak/output caps. Its claim

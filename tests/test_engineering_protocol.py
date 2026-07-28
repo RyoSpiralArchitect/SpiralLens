@@ -6,6 +6,7 @@ import hashlib
 import pytest
 import yaml
 
+from spirallens.access import AtlasConsumer
 from spirallens.atlas.engineering_protocol import (
     EngineeringConsumerAuthorizationError,
     PublicExamplePlumbingProtocolIntegrityError,
@@ -434,11 +435,20 @@ def test_consumer_gate_allows_only_integrity_validation(tmp_path) -> None:
     require_engineering_consumer_authorized(
         request, "atlas_integrity_validation"
     )
+    require_engineering_consumer_authorized(
+        request, AtlasConsumer.ATLAS_INTEGRITY_VALIDATION
+    )
     with pytest.raises(
         EngineeringConsumerAuthorizationError, match="candidate_extraction"
     ):
         require_engineering_consumer_authorized(
             request, "candidate_extraction"
+        )
+    with pytest.raises(
+        EngineeringConsumerAuthorizationError, match="candidate_search"
+    ):
+        require_engineering_consumer_authorized(
+            request, AtlasConsumer.CANDIDATE_SEARCH
         )
     require_engineering_consumer_authorized(
         {"legacy": True}, "candidate_extraction"

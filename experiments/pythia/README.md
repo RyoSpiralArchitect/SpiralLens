@@ -3,9 +3,11 @@
 Tracked experiment manifests live here; generated arrays and journals live
 under the ignored `runs/` directory.
 
-The first implementation smoke uses `EleutherAI/pythia-70m`. The first
-claim-bearing run is intended for `EleutherAI/pythia-160m` with the same frozen
-protocol.
+The first implementation smoke uses `EleutherAI/pythia-70m`. The historically
+intended first claim-bearing family is `EleutherAI/pythia-160m`, but it requires
+a separately versioned and reviewed `SubjectProtocolManifest` that follows the
+same capture discipline. Neither this 70M protocol nor the model-family intent
+authorizes that future preparation or run.
 
 The current 70M public-example smoke validates only exact offline model-file
 resolution, bounded capture, storage, checksum, manifest reload, and receipt
