@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import spirallens
-from spirallens import access, core, instrument_contracts, synthetic
+from spirallens import access, core, graphs, instrument_contracts, synthetic
 from spirallens.core import canonical as core_canonical
 from spirallens.instrument_contracts import canonical as legacy_canonical
 
@@ -198,11 +198,56 @@ EXPECTED_SYNTHETIC_EXPORTS = [
     "require_distinct_construction_families",
 ]
 
+EXPECTED_GRAPH_EXPORTS = [
+    "BOUNDARY_CYCLE_CLASS_SPEC_RECEIPT_VERSION",
+    "BOUNDARY_REFINEMENT_RULE_RECEIPT_VERSION",
+    "CYCLE_CLASS_BINDING_RECEIPT_VERSION",
+    "CYCLE_CLASS_MATCH_ATTEMPT_RECEIPT_VERSION",
+    "DISCRETE_DOMAIN_RECEIPT_VERSION",
+    "GRAPH_CLAIM_CEILING",
+    "GRAPH_CLAIM_SCOPE",
+    "GRAPH_CONSTRUCTION_RECEIPT_VERSION",
+    "GRAPH_DIVERSITY_RECEIPT_VERSION",
+    "GRAPH_FAMILY_IDENTITY_RECEIPT_VERSION",
+    "GRAPH_INPUT_RECEIPT_VERSION",
+    "GRAPH_PAIR_DIVERSITY_RECEIPT_VERSION",
+    "GRAPH_PERSISTENCE_ROUND_TRIP_SUPPORTED",
+    "GRAPH_RECORD_SCOPE",
+    "GRAPH_SPEC_RECEIPT_VERSION",
+    "MAX_DOMAIN_ESTIMATED_PEAK_BYTES",
+    "MAX_GRAPH_ESTIMATED_PEAK_BYTES",
+    "BoundaryCycleClassSpec",
+    "BoundaryRefinementRule",
+    "CycleClassBinding",
+    "CycleClassMatchAttempt",
+    "DiscreteDomainComplex",
+    "GraphConstructionReceipt",
+    "GraphContractError",
+    "GraphDiversityReceipt",
+    "GraphFamily",
+    "GraphFamilyIdentity",
+    "GraphInput",
+    "GraphPairDiversity",
+    "GraphPurpose",
+    "GraphSpecValue",
+    "MutualKnnSpec",
+    "RadiusGraphSpec",
+    "SharedNeighborSpec",
+    "bind_cycle_class",
+    "build_discrete_domain_complex",
+    "construct_mutual_knn",
+    "construct_radius_graph",
+    "construct_shared_neighbor_graph",
+    "define_boundary_cycle_class",
+    "measure_graph_diversity",
+]
+
 
 def test_curated_public_export_snapshots_are_exact() -> None:
     assert spirallens.__all__ == ["__version__"]
     assert core.__all__ == EXPECTED_CORE_EXPORTS
     assert access.__all__ == EXPECTED_ACCESS_EXPORTS
+    assert graphs.__all__ == EXPECTED_GRAPH_EXPORTS
     assert instrument_contracts.__all__ == EXPECTED_INSTRUMENT_CONTRACT_EXPORTS
     assert synthetic.__all__ == EXPECTED_SYNTHETIC_EXPORTS
 
@@ -224,6 +269,27 @@ print(json.dumps(sorted(name for name in forbidden if name in sys.modules)))
 """
     completed = subprocess.run(
         [sys.executable, "-I", "-c", probe],
+        cwd=source_root.parent,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == []
+
+
+def test_graphs_import_is_framework_neutral_in_fresh_process() -> None:
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = f"""
+import json
+import sys
+sys.path.insert(0, {str(source_root)!r})
+import spirallens.graphs
+forbidden = ["faiss", "huggingface_hub", "safetensors", "torch", "transformers"]
+print(json.dumps(sorted(name for name in forbidden if name in sys.modules)))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", probe],
         cwd=source_root.parent,
         check=False,
         capture_output=True,

@@ -100,6 +100,23 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
 - **Graph construction family**: A preregistered set of genuinely distinct
   adjacency mechanisms on the same declared substrate, such as mutual-kNN,
   fixed-radius, and shared-neighbor graphs.
+- **Graph diversity receipt**: An in-memory measurement of edge, degree,
+  component, and two-core relations among the three declared graph families
+  on one identical numerical input. It has no adequacy threshold, gate result,
+  or independence claim.
+- **Discrete domain complex**: A supplied oriented triangular complex on the
+  bound row domain with exact integer boundary operators. It is independent of
+  graph-family adjacency and is not a claimed triangulation of a latent
+  manifold.
+- **Same induced support boundary**: The narrow relation used by the first
+  `CycleClassBinding`: a graph cycle partitions the exact oriented boundary of
+  one caller-declared face support once. The API does not certify when or why
+  that support was selected. The relation is not generic homology, homotopy,
+  core enclosure, graph-family cycle invariance, or topology promotion.
+- **Combinatorial multiplicity**: Multiple graph families, refinements,
+  representatives, reversals, or duplicate cells derived from one generator
+  instance. It is repeated measurement and cannot increase the independent
+  statistical sample size.
 - **Instrument-development executed choice**: A `RuleChoice` with
   `resolution=instrument_dev_executed` that records the exact family, metric,
   or scale run by a visible development graph. It is not
@@ -115,7 +132,8 @@ SpiralLens keeps similarly named ideas separate in both prose and code.
   one graph is not this null.
 - **Matched cycle class**: A support, anchor, or homology rule that identifies
   the comparison object across graph families without choosing whichever cycle
-  preserves the desired result.
+  preserves the desired result. The first implemented graph/domain foundation
+  supports only the narrower same-induced-support-boundary rule.
 - **Crossed graph design**: Evaluation over field-estimation graph
   \(G_A\) by cycle-construction graph \(G_B\). Diagonal-only agreement can be a
   shared-construction artifact.

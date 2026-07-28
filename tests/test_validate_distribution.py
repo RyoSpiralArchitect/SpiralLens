@@ -3,9 +3,9 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -24,6 +24,7 @@ _VALIDATOR_SPEC.loader.exec_module(_VALIDATOR)
 DEFAULT_IMPORTS = _VALIDATOR.DEFAULT_IMPORTS
 DistributionValidationError = _VALIDATOR.DistributionValidationError
 REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
+REQUIRED_WHEEL_MEMBERS = _VALIDATOR.REQUIRED_WHEEL_MEMBERS
 _parse_probe_output = _VALIDATOR._parse_probe_output
 _sha256_file = _VALIDATOR._sha256_file
 
@@ -133,6 +134,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
     assert report["required_imports"] == list(DEFAULT_IMPORTS)
+    assert report["required_wheel_members"] == list(REQUIRED_WHEEL_MEMBERS)
     assert report["forbidden_imports"] == [
         "faiss",
         "huggingface_hub",

@@ -13,16 +13,15 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
-from pathlib import PurePosixPath
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
-from typing import Sequence
 import venv
-
+import zipfile
+from collections.abc import Sequence
+from pathlib import Path, PurePosixPath
 
 REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.1"
 DEFAULT_IMPORTS = (
@@ -40,6 +39,14 @@ FORBIDDEN_IMPORTS = (
     "torch",
     "transformers",
     "yaml",
+)
+REQUIRED_WHEEL_MEMBERS = (
+    "spirallens/graphs/__init__.py",
+    "spirallens/graphs/common.py",
+    "spirallens/graphs/constructors.py",
+    "spirallens/graphs/contracts.py",
+    "spirallens/graphs/diversity.py",
+    "spirallens/graphs/domain.py",
 )
 _COPY_IGNORE = (
     ".git",
@@ -164,6 +171,21 @@ def _extract_sdist(source: Path, destination: Path) -> Path:
             "extracted sdist has no top-level pyproject.toml"
         )
     return extracted
+
+
+def _require_wheel_members(
+    wheel: Path,
+    *,
+    required_members: Sequence[str],
+) -> tuple[str, ...]:
+    with zipfile.ZipFile(wheel) as archive:
+        members = set(archive.namelist())
+    missing = sorted(set(required_members) - members)
+    if missing:
+        raise DistributionValidationError(
+            f"wheel is missing required package members: {missing}"
+        )
+    return tuple(sorted(required_members))
 
 
 def _venv_executable(environment: Path, name: str) -> Path:
@@ -438,6 +460,10 @@ def validate_distribution(
             "*.whl",
             label="wheel",
         )
+        verified_wheel_members = _require_wheel_members(
+            wheel,
+            required_members=REQUIRED_WHEEL_MEMBERS,
+        )
 
         venv.EnvBuilder(
             with_pip=True,
@@ -530,6 +556,7 @@ def validate_distribution(
                 "wheel_filename": wheel.name,
             },
             "inspection": inspection,
+            "required_wheel_members": list(verified_wheel_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),
             "required_imports": list(imports),
         }
@@ -571,7 +598,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arguments.source_root,
             required_imports=required_imports,
         )
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - CLI must emit a failure receipt.
         report = {
             "schema_version": REPORT_SCHEMA_VERSION,
             "status": "fail",
