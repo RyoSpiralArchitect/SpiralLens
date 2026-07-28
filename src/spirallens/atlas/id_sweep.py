@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 
 import numpy as np
 import torch
@@ -21,6 +22,7 @@ from spirallens.contexts import (
     SweepDomain,
 )
 
+from .engineering_protocol import validate_engineering_request_binding
 from .store import ATLAS_SCHEMA_VERSION, AtlasStore, token_ids_sha256
 
 
@@ -133,6 +135,9 @@ class SweepConfig:
     resume: bool = False
     sweep_position: int | None = None
     context_bank_binding: ContextBankBinding | None = None
+    public_example_plumbing_protocol_binding: (
+        Mapping[str, object] | None
+    ) = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "output_dir", Path(self.output_dir))
@@ -161,6 +166,41 @@ class SweepConfig:
                     "sweep_position",
                     binding.context.sweep_position,
                 )
+        if self.public_example_plumbing_protocol_binding is not None:
+            if self.context_bank_binding is None:
+                raise ValueError(
+                    "public-example plumbing requires a ContextBank binding"
+                )
+            protocol_binding = self.public_example_plumbing_protocol_binding
+            if (
+                not isinstance(protocol_binding, Mapping)
+                or any(
+                    not isinstance(key, str)
+                    for key in protocol_binding
+                )
+            ):
+                raise TypeError(
+                    "public_example_plumbing_protocol_binding must be "
+                    "a string-keyed mapping"
+                )
+            try:
+                encoded_binding = json.dumps(
+                    protocol_binding,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                    allow_nan=False,
+                )
+            except (TypeError, ValueError) as error:
+                raise TypeError(
+                    "public-example plumbing binding must be canonical-JSON "
+                    "compatible"
+                ) from error
+            object.__setattr__(
+                self,
+                "public_example_plumbing_protocol_binding",
+                json.loads(encoded_binding),
+            )
         if self.subset is not None:
             object.__setattr__(
                 self, "subset", _integer_tuple(self.subset, label="subset")
@@ -368,6 +408,13 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
     binding_payload = (
         None if context_binding is None else context_binding.to_dict()
     )
+    engineering_binding = (
+        None
+        if config.public_example_plumbing_protocol_binding is None
+        else deepcopy(
+            dict(config.public_example_plumbing_protocol_binding)
+        )
+    )
     request: dict[str, object] = {
         "model_id": adapter.model_id,
         "requested_model_revision": adapter.revision,
@@ -423,6 +470,32 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
                 "semantic_unit": False,
             }
         )
+        if engineering_binding is not None:
+            model_files = engineering_binding.get("model_files_verified")
+            model_file_mapping = (
+                model_files if isinstance(model_files, Mapping) else {}
+            )
+            request.update(
+                {
+                    "output_id": config.output_dir.name,
+                    "config_blob_sha256": model_file_mapping.get(
+                        "config.json"
+                    ),
+                    "model_blob_sha256": model_file_mapping.get(
+                        "model.safetensors"
+                    ),
+                    "public_example_plumbing_protocol_binding": (
+                        engineering_binding
+                    ),
+                    "public_example_plumbing_protocol_binding_sha256": (
+                        _sha256_json(engineering_binding)
+                    ),
+                }
+            )
+            validate_engineering_request_binding(
+                request,
+                manifest_model=model_metadata,
+            )
         request_identity = dict(request)
         request_identity.pop("batch_size_initial")
         request_identity.pop("batch_size_latest")
@@ -462,6 +535,19 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
                 ],
             }
         )
+        if engineering_binding is not None:
+            fingerprint_payload.update(
+                {
+                    "public_example_plumbing_protocol_binding": (
+                        engineering_binding
+                    ),
+                    "public_example_plumbing_protocol_binding_sha256": (
+                        request[
+                            "public_example_plumbing_protocol_binding_sha256"
+                        ]
+                    ),
+                }
+            )
 
     store = AtlasStore.initialize(
         output_dir=Path(config.output_dir),

@@ -659,6 +659,17 @@ validator are now implemented under this allowance. Their exact boundary and
 remaining non-claims are recorded in
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
+A separate public-example engineering lane may validate the already
+implemented model observation apparatus. It requires a pre-execution protocol
+with `execution_class=public_example_engineering`, an `example` ContextBank
+with claim eligibility disabled, exact bounded rows, offline model-file
+verification, resource ceilings, and an atlas-only consumer allowlist. The
+receipt must state that the model was accessed and activations were persisted.
+Every scientific and structural downstream stage remains `not_run`; the atlas
+cannot enter candidate, neighbor, instrument, graph, field, core, loop,
+semantic, SAE, or integer consumers. This lane neither prepares nor executes a
+subject experiment and does not advance D0-D8.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:
@@ -697,6 +708,10 @@ separate, explicit execution authorization after manifest review and freeze.
 
 This section defines a future access boundary only. It does not create a
 subject manifest or choose a subject in the present work.
+
+The pre-D8 public-example engineering carve-out above is disjoint from this
+boundary: it authorizes only claim-ineligible atlas capture and integrity
+reload, never a subject role or a downstream observation.
 
 ## 13. Preparation completion
 

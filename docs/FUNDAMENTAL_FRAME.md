@@ -441,3 +441,24 @@ No new Pythia subject experiment is prepared until all of the following exist:
 
 The preparation sequence is defined in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
+
+### Public-example engineering carve-out
+
+One narrow real-model lane remains available before D8 because it tests the
+observation apparatus rather than a scientific subject. A tracked
+`public_example_engineering` protocol may load the exact Pythia-70M revision
+bound by the public ContextBank and persist a bounded activation atlas only
+when every selected context has `role=example`, the bank has
+`claim_eligible=false`, and the protocol freezes CPU/float32 capture, exact
+rows, source and model-file identities, resource ceilings, and an output ID.
+
+This lane records the access facts positively: the model was loaded and
+activation values were persisted. It is nevertheless ineligible for
+scientific claims and is not a subject protocol, subject preparation, or
+progress on D0-D8. Its only authorized consumer is atlas integrity validation.
+Candidate extraction, neighbor audit, instrument-bundle conversion, graph,
+field, core, loop, holonomy, winding, semantic, SAE, and integer consumers
+must reject it before reading activation arrays. Expanding that allowlist is a
+change to this frame, not an interpretation of a successful smoke run.
+The resulting receipt is a committed-code procedural attestation, not
+cryptographic proof against deliberate local artifact forgery.

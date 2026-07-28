@@ -656,6 +656,16 @@ emitted observations remain Level 0 and the bundle remains
 The detailed preparation gates are in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
 
+In parallel, a deliberately non-scientific
+`public_example_engineering` lane may exercise the existing Pythia-70M
+observation apparatus before D8. It is frozen to an `example`,
+claim-ineligible ContextBank, exact offline model bytes, bounded rows,
+CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
+real model access and persisted activations, while candidate, neighbor,
+instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
+remain `not_run`. This lane cannot select any choice in steps 5-12 above and
+cannot be cited as subject preparation or evidence.
+
 The immediate deliverable is a synthetic-qualified, replayable instrument
 bundle. It is not “find a semantic vortex,” and it does not authorize a subject
 run.

@@ -1,0 +1,142 @@
+# Frozen public-example engineering capture. This protocol authorizes only
+# exact offline model access, bounded activation-atlas persistence, integrity
+# validation, and receipt publication. It authorizes no scientific consumer.
+schema_version: spirallens.public-example-plumbing-protocol.v0.1
+protocol_id: pythia70-public-example-plumbing-v0.1
+status: frozen_engineering
+purpose: public_example_capture_plumbing
+claim_ceiling: level_0
+execution_class: public_example_engineering
+scientific_claim_eligible: false
+p1_instrument_consumed: false
+tokenizer_runtime_verified: false
+
+source:
+  repository: RyoSpiralArchitect/SpiralLens
+  implementation_commit: de24a2b73fa408d49ed4252c8a18332554978296
+  implementation_repository_path: src/spirallens/adapters/pythia.py
+  implementation_module_sha256: 723f70e9f36b764fb12816dac8feb044bf4a1f2bd8b19ac8e28acc6094a46cc2
+
+model:
+  id: EleutherAI/pythia-70m
+  revision: a39f36b100fe8a5377810d56c3f4789b9c53ac42
+  architecture: GPTNeoXForCausalLM
+  num_layers: 6
+  hidden_size: 512
+  vocab_size: 50304
+  num_attention_heads: 8
+  intermediate_size: 2048
+  max_position_embeddings: 2048
+  files:
+    config.json: 002050231a9b1ec3ac77aa6b9b3bbdc4d923f4068a7dd33b8da72a9bd6ad9a43
+    model.safetensors: ebfa4e2f18696ebd83716a0d39fe2c025f2ff8483f72a83ca59c475692fc9d15
+
+context_bank:
+  path: protocols/context_bank_example_v0_1.yaml
+  source_sha256: db9df614ad68bd20646da29740354624b8be075719e7ef4ca2ad8023d4dcef4f
+  canonical_sha256: 46c23fb8f1c0f2136537bab5717473c2cc8b03a9121d89db267a29b89ef0a438
+  context_id: synthetic-slot-only-001
+  role: example
+  claim_eligible: false
+
+token_selection:
+  kind: explicit_sorted_ids
+  token_ids:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+  token_ids_sha256: bcc9bcfc670935c6018dc26a74956a373b655f8930dd55ab074d816d7d233780
+
+capture:
+  device: cpu
+  dtype: float32
+  batch_size: 8
+  output_id: pythia70-public-example-plumbing-v0.1
+  observation_contract: all_residual_pre_post_layers
+
+resource_budget:
+  estimator_id: pythia-atlas-conservative-static-estimate-v0.1
+  safety_factor: 4
+  estimated_output_bytes: 4194304
+  max_estimated_output_bytes: 16777216
+  estimated_peak_bytes: 1073741824
+  max_estimated_peak_bytes: 2147483648
+  claim_boundary: static-array-and-working-set-estimate-not-os-oom-guarantee
+
+authorizations:
+  example_model_access: true
+  activation_atlas_capture: true
+  network_access: false
+  subject_protocol_preparation: false
+  subject_execution: false
+  instrument_bundle_conversion: false
+  candidate_search: false
+  neighbor_audit: false
+  graph_construction: false
+  field_estimation: false
+  core_detection: false
+  loop_construction: false
+  holonomy_analysis: false
+  winding_analysis: false
+  semantic_analysis: false
+  sae_analysis: false
+  causal_analysis: false
+  integer_output: false
+
+stage_status:
+  D0: not_run
+  D1: not_run
+  D2: not_run
+  D3: not_run
+  D4: not_run
+  D5: not_run
+  D6: not_run
+  D7: not_run
+  D8: not_run
+  subject_protocol_preparation: not_run
+  subject_execution: not_run
+  instrument_bundle_conversion: not_run
+  candidate_search: not_run
+  neighbor_audit: not_run
+  graph_construction: not_run
+  field_estimation: not_run
+  core_detection: not_run
+  loop_construction: not_run
+  holonomy_analysis: not_run
+  winding_analysis: not_run
+  semantic_analysis: not_run
+  sae_analysis: not_run
+  causal_analysis: not_run
+  integer_output: not_run
+
+allowed_consumers:
+  - atlas_integrity_validation
