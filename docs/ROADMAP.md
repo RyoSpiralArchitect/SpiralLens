@@ -132,6 +132,8 @@ The target is:
 
 | Boundary | Responsibility | Dependency policy |
 | --- | --- | --- |
+| `core` | Stable-candidate canonical codecs and future framework-neutral status/error primitives | Standard library only; promotion still requires two independent consumers |
+| `access` | Provisional provenance, consumer authorization, pre-observation descriptors, and attempt lifecycle | Standard library plus `core`; never reads model values |
 | `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
 | `instrument_contracts` | Provisional manifests, closed-world content-addressed integrity, and selected cross-manifest metadata joins | Core only; payload values remain opaque and subject roles are forbidden |
 | `synthetic` | Model-free development generators, numeric self-audit, resource preflight, exact executed development cells, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
@@ -638,6 +640,13 @@ below:
     path under the no-subject-value access boundary;
 12. keep future discovery and confirmation roles separate and forbid
     Pythia-70M outcomes from selecting Pythia-160M choices.
+
+Before item 5 advances, the library also introduces a generic access and
+lifecycle boundary. It makes engineering-value provenance irreversible,
+defines a descriptor-only prepare reader with canary noninterference, separates
+execution terminal states from scientific gate states, and begins hermetic
+wheel-install validation. These are library capabilities, not progress on
+D0-D8.
 
 The current work has advanced from documentation and metadata-only contracts
 into one bounded, model-free P1 development producer. That producer executes

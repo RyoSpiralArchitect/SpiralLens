@@ -46,6 +46,9 @@ Read these documents before adding a field, graph, loop, or claim:
 - [Next Experiment Preparation](docs/NEXT_EXPERIMENT_PREPARATION.md)
 - [P0 Hypothesis and Artifact Contracts](docs/P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md)
 - [Research-to-Library Roadmap](docs/ROADMAP.md)
+- [Access, Provenance, and Lifecycle Boundary](docs/ACCESS_BOUNDARY.md)
+- [API Maturity and Compatibility Status](docs/API_STATUS.md)
+- [Schema and Compatibility Change Record](docs/SCHEMA_CHANGELOG.md)
 
 ## Research pipeline
 
@@ -484,6 +487,11 @@ immediate next plan live in the single
 
 ## Repository boundaries
 
+- `core/` contains framework-neutral stable-candidate primitives. Its
+  compatibility tests have begun, but it is not yet a 1.0-stable API.
+- `access/` contains provisional typed provenance, descriptor-only prepare
+  access, consumer authorization, and execution lifecycle contracts. It
+  imports no model or numeric framework.
 - `holonomy/` contains continuous closed-loop transport quantities.
 - `topology/` contains sampled-winding quantities and, later, topology
   promotion tests. A sampled charge is not a continuous-field certificate.

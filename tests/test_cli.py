@@ -26,6 +26,51 @@ from spirallens.metrics.neighbor_receipt import (
 )
 
 
+def test_access_prepare_cli_reads_only_the_preobservation_descriptor(
+    tmp_path,
+    capsys,
+) -> None:
+    from access_fixtures import preparation_descriptor
+    from spirallens.access import write_atlas_preparation_descriptor
+
+    descriptor = preparation_descriptor()
+    path = tmp_path / "atlas-access.json"
+    loaded = write_atlas_preparation_descriptor(path, descriptor)
+    (tmp_path / "manifest.json").write_text(
+        '{"outcome":"must-not-be-read"}',
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "access",
+            "prepare",
+            "--descriptor",
+            str(path),
+            "--expected-source-sha256",
+            loaded.source_sha256,
+            "--expected-canonical-sha256",
+            loaded.canonical_sha256,
+        ]
+    )
+
+    assert exit_code == 0
+    view = json.loads(capsys.readouterr().out)
+    assert view["status"] == "prepared_metadata_only"
+    assert view["requested_consumer"] == "subject_protocol_preparation"
+    assert view["subject_values_observed"] is False
+    assert view["manifest_read"] is False
+    assert view["payload_files_read"] is False
+    assert view["subject_execution_authorized"] is False
+    assert not {
+        "source_path",
+        "manifest",
+        "run_id",
+        "timestamp",
+        "summary",
+    }.intersection(view)
+
+
 def test_calibrate_cli_persists_a_complete_report(tmp_path, capsys) -> None:
     report_path = tmp_path / "calibration.json"
 

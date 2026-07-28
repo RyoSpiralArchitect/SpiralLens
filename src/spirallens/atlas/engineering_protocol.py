@@ -20,7 +20,14 @@ import yaml
 from yaml.events import AliasEvent
 from yaml.nodes import MappingNode
 
-from spirallens.instrument_contracts.canonical import (
+from spirallens.access import (
+    AtlasAccessPolicy,
+    AtlasConsumer,
+    AtlasConsumerDenied,
+    ProvenanceTaint,
+    require_atlas_consumer,
+)
+from spirallens.core.canonical import (
     canonical_json_bytes,
     canonical_json_sha256,
 )
@@ -52,6 +59,9 @@ _RESOURCE_CLAIM_BOUNDARY = (
     "static-array-and-working-set-estimate-not-os-oom-guarantee"
 )
 _ALLOWED_CONSUMER = "atlas_integrity_validation"
+_LEGACY_CONSUMER_ALIASES = {
+    "candidate_extraction": AtlasConsumer.CANDIDATE_SEARCH,
+}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
@@ -1242,19 +1252,57 @@ def validate_engineering_request_binding(
 
 def require_engineering_consumer_authorized(
     request: Mapping[str, object],
-    consumer: str,
+    consumer: AtlasConsumer | str,
 ) -> None:
-    """Reject every downstream consumer for a bound engineering atlas."""
+    """Apply the generic monotone policy to a bound engineering atlas.
 
-    consumer = _string(consumer, label="consumer")
+    String consumers remain accepted for the historical CLI call sites. New
+    library consumers should pass :class:`~spirallens.access.AtlasConsumer`.
+    Unbound historical atlases retain their pre-v0.1 compatibility behavior.
+    """
+
+    if isinstance(consumer, AtlasConsumer):
+        consumer_name = consumer.value
+    else:
+        consumer_name = _string(consumer, label="consumer")
     protocol = _validated_binding(request)
     if protocol is None:
         return
-    if consumer not in protocol.allowed_consumers:
-        raise EngineeringConsumerAuthorizationError(
-            f"bound public-example atlas does not authorize {consumer!r}; "
-            f"only {_ALLOWED_CONSUMER!r} is allowed"
+    try:
+        typed_consumer = (
+            _LEGACY_CONSUMER_ALIASES[consumer_name]
+            if consumer_name in _LEGACY_CONSUMER_ALIASES
+            else AtlasConsumer(consumer_name)
         )
+    except ValueError as error:
+        raise EngineeringConsumerAuthorizationError(
+            f"bound public-example atlas does not authorize "
+            f"{consumer_name!r}; "
+            f"only {_ALLOWED_CONSUMER!r} is allowed"
+        ) from error
+    policy = AtlasAccessPolicy(
+        origin_execution_class=protocol.execution_class,
+        claim_ceiling=protocol.claim_ceiling,
+        scientific_claim_eligible=protocol.scientific_claim_eligible,
+        allowed_consumers=frozenset(
+            AtlasConsumer(item) for item in protocol.allowed_consumers
+        ),
+        provenance_taints=frozenset(
+            {
+                ProvenanceTaint.PUBLIC_EXAMPLE_ENGINEERING,
+                ProvenanceTaint.CLAIM_INELIGIBLE_CONTEXT,
+                ProvenanceTaint.INSTRUMENT_UNQUALIFIED,
+            }
+        ),
+    )
+    try:
+        require_atlas_consumer(policy, typed_consumer)
+    except AtlasConsumerDenied as error:
+        raise EngineeringConsumerAuthorizationError(
+            f"bound public-example atlas does not authorize "
+            f"{consumer_name!r}; "
+            f"only {_ALLOWED_CONSUMER!r} is allowed"
+        ) from error
 
 
 def resolve_repository_relative_path(

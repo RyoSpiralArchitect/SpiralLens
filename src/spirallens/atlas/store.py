@@ -782,7 +782,11 @@ def _verify_manifest_structure(manifest: Mapping[str, Any]) -> None:
 def load_manifest_metadata(
     output_dir: str | Path,
 ) -> dict[str, Any]:
-    """Validate manifest metadata and bindings without opening atlas arrays."""
+    """Load the entire outcome-bearing manifest without opening its arrays.
+
+    The returned mapping includes data-derived summaries and run state. It is
+    not a sanitized or subject prepare-only view.
+    """
 
     root = Path(output_dir)
     manifest_path = root / "manifest.json"

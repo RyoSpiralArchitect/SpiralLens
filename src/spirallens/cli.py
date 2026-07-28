@@ -737,6 +737,26 @@ def _run_public_example_plumbing(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_access_prepare(args: argparse.Namespace) -> int:
+    from spirallens.access import (
+        AtlasConsumer,
+        load_atlas_preparation_descriptor,
+        prepare_descriptor_only_view,
+    )
+
+    loaded = load_atlas_preparation_descriptor(
+        args.descriptor,
+        expected_source_sha256=args.expected_source_sha256,
+        expected_canonical_sha256=args.expected_canonical_sha256,
+    )
+    view = prepare_descriptor_only_view(
+        loaded,
+        consumer=AtlasConsumer.SUBJECT_PROTOCOL_PREPARATION,
+    )
+    sys.stdout.buffer.write(view.canonical_bytes + b"\n")
+    return 0
+
+
 def _run_context_bank_validate(args: argparse.Namespace) -> int:
     from spirallens.contexts import load_context_bank
 
@@ -1888,6 +1908,25 @@ def _add_context_bank_parser(subparsers: Any) -> None:
     validate.set_defaults(handler=_run_context_bank_validate)
 
 
+def _add_access_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser(
+        "access",
+        help="validate a pre-observation descriptor without reading an atlas",
+    )
+    commands = parser.add_subparsers(
+        dest="access_command",
+        required=True,
+    )
+    prepare = commands.add_parser(
+        "prepare",
+        help="emit a canonical metadata-only preparation view",
+    )
+    prepare.add_argument("--descriptor", type=Path, required=True)
+    prepare.add_argument("--expected-source-sha256", required=True)
+    prepare.add_argument("--expected-canonical-sha256", required=True)
+    prepare.set_defaults(handler=_run_access_prepare)
+
+
 def _add_hypothesis_registry_parser(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "hypothesis-registry",
@@ -2116,6 +2155,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_calibrate_parser(subparsers)
+    _add_access_parser(subparsers)
     _add_context_bank_parser(subparsers)
     _add_hypothesis_registry_parser(subparsers)
     _add_instrument_artifact_parser(subparsers)
