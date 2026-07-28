@@ -280,7 +280,10 @@ The frozen protocol also binds implementation commit
 `de24a2b73fa408d49ed4252c8a18332554978296`, and the runner requires that commit
 to remain an ancestor of the execution checkout. Integration therefore must
 preserve the PR commit ancestry; squash or rebase integration is incompatible
-with this frozen engineering cell and fails closed.
+with this frozen engineering cell and fails closed. Ancestry is necessary but
+not sufficient: the runner also rejects tracked or untracked drift under
+`src/spirallens`, so a later independent replay requires a clean,
+source-compatible checkout or dedicated worktree.
 
 The strict tracked protocol selects the exact model revision and cached model
 file hashes, ContextBank source and canonical digests, structured slot, 32
