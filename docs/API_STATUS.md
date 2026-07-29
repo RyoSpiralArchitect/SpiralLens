@@ -55,12 +55,15 @@ current-loader HEAD and source-binding digest, while construction still
 requires and validates the typed authoritative loader receipt. The prior
 internal `v0.1` drafts have no persisted artifacts or migration surface.
 
-`spirallens.qualification.confirmation_execution_design` and
+`spirallens.qualification.confirmation_execution_design`,
+`spirallens.qualification.confirmation_execution_kernel`, and
 `spirallens.qualification.confirmation_crossed_development` are also internal.
 The first requires a strict full parent-protocol load and constructs a
-commit-stable, unpersisted `v0.2` seed-slot execution draft; the second accepts
-only permanently excluded development seeds and stops at sealed predictions.
-Neither module is exported
+commit-stable, unpersisted `v0.2` seed-slot execution draft. The second is the
+single oracle-free numerical prediction kernel for an explicitly supplied
+seed; supplying one attests no freeze, authorization, or chronology. The third
+remains a development adapter that accepts only permanently excluded seeds and
+stops at sealed predictions. None of these modules is exported
 from `spirallens.qualification` or the package root. Their schemas and call
 signatures may change before pre-1.0 stabilization. They expose no freeze,
 official seed supplier, admission, gate, result, terminal writer, replay, or

@@ -17,18 +17,6 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from spirallens.core.canonical import canonical_json_sha256
-from spirallens.graphs import BoundaryRefinementRule, GraphInput
-from spirallens.synthetic.cartesian_fourier_domain_phantom import (
-    CartesianFourierEstimatorInputs,
-)
-from spirallens.synthetic.cartesian_fourier_estimator import (
-    CartesianFourierFieldEstimate,
-    estimate_cartesian_fourier_field,
-)
-from spirallens.synthetic.spectral_moment_confirmation import (
-    SpectralMomentConfirmationGenerator,
-    SpectralMomentConfirmationSpec,
-)
 
 from .blind import SealedCorePrediction
 from .common import (
@@ -41,23 +29,11 @@ from .confirmation_execution_design import (
     D7PrimaryUnitTemplate,
     require_d7_confirmation_development_seed,
 )
-from .crossed import (
-    CrossedGraphExecution,
-    build_crossed_blind_core_input,
-    build_crossed_blind_loop_input,
-    build_crossed_graph_execution,
-    rectangular_grid_support_faces,
+from .confirmation_execution_kernel import (
+    execute_d7_seed_slot_primary,
 )
-from .prerequisites import (
-    CorePrerequisitePolicy,
-    estimate_and_seal_core,
-)
-from .protocol import BoundaryTemplate, LoopRole, NumericStressLevel
-from .winding import (
-    LoopPhasePolicy,
-    SealedLoopPrediction,
-    estimate_and_seal_loop,
-)
+from .protocol import LoopRole
+from .winding import SealedLoopPrediction
 
 D7_DEVELOPMENT_PREDICTION_INVENTORY_SCHEMA_VERSION = (
     "spirallens.d7-development-prediction-inventory.v0.1"
@@ -66,104 +42,6 @@ _D7_DEVELOPMENT_CORE_PREDICTION_FACTORY_TOKEN = object()
 _D7_DEVELOPMENT_LOOP_PREDICTION_FACTORY_TOKEN = object()
 _D7_DEVELOPMENT_PRIMARY_PREDICTION_FACTORY_TOKEN = object()
 _D7_DEVELOPMENT_INVENTORY_FACTORY_TOKEN = object()
-
-
-def _numeric_level(
-    values: tuple[NumericStressLevel, ...],
-    *,
-    level: str,
-) -> float:
-    matches = tuple(item.value for item in values if item.level == level)
-    if len(matches) != 1:
-        raise ValueError("stress level must resolve exactly one numeric value")
-    return float(matches[0])
-
-
-def _assignments(unit: D7PrimaryUnitTemplate) -> dict[str, str]:
-    result = {item.axis_id: item.level for item in unit.stress_assignments}
-    if set(result) != {
-        "boundary",
-        "state-geometry-warp",
-        "structured-observation-perturbation",
-    }:
-        raise ValueError("primary unit does not carry the exact stress axes")
-    return result
-
-
-def _primary_boundary(
-    design: D7ConfirmationExecutionDesignDraft,
-    *,
-    level: str,
-) -> BoundaryTemplate:
-    matches = tuple(
-        item
-        for item in design.stress_translation.primary_boundaries
-        if item.level == level
-    )
-    if len(matches) != 1:
-        raise ValueError("boundary level must resolve exactly one template")
-    return matches[0]
-
-
-def _support_faces(
-    template: BoundaryTemplate,
-) -> object:
-    return rectangular_grid_support_faces(
-        grid_side=7,
-        x_min=template.x_min,
-        y_min=template.y_min,
-        x_max=template.x_max,
-        y_max=template.y_max,
-    )
-
-
-def _crossed_execution(
-    design: D7ConfirmationExecutionDesignDraft,
-    *,
-    graph_input: GraphInput,
-    inputs: CartesianFourierEstimatorInputs,
-    template: BoundaryTemplate,
-) -> CrossedGraphExecution:
-    domain = design.domain
-    return build_crossed_graph_execution(
-        graph_input=graph_input,
-        graph_axes=design.graph_axes,
-        oriented_faces=inputs.oriented_faces,
-        support_face_indices=_support_faces(template),
-        domain_id=domain.domain_id,
-        cycle_class_spec_id=domain.boundary_class_id,
-        matched_set_id=domain.support_id,
-        refinement_rule=BoundaryRefinementRule(
-            rule_id=domain.refinement_rule_id,
-            max_domain_edges_per_graph_edge=(domain.max_domain_edges_per_graph_edge),
-        ),
-    )
-
-
-def _policies(
-    design: D7ConfirmationExecutionDesignDraft,
-) -> tuple[CorePrerequisitePolicy, LoopPhasePolicy]:
-    thresholds = design.thresholds
-    return (
-        CorePrerequisitePolicy(
-            policy_id="d7-development-core-prerequisites-v0-1",
-            core_amplitude_ceiling=thresholds.core_amplitude_ceiling,
-            identifiability_floor=thresholds.identifiability_floor,
-            edge_coherence_floor=thresholds.coherence_floor,
-            minimum_support_count=thresholds.minimum_support_count,
-            max_localized_core_fraction=(thresholds.max_localized_core_fraction),
-            minimum_core_contrast_ratio=(thresholds.minimum_core_contrast_ratio),
-        ),
-        LoopPhasePolicy(
-            policy_id="d7-development-loop-phase-v0-1",
-            amplitude_floor=thresholds.core_amplitude_ceiling,
-            identifiability_floor=thresholds.identifiability_floor,
-            coherence_floor=thresholds.coherence_floor,
-            branch_margin_radians=thresholds.branch_margin_rad,
-            integer_residual_tolerance_cycles=(thresholds.loop_oracle_tolerance_cycles),
-            nonzero_floor_cycles=thresholds.loop_nonzero_floor_cycles,
-        ),
-    )
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -525,138 +403,6 @@ class D7DevelopmentPredictionInventory:
         return canonical_json_sha256(self.to_dict())
 
 
-def _execute_oracle_record_free_primary(
-    design: D7ConfirmationExecutionDesignDraft,
-    *,
-    unit: D7PrimaryUnitTemplate,
-    development_seed: int,
-    spec: SpectralMomentConfirmationSpec,
-    inputs: CartesianFourierEstimatorInputs,
-) -> D7DevelopmentPrimaryPrediction:
-    """Execute from numerical inputs without an oracle-truth record parameter."""
-
-    assignments = _assignments(unit)
-    graph_input = GraphInput(
-        primary_unit_id=unit.primary_unit_id,
-        vertex_ids=inputs.row_ids,
-        states=inputs.states,
-    )
-    primary = _crossed_execution(
-        design,
-        graph_input=graph_input,
-        inputs=inputs,
-        template=_primary_boundary(
-            design,
-            level=assignments["boundary"],
-        ),
-    )
-    offcore = _crossed_execution(
-        design,
-        graph_input=graph_input,
-        inputs=inputs,
-        template=design.stress_translation.offcore_boundary,
-    )
-    if any(attempt.binding is None for attempt in primary.cycle_attempts):
-        raise ValueError("development primary boundary has an unmatched B graph")
-    if any(attempt.binding is None for attempt in offcore.cycle_attempts):
-        raise ValueError("development offcore boundary has an unmatched B graph")
-    estimates = tuple(
-        estimate_cartesian_fourier_field(inputs, graph)
-        for graph in primary.field_graphs
-    )
-    estimate_by_graph: dict[str, CartesianFourierFieldEstimate] = {
-        declaration.graph_id: estimate
-        for declaration, estimate in zip(
-            design.graph_axes.field_estimation,
-            estimates,
-            strict=True,
-        )
-    }
-    primary_content_sha256 = canonical_json_sha256(
-        {
-            "schema_version": ("spirallens.d7-development-primary-content.v0.1"),
-            "estimator_input_fingerprint_sha256": (inputs.fingerprint_sha256),
-        }
-    )
-    core_policy, loop_policy = _policies(design)
-    core_cells = {
-        item.field_graph_id: item
-        for item in design.inventory.core_cells
-        if item.primary_unit_id == unit.primary_unit_id
-    }
-    core_predictions: list[D7DevelopmentCorePrediction] = []
-    for field_graph_id, estimate in estimate_by_graph.items():
-        cell = core_cells[field_graph_id]
-        blind = build_crossed_blind_core_input(
-            primary,
-            estimate,
-            primary_unit_sha256=primary_content_sha256,
-        )
-        prediction = estimate_and_seal_core(blind, core_policy)
-        core_predictions.append(
-            D7DevelopmentCorePrediction(
-                _factory_token=(_D7_DEVELOPMENT_CORE_PREDICTION_FACTORY_TOKEN),
-                core_cell_id=cell.core_cell_id,
-                field_graph_id=field_graph_id,
-                field_estimate_fingerprint_sha256=(estimate.fingerprint_sha256),
-                prediction=prediction,
-            )
-        )
-    loop_cells = tuple(
-        item
-        for item in design.inventory.loop_cells
-        if item.primary_unit_id == unit.primary_unit_id
-    )
-    execution_by_role = {
-        LoopRole.PRIMARY_BOUNDARY: primary,
-        LoopRole.OFFCORE_CONTROL: offcore,
-    }
-    loop_predictions: list[D7DevelopmentLoopPrediction] = []
-    for cell in loop_cells:
-        estimate = estimate_by_graph[cell.field_graph_id]
-        blind = build_crossed_blind_loop_input(
-            execution_by_role[cell.loop_role],
-            estimate,
-            cycle_graph_id=cell.cycle_graph_id,
-            primary_unit_sha256=primary_content_sha256,
-        )
-        prediction = estimate_and_seal_loop(blind, loop_policy)
-        loop_predictions.append(
-            D7DevelopmentLoopPrediction(
-                _factory_token=(_D7_DEVELOPMENT_LOOP_PREDICTION_FACTORY_TOKEN),
-                loop_cell_id=cell.loop_cell_id,
-                field_graph_id=cell.field_graph_id,
-                cycle_graph_id=cell.cycle_graph_id,
-                loop_role=cell.loop_role,
-                field_estimate_fingerprint_sha256=(estimate.fingerprint_sha256),
-                prediction=prediction,
-            )
-        )
-    return D7DevelopmentPrimaryPrediction(
-        _factory_token=(_D7_DEVELOPMENT_PRIMARY_PREDICTION_FACTORY_TOKEN),
-        primary_unit_id=unit.primary_unit_id,
-        seed_slot_id=unit.seed_slot_id,
-        development_seed=development_seed,
-        spec_receipt_sha256=spec.receipt_sha256,
-        estimator_input_fingerprint_sha256=inputs.fingerprint_sha256,
-        graph_input_fingerprint_sha256=graph_input.fingerprint_sha256,
-        primary_execution_fingerprint_sha256=primary.fingerprint_sha256,
-        offcore_execution_fingerprint_sha256=offcore.fingerprint_sha256,
-        core_predictions=tuple(
-            sorted(
-                core_predictions,
-                key=lambda item: item.core_cell_id,
-            )
-        ),
-        loop_predictions=tuple(
-            sorted(
-                loop_predictions,
-                key=lambda item: item.loop_cell_id,
-            )
-        ),
-    )
-
-
 def execute_d7_confirmation_development_primary(
     design: D7ConfirmationExecutionDesignDraft,
     *,
@@ -673,28 +419,55 @@ def execute_d7_confirmation_development_primary(
     if not isinstance(unit, D7PrimaryUnitTemplate):
         raise TypeError("unit must be D7PrimaryUnitTemplate")
     seed = require_d7_confirmation_development_seed(development_seed)
-    if unit not in design.inventory.primary_units:
-        raise ValueError("unit is not a member of the supplied design")
-    assignments = _assignments(unit)
-    spec = SpectralMomentConfirmationSpec(
-        seed=seed,
-        state_geometry_warp_strength=_numeric_level(
-            design.stress_translation.state_geometry_warp_levels,
-            level=assignments["state-geometry-warp"],
-        ),
-        structured_observation_perturbation_scale=_numeric_level(
-            design.stress_translation.structured_observation_perturbation_levels,
-            level=assignments["structured-observation-perturbation"],
-        ),
-    )
-    prepared = SpectralMomentConfirmationGenerator().prepare(spec)
-    case = prepared.case(unit.case_id)
-    return _execute_oracle_record_free_primary(
+    prediction = execute_d7_seed_slot_primary(
         design,
         unit=unit,
+        supplied_seed=seed,
+    )
+    return D7DevelopmentPrimaryPrediction(
+        _factory_token=_D7_DEVELOPMENT_PRIMARY_PREDICTION_FACTORY_TOKEN,
+        primary_unit_id=prediction.primary_unit_id,
+        seed_slot_id=prediction.seed_slot_id,
         development_seed=seed,
-        spec=spec,
-        inputs=case.estimator_inputs,
+        spec_receipt_sha256=prediction.spec_receipt_sha256,
+        estimator_input_fingerprint_sha256=(
+            prediction.estimator_input_fingerprint_sha256
+        ),
+        graph_input_fingerprint_sha256=(
+            prediction.graph_input_fingerprint_sha256
+        ),
+        primary_execution_fingerprint_sha256=(
+            prediction.primary_execution_fingerprint_sha256
+        ),
+        offcore_execution_fingerprint_sha256=(
+            prediction.offcore_execution_fingerprint_sha256
+        ),
+        core_predictions=tuple(
+            D7DevelopmentCorePrediction(
+                _factory_token=_D7_DEVELOPMENT_CORE_PREDICTION_FACTORY_TOKEN,
+                core_cell_id=item.core_cell_id,
+                field_graph_id=item.field_graph_id,
+                field_estimate_fingerprint_sha256=(
+                    item.field_estimate_fingerprint_sha256
+                ),
+                prediction=item.prediction,
+            )
+            for item in prediction.core_predictions
+        ),
+        loop_predictions=tuple(
+            D7DevelopmentLoopPrediction(
+                _factory_token=_D7_DEVELOPMENT_LOOP_PREDICTION_FACTORY_TOKEN,
+                loop_cell_id=item.loop_cell_id,
+                field_graph_id=item.field_graph_id,
+                cycle_graph_id=item.cycle_graph_id,
+                loop_role=item.loop_role,
+                field_estimate_fingerprint_sha256=(
+                    item.field_estimate_fingerprint_sha256
+                ),
+                prediction=item.prediction,
+            )
+            for item in prediction.loop_predictions
+        ),
     )
 
 
