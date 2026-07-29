@@ -4,6 +4,52 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — PR #14 commit-stable D7 drafts and successor rebinding
+
+### Added
+
+- `spirallens.d7-parent-d6-binding.v0.2`,
+  `spirallens.d7-confirmation-foundation.v0.2`, and
+  `spirallens.d7-confirmation-execution-design-draft.v0.2` supersede their
+  internal, unpersisted `v0.1` drafts. Canonical D7 identity no longer contains
+  the validation-time current-loader HEAD or source-binding digest. Builders
+  still require `LoadedScopeLimitedD6Decision` and validate its typed
+  authoritative receipt before deriving the stable historical parent
+  projection.
+- `spirallens.d6-d7-structural-rebinding-amendment.v0.1` and its internal
+  `d7-seed-free-design-identity`, `d7-exact-carry-forward`,
+  `d7-structural-manifest-rebinding`, and
+  `d7-deferred-successor-obligations` `v0.1` records type a proposed
+  successor-only fulfillment rule. Graph axes and thresholds retain exact parent byte
+  identity; cells and stress manifests require distinct successor identities
+  and exact equality of their typed structural-projection digests.
+- The rebinding factory reconstructs the seed-free design from an authoritative
+  D6 receipt plus the strict parent protocol. Its strict canonical reader
+  requires an expected SHA-256, canonical duplicate-free JSON, bounded bytes,
+  and whole-document equality with authoritative reconstruction.
+
+### Compatibility and non-migrations
+
+- All affected D7 schemas remain deep internal, unpersisted surfaces.
+  There is no `v0.1` artifact migration and no package-root or
+  `spirallens.qualification` re-export.
+- The D6 v0.1 decision, embedded admission, cells, and stress bytes are not
+  modified or reinterpreted. Exact parent cells/stress satisfaction and
+  `d6_admission_spec_satisfied` remain false; the new rule applies only to a
+  future D7 successor.
+- The rebinding rule is explicitly encoded but unreviewed, unpublished, and
+  ineffective for admission. Construction-diversity review,
+  source closure, the D7 implementation registry and aggregation application,
+  family admission, full-design freeze, official seeds, lifecycle,
+  result/failure and terminal schemas, D7, and D8 remain absent, false, or
+  `not_run`.
+- The next sequence is C1 stable design and reviewed rebinding artifacts plus
+  the complete executable source set, then a choice-free C2 closure receipt
+  from a clean descendant. C1 contains no self-referential source receipt.
+  Lifecycle and terminal work
+  follow later; the immutable replay target and attempt envelope will be
+  separate types rather than a placeholder result.
+
 ## 2026-07-30 — PR #13 seed-free D7 execution topology
 
 ### Added
@@ -20,7 +66,8 @@ promote a claim.
   label-free estimator arrays to the numerical estimator path. The surrounding
   synthetic-control orchestration retains case and unit identity and is not
   claimed label-blind.
-- `spirallens.d7-confirmation-execution-design-draft.v0.1` strictly joins an
+- The now-superseded internal
+  `spirallens.d7-confirmation-execution-design-draft.v0.1` strictly joined an
   authoritative D6 decision identity to the full canonical parent protocol,
   reproduces every graph/cell/stress/threshold/aggregation body hash, and
   constructs the exact seed-slot inventory of 64 primary, 192 core, and 1,152
@@ -45,9 +92,11 @@ promote a claim.
   They are not redefined as structural hashes. Their selection-specific seed
   and identifier content is recorded as an explicit incompatibility, not
   silently migrated.
-- The draft binds the exact authoritative D6 decision, admission, and current
-  loader identities. Historical terminal companions were verified upstream;
-  their raw bytes are not direct draft arguments or retained design members.
+- The historical internal `v0.1` draft bound the exact authoritative D6
+  decision, admission, and validation-time current-loader identities. PR #14
+  supersedes that unpersisted draft with `v0.2`; historical terminal companions
+  remain verified upstream and their raw bytes remain absent from design
+  members.
 - The design draft has a strict canonical reader but no publisher. The
   development prediction records have no parser or writer. All new modules
   remain deep internal imports and are not re-exported from
@@ -65,10 +114,11 @@ promote a claim.
   generate the exact four D6-required case semantics on one matched 7 by 7
   discrete domain. Estimator-visible arrays and evaluator-only oracle truth are
   separate, and no confirmation seed has a library default.
-- `spirallens.d7-confirmation-foundation.v0.1` is a canonical internal draft
-  reconstructed only from a `LoadedScopeLimitedD6Decision` returned by the
-  authoritative committed-D6 loader. It binds the D6 decision, embedded
-  admission, loader-source receipt, estimator/trivialization IDs, and inherited
+- The now-superseded internal
+  `spirallens.d7-confirmation-foundation.v0.1` was reconstructed only from a
+  `LoadedScopeLimitedD6Decision` returned by the authoritative committed-D6
+  loader. It bound the D6 decision, embedded admission, loader-source receipt,
+  estimator/trivialization IDs, and inherited
   graph/cell/stress/threshold/aggregation hashes.
 - The strict foundation reader requires canonical bytes, an expected SHA-256,
   and the same authoritative D6 receipt, then compares the whole document with

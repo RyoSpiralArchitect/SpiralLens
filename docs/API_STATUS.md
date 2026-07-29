@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a single scope-limited D6 surrogate-profile decision with embedded admission spec; publish is provisional until a clean tracked descendant reload, the archival loader uses the current strict parser but skips current D1 recomputation and proves neither current-engine compatibility nor reexecution, and D7/D8/global synthetic, topology, representation, and subject authority remain false |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a single scope-limited D6 surrogate-profile decision with embedded admission spec; publish is provisional until a clean tracked descendant reload, and the archival loader proves neither current-engine compatibility nor reexecution; internal D7 v0.2 draft and v0.1 successor-rebinding types add no public or persisted surface, and D7/D8/global synthetic, topology, representation, and subject authority remain false |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -49,17 +49,39 @@ The spectral-moment four-case generator and
 development surfaces. Its builder and strict reader accept only an
 authoritative committed-D6 loader receipt, but it deliberately exposes no
 full-design freeze, source-closure, admission, lifecycle, execution, result, or
-promotion surface.
+promotion surface. `D7ParentD6Binding` and the foundation are now internal,
+unpersisted `v0.2` drafts. Their canonical identity excludes the ephemeral
+current-loader HEAD and source-binding digest, while construction still
+requires and validates the typed authoritative loader receipt. The prior
+internal `v0.1` drafts have no persisted artifacts or migration surface.
 
 `spirallens.qualification.confirmation_execution_design` and
 `spirallens.qualification.confirmation_crossed_development` are also internal.
 The first requires a strict full parent-protocol load and constructs a
-seed-slot execution draft; the second accepts only permanently excluded
-development seeds and stops at sealed predictions. Neither module is exported
+commit-stable, unpersisted `v0.2` seed-slot execution draft; the second accepts
+only permanently excluded development seeds and stops at sealed predictions.
+Neither module is exported
 from `spirallens.qualification` or the package root. Their schemas and call
-signatures may change while the D6-to-D7 structural-rebinding contract remains
-unresolved. They expose no freeze, official seed supplier, admission, gate,
-result, terminal writer, replay, or promotion API.
+signatures may change before pre-1.0 stabilization. They expose no freeze,
+official seed supplier, admission, gate, result, terminal writer, replay, or
+promotion API.
+
+`spirallens.qualification.confirmation_rebinding` is another internal surface.
+Its `v0.1` factory and strict canonical reader encode a proposed successor-only
+fulfillment rule: graph-axis and threshold bodies remain byte-exact, while D7 cells/stress
+manifests use distinct identities with an exactly matched typed structural
+projection. The rule is explicitly unreviewed, unpublished, and ineffective
+for admission. It neither mutates nor reinterprets D6 v0.1, whose exact
+admission remains false. No amendment artifact, source closure, D7 implementation
+registry, aggregation application, family admission, freeze, seed, lifecycle,
+terminal, D7, or D8 state is published or completed.
+
+The next internal qualification slice is ordered as C1 stable design and
+reviewed rebinding artifacts plus a complete executable source set, followed
+by a choice-free C2 closure receipt from a clean descendant. C1 contains no
+self-referential source receipt. Lifecycle comes later. Its terminal design must type the immutable
+replay target separately from the attempt envelope rather than exposing a
+placeholder result.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

@@ -83,7 +83,11 @@ def _selection_binding() -> SelectionTerminalBinding:
     )
 
 
-def _authoritative_loaded_d6() -> advancement.LoadedScopeLimitedD6Decision:
+def _authoritative_loaded_d6(
+    *,
+    current_loader_source_commit: str = "1" * 40,
+    current_loader_source_binding_sha256: str = "2" * 64,
+) -> advancement.LoadedScopeLimitedD6Decision:
     terminal = _selection_binding()
     admission = IndependentConfirmationAdmissionSpec.from_selection(
         terminal,
@@ -112,8 +116,10 @@ def _authoritative_loaded_d6() -> advancement.LoadedScopeLimitedD6Decision:
     )
     return advancement._build_authoritative_loaded_d6_decision(
         loaded_artifact,
-        current_loader_source_commit="1" * 40,
-        current_loader_source_binding_sha256="2" * 64,
+        current_loader_source_commit=current_loader_source_commit,
+        current_loader_source_binding_sha256=(
+            current_loader_source_binding_sha256
+        ),
     )
 
 
@@ -136,6 +142,18 @@ def test_foundation_binds_parent_and_serializes_every_open_obligation() -> None:
     parent = document["parent_d6"]
     obligations = document["obligations"]
 
+    assert document["schema_version"] == (
+        "spirallens.d7-confirmation-foundation.v0.2"
+    )
+    assert (
+        document["foundation_id"]
+        == "d7-spectral-moment-confirmation-foundation-v0-2"
+    )
+    assert foundation.canonical_sha256 == (
+        "f96186c5bb3aca672e51ec97ae9a454a"
+        "0f6f9359e240d0f13957140f8a573449"
+    )
+    assert len(foundation.canonical_bytes) == 8099
     assert document["status"] == "implementation-foundation-not-frozen"
     assert document["claim_ceiling"] == "level_0"
     assert document["d7_state"] == "not_run"
@@ -148,10 +166,61 @@ def test_foundation_binds_parent_and_serializes_every_open_obligation() -> None:
     assert parent["admission_spec_sha256"] == (
         loaded.decision.confirmation_admission_spec.canonical_sha256
     )
-    assert parent["current_loader_source_commit"] == (
-        loaded.current_loader_source_commit
+    assert parent["schema_version"] == (
+        "spirallens.d7-parent-d6-binding.v0.2"
     )
-    assert all(value is False for key, value in obligations.items() if key != "schema_version")
+    assert "current_loader_source_commit" not in parent
+    assert "current_loader_source_binding_sha256" not in parent
+    assert "current_loader_source_surface_verified" not in parent
+    assert all(
+        value is False
+        for key, value in obligations.items()
+        if key != "schema_version"
+    )
+
+
+def test_parent_and_foundation_identity_ignore_current_loader_source() -> None:
+    first_loaded = _authoritative_loaded_d6()
+    second_loaded = _authoritative_loaded_d6(
+        current_loader_source_commit="3" * 40,
+        current_loader_source_binding_sha256="4" * 64,
+    )
+
+    first_parent = D7ParentD6Binding.from_loaded(first_loaded)
+    second_parent = D7ParentD6Binding.from_loaded(second_loaded)
+    first_foundation = build_spectral_moment_d7_confirmation_foundation(
+        first_loaded
+    )
+    second_foundation = build_spectral_moment_d7_confirmation_foundation(
+        second_loaded
+    )
+
+    assert first_parent == second_parent
+    assert first_parent.to_dict() == second_parent.to_dict()
+    assert first_foundation.canonical_bytes == second_foundation.canonical_bytes
+    assert (
+        first_foundation.canonical_sha256
+        == second_foundation.canonical_sha256
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    (
+        ("current_loader_source_commit", "not-a-commit"),
+        ("current_loader_source_binding_sha256", "not-a-digest"),
+        ("current_loader_source_surface_verified", False),
+    ),
+)
+def test_parent_binding_still_validates_current_loader_receipt(
+    field: str,
+    invalid_value: object,
+) -> None:
+    loaded = _authoritative_loaded_d6()
+    object.__setattr__(loaded, field, invalid_value)
+
+    with pytest.raises(QualificationContractError):
+        D7ParentD6Binding.from_loaded(loaded)
 
 
 def test_foundation_uses_the_generator_case_registry_without_duplicate_literals() -> None:

@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, and scope-limited D6 admission | NumPy/PyYAML plus project contract foundations; no model framework, network, global D6-D8, D7-D8, synthetic-qualified, subject, integer, or topology authority |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 draft/rebinding contracts | NumPy/PyYAML plus project contract foundations; the D7 v0.2 drafts and v0.1 successor rule are unpersisted internal surfaces with no admission, source-closure, lifecycle, result, terminal, or D7/D8 authority |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -797,13 +797,15 @@ below:
     D7 structural gap matrix — recorded as two canonical, non-authorizing
     research artifacts; the descriptive lane cannot tune D7, and the gap lane
     cannot read the terminal values, name a candidate, or compute progress;
-12. land the current spectral-moment draft foundation: exact four-case
-    development generation plus a closed typed draft reconstructed only from
-    the authoritative committed-D6 loader receipt. This is not a D7
-    full-design freeze: it does not complete same-schema construction-diversity
-    review, selects no confirmation seed or execution inventory, persists no
-    receipt, admits no family, exposes no runner/result, and leaves D7/D8
-    `not_run`;
+12. land the spectral-moment draft foundation: exact four-case development
+    generation plus a closed typed draft reconstructed only from the
+    authoritative committed-D6 loader receipt. Its current internal,
+    unpersisted `v0.2` identity excludes validation-time current-loader
+    HEAD/digest fields while retaining typed receipt validation, so unchanged
+    inputs are commit-stable. This is not a D7 full-design freeze: it does not
+    complete same-schema construction-diversity review, selects no
+    confirmation seed or execution inventory, persists no receipt, admits no
+    family, exposes no runner/result, and leaves D7/D8 `not_run`;
 13. close the seed-free D7 execution topology before choosing official seeds:
     reconstruct the full authoritative parent protocol; translate all three
     stresses explicitly; generate the exact 64-primary, 192-core, and
@@ -814,34 +816,51 @@ below:
     incompatibility: required cells and stress-strata bodies contain selection
     seeds and seed-bearing IDs, so structural projection equality is true
     while exact parent-manifest satisfaction and admission remain false;
-14. publish a reviewed versioned successor admission or structural-rebinding
-    amendment, then complete construction-diversity/source closure, the
-    D7-specific implementation registry and aggregation application, terminal
-    schemas and writers, lifecycle, launch intent, exclusive attempt, and
-    absent output namespace before issuing any D7 full-design receipt;
-15. after that committed D7 design-freeze receipt exists, execute the separate
+14. encode a proposed successor-only fulfillment rule without rewriting D6:
+    graph-axis and threshold bodies remain exact, while cells/stress receive
+    distinct successor identities whose structural projections match —
+    implemented as an internal `v0.1` factory and strict reader. The proposal
+    remains unreviewed, unpublished, and ineffective for admission; the
+    historical D6 v0.1 exact admission remains false, and
+    family admission, source closure, registry/aggregation application,
+    freeze, seeds, lifecycle, terminal, D7, and D8 remain incomplete;
+15. create **C1**, the published and strictly reloadable stable seed-free
+    design and reviewed successor-rebinding artifacts plus reviewed
+    construction-diversity, the complete executable source set, and
+    D7-specific implementation-registry/aggregation application; commit those
+    exact bytes without a self-referential source receipt or official seed
+    supplier invocation;
+16. create **C2** only from a clean descendant of C1: verify ancestry and every
+    tracked C1 blob, issue a choice-free source-closure receipt, and commit only
+    that receipt;
+17. only after C2, add official seeds and the lifecycle in a separately
+    reviewed sequence. Define the immutable replay target independently from
+    the launch/claim/start/outcome attempt envelope; do not create a placeholder
+    result to stand in for either. Result/failure and terminal publication
+    remain absent until that separation and no-overwrite chronology are typed;
+18. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-16. run the admitted family without overrides or post-selection exclusions,
+19. run the admitted family without overrides or post-selection exclusions,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status; same-family new seeds remain replication and
     cannot satisfy this item;
-17. only then begin the separate representation-native F0-F4 selection lane;
+20. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-18. establish the same-substrate field/core/loop join, persist the frozen
+21. establish the same-substrate field/core/loop join, persist the frozen
     same-field core-degeneracy scalar and nested-radius profile, and retain the
     architecture-accounted sampled-winding estimate distribution with its
     unrounded cycle totals and residuals; only when the convention permits it
     may calibration-side integer/topology eligibility be assessed;
-19. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+22. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
     detection-limit surface over injection amplitude, declared
     perturbation/noise, and sampling density, including density-stratified
     exact-recall and graph-family matched-class gates;
-20. apply the preregistered M1 transition/stop rule. Pythia-70M remains
+23. apply the preregistered M1 transition/stop rule. Pythia-70M remains
     plumbing-only; an exhausted qualification budget ends `insufficient`
     rather than extending instrumentation indefinitely; and
-21. only after those separately reviewed M1 gates prepare and externally
+24. only after those separately reviewed M1 gates prepare and externally
     witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
@@ -878,13 +897,18 @@ This library slice adds, without changing that generic behavior:
 - a second spectral-moment construction-family foundation whose exact four
   development cases keep estimator inputs and oracle truth separated; and
 - a closed D7 draft-contract type reconstructed from the authoritative D6
-  loader receipt while deliberately admitting no family and issuing no
-  full-design receipt;
+  loader receipt, now superseded by an internal unpersisted `v0.2` whose
+  canonical identity is stable across validation-only descendant HEAD changes,
+  while deliberately admitting no family and issuing no full-design receipt;
 - a strict full-parent design-body reconstruction and seed-slot execution
   inventory with exact 64/192/1,152 repeated-measures counts; and
 - a development-only path through all crossed graph/core/loop cells that
   supplies no oracle-truth record to the blind kernels and cannot aggregate
-  or publish a D7 result.
+  or publish a D7 result; and
+- an internal `v0.1` D6-to-D7 successor-rule proposal that carries graph and threshold
+  bodies exactly, rebinds cells/stress only through a matched structural
+  projection, strictly reconstructs canonical bytes, and leaves both artifact
+  publication and D6/D7 admission false.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -911,15 +935,21 @@ claim-ineligible ContextBank, exact offline model bytes, bounded rows,
 CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
 real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
-remain `not_run`. This lane cannot select any choice in steps 5-21 above and
+remain `not_run`. This lane cannot select any choice in steps 5-24 above and
 cannot be cited as subject preparation or evidence.
 
-The immediate deliverable is a reviewed versioned resolution of the D6 v0.1
-identity-bearing cells/stress manifests, followed by construction-diversity
-source closure, D7-specific registry/aggregation application, lifecycle, and
-terminal surfaces. The current four-case generator, seed-free execution
-design, and development prediction inventory are not a D7 full-design freeze,
-receipt, admission, or run. Only a later locked D7 pass and isolated
+The proposed successor-only fulfillment rule for the D6 v0.1 identity-bearing
+cells/stress manifests is now typed internally but not reviewed or published. The immediate
+deliverable is C1: strictly reloadable stable design and reviewed rebinding
+artifacts plus reviewed construction diversity, the complete executable source
+set, and D7-specific registry/aggregation application. C2 then verifies and
+receipts those exact committed bytes from a
+clean descendant. Lifecycle and terminal work follow C2, with the replay
+target kept separate from the attempt envelope and no placeholder result.
+The current four-case generator, seed-free execution design, rebinding record,
+and development prediction inventory are not a D7 full-design freeze, receipt,
+admission, or run. Historical D6 bytes remain unchanged and exact D6 v0.1
+admission remains false. Only a later locked D7 pass and isolated
 byte-identical D8 replay could support a scope-specific synthetic-qualified,
 replayable bundle.
 That still would not mean “find a semantic vortex” or authorize a subject run.
