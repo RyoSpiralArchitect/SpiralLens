@@ -4,6 +4,32 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 seed-slot prediction-kernel extraction
+
+### Added
+
+- `spirallens.d7-seed-slot-primary-prediction.v0.1` is an internal,
+  in-memory-only prediction payload produced by one oracle-free numerical
+  kernel from an explicitly supplied seed and a member of the seed-free D7
+  inventory. The record explicitly attests no seed freeze, authorization,
+  chronology, gate, result, or scientific claim.
+- The permanently excluded development-seed executor is now a policy adapter
+  over that kernel. A conformance test locks equality of graph/input
+  fingerprints and observable core/loop prediction semantics between the
+  adapter and kernel.
+
+### Compatibility and non-migrations
+
+- The extracted kernel uses stable seed-slot policy and primary-content
+  identities, so internal sealed-prediction provenance fingerprints can differ
+  from the former development-specific implementation. Prediction classes,
+  reason codes, candidate rows, continuous loop estimates, and graph/input
+  fingerprints are required to remain equivalent.
+- The kernel and payload have no parser or writer and are not re-exported from
+  `spirallens.qualification` or the package root. This extraction adds no
+  official seed source, source closure, family admission, lifecycle, D7
+  scoring, persistence, result, terminal, or D7/D8 authority.
+
 ## 2026-07-30 — PR #14 commit-stable D7 drafts and successor rebinding
 
 ### Added

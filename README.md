@@ -821,9 +821,12 @@ to become a general library.
   the full D6 parent protocol is strictly reconstructed; explicit boundary,
   state-warp, and observation-perturbation translations produce an exact
   seed-slot inventory of 64 primary, 192 core, and 1,152 loop cells. The full
-  graph/field/blind-core/continuous-loop path passes development-only
-  conformance on permanently excluded seeds. It produces no D7 gate, result,
-  or terminal.
+  graph/field/blind-core/continuous-loop path now has one internal oracle-free
+  seed-slot prediction kernel. The permanently-excluded-seed development path
+  is a policy adapter over that kernel and retains the same observable
+  prediction semantics. An explicitly supplied seed alone attests no freeze,
+  authorization, or chronology, and the kernel produces no D7 gate, result, or
+  terminal.
 - **Encoded internal v0.1 proposal, not reviewed or published — successor structural
   rebinding:** the inherited D6 v0.1 cells and stress-strata hashes include
   selection seeds and seed-bearing IDs. The typed successor rule carries graph
