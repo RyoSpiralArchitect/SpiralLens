@@ -309,9 +309,13 @@ The bundle binds source commit
 `7673ef81bbd67afce5d20255cc6ca6d68e453c3f` and was first tracked by
 artifact commit `1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`. A clean
 tracked reload rejoined the historical terminal, complete source surface, and
-embedded spec with `committed_artifact_verified=true`; current-source
-compatibility, historical reexecution, and historical D1 recomputation remain
-false.
+embedded spec with `committed_artifact_verified=true`. The authoritative
+loader now also requires the complete current loader source surface to be the
+clean tracked blobs of one stable current HEAD and records that commit and
+source-binding digest in its receipt. This verifies the code surface executing
+the archival checks; it does not claim compatibility with the historical
+decision source. Current-source compatibility, historical reexecution, and
+historical D1 recomputation therefore remain false.
 
 D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
 form are replication, not independent-family confirmation. The existing

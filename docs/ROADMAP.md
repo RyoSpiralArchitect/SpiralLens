@@ -712,8 +712,10 @@ below:
     admission contract before any confirmation access — implemented as the
     scope-limited D6 decision with canonical SHA-256
     `c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
-    its clean tracked reload passed, but it does not select the representation
-    instrument or advance global D6-D8;
+    its clean tracked reload passed and now binds the clean current loader
+    source surface to one stable HEAD without claiming historical-source
+    compatibility, but it does not select the representation instrument or
+    advance global D6-D8;
 11. implement and admit a genuinely different construction family, run it
     without overrides or post-selection exclusions, and require complete
     isolated byte-identical replay before setting any scope-specific D7/D8

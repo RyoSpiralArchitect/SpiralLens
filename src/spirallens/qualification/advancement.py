@@ -327,18 +327,18 @@ def build_current_advancement_source_binding(
     """Return current HEAD and its clean exact D6 source-binding digest."""
 
     repository = _resolve_repository(repository_root)
-    completed = subprocess.run(
-        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+    head_before = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "--verify", "HEAD^{commit}"],
         check=False,
         capture_output=True,
         text=True,
     )
-    if completed.returncode != 0:
+    if head_before.returncode != 0:
         raise QualificationContractError(
             "cannot resolve current advancement source commit"
         )
     commit = _git_commit(
-        completed.stdout.strip(),
+        head_before.stdout.strip(),
         label="current advancement source commit",
     )
     digest = advancement_source_binding_sha256(
@@ -346,6 +346,16 @@ def build_current_advancement_source_binding(
         commit=commit,
         require_clean_current_sources=True,
     )
+    head_after = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "--verify", "HEAD^{commit}"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if head_after.returncode != 0 or head_after.stdout.strip() != commit:
+        raise QualificationContractError(
+            "advancement HEAD changed during current source verification"
+        )
     return commit, digest
 
 
@@ -1808,8 +1818,11 @@ class LoadedScopeLimitedD6Decision:
     """Authoritatively rejoined D6 decision and its canonical file identity."""
 
     loaded_artifact: LoadedAdvancementArtifact
+    current_loader_source_commit: str
+    current_loader_source_binding_sha256: str
     historical_terminal_companions_verified: bool = True
     decision_source_surface_verified: bool = True
+    current_loader_source_surface_verified: bool = True
     embedded_admission_spec_verified: bool = True
     committed_artifact_verified: bool = True
     current_source_compatibility_verified: bool = False
@@ -1821,9 +1834,18 @@ class LoadedScopeLimitedD6Decision:
             raise TypeError(
                 "loaded_artifact must be a LoadedAdvancementArtifact"
             )
+        _git_commit(
+            self.current_loader_source_commit,
+            label="loaded D6 current_loader_source_commit",
+        )
+        require_sha256(
+            self.current_loader_source_binding_sha256,
+            label="loaded D6 current_loader_source_binding_sha256",
+        )
         for name in (
             "historical_terminal_companions_verified",
             "decision_source_surface_verified",
+            "current_loader_source_surface_verified",
             "embedded_admission_spec_verified",
             "committed_artifact_verified",
         ):
@@ -1858,14 +1880,23 @@ class LoadedScopeLimitedD6Decision:
 
 def _build_authoritative_loaded_d6_decision(
     loaded_artifact: LoadedAdvancementArtifact,
+    *,
+    current_loader_source_commit: str,
+    current_loader_source_binding_sha256: str,
 ) -> LoadedScopeLimitedD6Decision:
     """Construct the public receipt only after the loader finishes all gates."""
 
     receipt = object.__new__(LoadedScopeLimitedD6Decision)
     values: tuple[tuple[str, object], ...] = (
         ("loaded_artifact", loaded_artifact),
+        ("current_loader_source_commit", current_loader_source_commit),
+        (
+            "current_loader_source_binding_sha256",
+            current_loader_source_binding_sha256,
+        ),
         ("historical_terminal_companions_verified", True),
         ("decision_source_surface_verified", True),
+        ("current_loader_source_surface_verified", True),
         ("embedded_admission_spec_verified", True),
         ("committed_artifact_verified", True),
         ("current_source_compatibility_verified", False),
@@ -1945,9 +1976,15 @@ def _rebuild_selection_terminal_binding(
 def _require_committed_decision_artifact(
     repository: Path,
     loaded: LoadedAdvancementArtifact,
+    *,
+    expected_current_head: str,
 ) -> None:
     """Require the D6 bundle to be one clean tracked current-HEAD blob."""
 
+    expected_head = _git_commit(
+        expected_current_head,
+        label="expected committed D6 artifact HEAD",
+    )
     try:
         repository_path = loaded.identity.path.relative_to(repository).as_posix()
     except ValueError as error:
@@ -1968,6 +2005,11 @@ def _require_committed_decision_artifact(
         head_before.stdout.strip(),
         label="committed D6 artifact HEAD",
     )
+    if current_head != expected_head:
+        raise QualificationContractError(
+            "D6 authoritative loader HEAD changed after current source "
+            "verification"
+        )
     tracked = subprocess.run(
         [
             "git",
@@ -2101,6 +2143,10 @@ def load_scope_limited_d6_decision(
         terminal_result_sha256=terminal_result_sha256,
         terminal_consumption_sha256=terminal_consumption_sha256,
     )
+    (
+        current_loader_source_commit,
+        current_loader_source_binding_sha256,
+    ) = build_current_advancement_source_binding(repository_root=repository)
     validate_advancement_decision_source(
         decision,
         repository_root=repository,
@@ -2122,8 +2168,18 @@ def load_scope_limited_d6_decision(
         raise QualificationContractError(
             "D6 decision differs from its committed terminal or admission spec"
         )
-    _require_committed_decision_artifact(repository, loaded)
-    return _build_authoritative_loaded_d6_decision(loaded)
+    _require_committed_decision_artifact(
+        repository,
+        loaded,
+        expected_current_head=current_loader_source_commit,
+    )
+    return _build_authoritative_loaded_d6_decision(
+        loaded,
+        current_loader_source_commit=current_loader_source_commit,
+        current_loader_source_binding_sha256=(
+            current_loader_source_binding_sha256
+        ),
+    )
 
 
 def publish_scope_limited_d6_decision(

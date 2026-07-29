@@ -291,6 +291,55 @@ def test_source_binding_covers_complete_tracked_package_and_rejects_drift(
     ) == digest
 
 
+def test_authoritative_loader_rejects_failed_current_source_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, _commit = _source_repository(tmp_path)
+    persisted = advancement._write_advancement_artifact(
+        tmp_path / "decision.json",
+        _decision(),
+    )
+    monkeypatch.setattr(
+        advancement,
+        "_rebuild_selection_terminal_binding",
+        lambda **_kwargs: (_binding(), repository),
+    )
+
+    def reject_current_source(
+        *,
+        repository_root: str | Path | None = None,
+    ) -> tuple[str, str]:
+        del repository_root
+        raise QualificationContractError("injected dirty current source")
+
+    monkeypatch.setattr(
+        advancement,
+        "build_current_advancement_source_binding",
+        reject_current_source,
+    )
+
+    with pytest.raises(
+        QualificationContractError,
+        match="injected dirty current source",
+    ):
+        load_scope_limited_d6_decision(
+            persisted.identity.path,
+            expected_source_sha256=persisted.identity.source_sha256,
+            expected_canonical_sha256=persisted.identity.canonical_sha256,
+            expected_decision_id="cartesian-surrogate-d6-decision-v0-1",
+            expected_admission_spec_id=(
+                "cartesian-surrogate-independent-family-admission-v0-1"
+            ),
+            launch_descriptor=tmp_path / "unused-launch.json",
+            launch_descriptor_source_sha256="0" * 64,
+            launch_descriptor_canonical_sha256="0" * 64,
+            terminal_manifest_sha256="0" * 64,
+            terminal_result_sha256="0" * 64,
+            terminal_consumption_sha256="0" * 64,
+        )
+
+
 def test_fabricated_source_binding_cannot_pass_authoritative_validation(
     tmp_path: Path,
 ) -> None:
@@ -306,8 +355,28 @@ def test_fabricated_source_binding_cannot_pass_authoritative_validation(
         )
 
 
-def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage() -> None:
+def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     repository = Path(__file__).resolve().parents[1]
+    source_gate_calls: list[tuple[str, str]] = []
+    original_source_gate = (
+        advancement.build_current_advancement_source_binding
+    )
+
+    def record_current_source_gate(
+        *,
+        repository_root: str | Path | None = None,
+    ) -> tuple[str, str]:
+        result = original_source_gate(repository_root=repository_root)
+        source_gate_calls.append(result)
+        return result
+
+    monkeypatch.setattr(
+        advancement,
+        "build_current_advancement_source_binding",
+        record_current_source_gate,
+    )
     loaded = load_scope_limited_d6_decision(
         (
             repository
@@ -360,6 +429,13 @@ def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage() -> 
     assert loaded.committed_artifact_verified is True
     assert loaded.historical_terminal_companions_verified is True
     assert loaded.decision_source_surface_verified is True
+    assert loaded.current_loader_source_surface_verified is True
+    assert source_gate_calls == [
+        (
+            loaded.current_loader_source_commit,
+            loaded.current_loader_source_binding_sha256,
+        )
+    ]
     assert loaded.embedded_admission_spec_verified is True
     assert loaded.current_source_compatibility_verified is False
     assert loaded.historical_engine_reexecution_verified is False

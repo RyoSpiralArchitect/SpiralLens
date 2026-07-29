@@ -845,9 +845,12 @@ with canonical SHA-256
 It binds source commit
 `7673ef81bbd67afce5d20255cc6ca6d68e453c3f`, was first tracked in
 `1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`, and passed the clean
-tracked authoritative reload. That receipt does not change its explicit false
-values for current-source compatibility, historical reexecution, or historical
-D1 recomputation.
+tracked authoritative reload. The loader additionally requires the complete
+current loader source surface to equal the tracked blobs of one stable current
+HEAD and returns that commit plus its source-binding digest. This is a
+clean-execution-surface check, not a historical compatibility claim. The
+receipt therefore does not change its explicit false values for current-source
+compatibility, historical reexecution, or historical D1 recomputation.
 
 The pre-run D0-D5 `SelectionFreezeArtifact` is a different object: it binds one
 unopened selection attempt to exact protocol bytes and a seed-family
