@@ -317,6 +317,14 @@ the archival checks; it does not claim compatibility with the historical
 decision source. Current-source compatibility, historical reexecution, and
 historical D1 recomputation therefore remain false.
 
+The recorded bundle is also lineage-bound: its source commit must remain an
+ancestor of the loading HEAD. This PR must therefore be integrated with a
+history-preserving merge commit; squash or rebase integration invalidates the
+authoritative reload and is intentionally rejected. The end-to-end recorded
+reload test runs only in its declared `absolute_local_paths` layout. Other
+checkouts exercise the portable loader contracts but skip that local archival
+evidence instead of pretending to relocate it.
+
 D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
 form are replication, not independent-family confirmation. The existing
 spectral-moment family is a useful distinct-family foundation, but it presently

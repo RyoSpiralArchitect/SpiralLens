@@ -715,7 +715,10 @@ below:
     its clean tracked reload passed and now binds the clean current loader
     source surface to one stable HEAD without claiming historical-source
     compatibility, but it does not select the representation instrument or
-    advance global D6-D8;
+    advance global D6-D8; preserve its source-commit ancestry with a merge
+    commit because squash/rebase integration invalidates the authoritative
+    lineage, and treat its absolute-path end-to-end reload as local archival
+    evidence rather than a cross-worktree test;
 11. implement and admit a genuinely different construction family, run it
     without overrides or post-selection exclusions, and require complete
     isolated byte-identical replay before setting any scope-specific D7/D8

@@ -355,10 +355,41 @@ def test_fabricated_source_binding_cannot_pass_authoritative_validation(
         )
 
 
+def test_recorded_launch_declares_local_archival_layout() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    descriptor_path = (
+        repository
+        / "experiments"
+        / "qualification"
+        / "d0_d5_f2_cartesian_selection_v0_1"
+        / "launch.json"
+    )
+    document = json.loads(descriptor_path.read_bytes())
+
+    assert document["path_binding_scope"] == "absolute_local_paths"
+    assert document["cross_worktree_portable"] is False
+    assert document["cross_machine_portable"] is False
+
+
 def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
+    descriptor_path = (
+        repository
+        / "experiments"
+        / "qualification"
+        / "d0_d5_f2_cartesian_selection_v0_1"
+        / "launch.json"
+    )
+    bound_repository = Path(
+        json.loads(descriptor_path.read_bytes())["repository_root"]
+    )
+    if bound_repository != repository:
+        pytest.skip(
+            "recorded D6 reload is local archival evidence bound to "
+            f"{bound_repository}, not a cross-worktree test"
+        )
     source_gate_calls: list[tuple[str, str]] = []
     original_source_gate = (
         advancement.build_current_advancement_source_binding
@@ -397,13 +428,7 @@ def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage(
         expected_admission_spec_id=(
             "cartesian-surrogate-independent-family-admission-v0-1"
         ),
-        launch_descriptor=(
-            repository
-            / "experiments"
-            / "qualification"
-            / "d0_d5_f2_cartesian_selection_v0_1"
-            / "launch.json"
-        ),
+        launch_descriptor=descriptor_path,
         launch_descriptor_source_sha256=(
             "a6a8f8a2c3c47cc76053646440cec94c"
             "6bf7da6a6794a2bdda2e4a2cfa28f300"
