@@ -27,7 +27,7 @@ PR #11 therefore freezes two separate canonical artifacts:
 
 | Artifact | Canonical/source SHA-256 | Permitted use |
 | --- | --- | --- |
-| [`post_d6_descriptive_analysis_v0_1.json`](../protocols/post_d6_descriptive_analysis_v0_1.json) | `fe5dad073cca8c671d3fee5feb46001b6a22303e5aa7d9667cbf50816daabb40` | Post-selection description of the already-opened PR #9 terminal |
+| [`post_d6_descriptive_analysis_v0_1.json`](../protocols/post_d6_descriptive_analysis_v0_1.json) | `e03a5648931d1ca44cc14c7581734e3803749bc3f4da40bf90d3525c8d0e8cc6` | Post-selection description of the already-opened PR #9 terminal |
 | [`d7_structural_gap_matrix_v0_1.json`](../protocols/d7_structural_gap_matrix_v0_1.json) | `e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758` | Value-blind implementation scheduling against the D6 contract |
 
 Both are declarations. They grant no consumer authority and expose no writer,
@@ -155,14 +155,17 @@ The analysis must report:
 
 There are 64 loop-bearing executions. Boundary is retained because it changes
 the loop execution. Each execution contains nine field-graph by cycle-graph
-cells. Those nine cells are repeated measurements of the same execution, not
-nine independent observations.
+pairs, and every pair has both a `primary_boundary` and an `offcore_control`
+loop role. This yields 18 crossed cells per execution and 1,152 total: 576 per
+role. The graph pairs and both roles are repeated measurements of the same
+execution, not independent observations.
 
 The analysis must report:
 
 - 64 attempted and passed gate units;
 - 48 evaluable executions;
 - 16 expected prerequisite failures;
+- 18 crossed cells per execution, separated into nine cells for each loop role;
 - within-execution graph-pair effects; and
 - between-input worst cases without converting cells into replicates.
 
@@ -243,8 +246,10 @@ topology claim.
 
 ### 5.5 D4 crossed-graph descriptive matrix
 
-Report the complete three-by-three field-graph by cycle-graph matrix. Keep
-diagonal and off-diagonal cells distinct, and separate:
+Report the complete three-by-three field-graph by cycle-graph matrix separately
+for `primary_boundary` and `offcore_control`: 18 crossed cells per execution.
+Neither role may be omitted or collapsed into the other. Keep diagonal and
+off-diagonal graph pairs distinct, and separate:
 
 - graph adjacency difference;
 - field-output RMS effect;
@@ -264,6 +269,7 @@ Report worst cases by:
 - state-geometry warp;
 - structured-observation perturbation;
 - graph pair; and
+- loop role; and
 - required stratum.
 
 Coverage, abstention, recall, specificity, and prerequisite-failure counts must

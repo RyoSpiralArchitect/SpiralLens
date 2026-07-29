@@ -16,7 +16,7 @@ DESCRIPTIVE_PATH = (
 )
 GAP_PATH = REPOSITORY / "protocols" / "d7_structural_gap_matrix_v0_1.json"
 DESCRIPTIVE_SHA256 = (
-    "fe5dad073cca8c671d3fee5feb46001b6a22303e5aa7d9667cbf50816daabb40"
+    "e03a5648931d1ca44cc14c7581734e3803749bc3f4da40bf90d3525c8d0e8cc6"
 )
 GAP_SHA256 = "e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758"
 
@@ -195,6 +195,37 @@ def test_descriptive_plan_binds_the_exact_existing_parent_bytes() -> None:
     assert result_mapping["d6_d8_advanced"] is False
     assert result_mapping["synthetic_qualified"] is False
 
+    crossed_cells = [
+        _mapping(item)
+        for item in _sequence(result_mapping["crossed_cells"])
+    ]
+    primary_units = _sequence(result_mapping["primary_units"])
+    assert len(primary_units) == 64
+    assert len(crossed_cells) == 1_152
+
+    role_counts: dict[str, int] = {}
+    cells_by_unit: dict[str, int] = {}
+    roles_by_graph_pair: dict[tuple[str, str, str], set[str]] = {}
+    for cell in crossed_cells:
+        unit_id = str(cell["primary_unit_id"])
+        field_graph_id = str(cell["field_graph_id"])
+        cycle_graph_id = str(cell["cycle_graph_id"])
+        loop_role = str(cell["loop_role"])
+        role_counts[loop_role] = role_counts.get(loop_role, 0) + 1
+        cells_by_unit[unit_id] = cells_by_unit.get(unit_id, 0) + 1
+        graph_pair = (unit_id, field_graph_id, cycle_graph_id)
+        roles_by_graph_pair.setdefault(graph_pair, set()).add(loop_role)
+
+    assert role_counts == {
+        "offcore_control": 576,
+        "primary_boundary": 576,
+    }
+    assert set(cells_by_unit.values()) == {18}
+    assert all(
+        roles == {"offcore_control", "primary_boundary"}
+        for roles in roles_by_graph_pair.values()
+    )
+
     decision_source = (
         REPOSITORY / str(parent["d6_decision_path"])
     ).read_bytes()
@@ -230,7 +261,22 @@ def test_descriptive_plan_declares_grains_without_iid_laundering() -> None:
         "graph_pair_repeats_per_execution"
     ] == 9
     assert units["d4-d5-loop-execution-unit"][
+        "crossed_cells_per_execution"
+    ] == 18
+    assert units["d4-d5-loop-execution-unit"][
+        "loop_roles_per_graph_pair"
+    ] == 2
+    assert units["d4-d5-loop-execution-unit"][
+        "loop_role_counts_per_execution"
+    ] == {
+        "offcore_control": 9,
+        "primary_boundary": 9,
+    }
+    assert units["d4-d5-loop-execution-unit"][
         "graph_pairs_are_independent_samples"
+    ] is False
+    assert units["d4-d5-loop-execution-unit"][
+        "loop_roles_are_independent_samples"
     ] is False
     assert units["construction-family-unit"]["declared_count"] == 1
     assert all(
@@ -251,6 +297,21 @@ def test_descriptive_plan_declares_grains_without_iid_laundering() -> None:
         "evidence-independence-map",
     ]
     assert all(item["status"] == "planned" for item in packages)
+    packages_by_id = {
+        str(item["analysis_id"]): item for item in packages
+    }
+    assert (
+        "loop-role-separated-primary-boundary-and-offcore-control-table"
+        in packages_by_id["d4-crossed-graph-descriptive-matrix"][
+            "required_outputs"
+        ]
+    )
+    assert (
+        "loop-role-separated-worst-case-and-coverage-table"
+        in packages_by_id["d5-worst-case-stress-and-coverage"][
+            "required_outputs"
+        ]
+    )
 
 
 def test_d7_gap_matrix_is_value_blind_and_has_no_progress_score() -> None:

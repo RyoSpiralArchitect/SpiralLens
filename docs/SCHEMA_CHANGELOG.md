@@ -12,8 +12,9 @@ promote a claim.
   research artifact bound to the exact PR #9 terminal and PR #10 D6 decision.
   It declares prior outcome exposure, use of opened outcome values during
   planning, eight mandatory descriptive work packages, fixed 32-unit D2 and
-  64-execution D4/D5 grains, and `claim_delta=none`; its runner and result
-  remain unexecuted.
+  64-execution D4/D5 grains, including nine graph pairs times two loop roles
+  per execution, and `claim_delta=none`; its runner and result remain
+  unexecuted.
 - `spirallens.d7-structural-gap-matrix.v0.1` is a separate value-blind research
   artifact bound to the D6 contract and the tracked PR #10 source snapshot.
   Its non-promotional vocabulary is `absent`, `contract_only`,
