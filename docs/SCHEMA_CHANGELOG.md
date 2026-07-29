@@ -19,7 +19,9 @@ promote a claim.
   artifact bound to the D6 contract and the tracked PR #10 source snapshot.
   Its non-promotional vocabulary is `absent`, `contract_only`,
   `implementation_foundation_only`, `evidence_present_but_ineligible`, and
-  `blocked`.
+  `blocked`. Existing truth-blind core and label-free loop kernels are recorded
+  as implementation foundations only; confirmation-family integration,
+  matched support, source closure, and evidence remain missing.
 
 ### Compatibility and non-migrations
 

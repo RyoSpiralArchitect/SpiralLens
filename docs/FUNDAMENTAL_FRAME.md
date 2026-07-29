@@ -433,8 +433,9 @@ retain selected descriptors during that same secure validation transaction,
 strictly decode their numeric snapshots, derive row identity from content, and
 verify closed value relations. That consumer does not change the ordinary
 loader's scope and does not qualify a referent, graph, or instrument. A subject
-protocol still cannot depend on either path until synthetic qualification
-D0-D8 is complete. See
+protocol still cannot depend on either path until the applicable synthetic
+qualification D0-D8 chain and the representation-native and same-substrate
+gates below are complete. See
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
 ### Current D0-D5 engine boundary
@@ -558,6 +559,36 @@ No D7 family-admission or D8 replay-execution validator is implemented by this
 boundary; different labels or two caller-supplied byte strings cannot promote
 either gate.
 
+### Post-D6 chronology and qualification-lane nontransfer
+
+The post-D6 plan is now split into two non-authorizing research artifacts. One
+is explicitly post-selection and may describe the already-opened Cartesian
+terminal only. The other is a value-excluded structural gap matrix that may
+inspect the D6 contract and a tracked source snapshot, but no terminal or
+confirmation values. Neither is a preregistration, D7 admission, execution
+authorization, or claim-strengthening result.
+
+Because the operator has prior aggregate-outcome exposure and no independent
+information barrier exists, the complete D7 family descriptor, admission,
+protocol, source closure, graph/case/stress and aggregation bytes, lifecycle,
+launch intent, exclusive attempt, and absent output namespace must be frozen
+under a committed receipt before the post-selection descriptive runner may
+execute. The runner may validate that one design receipt but may not consume
+D7 result or confirmation values. Any later D7 design change requires a new
+version and review.
+
+The resulting construction-diverse D7 confirmation and D8 replay qualify only
+the surrogate-engine lane. They do not select a representation referent,
+transfer Cartesian D2-D5 evidence, establish a same-substrate core-loop join,
+observe model topology, or authorize subject preparation. Before a subject
+manifest can be issued, a separate representation-native F0-F4 selection must
+be independently confirmed and replayed, the chosen field/core/loop paths must
+be joined on the same substrate, and any calibration-side integer/topology
+eligibility required by the convention must be frozen. These are instrument
+gates, not a model-topology observation. A later subject discovery may apply
+the already-frozen rules without retuning; semantic, SAE, and causal tests
+remain held out until a structural candidate exists.
+
 ## 9. Historical and experimental consequences
 
 Under this frame:
@@ -593,11 +624,20 @@ No new Pythia subject experiment is prepared until all of the following exist:
    and frozen before loop readout;
 6. explicit failure, coverage, abstention, aggregation, and support rules;
 7. a calibration-selection decision sealed before hidden confirmation;
-8. a split and leakage policy that prevents prior subject outcomes from
+8. representation-native instrument selection followed by independently
+   constructed confirmation and isolated replay, without transferring
+   Cartesian D2-D5 evidence;
+9. a same-substrate field/core/loop join and, when the selected convention
+   requires it, frozen calibration-side integer/topology eligibility;
+10. a split and leakage policy that prevents prior subject outcomes from
    selecting the confirmatory field or graph;
-9. replayable artifacts and an adversarially reviewed freeze plan;
-10. a future subject-access manifest that reveals no subject-derived values
+11. replayable artifacts and an adversarially reviewed freeze plan;
+12. a future subject-access manifest that reveals no subject-derived values
     before its own review and freeze.
+
+A construction-diverse surrogate D7 pass and byte-identical D8 replay satisfy
+only the surrogate-engine portion of this gate. They are necessary evidence
+for the instrument pipeline but are not sufficient for subject preparation.
 
 The preparation sequence is defined in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).

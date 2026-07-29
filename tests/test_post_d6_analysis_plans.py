@@ -18,7 +18,7 @@ GAP_PATH = REPOSITORY / "protocols" / "d7_structural_gap_matrix_v0_1.json"
 DESCRIPTIVE_SHA256 = (
     "9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981"
 )
-GAP_SHA256 = "e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758"
+GAP_SHA256 = "018f06ce15cafb7830f522e41001c7a275bd85a76471c58e0fd04df009f67624"
 
 
 def _sha256(path: Path) -> str:
@@ -426,6 +426,20 @@ def test_d7_gap_rows_cover_the_locked_obligations_without_admission() -> None:
     assert entries["distinct-generator-family"]["status"] == (
         "implementation_foundation_only"
     )
+    assert entries["charge-blind-core-path"]["status"] == (
+        "implementation_foundation_only"
+    )
+    assert entries["separate-loop-path"]["status"] == (
+        "implementation_foundation_only"
+    )
+    assert (
+        "src/spirallens/qualification/prerequisites.py"
+        in entries["charge-blind-core-path"]["evidence_refs"]
+    )
+    assert (
+        "src/spirallens/qualification/winding.py"
+        in entries["separate-loop-path"]["evidence_refs"]
+    )
     assert entries["typed-d7-result-and-evidence-root"]["status"] == "absent"
     assert entries["isolated-byte-identical-d8-replay"]["status"] == "blocked"
 
@@ -461,6 +475,14 @@ def test_gap_matrix_source_snapshot_and_pythia_boundary_are_unchanged() -> None:
 
     assert surface["commit"] == "f869d53d890ae35b43c3dbca2ce6363c78fea367"
     assert surface["outcome_model_or_subject_values_used"] is False
+    reviewed_paths = {
+        str(_mapping(item)["repository_path"])
+        for item in _sequence(surface["files"])
+    }
+    assert {
+        "src/spirallens/qualification/prerequisites.py",
+        "src/spirallens/qualification/winding.py",
+    }.issubset(reviewed_paths)
     for item in _sequence(surface["files"]):
         entry = _mapping(item)
         repository_path = entry["repository_path"]
@@ -511,6 +533,9 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
             REPOSITORY / "docs" / "POST_D6_ANALYSIS_AND_D7_GAPS.md"
         ).read_text().split()
     )
+    frame = " ".join(
+        (REPOSITORY / "docs" / "FUNDAMENTAL_FRAME.md").read_text().split()
+    )
 
     assert (
         "begin the separate representation-native F0-F4 selection lane"
@@ -524,4 +549,8 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
     assert (
         "this is an instrument gate, not a model-topology observation"
         in anchor
+    )
+    assert (
+        "qualify only the surrogate-engine lane" in frame
+        and "not sufficient for subject preparation" in frame
     )

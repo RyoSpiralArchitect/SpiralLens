@@ -28,7 +28,7 @@ PR #11 therefore freezes two separate canonical artifacts:
 | Artifact | Canonical/source SHA-256 | Permitted use |
 | --- | --- | --- |
 | [`post_d6_descriptive_analysis_v0_1.json`](../protocols/post_d6_descriptive_analysis_v0_1.json) | `9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981` | Post-selection description of the already-opened PR #9 terminal |
-| [`d7_structural_gap_matrix_v0_1.json`](../protocols/d7_structural_gap_matrix_v0_1.json) | `e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758` | Value-blind implementation scheduling against the D6 contract |
+| [`d7_structural_gap_matrix_v0_1.json`](../protocols/d7_structural_gap_matrix_v0_1.json) | `018f06ce15cafb7830f522e41001c7a275bd85a76471c58e0fd04df009f67624` | Value-blind implementation scheduling against the D6 contract |
 
 Both are declarations. They grant no consumer authority and expose no writer,
 runner, family-admission helper, D7 promoter, or D8 promoter. Repository tests
@@ -355,8 +355,8 @@ score, family ranking, or aggregate progress metric.
 | Locked estimator/trivialization | `absent` | Spectral input path and conformance evidence |
 | Confirmation implementation registry | `contract_only` | Confirmation source closure and registry |
 | Locked graph axes | `absent` | Full field-graph and cycle-graph consumption |
-| Charge-blind core path | `absent` | Truth-blind confirmation core localization |
-| Separate loop path | `absent` | Sampled loop and matched discrete support |
+| Charge-blind core path | `implementation_foundation_only` | Confirmation-family integration, source closure, and matched-support path |
+| Separate loop path | `implementation_foundation_only` | Confirmation-family integration, source closure, and matched discrete support |
 | Cells and stress strata | `contract_only` | Complete confirmation execution |
 | Thresholds and aggregation | `contract_only` | Applied confirmation result |
 | Evidence disjointness | `contract_only` | Closed confirmation inventory and receipt |
@@ -372,6 +372,14 @@ construction, but it does not construct the required graph, core, loop, full
 D2-D5 path, execution lineage, or evidence bundle. It is not a D7 candidate or
 admitted family.
 
+The existing qualification core and loop kernels are also implementation
+foundations. `estimate_and_seal_core()` is truth-blind and
+`estimate_and_seal_loop()` consumes a label-free representative loop, but
+neither is integrated into an admitted confirmation family with matched
+support, confirmation source closure, lifecycle, or evidence. D7 should reuse
+and bind these kernels rather than reimplement them; their existence does not
+count as confirmation.
+
 Unopened Cartesian seeds remain same-family replication. A new source digest,
 implementation label, or seed cannot create construction diversity.
 
@@ -386,8 +394,9 @@ opened, a future sequence must:
 3. freeze its complete source and implementation registry;
 4. prove the required four case semantics can enter the locked surrogate
    estimator and trivialization;
-5. implement separate truth-blind core and sampled-loop paths on matched
-   discrete support;
+5. integrate the existing separate truth-blind core and sampled-loop kernels
+   on matched discrete support and bind them into the confirmation source
+   closure;
 6. implement every locked graph axis, cell, stress stratum, threshold, and
    aggregation rule;
 7. publish a canonical family-admission receipt before confirmation access;
