@@ -34,15 +34,21 @@ SPECTRAL_MOMENT_NO_CORE_NULL = "spectral-moment-no-core-null"
 SPECTRAL_MOMENT_PREREQUISITE_FAILURE = (
     "spectral-moment-confirmation-prerequisite-failure"
 )
-SPECTRAL_MOMENT_GENERATOR_FAMILY_ID = (
-    "spectral-moment-confirmation-grid-v0.1"
-)
+SPECTRAL_MOMENT_GENERATOR_FAMILY_ID = "spectral-moment-confirmation-grid-v0.1"
 SPECTRAL_MOMENT_CONSTRUCTION_FAMILY_ID = "separable-spectral-moment-grid"
 SPECTRAL_MOMENT_IMPLEMENTATION_ID = "numpy-separable-sine-moment-grid"
-SPECTRAL_MOMENT_IMPLEMENTATION_VERSION = "v0.1"
-SPECTRAL_MOMENT_SOURCE_PATH = (
-    "src/spirallens/synthetic/spectral_moment_confirmation.py"
+SPECTRAL_MOMENT_IMPLEMENTATION_VERSION = "v0.2"
+SPECTRAL_MOMENT_SOURCE_PATH = "src/spirallens/synthetic/spectral_moment_confirmation.py"
+SPECTRAL_MOMENT_STRESS_TRANSLATION_ID = (
+    "spectral-moment-state-warp-and-structured-observation-perturbation-v0.1"
 )
+SPECTRAL_MOMENT_STATE_NORMALIZATION_ID = "ambient-dimension-root-normalization-v0.1"
+SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE = 1.0 / math.sqrt(12.0)
+SPECTRAL_MOMENT_GRID_SIDE = 7
+SPECTRAL_MOMENT_AMBIENT_DIMENSION = 12
+SPECTRAL_MOMENT_SAMPLES_PER_SPLIT = 8
+SPECTRAL_MOMENT_BASELINE = 1.25
+SPECTRAL_MOMENT_SECOND_MOMENT_SCALE = 0.25
 
 SPECTRAL_MOMENT_CASE_REGISTRY = (
     (
@@ -81,17 +87,14 @@ SPECTRAL_MOMENT_REQUIRED_CASE_SEMANTICS = tuple(
 )
 
 _CASE_IDS = tuple(item[0] for item in SPECTRAL_MOMENT_CASE_REGISTRY)
-_CASE_SEMANTICS = {
-    item[0]: item[1]
-    for item in SPECTRAL_MOMENT_CASE_REGISTRY
-}
+_CASE_SEMANTICS = {item[0]: item[1] for item in SPECTRAL_MOMENT_CASE_REGISTRY}
 
-_GRID_SIDE = 7
+_GRID_SIDE = SPECTRAL_MOMENT_GRID_SIDE
 _ROW_COUNT = _GRID_SIDE * _GRID_SIDE
-_AMBIENT_DIMENSION = 12
-_SAMPLES_PER_SPLIT = 8
-_BASELINE = 1.25
-_SECOND_MOMENT_SCALE = 0.25
+_AMBIENT_DIMENSION = SPECTRAL_MOMENT_AMBIENT_DIMENSION
+_SAMPLES_PER_SPLIT = SPECTRAL_MOMENT_SAMPLES_PER_SPLIT
+_BASELINE = SPECTRAL_MOMENT_BASELINE
+_SECOND_MOMENT_SCALE = SPECTRAL_MOMENT_SECOND_MOMENT_SCALE
 _FLOAT = np.dtype("<f8")
 _INT64 = np.dtype("<i8")
 _BOOL = np.dtype("|b1")
@@ -110,6 +113,23 @@ def _plain_seed(value: object) -> int:
     result = int(value)
     if result < 0 or result > np.iinfo(np.int64).max:
         raise ValueError("seed must be a non-negative signed-int64 value")
+    return result
+
+
+def _bounded_nonnegative_real(
+    value: object,
+    *,
+    label: str,
+    maximum: float,
+) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(
+        value,
+        (int, float, np.integer, np.floating),
+    ):
+        raise TypeError(f"{label} must be a real number")
+    result = float(value)
+    if not math.isfinite(result) or result < 0.0 or result > maximum:
+        raise ValueError(f"{label} must be finite and lie in [0, {maximum}]")
     return result
 
 
@@ -162,11 +182,31 @@ class SpectralMomentConfirmationSpec:
     """
 
     seed: int
+    state_geometry_warp_strength: float
+    structured_observation_perturbation_scale: float
 
-    receipt_version: ClassVar[str] = "spirallens.spectral-moment-confirmation-spec.v0.1"
+    receipt_version: ClassVar[str] = "spirallens.spectral-moment-confirmation-spec.v0.2"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "seed", _plain_seed(self.seed))
+        object.__setattr__(
+            self,
+            "state_geometry_warp_strength",
+            _bounded_nonnegative_real(
+                self.state_geometry_warp_strength,
+                label="state_geometry_warp_strength",
+                maximum=0.5,
+            ),
+        )
+        object.__setattr__(
+            self,
+            "structured_observation_perturbation_scale",
+            _bounded_nonnegative_real(
+                self.structured_observation_perturbation_scale,
+                label="structured_observation_perturbation_scale",
+                maximum=0.1,
+            ),
+        )
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -175,6 +215,15 @@ class SpectralMomentConfirmationSpec:
             "seed": self.seed,
             "seed_role": "caller-supplied-development-or-future-frozen-input",
             "confirmation_seed_frozen_by_this_source": False,
+            "stress_translation_id": SPECTRAL_MOMENT_STRESS_TRANSLATION_ID,
+            "state_normalization_id": (SPECTRAL_MOMENT_STATE_NORMALIZATION_ID),
+            "state_normalization_scale": (SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE),
+            "state_geometry_warp_strength": (self.state_geometry_warp_strength),
+            "structured_observation_perturbation_scale": (
+                self.structured_observation_perturbation_scale
+            ),
+            "stress_values_are_caller_supplied": True,
+            "stress_values_frozen_by_this_source": False,
             "grid_side": _GRID_SIDE,
             "row_count": _ROW_COUNT,
             "ambient_dimension": _AMBIENT_DIMENSION,
@@ -389,37 +438,20 @@ class SpectralMomentConfirmationOracleTruth:
         return canonical_json_sha256(self.to_dict())
 
 
-def _observed_moment(
-    *,
-    angles: FloatArray,
-    values: FloatArray,
-    harmonic: int,
-) -> FloatArray:
-    centered = values - values.mean(axis=1, keepdims=True)
-    scale = 2.0 / float(angles.shape[0])
-    return np.asarray(
-        scale
-        * np.column_stack(
-            (
-                centered @ np.cos(float(harmonic) * angles),
-                centered @ np.sin(float(harmonic) * angles),
-            )
-        ),
-        dtype=_FLOAT,
-    )
-
-
 @dataclass(frozen=True, slots=True)
 class SpectralMomentConfirmationCase:
     """Evaluator-side linkage between label-free inputs and held-aside truth."""
 
     case_id: str
+    spec: SpectralMomentConfirmationSpec
     estimator_inputs: CartesianFourierEstimatorInputs
     oracle_truth: SpectralMomentConfirmationOracleTruth
 
     def __post_init__(self) -> None:
         if self.case_id not in _CASE_IDS:
             raise ValueError("unsupported spectral-moment confirmation case_id")
+        if not isinstance(self.spec, SpectralMomentConfirmationSpec):
+            raise TypeError("spec must be a SpectralMomentConfirmationSpec")
         if not isinstance(
             self.estimator_inputs,
             CartesianFourierEstimatorInputs,
@@ -439,41 +471,60 @@ class SpectralMomentConfirmationCase:
             self.oracle_truth.row_ids,
         ):
             raise ValueError("estimator inputs and oracle require identical row order")
+        effective_scale = (
+            0.0
+            if self.oracle_truth.case_semantics
+            == "prerequisite-failure|prerequisite-failure"
+            else self.spec.structured_observation_perturbation_scale
+        )
+        perturbation_phase = _perturbation_phase(self.spec.seed)
         for split in ("fit", "evaluation"):
-            observed_first = _observed_moment(
-                angles=getattr(self.estimator_inputs, f"{split}_angles_rad"),
-                values=getattr(self.estimator_inputs, f"{split}_values"),
-                harmonic=1,
+            angles = getattr(
+                self.estimator_inputs,
+                f"{split}_angles_rad",
             )
-            observed_second = _observed_moment(
-                angles=getattr(self.estimator_inputs, f"{split}_angles_rad"),
-                values=getattr(self.estimator_inputs, f"{split}_values"),
-                harmonic=2,
+            observed_values = getattr(
+                self.estimator_inputs,
+                f"{split}_values",
             )
-            if not np.allclose(
-                observed_first,
-                self.oracle_truth.first_moment_field,
-                rtol=1e-12,
-                atol=1e-12,
-            ):
-                raise ValueError(f"{split} observations do not recover first moment")
-            if not np.allclose(
-                observed_second,
-                self.oracle_truth.second_moment_field,
-                rtol=1e-12,
-                atol=1e-12,
-            ):
-                raise ValueError(f"{split} observations do not recover second moment")
+            expected_values = _values(
+                angles=angles,
+                first=self.oracle_truth.first_moment_field,
+                second=self.oracle_truth.second_moment_field,
+                perturbation_scale=effective_scale,
+                perturbation_phase=perturbation_phase,
+            )
+            if not np.array_equal(observed_values, expected_values):
+                raise ValueError(
+                    f"{split} observations differ from the exact "
+                    "declared stress translation"
+                )
 
     def to_dict(self) -> dict[str, object]:
         return {
             "receipt_version": ("spirallens.spectral-moment-confirmation-case.v0.1"),
             "record_scope": "in-memory-fingerprint-only",
             "case_id": self.case_id,
+            "spec_receipt_sha256": self.spec.receipt_sha256,
             "estimator_inputs_fingerprint_sha256": (
                 self.estimator_inputs.fingerprint_sha256
             ),
             "oracle_truth_fingerprint_sha256": (self.oracle_truth.fingerprint_sha256),
+            "stress_translation_id": SPECTRAL_MOMENT_STRESS_TRANSLATION_ID,
+            "requested_structured_observation_perturbation_scale": (
+                self.spec.structured_observation_perturbation_scale
+            ),
+            "effective_structured_observation_perturbation_scale": (
+                0.0
+                if self.oracle_truth.case_semantics
+                == "prerequisite-failure|prerequisite-failure"
+                else self.spec.structured_observation_perturbation_scale
+            ),
+            "prerequisite_perturbation_suppression_applied": (
+                self.oracle_truth.case_semantics
+                == "prerequisite-failure|prerequisite-failure"
+                and self.spec.structured_observation_perturbation_scale > 0.0
+            ),
             "truth_separated_from_estimator_inputs": True,
         }
 
@@ -554,6 +605,8 @@ class SpectralMomentConfirmationBundle:
             "d7_runner_present": False,
             "d7_confirmation_executed": False,
             "confirmation_seed_frozen": False,
+            "stress_translation_implemented": True,
+            "stress_values_frozen": False,
             "model_values_present": False,
             "semantic_labels_present": False,
             "model_claim_authorized": False,
@@ -571,6 +624,106 @@ class SpectralMomentConfirmationBundle:
         return canonical_json_sha256(self.to_dict())
 
 
+@dataclass(frozen=True, slots=True)
+class SpectralMomentPreparedCase:
+    """One label-free case prepared without constructing oracle objects."""
+
+    case_id: str
+    spec_receipt_sha256: str
+    estimator_inputs: CartesianFourierEstimatorInputs
+
+    def __post_init__(self) -> None:
+        if self.case_id not in _CASE_IDS:
+            raise ValueError("unsupported prepared confirmation case_id")
+        if (
+            not isinstance(self.spec_receipt_sha256, str)
+            or len(self.spec_receipt_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.spec_receipt_sha256
+            )
+        ):
+            raise ValueError("spec_receipt_sha256 must be lowercase SHA-256")
+        if not isinstance(
+            self.estimator_inputs,
+            CartesianFourierEstimatorInputs,
+        ):
+            raise TypeError("estimator_inputs must be CartesianFourierEstimatorInputs")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "receipt_version": ("spirallens.spectral-moment-prepared-case.v0.1"),
+            "record_scope": "in-memory-development-fingerprint-only",
+            "case_id": self.case_id,
+            "spec_receipt_sha256": self.spec_receipt_sha256,
+            "estimator_inputs_fingerprint_sha256": (
+                self.estimator_inputs.fingerprint_sha256
+            ),
+            "oracle_truth_record_materialized": False,
+            "oracle_supplied_to_execution_kernel": False,
+            "semantic_labels_present_in_estimator_inputs": False,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SpectralMomentPreparedBundle:
+    """Four estimator-input cases with no oracle object in the API surface."""
+
+    spec: SpectralMomentConfirmationSpec
+    family_identity: GeneratorFamilyIdentity
+    domain: SpectralMomentConfirmationDomain
+    cases: tuple[SpectralMomentPreparedCase, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.spec, SpectralMomentConfirmationSpec):
+            raise TypeError("spec must be a SpectralMomentConfirmationSpec")
+        if self.family_identity != _family_identity():
+            raise ValueError("family_identity must match this exact source")
+        if not isinstance(self.domain, SpectralMomentConfirmationDomain):
+            raise TypeError("domain must be a SpectralMomentConfirmationDomain")
+        if tuple(item.case_id for item in self.cases) != _CASE_IDS:
+            raise ValueError("prepared cases must use canonical case order")
+        for case in self.cases:
+            if case.spec_receipt_sha256 != self.spec.receipt_sha256:
+                raise ValueError("prepared case differs from the shared specification")
+            inputs = case.estimator_inputs
+            for actual, expected, label in (
+                (inputs.row_ids, self.domain.row_ids, "row_ids"),
+                (inputs.states, self.domain.states, "states"),
+                (
+                    inputs.site_coordinates,
+                    self.domain.site_coordinates,
+                    "site_coordinates",
+                ),
+                (
+                    inputs.oriented_faces,
+                    self.domain.oriented_faces,
+                    "oriented_faces",
+                ),
+            ):
+                if not np.array_equal(actual, expected):
+                    raise ValueError(f"prepared case does not share domain {label}")
+
+    def case(self, case_id: str) -> SpectralMomentPreparedCase:
+        matches = tuple(item for item in self.cases if item.case_id == case_id)
+        if len(matches) != 1:
+            raise ValueError("case_id must select exactly one prepared case")
+        return matches[0]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "receipt_version": ("spirallens.spectral-moment-prepared-bundle.v0.1"),
+            "record_scope": "in-memory-development-fingerprint-only",
+            "spec": self.spec.to_dict(),
+            "family_identity": self.family_identity.to_dict(),
+            "domain_fingerprint_sha256": self.domain.fingerprint_sha256,
+            "cases": [item.to_dict() for item in self.cases],
+            "oracle_truth_record_materialized": False,
+            "d7_result_produced": False,
+            "confirmation_seed_frozen": False,
+        }
+
+
 def _module_sha256() -> str:
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -585,27 +738,96 @@ def _family_identity() -> GeneratorFamilyIdentity:
     )
 
 
-def _domain() -> SpectralMomentConfirmationDomain:
+def _state_embedding(
+    coordinates: FloatArray,
+    *,
+    warp_strength: float,
+) -> FloatArray:
+    x = coordinates[:, 0]
+    y = coordinates[:, 1]
+    state_x = x + warp_strength * np.sin(np.pi * x) / np.pi
+    state_y = y + warp_strength * np.sin(np.pi * y) / np.pi
+    return np.asarray(
+        SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE
+        * np.column_stack(
+            (
+                np.sin(0.5 * np.pi * state_x),
+                np.sin(0.5 * np.pi * state_y),
+                np.cos(0.5 * np.pi * state_x),
+                np.cos(0.5 * np.pi * state_y),
+                np.sin(0.5 * np.pi * (state_x + state_y)),
+                np.cos(0.5 * np.pi * (state_x + state_y)),
+                np.sin(0.5 * np.pi * (state_x - state_y)),
+                np.cos(0.5 * np.pi * (state_x - state_y)),
+                0.1 * np.sin(np.pi * state_x),
+                0.1 * np.sin(np.pi * state_y),
+                0.1 * np.cos(np.pi * state_x),
+                0.1 * np.cos(np.pi * state_y),
+            )
+        ),
+        dtype=_FLOAT,
+    )
+
+
+def spectral_moment_state_geometry_conformance(
+    warp_strength: object,
+) -> dict[str, object]:
+    """Return seed-free distance diagnostics for the declared state rule."""
+
+    strength = _bounded_nonnegative_real(
+        warp_strength,
+        label="warp_strength",
+        maximum=0.5,
+    )
+    axis = np.linspace(-1.0, 1.0, _GRID_SIDE, dtype=_FLOAT)
+    x_grid, y_grid = np.meshgrid(axis, axis, indexing="xy")
+    coordinates = np.column_stack((x_grid.reshape(-1), y_grid.reshape(-1)))
+    states = _state_embedding(
+        np.asarray(coordinates, dtype=_FLOAT),
+        warp_strength=strength,
+    )
+    horizontal: list[float] = []
+    vertical: list[float] = []
+    for y_index in range(_GRID_SIDE):
+        for x_index in range(_GRID_SIDE):
+            row = y_index * _GRID_SIDE + x_index
+            if x_index + 1 < _GRID_SIDE:
+                horizontal.append(float(np.linalg.norm(states[row + 1] - states[row])))
+            if y_index + 1 < _GRID_SIDE:
+                vertical.append(
+                    float(np.linalg.norm(states[row + _GRID_SIDE] - states[row]))
+                )
+    return {
+        "receipt_version": (
+            "spirallens.spectral-moment-state-geometry-conformance.v0.1"
+        ),
+        "warp_strength": strength,
+        "normalization_id": SPECTRAL_MOMENT_STATE_NORMALIZATION_ID,
+        "normalization_scale": SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE,
+        "maximum_horizontal_adjacent_distance": max(horizontal),
+        "maximum_vertical_adjacent_distance": max(vertical),
+        "maximum_axis_adjacent_distance": max(
+            max(horizontal),
+            max(vertical),
+        ),
+        "maximum_state_row_norm": float(np.max(np.linalg.norm(states, axis=1))),
+        "seed_used": False,
+        "graph_constructed": False,
+        "outcome_read": False,
+    }
+
+
+def _domain(
+    spec: SpectralMomentConfirmationSpec,
+) -> SpectralMomentConfirmationDomain:
     axis = np.linspace(-1.0, 1.0, _GRID_SIDE, dtype=_FLOAT)
     x_grid, y_grid = np.meshgrid(axis, axis, indexing="xy")
     x = x_grid.reshape(-1)
     y = y_grid.reshape(-1)
     coordinates = np.column_stack((x, y))
-    states = np.column_stack(
-        (
-            np.sin(0.5 * np.pi * x),
-            np.sin(0.5 * np.pi * y),
-            np.cos(0.5 * np.pi * x),
-            np.cos(0.5 * np.pi * y),
-            np.sin(0.5 * np.pi * (x + y)),
-            np.cos(0.5 * np.pi * (x + y)),
-            np.sin(0.5 * np.pi * (x - y)),
-            np.cos(0.5 * np.pi * (x - y)),
-            0.1 * np.sin(np.pi * x),
-            0.1 * np.sin(np.pi * y),
-            0.1 * np.cos(np.pi * x),
-            0.1 * np.cos(np.pi * y),
-        )
+    states = _state_embedding(
+        np.asarray(coordinates, dtype=_FLOAT),
+        warp_strength=spec.state_geometry_warp_strength,
     )
     faces: list[tuple[int, int, int]] = []
     for y_index in range(_GRID_SIDE - 1):
@@ -708,37 +930,64 @@ def _values(
     angles: FloatArray,
     first: FloatArray,
     second: FloatArray,
+    perturbation_scale: float,
+    perturbation_phase: FloatArray,
 ) -> FloatArray:
     return np.asarray(
         _BASELINE
         + first[:, 0, None] * np.cos(angles)[None, :]
         + first[:, 1, None] * np.sin(angles)[None, :]
         + second[:, 0, None] * np.cos(2.0 * angles)[None, :]
-        + second[:, 1, None] * np.sin(2.0 * angles)[None, :],
+        + second[:, 1, None] * np.sin(2.0 * angles)[None, :]
+        + perturbation_scale
+        * np.cos(math.sqrt(2.0) * angles[None, :] + perturbation_phase[:, None]),
         dtype=_FLOAT,
     )
 
 
-def _case(
+def _perturbation_phase(seed: int) -> FloatArray:
+    rows = np.arange(_ROW_COUNT, dtype=_INT64)
+    numerators = (37 * rows + (seed % 1009)) % 1009
+    return np.asarray(
+        2.0 * np.pi * numerators.astype(_FLOAT) / 1009.0,
+        dtype=_FLOAT,
+    )
+
+
+def _estimator_inputs(
     domain: SpectralMomentConfirmationDomain,
     spec: SpectralMomentConfirmationSpec,
     *,
     case_id: str,
-) -> SpectralMomentConfirmationCase:
+) -> CartesianFourierEstimatorInputs:
     semantics = _CASE_SEMANTICS[case_id]
-    first, second, core_anchor = _fields(
+    first, second, _core_anchor = _fields(
         domain,
         case_semantics=semantics,
         seed=spec.seed,
     )
     fit_ids, fit_angles, evaluation_ids, evaluation_angles = _quadrature()
-    fit_values = _values(angles=fit_angles, first=first, second=second)
+    perturbation_scale = (
+        0.0
+        if semantics == "prerequisite-failure|prerequisite-failure"
+        else spec.structured_observation_perturbation_scale
+    )
+    phase = _perturbation_phase(spec.seed)
+    fit_values = _values(
+        angles=fit_angles,
+        first=first,
+        second=second,
+        perturbation_scale=perturbation_scale,
+        perturbation_phase=phase,
+    )
     evaluation_values = _values(
         angles=evaluation_angles,
         first=first,
         second=second,
+        perturbation_scale=perturbation_scale,
+        perturbation_phase=phase,
     )
-    estimator_inputs = CartesianFourierEstimatorInputs.from_observable_arrays(
+    return CartesianFourierEstimatorInputs.from_observable_arrays(
         row_ids=domain.row_ids,
         states=domain.states,
         site_coordinates=domain.site_coordinates,
@@ -749,6 +998,20 @@ def _case(
         evaluation_sample_ids=evaluation_ids,
         evaluation_angles_rad=evaluation_angles,
         evaluation_values=evaluation_values,
+    )
+
+
+def _oracle_truth(
+    domain: SpectralMomentConfirmationDomain,
+    spec: SpectralMomentConfirmationSpec,
+    *,
+    case_id: str,
+) -> SpectralMomentConfirmationOracleTruth:
+    semantics = _CASE_SEMANTICS[case_id]
+    first, second, core_anchor = _fields(
+        domain,
+        case_semantics=semantics,
+        seed=spec.seed,
     )
     oracle = SpectralMomentConfirmationOracleTruth(
         truth_id=f"spectral-moment-truth-{case_id}",
@@ -763,10 +1026,28 @@ def _case(
             dtype=_INT64,
         ),
     )
+    return oracle
+
+
+def _case(
+    domain: SpectralMomentConfirmationDomain,
+    spec: SpectralMomentConfirmationSpec,
+    *,
+    case_id: str,
+) -> SpectralMomentConfirmationCase:
     return SpectralMomentConfirmationCase(
         case_id=case_id,
-        estimator_inputs=estimator_inputs,
-        oracle_truth=oracle,
+        spec=spec,
+        estimator_inputs=_estimator_inputs(
+            domain,
+            spec,
+            case_id=case_id,
+        ),
+        oracle_truth=_oracle_truth(
+            domain,
+            spec,
+            case_id=case_id,
+        ),
     )
 
 
@@ -783,11 +1064,38 @@ class SpectralMomentConfirmationGenerator:
     ) -> SpectralMomentConfirmationBundle:
         if not isinstance(spec, SpectralMomentConfirmationSpec):
             raise TypeError("spec must be a SpectralMomentConfirmationSpec")
-        domain = _domain()
+        domain = _domain(spec)
         cases = tuple(_case(domain, spec, case_id=case_id) for case_id in _CASE_IDS)
         return SpectralMomentConfirmationBundle(
             spec=spec,
             family_identity=self.family_identity,
             domain=domain,
             cases=cases,
+        )
+
+    def prepare(
+        self,
+        spec: SpectralMomentConfirmationSpec,
+    ) -> SpectralMomentPreparedBundle:
+        """Prepare estimator inputs without materializing any oracle object."""
+
+        if not isinstance(spec, SpectralMomentConfirmationSpec):
+            raise TypeError("spec must be a SpectralMomentConfirmationSpec")
+        domain = _domain(spec)
+        return SpectralMomentPreparedBundle(
+            spec=spec,
+            family_identity=self.family_identity,
+            domain=domain,
+            cases=tuple(
+                SpectralMomentPreparedCase(
+                    case_id=case_id,
+                    spec_receipt_sha256=spec.receipt_sha256,
+                    estimator_inputs=_estimator_inputs(
+                        domain,
+                        spec,
+                        case_id=case_id,
+                    ),
+                )
+                for case_id in _CASE_IDS
+            ),
         )
