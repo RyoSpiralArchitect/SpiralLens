@@ -30,7 +30,11 @@ DEFAULT_IMPORTS = (
     "spirallens.core.canonical",
     "spirallens.access",
 )
-DEFAULT_SCIENTIFIC_IMPORTS = ("spirallens.qualification",)
+DEFAULT_SCIENTIFIC_IMPORTS = (
+    "spirallens.qualification",
+    "spirallens.qualification.confirmation_protocol",
+    "spirallens.synthetic.spectral_moment_confirmation",
+)
 FORBIDDEN_IMPORTS = (
     "faiss",
     "huggingface_hub",
@@ -53,6 +57,7 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/aggregation.py",
     "spirallens/qualification/blind.py",
     "spirallens/qualification/common.py",
+    "spirallens/qualification/confirmation_protocol.py",
     "spirallens/qualification/contracts.py",
     "spirallens/qualification/crossed.py",
     "spirallens/qualification/evidence_bundle.py",
@@ -70,6 +75,7 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/synthetic/cartesian_fourier_domain_phantom.py",
     "spirallens/synthetic/cartesian_fourier_estimator.py",
     "spirallens/synthetic/representation_estimator.py",
+    "spirallens/synthetic/spectral_moment_confirmation.py",
 )
 _COPY_IGNORE = (
     ".git",

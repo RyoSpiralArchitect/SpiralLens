@@ -31,7 +31,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
-| `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; scientific qualification remains artifact-bound |
+| `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
 | `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a single scope-limited D6 surrogate-profile decision with embedded admission spec; publish is provisional until a clean tracked descendant reload, the archival loader uses the current strict parser but skips current D1 recomputation and proves neither current-engine compatibility nor reexecution, and D7/D8/global synthetic, topology, representation, and subject authority remain false |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
@@ -43,6 +43,13 @@ runner, writer, generic mapping validator, family-admission helper, or
 promotion surface. The descriptive artifact is also non-executable until a
 committed full-D7-design freeze receipt exists. Reusable analysis primitives
 remain extraction candidates until a second independent consumer exists.
+
+The spectral-moment four-case generator and
+`spirallens.qualification.confirmation_protocol` foundation are internal
+development surfaces. Its builder and strict reader accept only an
+authoritative committed-D6 loader receipt, but it deliberately exposes no
+full-design freeze, source-closure, admission, lifecycle, execution, result, or
+promotion surface.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

@@ -490,6 +490,49 @@ class CartesianFourierEstimatorInputs:
         if self.input_id != expected_id:
             raise ValueError("input_id does not match estimator-observable content")
 
+    @classmethod
+    def from_observable_arrays(
+        cls,
+        *,
+        row_ids: Int64Array,
+        states: FloatArray,
+        site_coordinates: FloatArray,
+        oriented_faces: Int64Array,
+        fit_sample_ids: Int64Array,
+        fit_angles_rad: FloatArray,
+        fit_values: FloatArray,
+        evaluation_sample_ids: Int64Array,
+        evaluation_angles_rad: FloatArray,
+        evaluation_values: FloatArray,
+    ) -> CartesianFourierEstimatorInputs:
+        """Construct inputs while the owner derives the label-free content ID."""
+
+        input_id = _label_free_content_pseudonym(
+            row_ids=row_ids,
+            states=states,
+            site_coordinates=site_coordinates,
+            oriented_faces=oriented_faces,
+            fit_sample_ids=fit_sample_ids,
+            fit_angles_rad=fit_angles_rad,
+            fit_values=fit_values,
+            evaluation_sample_ids=evaluation_sample_ids,
+            evaluation_angles_rad=evaluation_angles_rad,
+            evaluation_values=evaluation_values,
+        )
+        return cls(
+            input_id=input_id,
+            row_ids=row_ids,
+            states=states,
+            site_coordinates=site_coordinates,
+            oriented_faces=oriented_faces,
+            fit_sample_ids=fit_sample_ids,
+            fit_angles_rad=fit_angles_rad,
+            fit_values=fit_values,
+            evaluation_sample_ids=evaluation_sample_ids,
+            evaluation_angles_rad=evaluation_angles_rad,
+            evaluation_values=evaluation_values,
+        )
+
     def to_dict(self) -> dict[str, object]:
         return {
             "receipt_version": self.receipt_version,
@@ -1290,20 +1333,7 @@ def _case(
         orientation=orientation,
         disposition=disposition,
     )
-    input_id = _label_free_content_pseudonym(
-        row_ids=row_ids,
-        states=states,
-        site_coordinates=coordinates,
-        oriented_faces=oriented_faces,
-        fit_sample_ids=fit_ids,
-        fit_angles_rad=fit_angles,
-        fit_values=fit_values,
-        evaluation_sample_ids=evaluation_ids,
-        evaluation_angles_rad=evaluation_angles,
-        evaluation_values=evaluation_values,
-    )
-    estimator_inputs = CartesianFourierEstimatorInputs(
-        input_id=input_id,
+    estimator_inputs = CartesianFourierEstimatorInputs.from_observable_arrays(
         row_ids=row_ids,
         states=states,
         site_coordinates=coordinates,

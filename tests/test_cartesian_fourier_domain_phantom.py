@@ -165,6 +165,34 @@ def test_estimator_inputs_are_label_free_and_truth_separated() -> None:
         assert set(inputs.fit_sample_ids).isdisjoint(set(inputs.evaluation_sample_ids))
 
 
+def test_owner_factory_derives_the_content_id_from_observable_arrays() -> None:
+    inputs = (
+        CartesianFourierDomainGenerator()
+        .generate(CartesianFourierDomainSpec())
+        .positive.estimator_inputs
+    )
+    values = {
+        item.name: getattr(inputs, item.name)
+        for item in fields(inputs)
+        if item.name != "input_id"
+    }
+
+    rebuilt = CartesianFourierEstimatorInputs.from_observable_arrays(**values)
+    assert rebuilt.input_id == inputs.input_id
+    assert rebuilt.fingerprint_sha256 == inputs.fingerprint_sha256
+
+    changed_evaluation = np.array(
+        inputs.evaluation_values,
+        dtype=np.float64,
+        copy=True,
+    )
+    changed_evaluation[0, 0] += 1e-6
+    changed = CartesianFourierEstimatorInputs.from_observable_arrays(
+        **{**values, "evaluation_values": changed_evaluation}
+    )
+    assert changed.input_id != inputs.input_id
+
+
 @pytest.mark.parametrize("case_name", ["positive", "fixed_null"])
 @pytest.mark.parametrize("split_name", ["fit", "evaluation"])
 def test_interleaved_quadrature_recovers_oracle_fourier_coordinates(
