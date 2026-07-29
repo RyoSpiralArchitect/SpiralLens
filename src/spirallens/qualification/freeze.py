@@ -55,6 +55,7 @@ SELECTION_TERMINAL_MANIFEST_FILENAME = "terminal-manifest.json"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+_HISTORICAL_SOURCE_RELOAD_CAPABILITY = object()
 
 
 class SelectionAccessState(str, Enum):
@@ -2768,20 +2769,72 @@ def _validate_terminal_result_against_live_sources(
     repository_root: str | Path | None,
     registry_path: str | Path | None,
     referent_path: str | Path | None,
+    historical_source_binding_receipt: object | None = None,
+    historical_reload_capability: object | None = None,
 ) -> None:
-    """Run the full result contract with exact successor-aware provenance."""
+    """Run the full result contract with exact successor-aware provenance.
+
+    The default remains full live-source verification.  A committed historical
+    reload may instead supply the exact execution-time receipt already
+    cryptographically bound by the result's source-binding summary.
+    """
+
+    if historical_source_binding_receipt is not None:
+        if historical_reload_capability is not _HISTORICAL_SOURCE_RELOAD_CAPABILITY:
+            raise QualificationContractError(
+                "historical source receipt requires the private archived-reload "
+                "capability"
+            )
+    elif historical_reload_capability is not None:
+        raise QualificationContractError(
+            "historical reload capability requires a historical source receipt"
+        )
 
     from .contracts import QualificationResult
 
     if not isinstance(terminal_artifact, QualificationResult):
         return
     from .persistence import LoadedQualificationProtocol
-    from .source_binding import verify_protocol_source_binding_successor
+    from .source_binding import (
+        QualificationSourceBindingReceipt,
+        verify_protocol_source_binding_successor,
+    )
 
     if not isinstance(loaded_protocol, LoadedQualificationProtocol):
         raise QualificationContractError(
             "result terminal publication requires the full loaded protocol"
         )
+    if historical_source_binding_receipt is not None:
+        if not isinstance(
+            historical_source_binding_receipt,
+            QualificationSourceBindingReceipt,
+        ):
+            raise TypeError(
+                "historical_source_binding_receipt must be a "
+                "QualificationSourceBindingReceipt or None"
+            )
+        if any(
+            value is not None
+            for value in (repository_root, registry_path, referent_path)
+        ):
+            raise QualificationContractError(
+                "historical source verification does not accept live source paths"
+            )
+        freeze.validate_loaded_protocol(loaded_protocol=loaded_protocol)
+        terminal_artifact.validate_against_protocol(
+            loaded_protocol.protocol,
+            protocol_source_sha256=loaded_protocol.source_sha256,
+            source_binding_receipt=historical_source_binding_receipt,
+            selection_freeze_artifact=freeze,
+            selection_attempt_claim=attempt_claim,
+            selection_launch_authorization_sha256=(
+                selection_launch_authorization_sha256
+            ),
+            _historical_reload_capability=(
+                _HISTORICAL_SOURCE_RELOAD_CAPABILITY
+            ),
+        )
+        return
     if repository_root is None or registry_path is None or referent_path is None:
         raise QualificationContractError(
             "result terminal publication requires live source-verification paths"
@@ -3002,6 +3055,8 @@ def load_terminal_selection_consumption(
     repository_root: str | Path | None = None,
     registry_path: str | Path | None = None,
     referent_path: str | Path | None = None,
+    _historical_source_binding_receipt: object | None = None,
+    _historical_reload_capability: object | None = None,
 ) -> tuple[SelectionConsumptionArtifact, object]:
     """Load and validate every member of an atomic terminal transaction."""
 
@@ -3120,6 +3175,8 @@ def load_terminal_selection_consumption(
         repository_root=repository_root,
         registry_path=registry_path,
         referent_path=referent_path,
+        historical_source_binding_receipt=_historical_source_binding_receipt,
+        historical_reload_capability=_historical_reload_capability,
     )
 
     _consumption_path, consumption_source, consumption_document = (

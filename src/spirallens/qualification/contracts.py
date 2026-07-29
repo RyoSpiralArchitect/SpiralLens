@@ -3675,8 +3675,15 @@ class QualificationResult:
         selection_freeze_artifact: object | None = None,
         selection_attempt_claim: object | None = None,
         selection_launch_authorization_sha256: str | None = None,
+        _historical_reload_capability: object | None = None,
     ) -> None:
-        """Recompute every D0--D5 gate from exact typed evidence."""
+        """Validate every D0--D5 gate from exact typed evidence.
+
+        The private committed-terminal reload route validates the serialized
+        D1 receipts and their historical source binding without executing the
+        current D1 implementation.  All ordinary callers retain full current
+        D1 recomputation.
+        """
 
         if not isinstance(protocol, QualificationProtocol):
             raise TypeError("protocol must be a QualificationProtocol")
@@ -3701,10 +3708,21 @@ class QualificationResult:
             )
         self.evidence_bundle.d2_confounder_matrix_receipt.validate_protocol(protocol)
         from .freeze import (
+            _HISTORICAL_SOURCE_RELOAD_CAPABILITY,
             SelectionAttemptClaimArtifact,
             SelectionFreezeArtifact,
             seed_family_commitment_sha256,
         )
+
+        historical_reload = (
+            _historical_reload_capability
+            is _HISTORICAL_SOURCE_RELOAD_CAPABILITY
+        )
+        if _historical_reload_capability is not None and not historical_reload:
+            raise QualificationContractError(
+                "historical result validation requires the private committed-"
+                "terminal reload capability"
+            )
 
         if not isinstance(selection_freeze_artifact, SelectionFreezeArtifact):
             raise QualificationContractError(
@@ -3826,7 +3844,7 @@ class QualificationResult:
             for item in attempted_static_receipts
             if item.gate_id is QualificationGateId.D1
         )
-        if attempted_d1_receipts:
+        if attempted_d1_receipts and not historical_reload:
             from .runner import recompute_fixed_development_d1
 
             self.evidence_bundle.validate_d1_receipts_against_protocol(  # type: ignore[attr-defined]

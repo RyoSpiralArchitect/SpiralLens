@@ -419,6 +419,14 @@ The selection artifact is sealed before confirmation data are opened.
 Non-advanced competitors remain reported and cannot be retroactively made
 required or silently dropped.
 
+The generic instrument artifact above is not a bridge from the PR9
+`QualificationResult`: its inputs are canonical instrument artifact
+references, while the result is a separate qualification terminal type. The
+current D6 implementation therefore uses a dedicated
+surrogate-profile-advancement decision that binds the full terminal identity
+and cannot resolve a P0 hypothesis. Conflating these two decision classes would
+launder Cartesian surrogate evidence into representation-instrument evidence.
+
 ### `CalibrationConfirmationResult`
 
 Bind the sealed `CalibrationSelectionDecision`, every attempted confirmation
@@ -635,12 +643,17 @@ bundle before preparing any subject manifest.
 
 The repository now contains a closed, model-free D0-D5
 calibration-selection engine and its persistence/chronology contracts. That
-implementation does not itself set any gate to `pass`. A selection outcome
-exists only after exact canonical readiness/protocol/freeze F artifacts; a
+implementation alone does not set a gate to `pass`. The official selection
+outcome now exists because the exact canonical readiness/protocol/freeze F
+artifacts, a
 launch intent persisted before one exclusive attempt claim; exact clean
 tracked store-freeze/intent/claim/descriptor G artifacts; fresh G-derived
 authorization; and one atomic execution-start transition have been published
-and the one-shot run has terminated. This document records no such outcome.
+and the one-shot run terminated in one validated terminal transaction. All six
+gate states are `pass` within their serialized scopes. The result remains
+Level 0, Cartesian-surrogate-only, and false for D6-D8, synthetic
+qualification, P0 winner, representation transfer, localized join, subject,
+semantic, and integer/topology authority.
 
 ### D0 — definitions
 
@@ -653,7 +666,8 @@ For the current selection engine, the executable D0 evidence path binds the
 exact source commit and module digests, canonical P0 registry and referent
 set, closed estimator/generator/graph implementations, numeric thresholds,
 required core/crossed cells, exact stress strata, and Level-0 authority
-boundary. This defines how D0 will be evaluated; it is not a D0 result.
+boundary. The recorded official result passed this D0 contract; that pass
+defines only the engine/protocol scope serialized in the gate.
 
 ### D1 — analytic correctness
 
@@ -810,16 +824,35 @@ to engine/protocol contracts; D1/D3 cover the Cartesian surrogate and
 fixed-development representation checks; D2/D4/D5 cover the Cartesian
 surrogate only. These scopes cannot authorize representation D2-D5 transfer.
 
-### D6 — selection freeze
+### D6 — scope-limited advancement freeze
 
-The `CalibrationSelectionDecision` seals advanced hypotheses, required and
-diagnostic cells, estimators, graphs, thresholds, aggregation, and coverage
-rules before confirmation access.
+The terminally recorded D0-D5 result may advance only the exact
+`f2-cartesian-surrogate-d2-d5-v0-1` profile to an independent-family
+confirmation gate. The D6 decision binds the exact protocol, freeze, claim,
+launch authorization, terminal manifest, consumption, result, evidence root,
+gate scopes, required cells, graphs, thresholds, stress strata, aggregation,
+and coverage rules.
+
+That decision does not advance a P0 hypothesis or the representation
+estimator. It fixes P0 winner selection, representation D2-D5 transfer,
+localized core-loop join, integer/topology output, semantic authority, and
+subject access to false.
 
 The pre-run D0-D5 `SelectionFreezeArtifact` is a different object: it binds one
 unopened selection attempt to exact protocol bytes and a seed-family
 commitment. It does not decide which instrument advances and cannot satisfy
 D6.
+
+The D6 admission specification is embedded in the single decision bundle and
+sealed before any confirmation values are accessed. It requires a distinct
+mathematical construction family, the same required case semantics, surrogate
+estimator and trivialization, implementation registry, graph axes, separate
+core and loop paths, stress strata, cell manifest, thresholds, and aggregation;
+selection and confirmation evidence must be content-disjoint. Policy overrides
+and post-selection exclusions are forbidden. A different seed, source digest,
+or implementation label inside the same construction family cannot satisfy
+this gate. The no-access fact is an external attestation rather than
+cryptographic access proof.
 
 ### D7 — locked independent calibration
 
@@ -827,19 +860,34 @@ The one-shot confirmation applies D6 without overrides, exclusions, newly
 required cells, or required cells being removed. All non-advanced competitors
 remain visible as frozen selection outcomes.
 
+D7 is currently `not_run`. Unopened Cartesian seeds would provide a locked
+replication, not construction-family independence. The spectral-moment
+foundation has a distinct family identity but currently emits no graph, core,
+loop, or full D0-D5 confirmation result, so it is not yet admissible.
+Accordingly, no open-mapping or label-only D7 admission function exists.
+
 ### D8 — freeze and replay
 
 The complete synthetic-qualified bundle is byte-replayable and records every
 unresolved choice and claim ceiling.
+
+D8 is currently `not_run` because D7 has not passed and no isolated full-bundle
+replay exists. A future replay must compare complete canonical bytes in a
+separate namespace; replay demonstrates determinism and is not counted as a
+second independent confirmation.
+There is no D8 promotion helper that can pass from two caller-supplied byte
+strings; typed D7, execution, namespace, source, and replay receipts are still
+required.
 
 Any required failure stops. Any required insufficient result blocks. Only D0
 through D8 authorize a later subject-protocol preparation step. They do not
 authorize subject execution.
 
 For the current D0-D5 result schema, `d6_d8_advanced=false` and
-`synthetic_qualified=false` are invariants. D6-D8 therefore remain unadvanced
-until later selection-decision, independent confirmation, and complete replay
-work is implemented and separately reviewed.
+`synthetic_qualified=false` are invariants. The scope-limited D6 admission
+decision does not alter those bytes. Global D6-D8 therefore remain unadvanced
+until a separately implemented family passes locked confirmation and complete
+replay under a separately reviewed promotion contract.
 
 ## 10. Decisions allowed now
 

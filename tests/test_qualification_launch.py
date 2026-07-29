@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import spirallens.qualification.contracts as qualification_contracts
 import spirallens.qualification.freeze as qualification_freeze
 import spirallens.qualification.launch as qualification_launch
 import spirallens.qualification.runner as qualification_runner
@@ -30,7 +31,9 @@ from spirallens.qualification.freeze import (
 )
 from spirallens.qualification.launch import (
     ExclusiveTerminalPublicationCapability,
+    LoadedCommittedSelectionTerminal,
     PreparedSelectionLaunchDescriptor,
+    load_committed_selection_terminal,
     load_prepared_selection_launch,
     load_prepared_selection_launch_descriptor,
     prepare_selection_launch,
@@ -48,7 +51,10 @@ from spirallens.qualification.preparation import (
     publish_closed_d0_d5_preseed_readiness_artifact,
 )
 from spirallens.qualification.protocol import RepositoryFileDigest
-from spirallens.qualification.source_binding import verify_source_binding
+from spirallens.qualification.source_binding import (
+    QualificationSourceBindingSummary,
+    verify_source_binding,
+)
 
 
 def _git(repository: Path, *arguments: str) -> str:
@@ -1186,6 +1192,197 @@ def test_terminal_authorization_accepts_unchanged_successor_and_rejects_false_g(
             attempt_claim=launch.attempt_claim,
             loaded_protocol=launch.loaded_protocol,
             launch_authorization=authorization,
+        )
+
+
+def test_committed_terminal_loader_reconstructs_read_only_authorization(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = _launch_fixture(tmp_path)
+    prepared = _prepare(fixture)
+    descriptor_path, loaded_descriptor = _write_and_commit_g(
+        fixture,
+        prepared,
+    )
+    launch = load_prepared_selection_launch(
+        descriptor_path,
+        expected_descriptor_source_sha256=loaded_descriptor.source_sha256,
+        expected_descriptor_canonical_sha256=loaded_descriptor.canonical_sha256,
+    )
+    authorization = launch.launch_authorization
+    assert authorization is not None
+    begin_selection_execution(
+        fixture.attempt_store,
+        freeze=fixture.freeze,
+        attempt_claim=launch.attempt_claim,
+        loaded_protocol=launch.loaded_protocol,
+        launch_authorization=authorization,
+    )
+
+    source_summary = QualificationSourceBindingSummary.from_receipt(
+        launch.source_binding_receipt
+    )
+    validation_receipts: list[object] = []
+    validation_capabilities: list[object | None] = []
+
+    class FakeQualificationResult:
+        loaded_instance: object
+
+        def __init__(self) -> None:
+            self.protocol_id = launch.loaded_protocol.protocol.protocol_id
+            self.protocol_source_sha256 = launch.loaded_protocol.source_sha256
+            self.protocol_canonical_sha256 = launch.loaded_protocol.canonical_sha256
+            self.source_binding = source_summary
+            self.selection_freeze_artifact_sha256 = fixture.freeze.canonical_sha256
+            self.selection_attempt_claim_sha256 = launch.attempt_claim.canonical_sha256
+            self.selection_launch_authorization_sha256 = authorization.canonical_sha256
+
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "kind": "committed-terminal-loader-result",
+                "source_binding": self.source_binding.to_dict(),
+            }
+
+        @property
+        def canonical_bytes(self) -> bytes:
+            return qualification_launch.canonical_json_bytes(self.to_dict())
+
+        @property
+        def canonical_sha256(self) -> str:
+            return qualification_launch.canonical_json_sha256(self.to_dict())
+
+        def validate_against_protocol(
+            self,
+            supplied_protocol: object,
+            *,
+            protocol_source_sha256: str,
+            source_binding_receipt: object,
+            selection_freeze_artifact: object,
+            selection_attempt_claim: object,
+            selection_launch_authorization_sha256: str | None,
+            _historical_reload_capability: object | None = None,
+        ) -> None:
+            assert supplied_protocol == launch.loaded_protocol.protocol
+            assert protocol_source_sha256 == launch.loaded_protocol.source_sha256
+            assert selection_freeze_artifact == fixture.freeze
+            assert selection_attempt_claim == launch.attempt_claim
+            assert (
+                selection_launch_authorization_sha256 == authorization.canonical_sha256
+            )
+            validation_receipts.append(source_binding_receipt)
+            validation_capabilities.append(_historical_reload_capability)
+
+        @classmethod
+        def from_dict(cls, value: object) -> object:
+            instance = cls.loaded_instance
+            assert value == instance.to_dict()  # type: ignore[attr-defined]
+            return instance
+
+    result = FakeQualificationResult()
+    FakeQualificationResult.loaded_instance = result
+    monkeypatch.setattr(
+        qualification_contracts,
+        "QualificationResult",
+        FakeQualificationResult,
+    )
+    consumption, terminal_identity = publish_terminal_selection_consumption(
+        fixture.attempt_store,
+        consumption_id="committed-terminal-loader-consumption",
+        freeze=fixture.freeze,
+        attempt_claim=launch.attempt_claim,
+        terminal_artifact=result,
+        loaded_protocol=launch.loaded_protocol,
+        launch_authorization=authorization,
+        repository_root=fixture.repository,
+        registry_path=fixture.registry_path,
+        referent_path=fixture.referent_path,
+    )
+    _git(
+        fixture.repository,
+        "add",
+        str(
+            selection_execution_start_path(
+                fixture.attempt_store,
+                fixture.freeze,
+            ).relative_to(fixture.repository)
+        ),
+        str(terminal_identity.path.relative_to(fixture.repository)),
+    )
+    _git(fixture.repository, "commit", "-m", "record committed H terminal")
+    changed_module = (
+        fixture.repository / launch.source_binding_receipt.modules[0].repository_path
+    )
+    changed_module.write_bytes(changed_module.read_bytes() + b"\n# successor change\n")
+    _git(
+        fixture.repository,
+        "add",
+        changed_module.relative_to(fixture.repository).as_posix(),
+    )
+    _git(fixture.repository, "commit", "-m", "change current engine successor")
+
+    loaded = load_committed_selection_terminal(
+        descriptor_path,
+        expected_descriptor_source_sha256=loaded_descriptor.source_sha256,
+        expected_descriptor_canonical_sha256=loaded_descriptor.canonical_sha256,
+        expected_terminal_manifest_sha256=terminal_identity.manifest_sha256,
+        expected_terminal_artifact_sha256=(terminal_identity.terminal_artifact_sha256),
+        expected_consumption_sha256=terminal_identity.consumption_sha256,
+    )
+
+    assert isinstance(loaded, LoadedCommittedSelectionTerminal)
+    assert loaded.launch_authorization == authorization
+    assert loaded.terminal_identity == terminal_identity
+    assert loaded.consumption == consumption
+    assert loaded.terminal_artifact is result
+    assert validation_receipts == [
+        launch.source_binding_receipt,
+        launch.source_binding_receipt,
+    ]
+    assert validation_capabilities == [
+        None,
+        qualification_freeze._HISTORICAL_SOURCE_RELOAD_CAPABILITY,
+    ]
+    assert loaded.launch_authorization.retry_authorized is False
+    assert loaded.consumption.reopen_authorized is False
+    assert loaded.consumption.retry_authorized is False
+    assert loaded.archival_contract_parser_used is True
+    assert loaded.historical_d1_recomputation_performed is False
+    assert loaded.current_source_compatibility_verified is False
+    assert loaded.historical_engine_reexecution_verified is False
+    assert not hasattr(loaded, "loaded_protocol")
+
+    with pytest.raises(
+        QualificationContractError,
+        match="private archived-reload capability",
+    ):
+        load_terminal_selection_consumption(
+            terminal_identity.path,
+            expected_manifest_sha256=terminal_identity.manifest_sha256,
+            expected_terminal_artifact_sha256=(
+                terminal_identity.terminal_artifact_sha256
+            ),
+            expected_consumption_sha256=terminal_identity.consumption_sha256,
+            freeze=fixture.freeze,
+            attempt_claim=launch.attempt_claim,
+            loaded_protocol=launch.loaded_protocol,
+            launch_authorization=authorization,
+            _historical_source_binding_receipt=launch.source_binding_receipt,
+        )
+
+    with pytest.raises(
+        QualificationContractError,
+        match="H terminal manifest",
+    ):
+        load_committed_selection_terminal(
+            descriptor_path,
+            expected_descriptor_source_sha256=loaded_descriptor.source_sha256,
+            expected_descriptor_canonical_sha256=(loaded_descriptor.canonical_sha256),
+            expected_terminal_manifest_sha256="0" * 64,
+            expected_terminal_artifact_sha256=(
+                terminal_identity.terminal_artifact_sha256
+            ),
+            expected_consumption_sha256=terminal_identity.consumption_sha256,
         )
 
 

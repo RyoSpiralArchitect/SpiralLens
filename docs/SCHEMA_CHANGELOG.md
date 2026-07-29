@@ -4,6 +4,57 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-29 — PR #10 D6 independent-family admission boundary
+
+### Added
+
+- `spirallens.d6-selection-terminal-binding.v0.1` binds the exact official
+  D0-D5 protocol, freeze, claim, launch authorization, terminal manifest,
+  consumption, result, evidence root, all-pass gate scopes, and locked
+  graph/cell/stress/threshold/aggregation identities. It is an archival
+  historical binding and explicitly records
+  `current_engine_reexecution_verified=false`.
+- `spirallens.independent-confirmation-admission.v0.1` freezes the
+  Cartesian-surrogate-only profile and the requirements for a future distinct
+  mathematical construction family. Same-family seed changes, source or
+  implementation relabeling, policy overrides, post-selection exclusions, and
+  selection-evidence reuse cannot satisfy it. The schema is embedded inside
+  the decision bundle rather than published through a separate authoritative
+  writer.
+- `spirallens.surrogate-advancement-decision.v0.1` records a scope-limited D6
+  pass while fixing D7 and D8 to `not_run`, global
+  `d6_d8_advanced=false`, `synthetic_qualified=false`, and every P0,
+  representation, localized-join, integer/topology, semantic, Pythia, and
+  subject authority to false.
+- `spirallens.advancement-source-binding.v0.1` binds the D6 decision to exact
+  Git blobs for the sealing script and the complete tracked
+  `src/spirallens/**/*.py` surface at the source commit. It remains source-only,
+  not a runtime or transitive native-dependency attestation.
+- `load_committed_selection_terminal()` reconstructs the exact historical
+  committed-G authorization and H terminal from Git/artifact lineage. The
+  historical receipt route is private-token-gated and skips current D1
+  recomputation; it records current-engine compatibility and historical
+  reexecution as false. The ordinary successor-aware validator retains its
+  live-current-source semantics.
+- `publish_scope_limited_d6_decision()` produces a validated but
+  `committed_artifact_verified=false` candidate; only
+  `load_scope_limited_d6_decision()` after a clean tracked descendant commit
+  returns the authoritative committed receipt.
+
+### Compatibility and non-migrations
+
+- PR #9 protocol, result, terminal, and consumption bytes are unchanged. The
+  D6 artifacts refer to them; they do not mutate or reinterpret their fixed
+  authority fields.
+- The generic instrument `CalibrationSelectionDecision` is unchanged and is
+  not used as a type bridge from a qualification result.
+- No D7 confirmation, D8 replay, global synthetic qualification,
+  representation transfer, P0 winner, subject preparation/execution, semantic,
+  integer, or topology schema is promoted by this entry.
+- No label/self-attestation D7 validator or caller-byte-only D8 validator is
+  exported. Those surfaces require future typed evidence and execution
+  receipts.
+
 ## 2026-07-29 — PR #9 D0-D5 engine hardening
 
 ### Changed

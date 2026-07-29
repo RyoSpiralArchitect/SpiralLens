@@ -11,6 +11,7 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 PREPARE_SELECTION = REPOSITORY / "scripts" / "prepare_d0_d5_selection.py"
 PREPARE_LAUNCH = REPOSITORY / "scripts" / "prepare_d0_d5_launch.py"
 RUN_SELECTION = REPOSITORY / "scripts" / "run_d0_d5_selection.py"
+SEAL_D6 = REPOSITORY / "scripts" / "seal_d6_surrogate_advancement.py"
 
 
 def _source(path: Path) -> str:
@@ -81,9 +82,29 @@ def test_fresh_runner_has_no_store_override_and_calls_only_orchestrator_once() -
         assert forbidden not in calls
 
 
+def test_d6_sealer_is_read_only_on_the_consumed_attempt() -> None:
+    source = _source(SEAL_D6)
+    calls = _call_names(SEAL_D6)
+
+    assert "--selection-seed" not in source
+    assert "--admission-output" not in source
+    assert calls.count("publish_scope_limited_d6_decision") == 1
+    for forbidden in (
+        "begin_selection_execution",
+        "build_selection_terminal_binding",
+        "claim_selection_attempt",
+        "generate",
+        "load_committed_selection_terminal",
+        "run_and_publish_calibration_selection",
+        "run_calibration_selection",
+        "write_advancement_artifact",
+    ):
+        assert forbidden not in calls
+
+
 @pytest.mark.parametrize(
     "script",
-    [PREPARE_SELECTION, PREPARE_LAUNCH, RUN_SELECTION],
+    [PREPARE_SELECTION, PREPARE_LAUNCH, RUN_SELECTION, SEAL_D6],
 )
 def test_official_script_help_is_side_effect_free(script: Path) -> None:
     completed = subprocess.run(

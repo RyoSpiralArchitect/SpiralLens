@@ -29,8 +29,8 @@ import sys
 import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from typing import ClassVar
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, ClassVar
 
 from spirallens.core.canonical import (
     CanonicalJsonError,
@@ -41,15 +41,27 @@ from spirallens.core.canonical import (
 
 from .common import QualificationContractError
 from .freeze import (
+    _HISTORICAL_SOURCE_RELOAD_CAPABILITY,
     MAX_SELECTION_CHRONOLOGY_ARTIFACT_BYTES,
+    MAX_SELECTION_TERMINAL_ARTIFACT_BYTES,
     SELECTION_ATTEMPT_CLAIM_SUFFIX,
+    SELECTION_TERMINAL_ARTIFACT_FILENAME,
+    SELECTION_TERMINAL_CONSUMPTION_FILENAME,
+    SELECTION_TERMINAL_MANIFEST_FILENAME,
     PersistedSelectionIdentity,
+    PersistedSelectionTerminalIdentity,
     SelectionAttemptClaimArtifact,
+    SelectionConsumptionArtifact,
+    SelectionExecutionStartArtifact,
+    SelectionFailedAttemptArtifact,
     SelectionFreezeArtifact,
     SelectionLaunchIntentBinding,
+    SelectionTerminalManifestArtifact,
+    TerminalAttemptArtifactKind,
     claim_selection_attempt,
     load_selection_attempt_claim,
     load_selection_freeze,
+    load_terminal_selection_consumption,
     selection_attempt_claim_path,
     selection_attempt_key_sha256,
     selection_execution_start_path,
@@ -65,11 +77,17 @@ from .preparation import (
 )
 from .protocol import PreseedReadinessBinding
 from .source_binding import (
+    ModuleSourceReceipt,
     QualificationSourceBindingReceipt,
     QualificationSourceBindingSummary,
+    ReferentSourceReceipt,
+    RegistrySourceReceipt,
     verify_protocol_source_binding,
     verify_protocol_source_binding_successor,
 )
+
+if TYPE_CHECKING:
+    from .contracts import QualificationResult
 
 PREPARED_SELECTION_LAUNCH_DESCRIPTOR_SCHEMA_VERSION = (
     "spirallens.prepared-selection-launch-descriptor.v0.3"
@@ -1668,6 +1686,85 @@ class SelectionLaunchAuthorization:
 
 
 @dataclass(frozen=True, slots=True)
+class LoadedCommittedSelectionTerminal:
+    """Read-only archived reload of one already-consumed official attempt.
+
+    The protocol is intentionally not retained because it contains the closed
+    selection seeds.  Historical blob verification does not establish current
+    engine compatibility or historical runtime reexecution.  This receipt
+    carries no execution or retry capability.
+    """
+
+    launch_authorization: SelectionLaunchAuthorization
+    terminal_identity: PersistedSelectionTerminalIdentity
+    consumption: SelectionConsumptionArtifact
+    terminal_artifact: QualificationResult | SelectionFailedAttemptArtifact
+    archival_contract_parser_used: bool = True
+    historical_d1_recomputation_performed: bool = False
+    current_source_compatibility_verified: bool = False
+    historical_engine_reexecution_verified: bool = False
+
+    def __post_init__(self) -> None:
+        from .contracts import QualificationResult
+
+        if not isinstance(self.launch_authorization, SelectionLaunchAuthorization):
+            raise TypeError(
+                "launch_authorization must be a SelectionLaunchAuthorization"
+            )
+        if not isinstance(
+            self.terminal_identity,
+            PersistedSelectionTerminalIdentity,
+        ):
+            raise TypeError(
+                "terminal_identity must be a PersistedSelectionTerminalIdentity"
+            )
+        if not isinstance(self.consumption, SelectionConsumptionArtifact):
+            raise TypeError("consumption must be a SelectionConsumptionArtifact")
+        if not isinstance(
+            self.terminal_artifact,
+            (QualificationResult, SelectionFailedAttemptArtifact),
+        ):
+            raise TypeError(
+                "terminal_artifact must be a QualificationResult or "
+                "SelectionFailedAttemptArtifact"
+            )
+        _constant(
+            self.archival_contract_parser_used,
+            True,
+            label="archived terminal archival_contract_parser_used",
+        )
+        for name in (
+            "historical_d1_recomputation_performed",
+            "current_source_compatibility_verified",
+            "historical_engine_reexecution_verified",
+        ):
+            _constant(
+                getattr(self, name),
+                False,
+                label=f"archived terminal {name}",
+            )
+        if (
+            self.launch_authorization.retry_authorized
+            or self.consumption.retry_authorized
+            or self.consumption.reopen_authorized
+        ):
+            raise QualificationContractError(
+                "a committed terminal reload cannot authorize reopen or retry"
+            )
+        if (
+            self.terminal_identity.terminal_artifact_sha256
+            != self.terminal_artifact.canonical_sha256
+            or self.terminal_identity.consumption_sha256
+            != self.consumption.canonical_sha256
+            or self.consumption.terminal_artifact_sha256
+            != self.terminal_artifact.canonical_sha256
+        ):
+            raise QualificationContractError(
+                "loaded terminal receipt identities differ"
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class PreparedSelectionLaunch:
     """Validated inputs for the official runner, without entering it."""
 
@@ -2805,6 +2902,622 @@ def load_prepared_selection_launch(
     )
 
 
+def _read_stable_bounded_source(
+    path: Path,
+    *,
+    label: str,
+    maximum_bytes: int,
+) -> bytes:
+    """Read one regular file while rejecting replacement and oversize races."""
+
+    _require_real_file(path, label=label)
+    try:
+        with path.open("rb") as handle:
+            before = os.fstat(handle.fileno())
+            source = handle.read(maximum_bytes + 1)
+            after = os.fstat(handle.fileno())
+    except OSError as error:
+        raise QualificationContractError(f"cannot read {label}: {error}") from error
+    before_identity = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+        before.st_nlink,
+    )
+    after_identity = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+        after.st_nlink,
+    )
+    if before_identity != after_identity or len(source) != after.st_size:
+        raise QualificationContractError(f"{label} changed while being read")
+    if len(source) > maximum_bytes:
+        raise QualificationContractError(f"{label} exceeds the fixed byte cap")
+    return source
+
+
+def _git_blob_at_commit(
+    repository: Path,
+    *,
+    commit: str,
+    repository_path: str,
+    label: str,
+) -> bytes:
+    completed = subprocess.run(
+        ["git", "-C", str(repository), "show", f"{commit}:{repository_path}"],
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        raise QualificationContractError(
+            f"{label} is absent from its historical commit"
+        )
+    return completed.stdout
+
+
+def _module_path_at_commit(
+    repository: Path,
+    *,
+    commit: str,
+    module: str,
+) -> str:
+    stem = PurePosixPath("src", *module.split("."))
+    candidates = (f"{stem.as_posix()}.py", f"{stem.as_posix()}/__init__.py")
+    existing: list[str] = []
+    for candidate in candidates:
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "cat-file",
+                "-e",
+                f"{commit}:{candidate}",
+            ],
+            check=False,
+            capture_output=True,
+        )
+        if completed.returncode == 0:
+            existing.append(candidate)
+    if len(existing) != 1:
+        raise QualificationContractError(
+            f"engine module {module} does not resolve uniquely at execution HEAD"
+        )
+    return existing[0]
+
+
+def _historical_source_binding_receipt(
+    *,
+    repository: Path,
+    loaded_protocol: LoadedQualificationProtocol,
+    descriptor: PreparedSelectionLaunchDescriptor,
+    authorization: SelectionLaunchAuthorization,
+    source_binding: QualificationSourceBindingSummary,
+) -> QualificationSourceBindingReceipt:
+    """Rebuild the exact result-bound receipt from immutable Git blobs."""
+
+    protocol = loaded_protocol.protocol
+    execution_head = source_binding.head_commit
+    if execution_head != authorization.authorized_head_commit:
+        raise QualificationContractError(
+            "result execution source HEAD differs from committed G authorization"
+        )
+    current_head = _resolve_repository_head(
+        repository,
+        label="historical source receipt",
+    )
+    for commit, label in (
+        (protocol.engine.commit, "engine commit"),
+        (execution_head, "execution HEAD"),
+        (current_head, "current HEAD"),
+    ):
+        resolved = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "rev-parse",
+                "--verify",
+                f"{commit}^{{commit}}",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if resolved.returncode != 0 or resolved.stdout.strip() != commit:
+            raise QualificationContractError(
+                f"historical source receipt {label} does not resolve exactly"
+            )
+    for ancestor, descendant, label in (
+        (
+            protocol.engine.commit,
+            execution_head,
+            "engine commit is not an ancestor of execution HEAD",
+        ),
+        (
+            execution_head,
+            current_head,
+            "execution HEAD is not an ancestor of current HEAD",
+        ),
+    ):
+        ancestry = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "merge-base",
+                "--is-ancestor",
+                ancestor,
+                descendant,
+            ],
+            check=False,
+            capture_output=True,
+        )
+        if ancestry.returncode != 0:
+            raise QualificationContractError(label)
+
+    module_receipts: list[ModuleSourceReceipt] = []
+    for declaration in protocol.engine.modules:
+        repository_path = _module_path_at_commit(
+            repository,
+            commit=protocol.engine.commit,
+            module=declaration.module,
+        )
+        execution_path = _module_path_at_commit(
+            repository,
+            commit=execution_head,
+            module=declaration.module,
+        )
+        if execution_path != repository_path:
+            raise QualificationContractError(
+                f"engine module {declaration.module} moved before execution"
+            )
+        for commit, label in (
+            (protocol.engine.commit, "engine commit"),
+            (execution_head, "execution HEAD"),
+        ):
+            source = _git_blob_at_commit(
+                repository,
+                commit=commit,
+                repository_path=repository_path,
+                label=f"engine module {declaration.module} at {label}",
+            )
+            if hashlib.sha256(source).hexdigest() != declaration.sha256:
+                raise QualificationContractError(
+                    f"engine module {declaration.module} differs at {label}"
+                )
+        module_receipts.append(
+            ModuleSourceReceipt(
+                module=declaration.module,
+                repository_path=repository_path,
+                declared_sha256=declaration.sha256,
+                working_sha256=declaration.sha256,
+                head_blob_sha256=declaration.sha256,
+                bound_blob_sha256=declaration.sha256,
+            )
+        )
+
+    for declaration in protocol.engine.official_executables:
+        for commit, label in (
+            (protocol.engine.commit, "engine commit"),
+            (execution_head, "execution HEAD"),
+        ):
+            source = _git_blob_at_commit(
+                repository,
+                commit=commit,
+                repository_path=declaration.repository_path,
+                label=f"official executable {declaration.repository_path} at {label}",
+            )
+            if hashlib.sha256(source).hexdigest() != declaration.sha256:
+                raise QualificationContractError(
+                    f"official executable {declaration.repository_path} "
+                    f"differs at {label}"
+                )
+
+    try:
+        registry_repository_path = Path(descriptor.registry_path).relative_to(
+            repository
+        )
+        referent_repository_path = Path(descriptor.referent_path).relative_to(
+            repository
+        )
+    except ValueError as error:
+        raise QualificationContractError(
+            "descriptor registry/referent paths must remain inside repository_root"
+        ) from error
+    registry_path_text = registry_repository_path.as_posix()
+    referent_path_text = referent_repository_path.as_posix()
+    registry_source = _git_blob_at_commit(
+        repository,
+        commit=execution_head,
+        repository_path=registry_path_text,
+        label="hypothesis registry at execution HEAD",
+    )
+    referent_source = _git_blob_at_commit(
+        repository,
+        commit=execution_head,
+        repository_path=referent_path_text,
+        label="referent contract set at execution HEAD",
+    )
+    if (
+        hashlib.sha256(registry_source).hexdigest()
+        != protocol.registry.registry_source_sha256
+        or hashlib.sha256(referent_source).hexdigest()
+        != protocol.registry.referent_canonical_sha256
+    ):
+        raise QualificationContractError(
+            "registry or referent historical blob differs from the protocol"
+        )
+    receipt = QualificationSourceBindingReceipt(
+        engine=protocol.engine,
+        registry=protocol.registry,
+        head_commit=execution_head,
+        modules=tuple(module_receipts),
+        hypothesis_registry=RegistrySourceReceipt(
+            repository_path=registry_path_text,
+            source_sha256=protocol.registry.registry_source_sha256,
+            canonical_sha256=protocol.registry.registry_canonical_sha256,
+        ),
+        referent_contracts=ReferentSourceReceipt(
+            repository_path=referent_path_text,
+            source_sha256=protocol.registry.referent_canonical_sha256,
+            canonical_sha256=protocol.registry.referent_canonical_sha256,
+            hypothesis_registry_canonical_sha256=(
+                protocol.registry.registry_canonical_sha256
+            ),
+        ),
+    )
+    source_binding.verify_receipt(receipt)
+    return receipt
+
+
+def _terminal_historical_source_binding_receipt(
+    *,
+    repository: Path,
+    loaded_protocol: LoadedQualificationProtocol,
+    descriptor: PreparedSelectionLaunchDescriptor,
+    authorization: SelectionLaunchAuthorization,
+    freeze: SelectionFreezeArtifact,
+    attempt_claim: SelectionAttemptClaimArtifact,
+    terminal_identity: PersistedSelectionTerminalIdentity,
+) -> QualificationSourceBindingReceipt | None:
+    """Preload only enough typed terminal data to rebuild result provenance."""
+
+    manifest_source = _read_stable_bounded_source(
+        terminal_identity.path / SELECTION_TERMINAL_MANIFEST_FILENAME,
+        label="H terminal manifest",
+        maximum_bytes=MAX_SELECTION_CHRONOLOGY_ARTIFACT_BYTES,
+    )
+    try:
+        manifest_document = parse_canonical_json(
+            manifest_source,
+            label="selection terminal manifest",
+        )
+    except CanonicalJsonError as error:
+        raise QualificationContractError(str(error)) from error
+    manifest = SelectionTerminalManifestArtifact.from_dict(manifest_document)
+    if (
+        manifest_source != manifest.canonical_bytes
+        or manifest.canonical_sha256 != terminal_identity.manifest_sha256
+        or manifest.freeze_artifact_sha256 != freeze.canonical_sha256
+        or manifest.attempt_claim_sha256 != attempt_claim.canonical_sha256
+        or manifest.terminal_artifact_sha256
+        != terminal_identity.terminal_artifact_sha256
+        or manifest.consumption_sha256 != terminal_identity.consumption_sha256
+    ):
+        raise QualificationContractError(
+            "preloaded terminal manifest identity or companion join differs"
+        )
+    if manifest.terminal_artifact_kind is TerminalAttemptArtifactKind.FAILED_ATTEMPT:
+        return None
+
+    from .contracts import QualificationResult
+
+    terminal_source = _read_stable_bounded_source(
+        terminal_identity.path / SELECTION_TERMINAL_ARTIFACT_FILENAME,
+        label="H terminal artifact",
+        maximum_bytes=MAX_SELECTION_TERMINAL_ARTIFACT_BYTES,
+    )
+    try:
+        terminal_document = parse_canonical_json(
+            terminal_source,
+            label="selection terminal artifact",
+        )
+    except CanonicalJsonError as error:
+        raise QualificationContractError(str(error)) from error
+    result = QualificationResult.from_dict(terminal_document)
+    if (
+        terminal_source != result.canonical_bytes
+        or result.canonical_sha256 != terminal_identity.terminal_artifact_sha256
+        or len(terminal_source) != manifest.terminal_artifact_byte_count
+    ):
+        raise QualificationContractError(
+            "preloaded result identity differs from the terminal manifest"
+        )
+    return _historical_source_binding_receipt(
+        repository=repository,
+        loaded_protocol=loaded_protocol,
+        descriptor=descriptor,
+        authorization=authorization,
+        source_binding=result.source_binding,
+    )
+
+
+def _reconstruct_terminal_launch_authorization(
+    *,
+    loaded_descriptor: LoadedPreparedSelectionLaunchDescriptor,
+    loaded_protocol: LoadedQualificationProtocol,
+    freeze: SelectionFreezeArtifact,
+    attempt_claim: SelectionAttemptClaimArtifact,
+    attempt_store: Path,
+) -> tuple[SelectionLaunchAuthorization, SelectionExecutionStartArtifact]:
+    """Reconstruct G authorization from an exact persisted execution start."""
+
+    descriptor = loaded_descriptor.descriptor
+    start_path = selection_execution_start_path(attempt_store, freeze)
+    source = _read_stable_bounded_source(
+        start_path,
+        label="selection execution-start artifact",
+        maximum_bytes=MAX_SELECTION_CHRONOLOGY_ARTIFACT_BYTES,
+    )
+    try:
+        document = parse_canonical_json(
+            source,
+            label="selection execution-start artifact",
+        )
+    except CanonicalJsonError as error:
+        raise QualificationContractError(str(error)) from error
+    start = SelectionExecutionStartArtifact.from_dict(document)
+    if source != start.canonical_bytes:
+        raise QualificationContractError(
+            "selection execution-start artifact is not exact canonical bytes"
+        )
+    if (
+        start.authorized_head_commit is None
+        or start.selection_launch_authorization_sha256 is None
+    ):
+        raise QualificationContractError(
+            "official terminal start lacks committed-G authorization lineage"
+        )
+    start.validate_companions(
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+        selection_launch_authorization_sha256=(
+            start.selection_launch_authorization_sha256
+        ),
+        authorized_head_commit=start.authorized_head_commit,
+    )
+    authorization = SelectionLaunchAuthorization(
+        descriptor_path=str(loaded_descriptor.source_path),
+        descriptor_source_sha256=loaded_descriptor.source_sha256,
+        descriptor_canonical_sha256=loaded_descriptor.canonical_sha256,
+        authorized_head_commit=start.authorized_head_commit,
+        launch_intent_identity_sha256=descriptor.launch_intent.identity_sha256,
+        protocol_canonical_sha256=loaded_protocol.canonical_sha256,
+        freeze_canonical_sha256=freeze.canonical_sha256,
+        attempt_claim_canonical_sha256=attempt_claim.canonical_sha256,
+        attempt_store_path=str(attempt_store),
+    )
+    if authorization.canonical_sha256 != start.selection_launch_authorization_sha256:
+        raise QualificationContractError(
+            "execution-start launch authorization differs from its exact "
+            "descriptor-derived identity"
+        )
+    authorization.validate_terminal_companions(
+        loaded_protocol=loaded_protocol,
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+        attempt_store=attempt_store,
+    )
+    return authorization, start
+
+
+def load_committed_selection_terminal(
+    descriptor_path: str | Path,
+    *,
+    expected_descriptor_source_sha256: str,
+    expected_descriptor_canonical_sha256: str,
+    expected_terminal_manifest_sha256: str,
+    expected_terminal_artifact_sha256: str,
+    expected_consumption_sha256: str,
+) -> LoadedCommittedSelectionTerminal:
+    """Strictly reload one completed official terminal transaction.
+
+    All paths are descriptor-derived.  The historical G authorization is
+    reconstructed from the immutable execution-start lineage, then checked as
+    ``engine -> G -> current HEAD``.  The four G blobs must be unchanged at G
+    and current HEAD, and both the start and terminal paths must have been
+    absent at G.  This function only reads an already-consumed attempt; it
+    cannot create a claim, begin execution, reopen, or authorize a retry.
+    """
+
+    loaded_descriptor = load_prepared_selection_launch_descriptor(
+        descriptor_path,
+        expected_source_sha256=expected_descriptor_source_sha256,
+        expected_canonical_sha256=expected_descriptor_canonical_sha256,
+    )
+    descriptor = loaded_descriptor.descriptor
+    repository = _require_real_directory(
+        Path(descriptor.repository_root),
+        label="terminal descriptor repository_root",
+    )
+    _require_real_file(
+        Path(descriptor.registry_path),
+        label="terminal descriptor hypothesis registry",
+    )
+    _require_real_file(
+        Path(descriptor.referent_path),
+        label="terminal descriptor referent contract set",
+    )
+    protocol_path = _require_real_file(
+        Path(descriptor.protocol_path),
+        label="terminal descriptor qualification protocol",
+    )
+    freeze_path = _require_real_file(
+        Path(descriptor.freeze_path),
+        label="terminal descriptor selection freeze",
+    )
+    attempt_store = _require_real_directory(
+        Path(descriptor.attempt_store_path),
+        label="terminal descriptor selection attempt store",
+    )
+
+    loaded_protocol = load_qualification_protocol(
+        protocol_path,
+        expected_source_sha256=descriptor.protocol_source_sha256,
+        expected_canonical_sha256=descriptor.protocol_canonical_sha256,
+    )
+    validate_closed_d0_d5_selection_protocol(
+        loaded_protocol.protocol,
+        require_persisted_preseed_readiness=True,
+    )
+    freeze = load_selection_freeze(
+        freeze_path,
+        expected_source_sha256=descriptor.freeze_source_sha256,
+        expected_canonical_sha256=descriptor.freeze_canonical_sha256,
+        loaded_protocol=loaded_protocol,
+    )
+    if (
+        _validate_descriptor_join(
+            descriptor,
+            loaded_protocol=loaded_protocol,
+            freeze=freeze,
+        )
+        != attempt_store
+    ):
+        raise QualificationContractError(
+            "terminal descriptor attempt store differs from its companions"
+        )
+    loaded_intent = load_prepared_selection_launch_intent(descriptor.launch_intent)
+    if loaded_intent.binding != descriptor.launch_intent:
+        raise QualificationContractError(
+            "terminal launch intent differs from the descriptor"
+        )
+    attempt_claim = load_selection_attempt_claim(
+        descriptor.attempt_claim_path,
+        expected_source_sha256=descriptor.attempt_claim_source_sha256,
+        expected_canonical_sha256=descriptor.attempt_claim_canonical_sha256,
+        freeze=freeze,
+    )
+    validate_persisted_selection_attempt_claim(
+        attempt_store,
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+    )
+    if (
+        attempt_claim.claim_id != descriptor.claim_id
+        or attempt_claim.launch_intent != descriptor.launch_intent
+        or attempt_claim.canonical_sha256 != descriptor.attempt_claim_canonical_sha256
+    ):
+        raise QualificationContractError(
+            "terminal descriptor intent/claim identity differs"
+        )
+
+    authorization, start = _reconstruct_terminal_launch_authorization(
+        loaded_descriptor=loaded_descriptor,
+        loaded_protocol=loaded_protocol,
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+        attempt_store=attempt_store,
+    )
+    terminal_path = terminal_selection_transaction_path(attempt_store, freeze)
+    terminal_identity = PersistedSelectionTerminalIdentity(
+        path=terminal_path,
+        manifest_sha256=_sha256(
+            expected_terminal_manifest_sha256,
+            label="expected terminal manifest_sha256",
+        ),
+        terminal_artifact_sha256=_sha256(
+            expected_terminal_artifact_sha256,
+            label="expected terminal artifact_sha256",
+        ),
+        consumption_sha256=_sha256(
+            expected_consumption_sha256,
+            label="expected terminal consumption_sha256",
+        ),
+    )
+    current_head = _resolve_repository_head(
+        repository,
+        label="committed terminal reload",
+    )
+    for path, digest, label in (
+        (
+            selection_execution_start_path(attempt_store, freeze),
+            start.canonical_sha256,
+            "H selection execution start",
+        ),
+        (
+            terminal_path / SELECTION_TERMINAL_MANIFEST_FILENAME,
+            terminal_identity.manifest_sha256,
+            "H terminal manifest",
+        ),
+        (
+            terminal_path / SELECTION_TERMINAL_ARTIFACT_FILENAME,
+            terminal_identity.terminal_artifact_sha256,
+            "H terminal artifact",
+        ),
+        (
+            terminal_path / SELECTION_TERMINAL_CONSUMPTION_FILENAME,
+            terminal_identity.consumption_sha256,
+            "H terminal consumption",
+        ),
+    ):
+        _require_real_file(path, label=label)
+        _require_tracked_clean_head_artifact(
+            repository,
+            path,
+            expected_sha256=digest,
+            label=label,
+            expected_head_commit=current_head,
+        )
+    if (
+        _resolve_repository_head(
+            repository,
+            label="committed terminal reload",
+        )
+        != current_head
+    ):
+        raise QualificationContractError(
+            "committed terminal HEAD changed during verification"
+        )
+    historical_source_receipt = _terminal_historical_source_binding_receipt(
+        repository=repository,
+        loaded_protocol=loaded_protocol,
+        descriptor=descriptor,
+        authorization=authorization,
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+        terminal_identity=terminal_identity,
+    )
+    consumption, terminal_artifact = load_terminal_selection_consumption(
+        terminal_identity.path,
+        expected_manifest_sha256=terminal_identity.manifest_sha256,
+        expected_terminal_artifact_sha256=(terminal_identity.terminal_artifact_sha256),
+        expected_consumption_sha256=terminal_identity.consumption_sha256,
+        freeze=freeze,
+        attempt_claim=attempt_claim,
+        loaded_protocol=loaded_protocol,
+        launch_authorization=authorization,
+        _historical_source_binding_receipt=historical_source_receipt,
+        _historical_reload_capability=(
+            _HISTORICAL_SOURCE_RELOAD_CAPABILITY
+            if historical_source_receipt is not None
+            else None
+        ),
+    )
+    return LoadedCommittedSelectionTerminal(
+        launch_authorization=authorization,
+        terminal_identity=terminal_identity,
+        consumption=consumption,
+        terminal_artifact=terminal_artifact,  # type: ignore[arg-type]
+    )
+
+
 __all__ = [
     "EXCLUSIVE_TERMINAL_PUBLICATION_CAPABILITY_SCHEMA_VERSION",
     "MAX_PREPARED_SELECTION_LAUNCH_DESCRIPTOR_BYTES",
@@ -2812,12 +3525,14 @@ __all__ = [
     "PREPARED_SELECTION_LAUNCH_INTENT_SCHEMA_VERSION",
     "SELECTION_LAUNCH_AUTHORIZATION_SCHEMA_VERSION",
     "ExclusiveTerminalPublicationCapability",
+    "LoadedCommittedSelectionTerminal",
     "LoadedPreparedSelectionLaunchDescriptor",
     "LoadedPreparedSelectionLaunchIntent",
     "PreparedSelectionLaunch",
     "PreparedSelectionLaunchDescriptor",
     "PreparedSelectionLaunchIntentArtifact",
     "SelectionLaunchAuthorization",
+    "load_committed_selection_terminal",
     "load_prepared_selection_launch",
     "load_prepared_selection_launch_descriptor",
     "load_prepared_selection_launch_intent",
