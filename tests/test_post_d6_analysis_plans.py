@@ -19,6 +19,9 @@ DESCRIPTIVE_SHA256 = (
     "9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981"
 )
 GAP_SHA256 = "018f06ce15cafb7830f522e41001c7a275bd85a76471c58e0fd04df009f67624"
+POST_D6_DECISION_SOURCE_COMMIT = (
+    "4838cef49997a70f1d6281b8097905510e7ec351"
+)
 
 
 def _sha256(path: Path) -> str:
@@ -536,6 +539,11 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
     frame = " ".join(
         (REPOSITORY / "docs" / "FUNDAMENTAL_FRAME.md").read_text().split()
     )
+    ledger = " ".join(
+        (
+            REPOSITORY / "docs" / "EXPERIMENT_INTERPRETATION_LEDGER.md"
+        ).read_text().split()
+    )
 
     assert (
         "begin the separate representation-native F0-F4 selection lane"
@@ -553,4 +561,27 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
     assert (
         "qualify only the surrogate-engine lane" in frame
         and "not sufficient for subject preparation" in frame
+    )
+    assert (
+        "Post-D6 analysis separation and lane nontransfer decision" in ledger
+    )
+    assert POST_D6_DECISION_SOURCE_COMMIT in ledger
+    assert DESCRIPTIVE_SHA256 in ledger
+    assert GAP_SHA256 in ledger
+    assert hashlib.sha256(
+        _git_blob(
+            POST_D6_DECISION_SOURCE_COMMIT,
+            "protocols/post_d6_descriptive_analysis_v0_1.json",
+        )
+    ).hexdigest() == DESCRIPTIVE_SHA256
+    assert hashlib.sha256(
+        _git_blob(
+            POST_D6_DECISION_SOURCE_COMMIT,
+            "protocols/d7_structural_gap_matrix_v0_1.json",
+        )
+    ).hexdigest() == GAP_SHA256
+    frame_path = "docs/FUNDAMENTAL_FRAME.md"
+    assert (REPOSITORY / frame_path).read_bytes() == _git_blob(
+        POST_D6_DECISION_SOURCE_COMMIT,
+        frame_path,
     )
