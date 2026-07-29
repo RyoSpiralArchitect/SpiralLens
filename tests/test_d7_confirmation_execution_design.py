@@ -84,6 +84,8 @@ def _authoritative_d6(
     *,
     decision_id: str = "d7-test-authoritative-d6-decision-v0-1",
     decision_source_commit: str = "d" * 40,
+    current_loader_source_commit: str = "f" * 40,
+    current_loader_source_binding_sha256: str = "0" * 64,
 ) -> LoadedScopeLimitedD6Decision:
     protocol = parent.protocol
     bodies = ConfirmationDesignBodySet.from_protocol(protocol)
@@ -148,8 +150,10 @@ def _authoritative_d6(
     )
     return advancement._build_authoritative_loaded_d6_decision(
         loaded_artifact,
-        current_loader_source_commit="f" * 40,
-        current_loader_source_binding_sha256="0" * 64,
+        current_loader_source_commit=current_loader_source_commit,
+        current_loader_source_binding_sha256=(
+            current_loader_source_binding_sha256
+        ),
     )
 
 
@@ -187,6 +191,17 @@ def test_seed_free_design_has_exact_repeated_measures_inventory() -> None:
     assert all(len(item.primary_unit_ids) == 32 for item in inventory.expected_strata)
 
     document = design.to_dict()
+    assert document["schema_version"] == (
+        "spirallens.d7-confirmation-execution-design-draft.v0.2"
+    )
+    assert (
+        document["draft_id"]
+        == "d7-spectral-moment-seed-free-execution-design-v0-2"
+    )
+    assert design.canonical_sha256 == (
+        "4342ae198c9ea00c72f4dd2ad9c3962ae4c55c11918f64f59d6910668f8ba722"
+    )
+    assert len(design.canonical_bytes) == 476687
     assert document["status"] == "seed-free-execution-design-not-frozen"
     assert document["d7_state"] == "not_run"
     assert document["d8_state"] == "not_run"
@@ -355,6 +370,37 @@ def test_design_binds_the_exact_authoritative_d6_identity() -> None:
             loaded_d6=second_d6,
             parent_protocol=parent,
         )
+
+
+def test_design_identity_is_stable_across_loader_only_descendants() -> None:
+    parent = _parent_protocol()
+    first_d6 = _authoritative_d6(parent)
+    descendant_d6 = _authoritative_d6(
+        parent,
+        current_loader_source_commit="1" * 40,
+        current_loader_source_binding_sha256="2" * 64,
+    )
+    first = build_seed_free_d7_confirmation_execution_design(
+        loaded_d6=first_d6,
+        parent_protocol=parent,
+    )
+    descendant = build_seed_free_d7_confirmation_execution_design(
+        loaded_d6=descendant_d6,
+        parent_protocol=parent,
+    )
+
+    assert first.parent_d6 == descendant.parent_d6
+    assert first.canonical_bytes == descendant.canonical_bytes
+    assert first.canonical_sha256 == descendant.canonical_sha256
+    assert b"current_loader_source_commit" not in first.canonical_bytes
+    assert b"current_loader_source_binding_sha256" not in first.canonical_bytes
+    restored = D7ConfirmationExecutionDesignDraft.from_canonical_bytes(
+        first.canonical_bytes,
+        expected_sha256=first.canonical_sha256,
+        loaded_d6=descendant_d6,
+        parent_protocol=parent,
+    )
+    assert restored == descendant
 
 
 def test_live_design_cannot_be_reconstructed_with_substituted_members() -> None:

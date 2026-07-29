@@ -44,13 +44,13 @@ from .advancement import (
 from .common import QualificationContractError, require_sha256, require_slug
 
 D7_CONFIRMATION_FOUNDATION_SCHEMA_VERSION = (
-    "spirallens.d7-confirmation-foundation.v0.1"
+    "spirallens.d7-confirmation-foundation.v0.2"
 )
 D7_CONFIRMATION_CASE_BINDING_SCHEMA_VERSION = (
     "spirallens.d7-confirmation-case-binding.v0.1"
 )
 D7_PARENT_D6_BINDING_SCHEMA_VERSION = (
-    "spirallens.d7-parent-d6-binding.v0.1"
+    "spirallens.d7-parent-d6-binding.v0.2"
 )
 D7_CONFIRMATION_FAMILY_PROPOSAL_SCHEMA_VERSION = (
     "spirallens.d7-confirmation-family-proposal.v0.1"
@@ -160,8 +160,6 @@ class D7ParentD6Binding:
     d6_decision_source_sha256: str
     d6_decision_canonical_sha256: str
     d6_decision_source_commit: str
-    current_loader_source_commit: str
-    current_loader_source_binding_sha256: str
     admission_spec_id: str
     admission_spec_sha256: str
     selection_terminal_binding_sha256: str
@@ -180,7 +178,6 @@ class D7ParentD6Binding:
     repository_path: ClassVar[str] = D6_DECISION_REPOSITORY_PATH
     committed_artifact_verified: ClassVar[bool] = True
     historical_terminal_companions_verified: ClassVar[bool] = True
-    current_loader_source_surface_verified: ClassVar[bool] = True
 
     def __post_init__(self) -> None:
         for name in (
@@ -195,7 +192,6 @@ class D7ParentD6Binding:
         for name in (
             "d6_decision_source_sha256",
             "d6_decision_canonical_sha256",
-            "current_loader_source_binding_sha256",
             "admission_spec_sha256",
             "selection_terminal_binding_sha256",
             "selection_implementation_registry_sha256",
@@ -206,10 +202,7 @@ class D7ParentD6Binding:
             "locked_aggregation_sha256",
         ):
             require_sha256(getattr(self, name), label=name)
-        for name in (
-            "d6_decision_source_commit",
-            "current_loader_source_commit",
-        ):
+        for name in ("d6_decision_source_commit",):
             value = getattr(self, name)
             if (
                 not isinstance(value, str)
@@ -226,6 +219,7 @@ class D7ParentD6Binding:
         loaded_d6: LoadedScopeLimitedD6Decision,
     ) -> D7ParentD6Binding:
         loaded = _loaded_d6(loaded_d6)
+        LoadedScopeLimitedD6Decision.__post_init__(loaded)
         decision = loaded.decision
         spec = _admission(loaded)
         path = loaded.identity.path.as_posix()
@@ -239,10 +233,6 @@ class D7ParentD6Binding:
             "d6_decision_source_sha256": loaded.identity.source_sha256,
             "d6_decision_canonical_sha256": loaded.identity.canonical_sha256,
             "d6_decision_source_commit": decision.decision_source_commit,
-            "current_loader_source_commit": loaded.current_loader_source_commit,
-            "current_loader_source_binding_sha256": (
-                loaded.current_loader_source_binding_sha256
-            ),
             "admission_spec_id": spec.admission_spec_id,
             "admission_spec_sha256": spec.canonical_sha256,
             "selection_terminal_binding_sha256": (
@@ -289,10 +279,6 @@ class D7ParentD6Binding:
                 self.d6_decision_canonical_sha256
             ),
             "d6_decision_source_commit": self.d6_decision_source_commit,
-            "current_loader_source_commit": self.current_loader_source_commit,
-            "current_loader_source_binding_sha256": (
-                self.current_loader_source_binding_sha256
-            ),
             "admission_spec_id": self.admission_spec_id,
             "admission_spec_sha256": self.admission_spec_sha256,
             "selection_terminal_binding_sha256": (
@@ -325,9 +311,6 @@ class D7ParentD6Binding:
             "committed_artifact_verified": self.committed_artifact_verified,
             "historical_terminal_companions_verified": (
                 self.historical_terminal_companions_verified
-            ),
-            "current_loader_source_surface_verified": (
-                self.current_loader_source_surface_verified
             ),
         }
 
@@ -564,7 +547,7 @@ class D7ConfirmationFoundation:
 
     schema_version: ClassVar[str] = D7_CONFIRMATION_FOUNDATION_SCHEMA_VERSION
     foundation_id: ClassVar[str] = (
-        "d7-spectral-moment-confirmation-foundation-v0-1"
+        "d7-spectral-moment-confirmation-foundation-v0-2"
     )
     status: ClassVar[str] = "implementation-foundation-not-frozen"
     claim_ceiling: ClassVar[str] = "level_0"

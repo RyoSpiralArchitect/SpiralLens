@@ -68,7 +68,7 @@ from .protocol import (
 )
 
 D7_CONFIRMATION_EXECUTION_DRAFT_SCHEMA_VERSION = (
-    "spirallens.d7-confirmation-execution-design-draft.v0.1"
+    "spirallens.d7-confirmation-execution-design-draft.v0.2"
 )
 D7_CONFIRMATION_INVENTORY_SCHEMA_VERSION = (
     "spirallens.d7-confirmation-execution-inventory-template.v0.1"
@@ -1253,7 +1253,7 @@ class D7ConfirmationExecutionDesignDraft:
     manifest_compatibility: D7ParentManifestCompatibility
 
     schema_version: ClassVar[str] = D7_CONFIRMATION_EXECUTION_DRAFT_SCHEMA_VERSION
-    draft_id: ClassVar[str] = "d7-spectral-moment-seed-free-execution-design-v0-1"
+    draft_id: ClassVar[str] = "d7-spectral-moment-seed-free-execution-design-v0-2"
     status: ClassVar[str] = "seed-free-execution-design-not-frozen"
     claim_ceiling: ClassVar[str] = "level_0"
 
