@@ -37,6 +37,13 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
 
+The PR #11 post-D6 descriptive plan and value-blind D7 gap matrix are canonical
+research artifacts, not Python APIs. They intentionally add no analysis
+runner, writer, generic mapping validator, family-admission helper, or
+promotion surface. The descriptive artifact is also non-executable until a
+committed full-D7-design freeze receipt exists. Reusable analysis primitives
+remain extraction candidates until a second independent consumer exists.
+
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
 module imports remain internal.

@@ -893,9 +893,42 @@ There is no D8 promotion helper that can pass from two caller-supplied byte
 strings; typed D7, execution, namespace, source, and replay receipts are still
 required.
 
-Any required failure stops. Any required insufficient result blocks. Only D0
-through D8 authorize a later subject-protocol preparation step. They do not
-authorize subject execution.
+### Post-D6 analysis is split before either lane runs
+
+The already-opened PR #9 terminal may be inspected only under the canonical
+`postselection_descriptive_only` plan. That lane declares prior outcome
+exposure, fixed scientific grains, eight mandatory descriptive packages,
+`claim_delta=none`, and an absolute prohibition on D7 design use. It also
+records that planning used opened outcome values; only its runner and result
+remain unexecuted.
+
+A separate canonical D7 structural gap matrix may inspect only the D6 decision
+and a tracked source snapshot. It cannot read the terminal result, terminal
+manifest, consumption, Pythia engineering values, subject values, or unopened
+confirmation values. Its closed vocabulary is `absent`, `contract_only`,
+`implementation_foundation_only`, `evidence_present_but_ineligible`, and
+`blocked`; it has no completion percentage, weighted score, candidate, or
+admission state.
+
+Both artifacts are frozen but unexecuted. PR #11 adds no public analysis
+runner, writer, D7 admission helper, or promotion API. The detailed chronology,
+unit contract, work packages, gap rows, and full research sequence live in
+`docs/POST_D6_ANALYSIS_AND_D7_GAPS.md`.
+
+There is no independent operator or information barrier. Therefore the
+complete D7 family descriptor, admission, protocol, source closure,
+graph/case/stress and aggregation bytes, lifecycle, launch intent, exclusive
+attempt, and absent result namespace must be frozen under a committed receipt
+before the descriptive runner may execute. Any later D7 design change requires
+a new version and review; the prior admission cannot be carried forward.
+
+Any required failure stops. Any required insufficient result blocks. A
+complete applicable D0-D8 chain is necessary before later subject-protocol
+preparation, but the current surrogate-engine D7/D8 lane is not sufficient and
+grants no subject authority. Representation-native selection and independent
+confirmation/replay, a same-substrate field/core/loop join, and the separately
+reviewed instrument gates below must also complete. None of these authorize
+subject execution.
 
 For the current D0-D5 result schema, `d6_d8_advanced=false` and
 `synthetic_qualified=false` are invariants. The scope-limited D6 admission
@@ -959,7 +992,15 @@ cycle constructor, radius, or loop sampling count was run in that cell.
 Subject model, context, layer, semantic interpretation, SAE comparison, and
 topology promotion remain outside this preparation document.
 
-## 12. Post-D8 subject-access boundary
+## 12. Future subject-access boundary — not unlocked by surrogate D8 alone
+
+Here, “post-D8” means after the complete applicable qualification chain, not
+merely after the current surrogate-engine replay. Before any subject manifest
+is issued, the representation-native F0-F4 instrument must be separately
+selected, confirmed, and replayed; the same-substrate field/core/loop join must
+be established; and any calibration-side integer/topology eligibility required
+by the chosen convention must be frozen. These are still instrument
+qualifications, not an observation of model topology.
 
 A later `SubjectProtocolManifest` must pin the model and immutable revision,
 ContextBank and roles, context and layer scope, evolution axis, frozen

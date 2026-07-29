@@ -757,6 +757,16 @@ to become a general library.
   the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
   until a separately implemented family can satisfy that contract;
   same-family seed changes cannot do so.
+- **Frozen — post-D6 analysis separation:** the canonical
+  post-selection descriptive plan may read only the already-opened PR #9
+  terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
+  reads only the D6 contract and tracked implementation surfaces. Neither
+  artifact runs an analysis, names a candidate family, computes a progress
+  score, or grants execution authority. The descriptive plan records that its
+  planning used opened outcome values; before its runner may execute, the
+  complete D7 family descriptor, admission, protocol, source closure, and
+  lifecycle must already be frozen under a committed receipt. See
+  [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
 - **Next — locked D7/D8 confirmation:** execute the admitted family without
   overrides, then require complete isolated byte replay. Only a future
   scope-specific confirmation artifact may change its own qualification

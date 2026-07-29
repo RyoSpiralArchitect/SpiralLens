@@ -4,6 +4,47 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-29 — PR #11 post-D6 analysis separation
+
+### Added
+
+- `spirallens.postselection-descriptive-analysis-plan.v0.1` is a canonical
+  research artifact bound to the exact PR #9 terminal and PR #10 D6 decision.
+  It declares prior outcome exposure, use of opened outcome values during
+  planning, eight mandatory descriptive work packages, fixed 32-unit D2 and
+  64-execution D4/D5 grains, including nine graph pairs times two loop roles
+  per execution, and `claim_delta=none`; its runner and result remain
+  unexecuted.
+- `spirallens.d7-structural-gap-matrix.v0.1` is a separate value-blind research
+  artifact bound to the D6 contract and the tracked PR #10 source snapshot.
+  Its non-promotional vocabulary is `absent`, `contract_only`,
+  `implementation_foundation_only`, `evidence_present_but_ineligible`, and
+  `blocked`. Existing truth-blind core and label-free loop kernels are recorded
+  as implementation foundations only; confirmation-family integration,
+  matched support, source closure, and evidence remain missing.
+
+### Compatibility and non-migrations
+
+- Both files are declarations under `protocols/`; no public Python schema,
+  reader, writer, runner, arbitrary-mapping validator, D7 admission helper, or
+  D8 promotion helper is added.
+- The descriptive plan cannot be cited as preregistration and cannot inform D7
+  family, threshold, graph, cell, exclusion, estimator, trivialization, or
+  stress design. Its runner is blocked until a committed receipt binds the
+  complete D7 design, admission, source closure, lifecycle, launch intent,
+  exclusive attempt, and absent result namespace. That one receipt is an
+  explicit future input class whose repository-relative path, Git blob/commit,
+  and SHA-256 must be fixed before execution; D7 result and confirmation values
+  remain forbidden.
+- The D7 matrix accepts no terminal, Pythia, subject, semantic, SAE, model,
+  seed, or confirmation values as inputs. Its value-blindness is an input
+  policy, not a claim that its operator lacked prior outcome exposure. It names
+  no candidate and exposes no percentage, score, or partial-pass state.
+- PR #9, PR #10, Pythia engineering protocol/receipt, and all existing public
+  API bytes remain unchanged. D7/D8, global synthetic qualification, P0,
+  representation, core-loop join, integer/topology, semantic, Pythia, and
+  subject authority remain false or `not_run`.
+
 ## 2026-07-29 — PR #10 D6 independent-family admission boundary
 
 ### Added

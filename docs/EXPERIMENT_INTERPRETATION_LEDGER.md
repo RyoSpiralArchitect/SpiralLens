@@ -55,6 +55,7 @@ evidence carried by the original artifact.
 | `321a75b` | v0.4 neighbor and receipt bindings frozen | New remediation protocol, distinct from the consumed predecessor |
 | `23480d1` | v0.3 execution freeze issued | Exact pushed source/runtime/argv bound before the new subject outcome |
 | post-`23480d1` local artifact | frozen v0.4 subject audit completed | Terminal `insufficient` artifact generated from the frozen snapshot; its exact bytes were later tracked without modification |
+| `4838cef` PR #11 artifact/frame source | Post-D6 analysis separation and qualification-lane ordering reviewed | Forward-only Level-0 planning; no historical artifact or claim status changed |
 
 This ledger is a child of `23480d1` and was authored after the final row. It
 does not amend any row in the table.
@@ -378,6 +379,58 @@ prediction, and selective causal intervention.
 No change. These modules cannot create a missing structural field
 retroactively. A Level 3 claim requires a prior field or geometry artifact with
 its own complete lineage.
+
+### 3.13 Post-D6 analysis separation and lane nontransfer decision
+
+**Decision source and timing**
+
+This forward decision was made on 2026-07-29 after the PR #9 Cartesian
+terminal and PR #10 D6 decision were open. The reviewed PR #11 head
+`4838cef49997a70f1d6281b8097905510e7ec351` is the decision and artifact/frame
+source. It is not backdated and is not a preregistration claim.
+
+The affected new planning artifacts are:
+
+- `post-d6-cartesian-surrogate-descriptive-analysis-v0-1`, canonical SHA-256
+  `9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981`;
+- `cartesian-surrogate-d7-structural-gaps-v0-1`, canonical SHA-256
+  `018f06ce15cafb7830f522e41001c7a275bd85a76471c58e0fd04df009f67624`.
+
+**Evidence retained**
+
+One Cartesian Fourier quadrature construction passed the frozen scoped D0-D5
+selection, and D6 fixed the admission obligations for a future
+construction-diverse confirmation. D7 and D8 remain `not_run`; the
+construction-family evidence count remains one.
+
+**Forward interpretation**
+
+The already-opened terminal may be described only under the explicitly
+post-selection plan. Before that descriptive runner executes, one complete D7
+design-freeze receipt must bind the family, admission, protocol, source
+closure, graph/case/stress and aggregation bytes, lifecycle, launch intent,
+exclusive attempt, and absent output namespace. D7 result and confirmation
+values remain forbidden inputs.
+
+The construction-diverse D7 confirmation and isolated D8 replay qualify only
+the surrogate-engine lane. They cannot transfer Cartesian evidence to a
+representation referent or unlock subject preparation. A separate
+representation-native F0-F4 selection, independent confirmation/replay,
+same-substrate field/core/loop join, and any convention-required
+calibration-side integer/topology eligibility must precede the subject-access
+manifest. Model topology remains an unobserved subject-side question.
+
+**Claim delta**
+
+`none`. Neither planning artifact is scientific evidence, family admission,
+gate reclassification, representation selection, topology evidence, or
+subject authority.
+
+**Forbidden rereading**
+
+A future surrogate D7/D8 pass may not be described as a model-side order
+parameter, a same-substrate core-loop observation, model topology, or
+permission to prepare a Pythia subject.
 
 ## 4. Summary reclassification
 
