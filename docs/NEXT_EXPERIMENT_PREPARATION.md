@@ -868,6 +868,16 @@ or implementation label inside the same construction family cannot satisfy
 this gate. The no-access fact is an external attestation rather than
 cryptographic access proof.
 
+The subsequent seed-free D7 implementation found that two D6 v0.1 bodies are
+not portable as literal confirmation manifests. The required-cell body embeds
+selection seeds, control IDs, and seed-bearing unit/cell IDs; the
+required-stress body embeds the same primary IDs in stratum memberships. A
+new-seed confirmation can preserve an exact structural bijection but cannot
+be byte-identical to those two bodies without reusing selection identities.
+The historical D6 bytes are not reinterpreted or rewritten. A reviewed,
+versioned successor admission or structural-rebinding amendment is now an
+explicit pre-D7 obligation.
+
 ### D7 — locked independent calibration
 
 The one-shot confirmation applies D6 without overrides, exclusions, newly
@@ -875,10 +885,29 @@ required cells, or required cells being removed. All non-advanced competitors
 remain visible as frozen selection outcomes.
 
 D7 is currently `not_run`. Unopened Cartesian seeds would provide a locked
-replication, not construction-family independence. The spectral-moment
-foundation has a distinct family identity but currently emits no graph, core,
-loop, or full D0-D5 confirmation result, so it is not yet admissible.
-Accordingly, no open-mapping or label-only D7 admission function exists.
+replication, not construction-family independence.
+
+The spectral-moment lane now has a seed-free execution design that:
+
+- requires the authoritative D6 receipt and strict full parent protocol;
+- reconstructs every parent design-body hash;
+- requires explicit boundary, state-warp, and observation-perturbation
+  assignments;
+- materializes exactly 64 seed-slot primary units, 192 core cells, and 1,152
+  loop cells;
+- binds the exact three A and three B graph families plus both loop roles; and
+- executes the current development field estimator and blind
+  core/continuous-loop kernels on permanently excluded development seeds
+  without supplying an oracle-truth record to those kernels or producing a
+  gate/result.
+
+That is implementation conformance, not D7 evidence. Concrete confirmation
+seeds, reviewed construction-diversity/source closure, the versioned
+D6-to-D7 rebinding, D7-specific registry and aggregation application,
+lifecycle, result/failure types, terminal publication, and isolated replay
+remain absent. Accordingly, no open-mapping or label-only D7 admission
+function exists. See
+[`D7_CONFIRMATION_EXECUTION_DESIGN.md`](D7_CONFIRMATION_EXECUTION_DESIGN.md).
 
 ### D8 — freeze and replay
 
