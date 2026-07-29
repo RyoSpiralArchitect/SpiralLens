@@ -65,6 +65,13 @@ These rules apply to every milestone and release:
 - A topology claim requires matched cycle or homology support across every
   preregistered admissible graph family; unsupported comparisons are
   `insufficient` and supported disagreement is `fail_graph_dependence`.
+- A core-facing degeneracy scalar must be derived from the same declared field,
+  frozen before loop readout, and persisted with its nested-radius radial
+  profile. A nearby support diagnostic is not a substitute.
+- An architecture-accounted sampled-winding estimate distribution, including
+  its unrounded cycle total and proximity-to-integer residual, is a diagnostic
+  of clustering versus continuous spread. It emits no resolved charge label;
+  proximity to integers is not evidence of quantization or charge by itself.
 - Projected curl, UMAP/PCA geometry, and other projection-dependent quantities
   may rank exploratory candidates but are not promoted to physical invariants.
 - Whitening or PCA may condition a distance calculation, but cannot by itself
@@ -81,6 +88,9 @@ These rules apply to every milestone and release:
   tokenizer-addressable, a fixed-context model-input-row activation atlas is
   not described as a language-space or semantic atlas.
 - Zero-candidate and null results are valid completed outcomes.
+- A qualified zero-candidate result states the frozen end-to-end sensitivity
+  region in which no candidate was observed; it is not an unrestricted absence
+  claim.
 - Pythia-70M is plumbing and integration validation. Pythia-160M remains the
   historically intended first claim-bearing model family, but the Fundamental
   Frame does not authorize a subject run.
@@ -342,7 +352,9 @@ Deliverables:
     shared-neighbor candidate graph families with canonical construction
     receipts.
 13. Deterministic cycle construction plus a matched support or homology rule
-    that remains meaningful across graph families.
+    that remains meaningful across genuinely different graph-construction
+    families and compares the same enclosing support/class rather than
+    construction-specific cycle indices.
 14. A full crossed field-estimation-graph by cycle-construction-graph null,
     extended by a core-estimation-graph axis whenever the core estimator is
     neither graph-free nor bound to the field graph, with graph diversity,
@@ -378,6 +390,30 @@ Deliverables:
 24. A future `SubjectProtocolManifest` and access boundary that reveal no
     subject-derived values before separate review, freeze, and execution
     authorization.
+25. A protocol-declared same-field core-degeneracy scalar recorded at every
+    candidate and as a nested-radius radial profile. Its threshold and matching
+    rule are frozen before any loop value is read.
+26. An architecture-accounted sampled-winding estimate distribution across the
+    eligible loop ensemble, retaining every unrounded cycle total and
+    proximity-to-integer residual and comparing them with continuous and
+    integer-clustered calibration controls. This is a non-quantization
+    diagnostic, emits no resolved charge label, and is never a charge
+    certificate by itself.
+27. An opposite-sign dipole phantom with a separation sweep, single-core loop
+    signs, both-core-loop additivity/net-zero checks, and explicit two-core
+    resolution. It also calibrates the measurement needed by any future
+    checkpoint-series annihilation analysis.
+28. An end-to-end detection-limit surface over injection amplitude, declared
+    perturbation or noise level, and sampling density. Synthetic fields must
+    enter through the atlas representation and traverse ANN retrieval, exact
+    reranking, graph construction, cycle construction, and the final gates.
+    Exact-recall audits are stratified by local-density and candidate-boundary
+    cells because exact reranking cannot recover neighbors the ANN never
+    retrieved.
+29. A bounded qualification transition rule fixed before further tuning. Each
+    protocol declares its maximum revision/resource budget and a terminal
+    action: advance to M2 when the finite gates pass, or stop with a persisted
+    `insufficient` qualification record when the budget is exhausted.
 
 Exit criteria:
 
@@ -386,6 +422,10 @@ Exit criteria:
 - the tracked public example bank validates with all roles equal to `example`
   and with claim eligibility disabled;
 - approximate discovery meets its preregistered recall target on exact subsets;
+- the end-to-end detection-limit surface is frozen and complete before M2 or
+  any Pythia-160M run; it reports detection probability and uncertainty over
+  injection amplitude, declared perturbation/noise, and sampling density, with
+  density-stratified exact-recall and worst-case gates;
 - a locked independent synthetic calibration qualifies the selected
   instrument bundle before subject `prepare-only`;
 - the calibration-selection artifact freezes advanced hypotheses, required
@@ -402,11 +442,19 @@ Exit criteria:
   topology comparisons bind a matched class rather than a cycle-basis index;
 - injected-rotation positives survive while pure-gauge/stretch/shear negatives
   are rejected;
+- the opposite-sign dipole sweep resolves both cores in its declared regime,
+  recovers their individual signs, and satisfies the frozen outer-loop
+  additivity/net-zero control;
 - each shortlisted real-model loop has matched reverse, radius, sampling, and
   architecture-accounted controls;
 - every Level 1D result binds a replayable order-parameter field and an
   explicit singular-set/core status; every localized-defect result binds an
-  independently inferred `CoreCandidate` to that same field;
+  independently inferred `CoreCandidate` to that same field, its persisted
+  core-degeneracy scalar, and its nested-radius radial profile;
+- any sampled-winding population summary preserves its unrounded cycle totals,
+  proximity-to-integer residuals, architecture accounting, and calibration
+  comparison, emits no resolved charge label, and remains explicitly
+  non-evidence for quantized charge;
 - supplied phantom anchors qualify conditional loop mathematics only and do
   not satisfy core-localization criteria;
 - every local-frame integer binds its field, connection, interpolation, and
@@ -416,6 +464,10 @@ Exit criteria:
 - rerunning from persisted atlas data requires no model download or inference;
 - Level 2G and Level 2T are promoted independently and only after every
   branch-specific control is complete.
+
+Pythia-70M may exercise this path before qualification only as a
+claim-ineligible plumbing run. It cannot satisfy the detection-limit exit
+criterion or authorize M2.
 
 ### M2 — Frozen Pythia-160M scientific protocol
 
@@ -437,12 +489,22 @@ Deliverables:
   Pythia-160M confirmatory contexts, split membership, thresholds, exclusions,
   or learned preprocessing;
 - a preregistered resource budget, null family, stopping rule, and claim ceiling;
+- a signed annotated freeze tag plus an independently timestamped,
+  content-addressed snapshot of the exact protocol and instrument source
+  (a DOI-bearing archive such as Zenodo, or an equivalent immutable timestamp
+  service), with both references bound into the run manifest;
 - complete offline replay artifacts;
-- a concise result report that treats positive, zero, and null outcomes equally.
+- a concise result report that treats positive, zero, and null outcomes
+  equally; a zero-candidate report names the M1-qualified detectable region
+  rather than claiming unrestricted absence.
 
 Exit criteria:
 
 - one clean protocol run without post-hoc discovery-threshold changes;
+- the signed tag and independent snapshot resolve to the exact protocol and
+  source digests before claim-bearing subject access. If the independent
+  witness is unavailable, a plumbing-only attempt may record that absence, but
+  the M2 claim-bearing run remains blocked;
 - every reported candidate links to all required null results;
 - an independent rerun reproduces the persisted structural quantities within
   declared numerical tolerances;
@@ -462,6 +524,9 @@ Deliverables:
 - frozen SAE choice, reconstruction definition, and comparison layer;
 - raw-residual versus SAE-reconstruction transport measurements at matched
   points;
+- a PCA-\(k\) compression comparator chosen to match SAE reconstruction MSE,
+  with its fit partition and \(k\)-selection rule frozen before held-out
+  evaluation;
 - held-out semantic minimal pairs added only after structural discovery;
 - norm-preserving cyclic-mode interventions and matched sham interventions;
 - selective downstream behavioral endpoints;
@@ -471,7 +536,9 @@ Exit criteria:
 
 - a preregistered structural quantity predicts held-out contrasts;
 - the result is not explained by norm, token frequency, position, RoPE,
-  routing, or reconstruction-error magnitude alone;
+  routing, or reconstruction-error magnitude alone; survival under matched-MSE
+  PCA-\(k\) but loss under SAE is reported as basis-specific evidence, while
+  loss under both remains generic compression sensitivity;
 - intervention direction and dose predict selective downstream changes;
 - sham, random-subspace, and reverse interventions fail as expected;
 - the effect replicates across declared contexts and at least one independent
@@ -488,6 +555,11 @@ Deliverables:
 - a model-observer adapter protocol independent of Hugging Face class names;
 - a second model family in addition to Pythia/GPT-NeoX;
 - checkpoint, seed, or scale replication where public models permit it;
+- a preregistered public-checkpoint series that treats training step as a
+  prospective control variable for candidate density and opposite-sign pair
+  trajectories. Layer depth remains a within-model spatial/profile coordinate,
+  not a temperature proxy; no Kosterlitz-Thouless or annihilation claim follows
+  without the calibrated dipole resolution and branch-specific gates;
 - core mathematical imports that remain free of Torch/Transformers;
 - adapter conformance tests using the same phantom and artifact contracts;
 - explicit measurement of adapter-induced observable differences.
@@ -653,11 +725,13 @@ explicitly stated otherwise.
 | Full-vocabulary search becomes intractable | Keep exact reference subsets and audit approximate recall |
 | Backend differences create false candidates | Bind backend/runtime/index bytes, require verified receipts, and test repeatability before promotion |
 | Aggregate ANN recall hides a local collapse | Bind the frozen query-local, density-by-boundary, and worst-case methodology into each atlas-specific execution before enabling promotion |
+| Exact reranking hides ANN false negatives | Qualify the complete atlas-to-cycle path with a density-stratified detection-limit surface; never infer sensitivity from persisted-candidate precision alone |
 | Resume blesses corrupted partial data | Verify committed batch hashes before writing a new attempt |
 | Semantic labels leak into discovery | Separate modules, artifacts, and dataset splits |
 | Interesting Pythia-70M result drives confirmatory-bank tuning | Keep 70M as plumbing; freeze 160M contexts, splits, thresholds, and preprocessing independently of its outcomes |
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
+| Instrument refinement indefinitely postpones a claim-bearing run | Freeze a finite M1 revision/resource budget and transition rule; advance when all gates pass, stop `insufficient` when qualification does not, and treat an M2 zero-candidate run as a qualified null only inside the calibrated sensitivity region |
 
 ## 11. Immediate next plan
 
@@ -723,25 +797,41 @@ below:
     D7 structural gap matrix — recorded as two canonical, non-authorizing
     research artifacts; the descriptive lane cannot tune D7, and the gap lane
     cannot read the terminal values, name a candidate, or compute progress;
-12. implement and admit a genuinely different construction family, then freeze
-    its complete protocol, source closure, graph/case/stress and aggregation
-    bytes, lifecycle, launch intent, exclusive attempt, and absent output
-    namespace before the post-selection descriptive runner may execute;
-13. after that committed D7 design-freeze receipt exists, execute the separate
+12. land the current spectral-moment draft foundation: exact four-case
+    development generation plus a closed typed draft reconstructed only from
+    the authoritative committed-D6 loader receipt. This is not a D7
+    full-design freeze: it does not complete same-schema construction-diversity
+    review, selects no confirmation seed or execution inventory, persists no
+    receipt, admits no family, exposes no runner/result, and leaves D7/D8
+    `not_run`;
+13. complete and review the missing stress transforms, exact graph/core/loop
+    integration, terminal schemas and writers, source closure, lifecycle,
+    launch intent, exclusive attempt, and absent output namespace before
+    issuing any D7 full-design receipt;
+14. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-14. run the admitted family without overrides or post-selection exclusions,
+15. run the admitted family without overrides or post-selection exclusions,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status; same-family new seeds remain replication and
     cannot satisfy this item;
-15. only then begin the separate representation-native F0-F4 selection lane;
+16. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-16. establish the same-substrate field/core/loop join and, only when the
-    convention permits it, calibration-side integer/topology eligibility;
-    these are instrument gates, not a model-topology observation; and
-17. only after those separately reviewed gates prepare a new subject manifest
-    with new IDs under the
+17. establish the same-substrate field/core/loop join, persist the frozen
+    same-field core-degeneracy scalar and nested-radius profile, and retain the
+    architecture-accounted sampled-winding estimate distribution with its
+    unrounded cycle totals and residuals; only when the convention permits it
+    may calibration-side integer/topology eligibility be assessed;
+18. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+    detection-limit surface over injection amplitude, declared
+    perturbation/noise, and sampling density, including density-stratified
+    exact-recall and graph-family matched-class gates;
+19. apply the preregistered M1 transition/stop rule. Pythia-70M remains
+    plumbing-only; an exhausted qualification budget ends `insufficient`
+    rather than extending instrumentation indefinitely; and
+20. only after those separately reviewed M1 gates prepare and externally
+    witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
 
@@ -774,8 +864,11 @@ This library slice adds, without changing that generic behavior:
 - content-derived fit/evaluation partition receipts;
 - out-of-band-parent-bound value-access lineage;
 - a descriptor-retaining strict NPY consumer with row and L2 checks; and
-- a second spectral-moment construction-family foundation whose estimator
-  inputs and oracle truth are separated.
+- a second spectral-moment construction-family foundation whose exact four
+  development cases keep estimator inputs and oracle truth separated; and
+- a closed D7 draft-contract type reconstructed from the authoritative D6
+  loader receipt while deliberately admitting no family and issuing no
+  full-design receipt.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -802,14 +895,16 @@ claim-ineligible ContextBank, exact offline model bytes, bounded rows,
 CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
 real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
-remain `not_run`. This lane cannot select any choice in steps 5-17 above and
+remain `not_run`. This lane cannot select any choice in steps 5-20 above and
 cannot be cited as subject preparation or evidence.
 
-The immediate deliverable is a separately implemented family that can satisfy
-the now-recorded D6 admission contract. Only its locked D7 pass and isolated
-byte-identical D8 replay could support a scope-specific synthetic-qualified,
-replayable bundle. That still would not mean “find a semantic vortex” or
-authorize a subject run.
+The immediate deliverable is completion and review of the missing
+spectral-moment stress, graph/core/loop, source-closure, lifecycle, and
+terminal surfaces. The current four-case generator and typed design contracts
+are draft foundation only: they are not a D7 full-design freeze, receipt,
+admission, or run. Only a later locked D7 pass and isolated byte-identical D8
+replay could support a scope-specific synthetic-qualified, replayable bundle.
+That still would not mean “find a semantic vortex” or authorize a subject run.
 
 ## 12. Roadmap change rule
 

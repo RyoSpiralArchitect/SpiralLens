@@ -54,8 +54,10 @@ Read these documents before adding a field, graph, loop, or claim:
 
 ## Research pipeline
 
-1. Validate the instrument on analytic rotation, winding, stretch, radial, and
-   shear phantoms.
+1. Validate the instrument on analytic rotation, winding, stretch, radial,
+   shear, and opposite-sign dipole phantoms, then measure an end-to-end
+   detection-limit surface through atlas-form storage, ANN retrieval, exact
+   reranking, graph construction, and cycle readout.
 2. Stream a fixed-context Pythia model-input-row activation atlas to
    memory-mapped arrays.
 3. Emit a schema-validated, provenance-bound structural candidate ledger
@@ -67,8 +69,10 @@ Read these documents before adding a field, graph, loop, or claim:
    orientation, sampling, and matched nulls.
 7. Add semantic and causal evaluation only after structural promotion.
 
-Pythia-70M is a plumbing smoke. Pythia-160M remains the historically intended
-first scientific model family, but this frame does not authorize that run.
+Pythia-70M is a plumbing smoke and cannot turn an unqualified instrument into
+scientific evidence. Pythia-160M remains the historically intended first
+scientific model family, but M1 qualification must complete before its M2
+protocol can be frozen, and this frame does not authorize that run.
 SAE annotation, training-checkpoint trajectories, transfer operators, and
 natural-language interpretation are intentionally deferred.
 
@@ -111,13 +115,18 @@ This is a software and construct-definition identity, not evidence that any
 model contains the referent.
 
 A typed generator-family identity now distinguishes a mathematical
-construction from a seed, source digest, or implementation label. The new
+construction from a seed, source digest, or implementation label. The
 spectral-moment quadrature family declares a separate mathematical
-construction from the existing representation phantom and supplies separated
-F2/F4 positive/null/prerequisite-failure development controls. Distinct family
-metadata is necessary but does not prove epistemic or implementation
-independence. It is not yet wired into a qualification bundle and does not
-advance D0-D8.
+construction from the existing representation phantom. Its current draft
+confirmation foundation supplies the exact four development cases
+(nonzero-with-core, null-with-core, null-without-core, and
+prerequisite-failure) and a closed typed draft reconstructed only from the
+authoritative committed-D6 loader receipt. Identifier difference and
+development-path conformance are necessary but do not prove construction,
+epistemic, or implementation independence. This foundation freezes no
+confirmation seed or execution inventory, persists no full-design receipt,
+admits no family, exposes no D7 runner or terminal result, and does not advance
+D0-D8.
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
@@ -326,11 +335,14 @@ checkouts exercise the portable loader contracts but skip that local archival
 evidence instead of pretending to relocate it.
 
 D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
-form are replication, not independent-family confirmation. The existing
-spectral-moment family is a useful distinct-family foundation, but it presently
-constructs no graph, core, loop, or complete D0-D5 confirmation path. The D6
-decision therefore seals the only admissible entrance without pretending that
-an independent confirmation or replay has occurred. Global
+form are replication, not independent-family confirmation. The current
+spectral-moment draft foundation supplies four generated development cases on
+a separate construction path and a typed draft contract, but construction
+diversity still requires same-schema review. It does not freeze or execute the
+required stress, graph, core, loop, lifecycle, result, and replay path. No
+full-design receipt or admission exists. The D6 decision therefore
+seals the only admissible entrance without pretending that an independent
+confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
 No label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those execution surfaces remain absent until typed
@@ -757,6 +769,11 @@ to become a general library.
   the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
   until a separately implemented family can satisfy that contract;
   same-family seed changes cannot do so.
+- **Draft — D7 confirmation foundation:** the spectral-moment slice now has
+  four development cases and a typed draft reconstructed from the
+  authoritative D6 loader receipt. It has no frozen confirmation seed or
+  execution inventory, completed diversity review, full-design receipt,
+  admitted family, runner, result, or replay authority.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -767,21 +784,31 @@ to become a general library.
   complete D7 family descriptor, admission, protocol, source closure, and
   lifecycle must already be frozen under a committed receipt. See
   [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
-- **Next — locked D7/D8 confirmation:** execute the admitted family without
-  overrides, then require complete isolated byte replay. Only a future
-  scope-specific confirmation artifact may change its own qualification
+- **Next — complete, review, and freeze D7 before execution:** add the missing
+  stress, graph/core/loop, source-closure, lifecycle, result, and replay
+  surfaces; only then may a committed full-design receipt admit an attempt.
+  Execute without overrides and require complete isolated byte replay. Only a
+  future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
   `d6_d8_advanced` and `synthetic_qualified`.
 - **Then — candidate-to-loop integration:** keep geometry/holonomy and
   field/defect paths separate, join them only through explicit same-substrate
-  artifacts, and retain Pythia-70M as development material.
+  artifacts, persist a same-field core-degeneracy scalar and its nested-radius
+  profile, and retain Pythia-70M as plumbing-only development material.
+- **Before M2 — quantify sensitivity:** sweep injection amplitude, declared
+  perturbation/noise, and sampling density end to end through atlas, ANN,
+  graph, and cycle construction. Exact-recall audits are stratified by local
+  density. A zero-candidate result is qualified only relative to the frozen
+  detectable region.
 - **First scientific protocol:** create separate frozen discovery and held-out
-  context-bank artifacts, freeze the integrated instrument, and run the same
-  preregistered design on Pythia-160M without tuning on either held-out results
-  or Pythia-70M outcomes.
+  context-bank artifacts, freeze the integrated instrument with a signed tag
+  and an independently timestamped content-addressed snapshot, and run the
+  same preregistered design on Pythia-160M without tuning on either held-out
+  results or Pythia-70M outcomes.
 - **Research validation:** test whether surviving relational structure is lost
-  by SAE reconstruction and whether held-out, norm-preserving interventions
-  change downstream behavior selectively.
+  by SAE reconstruction relative to a matched-MSE PCA-\(k\) compressor and
+  whether held-out, norm-preserving interventions change downstream behavior
+  selectively.
 - **Library alpha/beta:** extract stable core APIs, formalize adapter protocols,
   add schema migration and compatibility policy, publish documentation and
   benchmarks, then release on PyPI.
