@@ -27,7 +27,7 @@ PR #11 therefore freezes two separate canonical artifacts:
 
 | Artifact | Canonical/source SHA-256 | Permitted use |
 | --- | --- | --- |
-| [`post_d6_descriptive_analysis_v0_1.json`](../protocols/post_d6_descriptive_analysis_v0_1.json) | `e03a5648931d1ca44cc14c7581734e3803749bc3f4da40bf90d3525c8d0e8cc6` | Post-selection description of the already-opened PR #9 terminal |
+| [`post_d6_descriptive_analysis_v0_1.json`](../protocols/post_d6_descriptive_analysis_v0_1.json) | `9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981` | Post-selection description of the already-opened PR #9 terminal |
 | [`d7_structural_gap_matrix_v0_1.json`](../protocols/d7_structural_gap_matrix_v0_1.json) | `e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758` | Value-blind implementation scheduling against the D6 contract |
 
 Both are declarations. They grant no consumer authority and expose no writer,
@@ -308,7 +308,11 @@ aggregation bytes, lifecycle, launch intent, exclusive attempt, and initially
 absent result namespace. It must then review the frozen descriptive plan and
 publish one separate result artifact that:
 
-- binds that D7 design-freeze receipt without reading D7 values;
+- consumes exactly one additional allowed input class,
+  `committed-d7-full-design-freeze-receipt`;
+- freezes that receipt's exact repository-relative path, Git commit/blob, and
+  SHA-256 before runner execution;
+- binds that receipt without reading any D7 result or confirmation value;
 - binds the plan SHA-256 and every parent SHA-256;
 - records a source binding and exact read trace;
 - reports all eight packages;
@@ -321,7 +325,8 @@ publish one separate result artifact that:
 
 This future result is exploratory descriptive evidence. Its purpose is to make
 the observed construction legible, not to convert it into independent
-confirmation.
+confirmation. A caller-supplied receipt digest is not proof: the runner must
+read and validate the committed blob and include it in the exact read trace.
 
 ## 7. Value-blind D7 gap vocabulary
 

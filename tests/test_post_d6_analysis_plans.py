@@ -16,7 +16,7 @@ DESCRIPTIVE_PATH = (
 )
 GAP_PATH = REPOSITORY / "protocols" / "d7_structural_gap_matrix_v0_1.json"
 DESCRIPTIVE_SHA256 = (
-    "e03a5648931d1ca44cc14c7581734e3803749bc3f4da40bf90d3525c8d0e8cc6"
+    "9b1a8d9c3857fd18fff7b4dfb20a75eade2f56f4933e05126830669cd8ccb981"
 )
 GAP_SHA256 = "e91236e4a28367f43ec23fc86228657d488ca933e364b2b9f8c1ec9993504758"
 
@@ -125,11 +125,21 @@ def test_descriptive_plan_is_explicitly_postselection_and_nonpromotional() -> No
     assert policy["subject_value_access_authorized"] is False
     forbidden = set(_sequence(policy["forbidden_input_classes"]))
     assert {
+        "d7-result-or-confirmation-values",
         "unopened-confirmation-values",
         "pythia-engineering-manifest-or-payload",
         "subject-descriptor-or-values",
         "model-or-network-access",
     }.issubset(forbidden)
+    future_input = _mapping(policy["future_required_input"])
+    assert future_input == {
+        "cardinality": 1,
+        "class": "committed-d7-full-design-freeze-receipt",
+        "d7_design_metadata_authorized": True,
+        "d7_result_or_confirmation_values_authorized": False,
+        "exact_repo_relative_path_frozen_before_runner_execution": True,
+        "git_blob_commit_and_sha256_binding_required": True,
+    }
 
     publication = _mapping(plan["publication_contract"])
     assert publication["result_status"] == "not_run"

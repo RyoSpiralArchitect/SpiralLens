@@ -30,7 +30,10 @@ promote a claim.
   family, threshold, graph, cell, exclusion, estimator, trivialization, or
   stress design. Its runner is blocked until a committed receipt binds the
   complete D7 design, admission, source closure, lifecycle, launch intent,
-  exclusive attempt, and absent result namespace.
+  exclusive attempt, and absent result namespace. That one receipt is an
+  explicit future input class whose repository-relative path, Git blob/commit,
+  and SHA-256 must be fixed before execution; D7 result and confirmation values
+  remain forbidden.
 - The D7 matrix accepts no terminal, Pythia, subject, semantic, SAE, model,
   seed, or confirmation values as inputs. Its value-blindness is an input
   policy, not a claim that its operator lacked prior outcome exposure. It names
