@@ -457,12 +457,14 @@ Subject to review at each transition, the current full sequence is:
 7. begin the separate representation-native F0-F4 selection lane;
 8. independently confirm and replay the selected representation instrument;
 9. establish a same-substrate field, charge-blind core, and loop join;
-10. only if the convention permits it, test integer stability and topology
-   invariance;
+10. only if the convention permits it, test calibration-side integer stability
+    and topology-invariance eligibility; this is an instrument gate, not a
+    model-topology observation;
 11. issue a reviewed subject manifest and run metadata-only subject
     `prepare-only`;
 12. obtain separate subject execution authorization;
-13. run structural subject discovery; and
+13. run semantics-free structural subject discovery and, only for a frozen
+    candidate, apply the already-frozen topology rules without retuning; and
 14. only after a structural candidate exists, run held-out semantic, SAE, and
     causal tests.
 

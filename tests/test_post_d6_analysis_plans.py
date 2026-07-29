@@ -424,3 +424,33 @@ def test_pr11_adds_no_analysis_runner_writer_or_promotion_api() -> None:
 
     assert forbidden.isdisjoint(qualification.__all__)
     assert all(not hasattr(qualification, name) for name in forbidden)
+
+
+def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
+    roadmap = " ".join(
+        (REPOSITORY / "docs" / "ROADMAP.md").read_text().split()
+    )
+    preparation = " ".join(
+        (
+            REPOSITORY / "docs" / "NEXT_EXPERIMENT_PREPARATION.md"
+        ).read_text().split()
+    )
+    anchor = " ".join(
+        (
+            REPOSITORY / "docs" / "POST_D6_ANALYSIS_AND_D7_GAPS.md"
+        ).read_text().split()
+    )
+
+    assert (
+        "begin the separate representation-native F0-F4 selection lane"
+        in roadmap
+    )
+    assert (
+        "current surrogate-engine D7/D8 lane is not sufficient and grants no "
+        "subject authority"
+    ) in preparation
+    assert "not unlocked by surrogate D8 alone" in preparation
+    assert (
+        "this is an instrument gate, not a model-topology observation"
+        in anchor
+    )

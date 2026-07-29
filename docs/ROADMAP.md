@@ -734,7 +734,14 @@ below:
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status; same-family new seeds remain replication and
     cannot satisfy this item;
-15. only then prepare a new subject manifest with new IDs under the
+15. only then begin the separate representation-native F0-F4 selection lane;
+    independently confirm and replay its selected instrument without
+    transferring Cartesian D2-D5 evidence;
+16. establish the same-substrate field/core/loop join and, only when the
+    convention permits it, calibration-side integer/topology eligibility;
+    these are instrument gates, not a model-topology observation; and
+17. only after those separately reviewed gates prepare a new subject manifest
+    with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
 
@@ -795,7 +802,7 @@ claim-ineligible ContextBank, exact offline model bytes, bounded rows,
 CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
 real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
-remain `not_run`. This lane cannot select any choice in steps 5-12 above and
+remain `not_run`. This lane cannot select any choice in steps 5-17 above and
 cannot be cited as subject preparation or evidence.
 
 The immediate deliverable is a separately implemented family that can satisfy
