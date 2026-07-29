@@ -710,7 +710,9 @@ below:
    completed with all six Cartesian-surrogate-scoped gates passing;
 10. seal the exact surrogate profile and a construction-diverse confirmation
     admission contract before any confirmation access — implemented as the
-    scope-limited D6 decision; it does not select the representation
+    scope-limited D6 decision with canonical SHA-256
+    `c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
+    its clean tracked reload passed, but it does not select the representation
     instrument or advance global D6-D8;
 11. implement and admit a genuinely different construction family, run it
     without overrides or post-selection exclusions, and require complete
@@ -782,7 +784,7 @@ remain `not_run`. This lane cannot select any choice in steps 5-12 above and
 cannot be cited as subject preparation or evidence.
 
 The immediate deliverable is a separately implemented family that can satisfy
-the sealed D6 admission contract. Only its locked D7 pass and isolated
+the now-recorded D6 admission contract. Only its locked D7 pass and isolated
 byte-identical D8 replay could support a scope-specific synthetic-qualified,
 replayable bundle. That still would not mean “find a semantic vortex” or
 authorize a subject run.

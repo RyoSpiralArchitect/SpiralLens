@@ -299,6 +299,20 @@ implementation registry, core/loop separation, stress strata, and
 aggregation, plus evidence disjointness and no policy override or
 post-selection exclusion.
 
+The authoritative bundle is recorded at
+[`experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json`](experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json).
+Its canonical SHA-256 is
+`c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
+the embedded admission-spec SHA-256 is
+`2e4aa2a272a38ed68b61f612d8a3a261cc6376f3d9a8097f5dce701a2c3f5aa4`.
+The bundle binds source commit
+`7673ef81bbd67afce5d20255cc6ca6d68e453c3f` and was first tracked by
+artifact commit `1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`. A clean
+tracked reload rejoined the historical terminal, complete source surface, and
+embedded spec with `committed_artifact_verified=true`; current-source
+compatibility, historical reexecution, and historical D1 recomputation remain
+false.
+
 D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
 form are replication, not independent-family confirmation. The existing
 spectral-moment family is a useful distinct-family foundation, but it presently
@@ -726,10 +740,11 @@ to become a general library.
 - **Recorded — synthetic D0-D5 qualification:** the frozen Cartesian-surrogate
   one-shot passed its six scoped gates under the committed chronology. This is
   not representation-instrument or subject evidence.
-- **Now — D6 independent-family admission:** seal the exact surrogate profile
-  and the non-negotiable construction-diverse confirmation contract. D7 and D8
-  remain machine-readable `not_run` until a separately implemented family can
-  satisfy that contract; same-family seed changes cannot do so.
+- **Recorded — D6 independent-family admission:** the exact surrogate profile
+  and non-negotiable construction-diverse confirmation contract are sealed in
+  the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
+  until a separately implemented family can satisfy that contract;
+  same-family seed changes cannot do so.
 - **Next — locked D7/D8 confirmation:** execute the admitted family without
   overrides, then require complete isolated byte replay. Only a future
   scope-specific confirmation artifact may change its own qualification

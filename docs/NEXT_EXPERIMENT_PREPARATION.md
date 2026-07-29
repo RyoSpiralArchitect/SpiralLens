@@ -838,6 +838,17 @@ estimator. It fixes P0 winner selection, representation D2-D5 transfer,
 localized core-loop join, integer/topology output, semantic authority, and
 subject access to false.
 
+The recorded decision is
+`experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json`
+with canonical SHA-256
+`c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`.
+It binds source commit
+`7673ef81bbd67afce5d20255cc6ca6d68e453c3f`, was first tracked in
+`1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`, and passed the clean
+tracked authoritative reload. That receipt does not change its explicit false
+values for current-source compatibility, historical reexecution, or historical
+D1 recomputation.
+
 The pre-run D0-D5 `SelectionFreezeArtifact` is a different object: it binds one
 unopened selection attempt to exact protocol bytes and a seed-family
 commitment. It does not decide which instrument advances and cannot satisfy

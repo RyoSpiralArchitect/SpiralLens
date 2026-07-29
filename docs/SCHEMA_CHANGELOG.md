@@ -40,6 +40,12 @@ promote a claim.
   `committed_artifact_verified=false` candidate; only
   `load_scope_limited_d6_decision()` after a clean tracked descendant commit
   returns the authoritative committed receipt.
+- The authoritative decision is recorded at
+  `experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json`
+  with canonical SHA-256
+  `c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`,
+  source commit `7673ef81bbd67afce5d20255cc6ca6d68e453c3f`, and first
+  artifact commit `1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`.
 
 ### Compatibility and non-migrations
 

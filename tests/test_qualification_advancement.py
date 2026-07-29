@@ -23,6 +23,7 @@ from spirallens.qualification.advancement import (
     SurrogateAdvancementDecision,
     advancement_source_binding_sha256,
     build_current_advancement_source_binding,
+    load_scope_limited_d6_decision,
     validate_advancement_decision_source,
 )
 from spirallens.qualification.common import (
@@ -303,6 +304,69 @@ def test_fabricated_source_binding_cannot_pass_authoritative_validation(
             _decision(),
             repository_root=repository,
         )
+
+
+def test_recorded_d6_bundle_authoritatively_reloads_from_committed_lineage() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    loaded = load_scope_limited_d6_decision(
+        (
+            repository
+            / "experiments"
+            / "qualification"
+            / "d0_d5_f2_cartesian_selection_v0_1"
+            / "d6-surrogate-advancement-decision.json"
+        ),
+        expected_source_sha256=(
+            "c1c3fbbb9a06e8df120755dcf159e015"
+            "636d96993bd6ec3a6792312618587a07"
+        ),
+        expected_canonical_sha256=(
+            "c1c3fbbb9a06e8df120755dcf159e015"
+            "636d96993bd6ec3a6792312618587a07"
+        ),
+        expected_decision_id="cartesian-surrogate-d6-decision-v0-1",
+        expected_admission_spec_id=(
+            "cartesian-surrogate-independent-family-admission-v0-1"
+        ),
+        launch_descriptor=(
+            repository
+            / "experiments"
+            / "qualification"
+            / "d0_d5_f2_cartesian_selection_v0_1"
+            / "launch.json"
+        ),
+        launch_descriptor_source_sha256=(
+            "a6a8f8a2c3c47cc76053646440cec94c"
+            "6bf7da6a6794a2bdda2e4a2cfa28f300"
+        ),
+        launch_descriptor_canonical_sha256=(
+            "a6a8f8a2c3c47cc76053646440cec94c"
+            "6bf7da6a6794a2bdda2e4a2cfa28f300"
+        ),
+        terminal_manifest_sha256=(
+            "518b66d715cf9bd05e12de62cb5681ec"
+            "63ec7f978fd4d2538ba3c2594deed4b1"
+        ),
+        terminal_result_sha256=(
+            "44749d8d237b8b35874099c605f8de3d"
+            "76130691ce8beb92e1ccf80fa368c13a"
+        ),
+        terminal_consumption_sha256=(
+            "a42ae9cffb6a2c87de6ed645e0982e85"
+            "b09046a4ed5ad3f815a8a8ce38c0cadb"
+        ),
+    )
+
+    assert loaded.committed_artifact_verified is True
+    assert loaded.historical_terminal_companions_verified is True
+    assert loaded.decision_source_surface_verified is True
+    assert loaded.embedded_admission_spec_verified is True
+    assert loaded.current_source_compatibility_verified is False
+    assert loaded.historical_engine_reexecution_verified is False
+    assert loaded.historical_d1_recomputation_performed is False
+    assert loaded.decision.d6_state == "pass"
+    assert loaded.decision.d7_state == "not_run"
+    assert loaded.decision.d8_state == "not_run"
 
 
 def test_private_writer_returns_typed_visible_artifact_when_parent_fsync_fails(
