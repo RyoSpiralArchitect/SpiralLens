@@ -49,6 +49,7 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/graphs/diversity.py",
     "spirallens/graphs/domain.py",
     "spirallens/qualification/__init__.py",
+    "spirallens/qualification/advancement.py",
     "spirallens/qualification/aggregation.py",
     "spirallens/qualification/blind.py",
     "spirallens/qualification/common.py",
