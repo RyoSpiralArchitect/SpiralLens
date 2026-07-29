@@ -440,10 +440,11 @@ D0-D8 is complete. See
 ### Current D0-D5 engine boundary
 
 The current model-free qualification engine operationalizes only the Level-0
-D0-D5 calibration-selection layer. Its presence is not evidence that a frozen
-selection has run or passed. Its result contract fixes
-`d6_d8_advanced=false`, `synthetic_qualified=false`, subject/model/semantic
-access to false, and integer/topology authority to false.
+D0-D5 calibration-selection layer. One official frozen Cartesian-surrogate
+attempt has run and all six scoped gates passed. The terminal result does not
+change its claim class: its contract fixes `d6_d8_advanced=false`,
+`synthetic_qualified=false`, subject/model/semantic access to false, and
+integer/topology authority to false.
 
 The operational split is fundamental rather than a post-hoc control:
 
@@ -509,7 +510,8 @@ guarantee also trusts deletion rights for the claim, start marker, and terminal
 transaction and therefore is not yet an append-only, adversary-resistant run
 ledger. No consumed family is retried under the same protocol identity. This
 pre-run freeze binds the D0-D5 attempt and does not substitute for the later
-D6 `CalibrationSelectionDecision`.
+scope-limited D6 advancement decision or its independent-family admission
+specification.
 
 This authority is defined at validated persistence sinks. Provisional record
 constructors may form non-authoritative in-memory objects, but the generic
@@ -517,15 +519,44 @@ standalone result writer/loader rejects the official protocol ID. An official
 result becomes admissible only through the start-lineage-bound terminal
 transaction.
 
-A later artifact-only commit does not rewrite execution provenance. Terminal
-revalidation proves the stored execution HEAD lies between the engine commit
-and current HEAD, verifies every bound module, official executable, registry,
-and referent blob at that historical HEAD, repeats the complete clean
-live-source check, reconstructs the exact historical receipt, and requires its
-original canonical digest through the persisted summary. Sibling histories,
-execution-blob mismatches, and current bound-path or content drift are
-inadmissible. This remains source-only Level-0 evidence, not runtime or
-hostile-process attestation.
+A later artifact-only commit does not rewrite execution provenance. The
+ordinary successor-aware terminal validator proves the stored execution HEAD
+lies between the engine commit and current HEAD, verifies every bound module,
+official executable, registry, and referent blob at that historical HEAD,
+repeats the complete clean live-source check, reconstructs the exact historical
+receipt, and requires its original canonical digest through the persisted
+summary. Sibling histories, execution-blob mismatches, and current bound-path
+or content drift are inadmissible on that route.
+
+The D6 path instead uses a read-only committed-terminal archival loader. It
+requires clean tracked G/H artifacts and historical Git/source joins, and uses
+the current strict parser to validate serialized companions, but skips current
+D1 recomputation. It records current-engine compatibility and historical
+reexecution as false. Neither route is runtime or hostile-process attestation.
+
+### D6 scope and the still-closed D7/D8 boundary
+
+The official result is admissible input to a D6 decision only for the exact
+Cartesian-surrogate qualification profile. D6 does not promote the
+representation estimator, select a P0 winner, or infer that Cartesian D2-D5
+transfers to a model-side referent. Its independent-confirmation admission
+contract is embedded in the single decision bundle and must be sealed before
+confirmation values are accessed. It binds the required cases, graph axes,
+surrogate estimator and trivialization, implementation registry, separate core
+and loop paths, stress strata, cell manifest, thresholds, aggregation, and
+evidence-disjointness rules. The no-access fact is an external attestation, not
+cryptographic proof.
+
+Changing a seed, implementation label, or source digest inside the same
+mathematical construction family is replication, not independent-family
+confirmation. The existing spectral-moment foundation is
+construction-distinct but has no graph/core/loop/full-gate path yet. D7 and D8
+are therefore `not_run`, and neither `d6_d8_advanced` nor
+`synthetic_qualified` may change. This is the positive substrate-side meaning
+of the gate, not a post-hoc relaxation after seeing the D0-D5 outcome.
+No D7 family-admission or D8 replay-execution validator is implemented by this
+boundary; different labels or two caller-supplied byte strings cannot promote
+either gate.
 
 ## 9. Historical and experimental consequences
 

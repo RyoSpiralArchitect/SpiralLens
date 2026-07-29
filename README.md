@@ -125,11 +125,15 @@ matched graph-cycle family, Level 2G result, or Level 2T result.
 
 ## D0-D5 qualification engine
 
-The experimental `spirallens.qualification` namespace now implements a
-model-free, source-bound D0-D5 **calibration-selection engine**. This is an
-execution capability, not a selection result. No selection seed outcome is
-asserted by this documentation, D6-D8 are not advanced, and every result type
-is fixed to `synthetic_qualified=false`.
+The experimental `spirallens.qualification` namespace implements a
+model-free, source-bound D0-D5 **calibration-selection engine**. The one
+official frozen Cartesian-surrogate attempt is now terminally recorded. All
+six scoped gates passed, and the exact canonical result is
+`44749d8d237b8b35874099c605f8de3d76130691ce8beb92e1ccf80fa368c13a`.
+That outcome is Level 0 and Cartesian-surrogate-only: its own immutable result
+still has `d6_d8_advanced=false`, `synthetic_qualified=false`, and every
+subject, semantic, integer/topology, P0-winner, representation-transfer, and
+localized core-loop-join authority set to false.
 
 Its scope is deliberately narrower than P0-wide instrument selection. The
 D2-D5 primary matrix qualifies the F2/Cartesian surrogate lane; the
@@ -261,24 +265,80 @@ callable check is an accidental-replacement tripwire, not hostile-process
 attestation. Atomic terminal publication uses Darwin `RENAME_EXCL` or Linux
 `RENAME_NOREPLACE` and fails closed on unsupported platforms.
 
-Terminal result validation preserves the exact execution-time source receipt
-after a later artifact-only commit. It proves
+The ordinary successor-aware terminal validator preserves the exact
+execution-time source receipt after a later artifact-only commit. It proves
 `engine.commit -> stored execution HEAD -> current HEAD`, rechecks every bound
 module, official executable, registry, and referent blob at the execution
 HEAD, performs the full clean live-source verification at current HEAD,
 reconstructs the historical receipt, and requires its canonical digest to
 equal the result's stored source summary. A sibling/non-ancestor HEAD,
 execution-time blob mismatch, or current bound-path/content drift is rejected.
-This permits the intended
+
+The D6 sealer uses a separate read-only archival loader. That route reconstructs
+committed-G authorization and the H terminal from clean tracked Git blobs,
+rejoins the historical source receipt, and runs the current strict schema and
+serialized companion checks. It deliberately does **not** run the current D1
+implementation, establish current-engine compatibility, or reproduce the
+historical execution. These two routes permit the intended
 engine-commit → one-shot → terminal-artifact-commit sequence without replacing
-the execution HEAD with the later commit in provenance.
+the execution HEAD with the later commit in provenance or laundering an
+archival read as a rerun.
 
-This pre-run `SelectionFreezeArtifact` freezes the D0-D5 attempt; it is not the
-D6 `CalibrationSelectionDecision` that would seal what advances to independent
-confirmation.
+This pre-run `SelectionFreezeArtifact` froze the D0-D5 attempt; it is not the
+later D6 decision that controls independent confirmation.
 
-The recorded negative-access facts are explicit external attestations, not
-cryptographic proof. The current local store also assumes trusted deletion
+The post-selection D6 boundary is now scope-explicit. It may seal only the
+exact `f2-cartesian-surrogate-d2-d5-v0-1` profile for a future independent
+construction-family confirmation. It does not select F2 as a P0 representation
+instrument, transfer D2-D5 to the representation estimator, or establish a
+localized core-loop join. The decision embeds its admission specification in
+one canonical no-overwrite bundle. That specification requires a
+genuinely distinct mathematical construction family, the same locked cells,
+thresholds, graph axes, surrogate estimator and trivialization,
+implementation registry, core/loop separation, stress strata, and
+aggregation, plus evidence disjointness and no policy override or
+post-selection exclusion.
+
+The authoritative bundle is recorded at
+[`experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json`](experiments/qualification/d0_d5_f2_cartesian_selection_v0_1/d6-surrogate-advancement-decision.json).
+Its canonical SHA-256 is
+`c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
+the embedded admission-spec SHA-256 is
+`2e4aa2a272a38ed68b61f612d8a3a261cc6376f3d9a8097f5dce701a2c3f5aa4`.
+The bundle binds source commit
+`7673ef81bbd67afce5d20255cc6ca6d68e453c3f` and was first tracked by
+artifact commit `1fcff8bfedc7d3ae8386bc409595607b5b57b8c4`. A clean
+tracked reload rejoined the historical terminal, complete source surface, and
+embedded spec with `committed_artifact_verified=true`. The authoritative
+loader now also requires the complete current loader source surface to be the
+clean tracked blobs of one stable current HEAD and records that commit and
+source-binding digest in its receipt. This verifies the code surface executing
+the archival checks; it does not claim compatibility with the historical
+decision source. Current-source compatibility, historical reexecution, and
+historical D1 recomputation therefore remain false.
+
+The recorded bundle is also lineage-bound: its source commit must remain an
+ancestor of the loading HEAD. This PR must therefore be integrated with a
+history-preserving merge commit; squash or rebase integration invalidates the
+authoritative reload and is intentionally rejected. The end-to-end recorded
+reload test runs only in its declared `absolute_local_paths` layout. Other
+checkouts exercise the portable loader contracts but skip that local archival
+evidence instead of pretending to relocate it.
+
+D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
+form are replication, not independent-family confirmation. The existing
+spectral-moment family is a useful distinct-family foundation, but it presently
+constructs no graph, core, loop, or complete D0-D5 confirmation path. The D6
+decision therefore seals the only admissible entrance without pretending that
+an independent confirmation or replay has occurred. Global
+`d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
+No label-only D7 admission validator or caller-supplied byte-comparison D8
+validator is exposed; those execution surfaces remain absent until typed
+result/evidence and isolated-replay receipts exist.
+
+The recorded negative-access facts, including the absence of admitted
+confirmation-value access before sealing, are explicit external attestations,
+not cryptographic proof. The current local store also assumes trusted deletion
 rights: an operator able to remove the claim, execution-start marker, or
 terminal directory can defeat
 its local uniqueness history. A future durable store must make that history
@@ -689,14 +749,19 @@ to become a general library.
   activation atlases, structural candidate ledgers, versioned provenance, and
   fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
   full-index/subset-query audits, and verified receipt plumbing.
-- **Now — synthetic D0-D5 qualification:** harden the implemented closed
-  protocol, separate core and loop evidence, full crossed graph-family null,
-  exact stress strata, source/evidence roots, and one-shot selection
-  chronology. Engine availability alone is not a gate result.
-- **Next — synthetic selection and D6-D8:** execute only the separately frozen
-  unseen selection family, then seal an independent confirmation decision and
-  replayable synthetic bundle. Until that later work passes,
-  `d6_d8_advanced=false` and `synthetic_qualified=false`.
+- **Recorded — synthetic D0-D5 qualification:** the frozen Cartesian-surrogate
+  one-shot passed its six scoped gates under the committed chronology. This is
+  not representation-instrument or subject evidence.
+- **Recorded — D6 independent-family admission:** the exact surrogate profile
+  and non-negotiable construction-diverse confirmation contract are sealed in
+  the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
+  until a separately implemented family can satisfy that contract;
+  same-family seed changes cannot do so.
+- **Next — locked D7/D8 confirmation:** execute the admitted family without
+  overrides, then require complete isolated byte replay. Only a future
+  scope-specific confirmation artifact may change its own qualification
+  status; the current official result remains byte-identically false for
+  `d6_d8_advanced` and `synthetic_qualified`.
 - **Then — candidate-to-loop integration:** keep geometry/holonomy and
   field/defect paths separate, join them only through explicit same-substrate
   artifacts, and retain Pythia-70M as development material.
@@ -750,9 +815,10 @@ immediate next plan live in the single
   field, core, loop, or topology claim;
 - `qualification/` contains the experimental, model-free D0-D5 protocol,
   source/evidence binding, charge-blind core and continuous sampled-loop
-  kernels, crossed aggregation, exclusive attempt chronology, and terminal
-  persistence. Importing or exercising its development API does not run a
-  frozen selection, advance D6-D8, or authorize subject access;
+  kernels, crossed aggregation, exclusive attempt chronology, terminal
+  persistence, and the scope-limited D6 independent-family admission
+  boundary. Importing it does not run a selection or confirmation, advance
+  global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
 - `neighbors/` retrieves row-index pairs from unprojected states only; it never

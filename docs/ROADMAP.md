@@ -139,7 +139,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, and one-attempt terminal chronology | NumPy/PyYAML plus project contract foundations; no model framework, network, D6-D8, synthetic-qualified, subject, integer, or topology authority |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, and scope-limited D6 admission | NumPy/PyYAML plus project contract foundations; no model framework, network, global D6-D8, D7-D8, synthetic-qualified, subject, integer, or topology authority |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -267,8 +267,8 @@ explicitly false. A later D6 transition must first supply
 representation-native D2-D5 evidence or a reviewed construct-equivalence
 bridge.
 
-This is not a frozen selection outcome. The selection family is not opened by
-engine tests or documentation. A claim-bearing attempt requires, in order,
+The frozen official selection outcome now exists. It was not opened by engine
+tests or documentation: its claim-bearing attempt followed, in order,
 the committed engine; the exact canonical readiness, protocol, and unopened
 freeze committed as F; a canonical launch intent persisted before one
 exclusive attempt claim; the store freeze, intent, claim, and descriptor
@@ -283,14 +283,17 @@ G, and `engine -> G -> current` ancestry. Negative-access facts are external
 attestations, and the current local uniqueness history trusts store deletion
 rights. D6-D8 remain unadvanced and every D0-D5 result keeps
 `synthetic_qualified=false`. The pre-run freeze is not the later D6
-`CalibrationSelectionDecision`.
+scope-limited advancement decision.
 
-The terminal validator also preserves the execution receipt across the later
-artifact commit required by this roadmap. It accepts only an exact descendant
-history, verifies bound blobs at the stored execution HEAD and current HEAD,
-reconstructs the historical receipt, and requires its unchanged canonical
-digest. It does not collapse execution HEAD and artifact HEAD into one
-identity, and it grants no runtime or hostile-mutation attestation.
+The ordinary successor-aware terminal validator preserves the execution
+receipt across the later artifact commit required by this roadmap. It accepts
+only an exact descendant history, verifies bound blobs at the stored execution
+HEAD and current HEAD, reconstructs the historical receipt, and requires its
+unchanged canonical digest. The separate D6 archival loader verifies clean
+tracked G/H history and serialized companion joins without current D1
+recomputation; it explicitly grants neither current-engine compatibility nor
+historical reexecution. Neither route collapses execution HEAD and artifact
+HEAD or grants runtime/hostile-mutation attestation.
 
 **Target release family:** `0.2.x`.
 
@@ -703,13 +706,24 @@ below:
    the store freeze, intent, claim, and descriptor as G; derive and revalidate
    exact G authorization; then perform the live source verification and atomic
    execution-start transition, the one-shot D0-D5 selection, and atomic
-   publication of either its fully validated result or typed failure — no
-   outcome is claimed in this roadmap text;
-10. in a later change, seal a `CalibrationSelectionDecision` before opening an
-    independent confirmation family;
-11. run that locked independent confirmation and require complete
-    byte-identical replay before setting any D6-D8 or synthetic-qualified
-    status;
+   publication of either its fully validated result or typed failure —
+   completed with all six Cartesian-surrogate-scoped gates passing;
+10. seal the exact surrogate profile and a construction-diverse confirmation
+    admission contract before any confirmation access — implemented as the
+    scope-limited D6 decision with canonical SHA-256
+    `c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
+    its clean tracked reload passed and now binds the clean current loader
+    source surface to one stable HEAD without claiming historical-source
+    compatibility, but it does not select the representation instrument or
+    advance global D6-D8; preserve its source-commit ancestry with a merge
+    commit because squash/rebase integration invalidates the authoritative
+    lineage, and treat its absolute-path end-to-end reload as local archival
+    evidence rather than a cross-worktree test;
+11. implement and admit a genuinely different construction family, run it
+    without overrides or post-selection exclusions, and require complete
+    isolated byte-identical replay before setting any scope-specific D7/D8
+    status; same-family new seeds remain replication and cannot satisfy this
+    item;
 12. only then prepare a new subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
@@ -756,10 +770,11 @@ selection design. That integration still establishes no homology or topology
 certificate: it records only unrounded integrated sampled-phase totals and
 graph-family stability.
 
-Engine tests and development executions do not qualify D0-D8. No frozen
-selection result is asserted here, no calibration confirmation is performed,
-and no subject is prepared, executed, or observed. Every result remains
-Level 0 with `d6_d8_advanced=false` and `synthetic_qualified=false`.
+Engine tests and development executions do not qualify D0-D8. The official
+frozen D0-D5 Cartesian-surrogate result is recorded and passed its six scoped
+gates, but no independent calibration confirmation is performed and no subject
+is prepared, executed, or observed. Every current result remains Level 0 with
+`d6_d8_advanced=false` and `synthetic_qualified=false`.
 The detailed preparation gates are in
 [Next Experiment Preparation](NEXT_EXPERIMENT_PREPARATION.md).
 
@@ -773,9 +788,11 @@ instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
 remain `not_run`. This lane cannot select any choice in steps 5-12 above and
 cannot be cited as subject preparation or evidence.
 
-The immediate deliverable is a synthetic-qualified, replayable instrument
-bundle. It is not “find a semantic vortex,” and it does not authorize a subject
-run.
+The immediate deliverable is a separately implemented family that can satisfy
+the now-recorded D6 admission contract. Only its locked D7 pass and isolated
+byte-identical D8 replay could support a scope-specific synthetic-qualified,
+replayable bundle. That still would not mean “find a semantic vortex” or
+authorize a subject run.
 
 ## 12. Roadmap change rule
 
