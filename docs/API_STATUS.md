@@ -51,6 +51,16 @@ authoritative committed-D6 loader receipt, but it deliberately exposes no
 full-design freeze, source-closure, admission, lifecycle, execution, result, or
 promotion surface.
 
+`spirallens.qualification.confirmation_execution_design` and
+`spirallens.qualification.confirmation_crossed_development` are also internal.
+The first requires a strict full parent-protocol load and constructs a
+seed-slot execution draft; the second accepts only permanently excluded
+development seeds and stops at sealed predictions. Neither module is exported
+from `spirallens.qualification` or the package root. Their schemas and call
+signatures may change while the D6-to-D7 structural-rebinding contract remains
+unresolved. They expose no freeze, official seed supplier, admission, gate,
+result, terminal writer, replay, or promotion API.
+
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
 module imports remain internal.

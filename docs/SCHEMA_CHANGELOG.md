@@ -4,6 +4,59 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — PR #13 seed-free D7 execution topology
+
+### Added
+
+- `spirallens.spectral-moment-confirmation-spec.v0.2` requires explicit seed,
+  state-warp, and observation-perturbation values. The spectral states use
+  ambient-dimension root normalization; the warp changes states only; the
+  deterministic perturbation reuses the D6 nuisance operator and changes
+  observations only. Prerequisite units record requested and effective
+  perturbation values separately.
+- `spirallens.spectral-moment-prepared-case.v0.1` and
+  `spirallens.spectral-moment-prepared-bundle.v0.1` are in-memory,
+  development-only inputs that construct no oracle-truth record and expose
+  label-free estimator arrays to the numerical estimator path. The surrounding
+  synthetic-control orchestration retains case and unit identity and is not
+  claimed label-blind.
+- `spirallens.d7-confirmation-execution-design-draft.v0.1` strictly joins an
+  authoritative D6 decision identity to the full canonical parent protocol,
+  reproduces every graph/cell/stress/threshold/aggregation body hash, and
+  constructs the exact seed-slot inventory of 64 primary, 192 core, and 1,152
+  loop cells.
+- `spirallens.d7-parent-manifest-compatibility.v0.1` records that the typed
+  parent and D7 structural projections match while exact parent cells/stress
+  hash satisfaction is false. A reviewed successor admission contract remains
+  required.
+- `spirallens.d7-development-prediction-inventory.v0.1` is an in-memory,
+  claim-ineligible receipt for the complete graph/field/blind-core/continuous
+  loop development path. It accepts only permanently excluded development
+  seeds and cannot score a gate or publish a result.
+
+### Compatibility and non-migrations
+
+- The spectral implementation version advances from `v0.1` to `v0.2`; the
+  current mechanism SHA-256 is
+  `3dedf73dab90463025b527a5e7a1265c6c860cf95d59bdd165ede0fbcfb107fb`.
+  PR #12 remains the historical foundation milestone; no persisted PR #12
+  artifact is rewritten.
+- The D6 v0.1 required-cell and required-stress hashes are preserved exactly.
+  They are not redefined as structural hashes. Their selection-specific seed
+  and identifier content is recorded as an explicit incompatibility, not
+  silently migrated.
+- The draft binds the exact authoritative D6 decision, admission, and current
+  loader identities. Historical terminal companions were verified upstream;
+  their raw bytes are not direct draft arguments or retained design members.
+- The design draft has a strict canonical reader but no publisher. The
+  development prediction records have no parser or writer. All new modules
+  remain deep internal imports and are not re-exported from
+  `spirallens.qualification` or the package root.
+- Concrete confirmation seeds, construction-family admission, source closure,
+  lifecycle, result/failure schemas, terminal publication, D7/D8 execution,
+  global synthetic qualification, representation, integer/topology, semantic,
+  Pythia, and subject authority remain absent or false.
+
 ## 2026-07-30 — PR #12 D7 construction foundation
 
 ### Added

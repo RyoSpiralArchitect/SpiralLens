@@ -127,6 +127,21 @@ epistemic, or implementation independence. This foundation freezes no
 confirmation seed or execution inventory, persists no full-design receipt,
 admits no family, exposes no D7 runner or terminal result, and does not advance
 D0-D8.
+
+The next seed-free D7 execution draft now reconstructs the full authoritative
+D6 parent protocol, binds explicit stress translations, and closes the exact
+`64` primary / `192` core / `1,152` loop repeated-measures topology. A
+development-only path runs the exact 3A-by-3B graph, core, and continuous-loop
+pipeline using permanently excluded seeds and stops at sealed predictions
+without constructing an oracle-truth record or producing a gate/result.
+Implementation also exposed that the D6 v0.1 required-cell and required-stress
+bodies contain selection seeds and seed-bearing IDs. A new-seed confirmation
+can match their typed structural projection but cannot be byte-identical.
+Accordingly the draft records structural equality separately while leaving
+exact parent-manifest satisfaction, D6 admission, freeze, and D7 execution
+false. See the
+[D7 Confirmation Execution Design](docs/D7_CONFIRMATION_EXECUTION_DESIGN.md).
+
 The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
@@ -774,6 +789,18 @@ to become a general library.
   authoritative D6 loader receipt. It has no frozen confirmation seed or
   execution inventory, completed diversity review, full-design receipt,
   admitted family, runner, result, or replay authority.
+- **Implemented, not frozen — seed-free D7 execution topology:** the full D6
+  parent protocol is strictly reconstructed; explicit boundary, state-warp,
+  and observation-perturbation translations produce an exact seed-slot
+  inventory of 64 primary, 192 core, and 1,152 loop cells. The full
+  graph/field/blind-core/continuous-loop path passes development-only
+  conformance on permanently excluded seeds. It produces no D7 gate, result,
+  or terminal.
+- **Discovered blocker — D6 v0.1 identity-bearing manifests:** the inherited
+  cells and stress-strata hashes include selection seeds and seed-bearing IDs.
+  The D7 structural projection is equal, but exact parent hash satisfaction is
+  deliberately false. A reviewed versioned rebinding/successor admission
+  contract is required; the implementation does not silently reinterpret D6.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -784,9 +811,11 @@ to become a general library.
   complete D7 family descriptor, admission, protocol, source closure, and
   lifecycle must already be frozen under a committed receipt. See
   [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
-- **Next — complete, review, and freeze D7 before execution:** add the missing
-  stress, graph/core/loop, source-closure, lifecycle, result, and replay
-  surfaces; only then may a committed full-design receipt admit an attempt.
+- **Next — resolve admission, then complete and freeze D7:** review and publish
+  the versioned D6-to-D7 structural rebinding, construction-diversity/source
+  closure, D7-specific implementation-registry and aggregation application,
+  lifecycle, result/failure, terminal, and replay surfaces. Only then may a
+  committed full-design receipt admit an attempt.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for

@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import hashlib
 import inspect
+import math
 from dataclasses import fields, replace
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+import spirallens.synthetic.spectral_moment_confirmation as confirmation_module
 from spirallens.graphs import (
     GraphInput,
     GraphPurpose,
     MutualKnnSpec,
+    RadiusGraphSpec,
     construct_mutual_knn,
+    construct_radius_graph,
 )
 from spirallens.synthetic.cartesian_fourier_domain_phantom import (
     CartesianFourierDomainGenerator,
@@ -32,6 +36,7 @@ from spirallens.synthetic.spectral_moment_confirmation import (
     SPECTRAL_MOMENT_IMPLEMENTATION_ID,
     SPECTRAL_MOMENT_IMPLEMENTATION_VERSION,
     SPECTRAL_MOMENT_REQUIRED_CASE_SEMANTICS,
+    SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE,
     SpectralMomentConfirmationGenerator,
     SpectralMomentConfirmationSpec,
 )
@@ -41,9 +46,31 @@ from spirallens.synthetic.spectral_moment_confirmation import (
 _DEVELOPMENT_SEED = 9001
 
 
-def _bundle(seed: int = _DEVELOPMENT_SEED):
+def _spec(
+    seed: int = _DEVELOPMENT_SEED,
+    *,
+    warp: float = 0.0,
+    perturbation: float = 0.0,
+) -> SpectralMomentConfirmationSpec:
+    return SpectralMomentConfirmationSpec(
+        seed=seed,
+        state_geometry_warp_strength=warp,
+        structured_observation_perturbation_scale=perturbation,
+    )
+
+
+def _bundle(
+    seed: int = _DEVELOPMENT_SEED,
+    *,
+    warp: float = 0.0,
+    perturbation: float = 0.0,
+):
     return SpectralMomentConfirmationGenerator().generate(
-        SpectralMomentConfirmationSpec(seed=seed)
+        _spec(
+            seed,
+            warp=warp,
+            perturbation=perturbation,
+        )
     )
 
 
@@ -64,8 +91,8 @@ def test_generator_is_deterministic_and_source_bound() -> None:
 def test_declared_family_ids_differ_and_seed_is_not_family_identity() -> None:
     generator = SpectralMomentConfirmationGenerator()
     cartesian = CartesianFourierDomainGenerator().family_identity
-    first = generator.generate(SpectralMomentConfirmationSpec(seed=11))
-    second = generator.generate(SpectralMomentConfirmationSpec(seed=12))
+    first = generator.generate(_spec(11))
+    second = generator.generate(_spec(12))
 
     require_distinct_construction_families((cartesian, generator.family_identity))
     assert first.family_identity == second.family_identity
@@ -74,10 +101,7 @@ def test_declared_family_ids_differ_and_seed_is_not_family_identity() -> None:
         first.family_identity.construction_family_id
         == SPECTRAL_MOMENT_CONSTRUCTION_FAMILY_ID
     )
-    assert (
-        first.family_identity.implementation_id
-        == SPECTRAL_MOMENT_IMPLEMENTATION_ID
-    )
+    assert first.family_identity.implementation_id == SPECTRAL_MOMENT_IMPLEMENTATION_ID
     assert (
         first.family_identity.implementation_version
         == SPECTRAL_MOMENT_IMPLEMENTATION_VERSION
@@ -97,17 +121,259 @@ def test_declared_family_ids_differ_and_seed_is_not_family_identity() -> None:
 
 
 def test_spec_requires_an_explicit_non_confirmation_seed() -> None:
-    assert (
-        inspect.signature(SpectralMomentConfirmationSpec).parameters["seed"].default
-        is inspect.Parameter.empty
-    )
-    with pytest.raises(TypeError, match="seed must be an integer"):
-        SpectralMomentConfirmationSpec(seed=True)
-    with pytest.raises(ValueError, match="non-negative"):
-        SpectralMomentConfirmationSpec(seed=-1)
+    parameters = inspect.signature(SpectralMomentConfirmationSpec).parameters
+    for name in (
+        "seed",
+        "state_geometry_warp_strength",
+        "structured_observation_perturbation_scale",
+    ):
+        assert parameters[name].default is inspect.Parameter.empty
 
-    receipt = SpectralMomentConfirmationSpec(seed=_DEVELOPMENT_SEED).to_dict()
+    with pytest.raises(TypeError, match="seed must be an integer"):
+        _spec(seed=True)
+    with pytest.raises(ValueError, match="non-negative"):
+        _spec(seed=-1)
+    with pytest.raises(ValueError, match="state_geometry_warp_strength"):
+        _spec(warp=-0.1)
+    with pytest.raises(ValueError, match="structured_observation"):
+        _spec(perturbation=0.11)
+
+    receipt = _spec().to_dict()
     assert receipt["confirmation_seed_frozen_by_this_source"] is False
+    assert receipt["stress_values_are_caller_supplied"] is True
+    assert receipt["stress_values_frozen_by_this_source"] is False
+
+
+@pytest.mark.parametrize(
+    ("warp", "perturbation"),
+    (
+        (0.0, 0.0),
+        (0.1, 0.0),
+        (0.0, 0.01),
+        (0.1, 0.01),
+    ),
+)
+def test_exact_stress_combinations_are_deterministic(
+    warp: float,
+    perturbation: float,
+) -> None:
+    first = _bundle(warp=warp, perturbation=perturbation)
+    second = _bundle(warp=warp, perturbation=perturbation)
+
+    assert first.receipt_bytes == second.receipt_bytes
+    assert first.receipt_sha256 == second.receipt_sha256
+    for first_case, second_case in zip(first.cases, second.cases, strict=True):
+        assert np.array_equal(
+            first_case.estimator_inputs.states,
+            second_case.estimator_inputs.states,
+        )
+        assert np.array_equal(
+            first_case.estimator_inputs.fit_values,
+            second_case.estimator_inputs.fit_values,
+        )
+        assert np.array_equal(
+            first_case.estimator_inputs.evaluation_values,
+            second_case.estimator_inputs.evaluation_values,
+        )
+
+
+def test_state_geometry_warp_changes_states_only() -> None:
+    nominal = _bundle(warp=0.0, perturbation=0.0)
+    stressed = _bundle(warp=0.1, perturbation=0.0)
+
+    assert not np.array_equal(nominal.domain.states, stressed.domain.states)
+    assert np.array_equal(
+        nominal.domain.site_coordinates,
+        stressed.domain.site_coordinates,
+    )
+    assert np.array_equal(
+        nominal.domain.oriented_faces,
+        stressed.domain.oriented_faces,
+    )
+    for nominal_case, stressed_case in zip(
+        nominal.cases,
+        stressed.cases,
+        strict=True,
+    ):
+        nominal_inputs = nominal_case.estimator_inputs
+        stressed_inputs = stressed_case.estimator_inputs
+        assert not np.array_equal(nominal_inputs.states, stressed_inputs.states)
+        assert np.array_equal(
+            nominal_inputs.site_coordinates,
+            stressed_inputs.site_coordinates,
+        )
+        assert np.array_equal(
+            nominal_inputs.oriented_faces,
+            stressed_inputs.oriented_faces,
+        )
+        assert np.array_equal(
+            nominal_inputs.fit_values,
+            stressed_inputs.fit_values,
+        )
+        assert np.array_equal(
+            nominal_inputs.evaluation_values,
+            stressed_inputs.evaluation_values,
+        )
+        assert np.array_equal(
+            nominal_case.oracle_truth.first_moment_field,
+            stressed_case.oracle_truth.first_moment_field,
+        )
+        assert np.array_equal(
+            nominal_case.oracle_truth.second_moment_field,
+            stressed_case.oracle_truth.second_moment_field,
+        )
+
+
+def test_structured_perturbation_changes_observed_values_only() -> None:
+    nominal = _bundle(warp=0.0, perturbation=0.0)
+    stressed = _bundle(warp=0.0, perturbation=0.01)
+    rows = np.arange(49, dtype=np.int64)
+    row_phase = 2.0 * np.pi * ((37 * rows + (_DEVELOPMENT_SEED % 1009)) % 1009) / 1009.0
+
+    assert np.array_equal(nominal.domain.states, stressed.domain.states)
+    assert np.array_equal(
+        nominal.domain.site_coordinates,
+        stressed.domain.site_coordinates,
+    )
+    for nominal_case, stressed_case in zip(
+        nominal.cases,
+        stressed.cases,
+        strict=True,
+    ):
+        nominal_inputs = nominal_case.estimator_inputs
+        stressed_inputs = stressed_case.estimator_inputs
+        assert np.array_equal(nominal_inputs.states, stressed_inputs.states)
+        assert np.array_equal(
+            nominal_inputs.site_coordinates,
+            stressed_inputs.site_coordinates,
+        )
+        assert np.array_equal(
+            nominal_case.oracle_truth.first_moment_field,
+            stressed_case.oracle_truth.first_moment_field,
+        )
+        assert np.array_equal(
+            nominal_case.oracle_truth.second_moment_field,
+            stressed_case.oracle_truth.second_moment_field,
+        )
+        for split in ("fit", "evaluation"):
+            angles = getattr(nominal_inputs, f"{split}_angles_rad")
+            nominal_values = getattr(nominal_inputs, f"{split}_values")
+            stressed_values = getattr(stressed_inputs, f"{split}_values")
+            if stressed_case is stressed.prerequisite_failure:
+                assert np.array_equal(nominal_values, stressed_values)
+                continue
+            expected_delta = 0.01 * np.cos(
+                math.sqrt(2.0) * angles[None, :] + row_phase[:, None]
+            )
+            np.testing.assert_allclose(
+                stressed_values - nominal_values,
+                expected_delta,
+                rtol=0.0,
+                atol=5e-16,
+            )
+
+
+def test_prerequisite_perturbation_suppression_is_receipted() -> None:
+    nominal = _bundle(perturbation=0.0).prerequisite_failure
+    stressed_bundle = _bundle(perturbation=0.01)
+    stressed = stressed_bundle.prerequisite_failure
+    receipt = stressed.to_dict()
+
+    assert receipt["requested_structured_observation_perturbation_scale"] == 0.01
+    assert receipt["effective_structured_observation_perturbation_scale"] == 0.0
+    assert receipt["prerequisite_perturbation_suppression_applied"] is True
+    assert np.array_equal(
+        nominal.estimator_inputs.fit_values,
+        stressed.estimator_inputs.fit_values,
+    )
+    assert np.array_equal(
+        nominal.estimator_inputs.evaluation_values,
+        stressed.estimator_inputs.evaluation_values,
+    )
+    for case in stressed_bundle.cases[:-1]:
+        case_receipt = case.to_dict()
+        assert (
+            case_receipt["effective_structured_observation_perturbation_scale"] == 0.01
+        )
+        assert case_receipt["prerequisite_perturbation_suppression_applied"] is False
+
+
+@pytest.mark.parametrize("warp", (0.0, 0.1))
+def test_root_dimension_normalization_conforms_to_parent_radius(
+    warp: float,
+) -> None:
+    radius = 0.48
+    domain = SpectralMomentConfirmationGenerator().prepare(_spec(warp=warp)).domain
+    graph = construct_radius_graph(
+        GraphInput(
+            primary_unit_id=f"spectral-radius-conformance-{warp}",
+            vertex_ids=domain.row_ids,
+            states=domain.states,
+        ),
+        RadiusGraphSpec(
+            spec_id=f"spectral-radius-conformance-{warp}",
+            purpose=GraphPurpose.FIELD_ESTIMATION,
+            radius=radius,
+        ),
+    )
+    expected_edges = np.asarray(
+        [
+            (left, right)
+            for left in range(49)
+            for right in range(left + 1, 49)
+            if max(
+                abs(left % 7 - right % 7),
+                abs(left // 7 - right // 7),
+            )
+            == 1
+        ],
+        dtype=np.int64,
+    )
+    distances = np.linalg.norm(
+        domain.states[:, None, :] - domain.states[None, :, :],
+        axis=2,
+    )
+    expected_edge_set = {(int(left), int(right)) for left, right in expected_edges}
+    excluded_distances = [
+        distances[left, right]
+        for left in range(49)
+        for right in range(left + 1, 49)
+        if (left, right) not in expected_edge_set
+    ]
+
+    assert SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE == (1.0 / math.sqrt(12.0))
+    assert expected_edges.shape == (156, 2)
+    assert np.array_equal(graph.canonical_edges, expected_edges)
+    assert float(np.max(graph.edge_distances)) < radius
+    assert float(np.min(excluded_distances)) > radius
+    assert len(set(graph.component_labels.tolist())) == 1
+    assert np.all(graph.two_core_mask)
+
+
+def test_prepare_does_not_construct_oracle_objects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    oracle_constructions: list[object] = []
+
+    def forbidden_oracle_construction(*args: object, **kwargs: object) -> object:
+        oracle_constructions.append((args, kwargs))
+        raise AssertionError("prepare() attempted to construct an oracle")
+
+    monkeypatch.setattr(
+        confirmation_module,
+        "SpectralMomentConfirmationOracleTruth",
+        forbidden_oracle_construction,
+    )
+    prepared = SpectralMomentConfirmationGenerator().prepare(
+        _spec(warp=0.1, perturbation=0.01)
+    )
+
+    assert oracle_constructions == []
+    assert len(prepared.cases) == 4
+    assert prepared.to_dict()["oracle_truth_record_materialized"] is False
+    for case in prepared.cases:
+        assert not hasattr(case, "oracle_truth")
+        assert case.to_dict()["oracle_truth_record_materialized"] is False
 
 
 def test_exact_four_semantics_share_one_7_by_7_discrete_domain() -> None:

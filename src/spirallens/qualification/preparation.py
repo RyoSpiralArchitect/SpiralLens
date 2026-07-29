@@ -792,7 +792,9 @@ def _graph(
     )
 
 
-def _graph_axes() -> GraphAxes:
+def closed_d0_d5_graph_axes() -> GraphAxes:
+    """Return the reviewed graph-family axes shared by later confirmations."""
+
     return GraphAxes(
         field_estimation=(
             _graph(
@@ -828,6 +830,85 @@ def _graph_axes() -> GraphAxes:
                 GraphPurpose.CYCLE_CONSTRUCTION,
             ),
         ),
+    )
+
+
+def closed_d0_d5_stress_axes() -> tuple[StressAxis, ...]:
+    """Return the reviewed three-factor stress template without any seeds."""
+
+    return (
+        StressAxis(BOUNDARY_AXIS_ID, ("central", "wide")),
+        StressAxis(STATE_GEOMETRY_WARP_AXIS_ID, ("nominal", "stressed")),
+        StressAxis(
+            STRUCTURED_OBSERVATION_PERTURBATION_AXIS_ID,
+            ("nominal", "stressed"),
+        ),
+    )
+
+
+def closed_d0_d5_cartesian_substrate() -> CartesianSelectionSubstrate:
+    """Return the reviewed numeric stress and boundary translation profile."""
+
+    return CartesianSelectionSubstrate(
+        generator_family_id=CLOSED_CARTESIAN_GENERATOR_FAMILY_ID,
+        grid_side=7,
+        ambient_dimension=12,
+        samples_per_split=8,
+        baseline=1.25,
+        second_harmonic_scale=0.35,
+        structured_observation_perturbation_axis_id=(
+            STRUCTURED_OBSERVATION_PERTURBATION_AXIS_ID
+        ),
+        structured_observation_perturbation_levels=(
+            NumericStressLevel("nominal", 0.0),
+            NumericStressLevel("stressed", 0.01),
+        ),
+        state_geometry_warp_axis_id=STATE_GEOMETRY_WARP_AXIS_ID,
+        state_geometry_warp_levels=(
+            NumericStressLevel("nominal", 0.0),
+            NumericStressLevel("stressed", 0.1),
+        ),
+        boundary_axis_id=BOUNDARY_AXIS_ID,
+        primary_boundaries=(
+            BoundaryTemplate("central", 2, 2, 4, 4),
+            BoundaryTemplate("wide", 1, 1, 5, 5),
+        ),
+        offcore_boundary=BoundaryTemplate("offcore", 0, 0, 1, 1),
+    )
+
+
+def closed_d0_d5_thresholds() -> Thresholds:
+    """Return the reviewed numeric policy inherited by D7 confirmation."""
+
+    return Thresholds(
+        d1_numeric_tolerance=1e-10,
+        d1_cartesian_direction_cosine_floor=0.99,
+        d1_representation_phase_coherence_floor=0.99,
+        core_amplitude_ceiling=0.05,
+        identifiability_floor=0.2,
+        coherence_floor=0.3,
+        minimum_support_count=2,
+        max_localized_core_fraction=0.05,
+        minimum_core_contrast_ratio=2.0,
+        branch_margin_rad=0.05,
+        loop_nonzero_floor_cycles=0.5,
+        loop_oracle_tolerance_cycles=1e-8,
+        graph_total_tolerance_cycles=1e-8,
+        core_candidate_difference_tolerance_rows=0,
+        minimum_representative_content_variants=2,
+        minimum_field_output_effect_size=1e-6,
+    )
+
+
+def closed_d0_d5_coverage_policy() -> CoveragePolicy:
+    """Return the reviewed worst-case repeated-measures aggregation policy."""
+
+    return CoveragePolicy(
+        evaluation_unit=EvaluationUnit.PHANTOM_INSTANCE,
+        minimum_coverage=1.0,
+        maximum_abstention_fraction=0.0,
+        minimum_recall=1.0,
+        minimum_specificity=1.0,
     )
 
 
@@ -888,15 +969,8 @@ def build_closed_d0_d5_selection_protocol(
         )
 
     controls = _controls()
-    graphs = _graph_axes()
-    stress_axes = (
-        StressAxis(BOUNDARY_AXIS_ID, ("central", "wide")),
-        StressAxis(STATE_GEOMETRY_WARP_AXIS_ID, ("nominal", "stressed")),
-        StressAxis(
-            STRUCTURED_OBSERVATION_PERTURBATION_AXIS_ID,
-            ("nominal", "stressed"),
-        ),
-    )
+    graphs = closed_d0_d5_graph_axes()
+    stress_axes = closed_d0_d5_stress_axes()
     selection = SelectionDesign(
         seeds=selection_seeds,
         controls=controls,
@@ -1004,59 +1078,11 @@ def build_closed_d0_d5_selection_protocol(
             refinement_rule_id="forward-span-four-v0-1",
             max_domain_edges_per_graph_edge=4,
         ),
-        cartesian=CartesianSelectionSubstrate(
-            generator_family_id=CLOSED_CARTESIAN_GENERATOR_FAMILY_ID,
-            grid_side=7,
-            ambient_dimension=12,
-            samples_per_split=8,
-            baseline=1.25,
-            second_harmonic_scale=0.35,
-            structured_observation_perturbation_axis_id=(
-                STRUCTURED_OBSERVATION_PERTURBATION_AXIS_ID
-            ),
-            structured_observation_perturbation_levels=(
-                NumericStressLevel("nominal", 0.0),
-                NumericStressLevel("stressed", 0.01),
-            ),
-            state_geometry_warp_axis_id=STATE_GEOMETRY_WARP_AXIS_ID,
-            state_geometry_warp_levels=(
-                NumericStressLevel("nominal", 0.0),
-                NumericStressLevel("stressed", 0.1),
-            ),
-            boundary_axis_id=BOUNDARY_AXIS_ID,
-            primary_boundaries=(
-                BoundaryTemplate("central", 2, 2, 4, 4),
-                BoundaryTemplate("wide", 1, 1, 5, 5),
-            ),
-            offcore_boundary=BoundaryTemplate("offcore", 0, 0, 1, 1),
-        ),
+        cartesian=closed_d0_d5_cartesian_substrate(),
         selection=selection,
         preseed_readiness=preseed_readiness,
-        thresholds=Thresholds(
-            d1_numeric_tolerance=1e-10,
-            d1_cartesian_direction_cosine_floor=0.99,
-            d1_representation_phase_coherence_floor=0.99,
-            core_amplitude_ceiling=0.05,
-            identifiability_floor=0.2,
-            coherence_floor=0.3,
-            minimum_support_count=2,
-            max_localized_core_fraction=0.05,
-            minimum_core_contrast_ratio=2.0,
-            branch_margin_rad=0.05,
-            loop_nonzero_floor_cycles=0.5,
-            loop_oracle_tolerance_cycles=1e-8,
-            graph_total_tolerance_cycles=1e-8,
-            core_candidate_difference_tolerance_rows=0,
-            minimum_representative_content_variants=2,
-            minimum_field_output_effect_size=1e-6,
-        ),
-        coverage_policy=CoveragePolicy(
-            evaluation_unit=EvaluationUnit.PHANTOM_INSTANCE,
-            minimum_coverage=1.0,
-            maximum_abstention_fraction=0.0,
-            minimum_recall=1.0,
-            minimum_specificity=1.0,
-        ),
+        thresholds=closed_d0_d5_thresholds(),
+        coverage_policy=closed_d0_d5_coverage_policy(),
         expected_core_cells=tuple(
             sorted(core_cells, key=lambda item: item.core_cell_id)
         ),

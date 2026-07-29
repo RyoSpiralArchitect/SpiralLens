@@ -23,6 +23,7 @@ from spirallens.core.canonical import (
     canonical_json_bytes,
     canonical_json_sha256,
     parse_canonical_json,
+    sha256_bytes,
 )
 
 from .common import (
@@ -893,37 +894,7 @@ def build_selection_terminal_binding(
                 f"D6 input result must keep {name}=false"
             )
     implementation = protocol.implementation_registry
-    graph_axes_sha256 = canonical_json_sha256(protocol.graphs.to_dict())
-    required_cells_sha256 = canonical_json_sha256(
-        {
-            "schema_version": "spirallens.required-confirmation-cells.v0.1",
-            "expected_core_cells": [
-                item.to_dict() for item in protocol.expected_core_cells
-            ],
-            "expected_loop_cells": [
-                item.to_dict() for item in protocol.expected_cells
-            ],
-        }
-    )
-    stress_sha256 = canonical_json_sha256(
-        {
-            "schema_version": "spirallens.required-confirmation-stress.v0.1",
-            "stress_axes": [
-                item.to_dict() for item in protocol.selection.stress_axes
-            ],
-            "expected_strata": [
-                item.to_dict() for item in protocol.expected_strata
-            ],
-        }
-    )
-    threshold_sha256 = canonical_json_sha256(protocol.thresholds.to_dict())
-    aggregation_sha256 = canonical_json_sha256(
-        {
-            "schema_version": "spirallens.locked-confirmation-aggregation.v0.1",
-            "coverage_policy": protocol.coverage_policy.to_dict(),
-            "evaluation_design": protocol.evaluation_design.to_dict(),
-        }
-    )
+    design_bodies = ConfirmationDesignBodySet.from_protocol(protocol)
     return SelectionTerminalBinding(
         protocol_id=result.protocol_id,
         protocol_source_sha256=result.protocol_source_sha256,
@@ -951,11 +922,15 @@ def build_selection_terminal_binding(
         selection_implementation_registry_sha256=canonical_json_sha256(
             implementation.to_dict()
         ),
-        graph_axes_sha256=graph_axes_sha256,
-        required_cells_manifest_sha256=required_cells_sha256,
-        required_stress_strata_sha256=stress_sha256,
-        locked_thresholds_sha256=threshold_sha256,
-        locked_aggregation_sha256=aggregation_sha256,
+        graph_axes_sha256=design_bodies.graph_axes_sha256,
+        required_cells_manifest_sha256=(
+            design_bodies.required_cells_sha256
+        ),
+        required_stress_strata_sha256=(
+            design_bodies.required_stress_sha256
+        ),
+        locked_thresholds_sha256=design_bodies.thresholds_sha256,
+        locked_aggregation_sha256=design_bodies.aggregation_sha256,
         gate_states=tuple(
             (gate.gate_id.value, gate.state.value)
             for gate in result.gate_results
@@ -2241,6 +2216,105 @@ def publish_scope_limited_d6_decision(
         repository_root=repository,
     )
     return PublishedScopeLimitedD6Decision(loaded_artifact=written)
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmationDesignBodySet:
+    """Immutable canonical bodies inherited by an independent confirmation.
+
+    The bodies intentionally preserve selection-specific identities.  A
+    later confirmation may prove a reviewed structural rebinding, but it
+    cannot relabel these bytes and still claim byte identity.
+    """
+
+    graph_axes: bytes
+    required_cells: bytes
+    required_stress: bytes
+    thresholds: bytes
+    aggregation: bytes
+
+    def __post_init__(self) -> None:
+        for name in (
+            "graph_axes",
+            "required_cells",
+            "required_stress",
+            "thresholds",
+            "aggregation",
+        ):
+            value = getattr(self, name)
+            if not isinstance(value, bytes) or not value:
+                raise TypeError(f"{name} must be nonempty canonical bytes")
+
+    @classmethod
+    def from_protocol(
+        cls,
+        protocol: QualificationProtocol,
+    ) -> ConfirmationDesignBodySet:
+        if not isinstance(protocol, QualificationProtocol):
+            raise TypeError("protocol must be a QualificationProtocol")
+        return cls(
+            graph_axes=canonical_json_bytes(protocol.graphs.to_dict()),
+            required_cells=canonical_json_bytes(
+                {
+                    "schema_version": (
+                        "spirallens.required-confirmation-cells.v0.1"
+                    ),
+                    "expected_core_cells": [
+                        item.to_dict()
+                        for item in protocol.expected_core_cells
+                    ],
+                    "expected_loop_cells": [
+                        item.to_dict() for item in protocol.expected_cells
+                    ],
+                }
+            ),
+            required_stress=canonical_json_bytes(
+                {
+                    "schema_version": (
+                        "spirallens.required-confirmation-stress.v0.1"
+                    ),
+                    "stress_axes": [
+                        item.to_dict()
+                        for item in protocol.selection.stress_axes
+                    ],
+                    "expected_strata": [
+                        item.to_dict() for item in protocol.expected_strata
+                    ],
+                }
+            ),
+            thresholds=canonical_json_bytes(protocol.thresholds.to_dict()),
+            aggregation=canonical_json_bytes(
+                {
+                    "schema_version": (
+                        "spirallens.locked-confirmation-aggregation.v0.1"
+                    ),
+                    "coverage_policy": protocol.coverage_policy.to_dict(),
+                    "evaluation_design": (
+                        protocol.evaluation_design.to_dict()
+                    ),
+                }
+            ),
+        )
+
+    @property
+    def graph_axes_sha256(self) -> str:
+        return sha256_bytes(self.graph_axes)
+
+    @property
+    def required_cells_sha256(self) -> str:
+        return sha256_bytes(self.required_cells)
+
+    @property
+    def required_stress_sha256(self) -> str:
+        return sha256_bytes(self.required_stress)
+
+    @property
+    def thresholds_sha256(self) -> str:
+        return sha256_bytes(self.thresholds)
+
+    @property
+    def aggregation_sha256(self) -> str:
+        return sha256_bytes(self.aggregation)
 
 
 __all__ = [

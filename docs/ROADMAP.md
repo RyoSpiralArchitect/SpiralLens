@@ -804,33 +804,44 @@ below:
     review, selects no confirmation seed or execution inventory, persists no
     receipt, admits no family, exposes no runner/result, and leaves D7/D8
     `not_run`;
-13. complete and review the missing stress transforms, exact graph/core/loop
-    integration, terminal schemas and writers, source closure, lifecycle,
-    launch intent, exclusive attempt, and absent output namespace before
-    issuing any D7 full-design receipt;
-14. after that committed D7 design-freeze receipt exists, execute the separate
+13. close the seed-free D7 execution topology before choosing official seeds:
+    reconstruct the full authoritative parent protocol; translate all three
+    stresses explicitly; generate the exact 64-primary, 192-core, and
+    1,152-loop seed-slot inventory; and exercise the exact crossed
+    graph/field/blind-core/continuous-loop path on permanently excluded
+    development seeds without producing a gate, result, or terminal —
+    implemented. This step also records the newly discovered D6 v0.1
+    incompatibility: required cells and stress-strata bodies contain selection
+    seeds and seed-bearing IDs, so structural projection equality is true
+    while exact parent-manifest satisfaction and admission remain false;
+14. publish a reviewed versioned successor admission or structural-rebinding
+    amendment, then complete construction-diversity/source closure, the
+    D7-specific implementation registry and aggregation application, terminal
+    schemas and writers, lifecycle, launch intent, exclusive attempt, and
+    absent output namespace before issuing any D7 full-design receipt;
+15. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-15. run the admitted family without overrides or post-selection exclusions,
+16. run the admitted family without overrides or post-selection exclusions,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status; same-family new seeds remain replication and
     cannot satisfy this item;
-16. only then begin the separate representation-native F0-F4 selection lane;
+17. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-17. establish the same-substrate field/core/loop join, persist the frozen
+18. establish the same-substrate field/core/loop join, persist the frozen
     same-field core-degeneracy scalar and nested-radius profile, and retain the
     architecture-accounted sampled-winding estimate distribution with its
     unrounded cycle totals and residuals; only when the convention permits it
     may calibration-side integer/topology eligibility be assessed;
-18. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+19. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
     detection-limit surface over injection amplitude, declared
     perturbation/noise, and sampling density, including density-stratified
     exact-recall and graph-family matched-class gates;
-19. apply the preregistered M1 transition/stop rule. Pythia-70M remains
+20. apply the preregistered M1 transition/stop rule. Pythia-70M remains
     plumbing-only; an exhausted qualification budget ends `insufficient`
     rather than extending instrumentation indefinitely; and
-20. only after those separately reviewed M1 gates prepare and externally
+21. only after those separately reviewed M1 gates prepare and externally
     witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
@@ -868,7 +879,12 @@ This library slice adds, without changing that generic behavior:
   development cases keep estimator inputs and oracle truth separated; and
 - a closed D7 draft-contract type reconstructed from the authoritative D6
   loader receipt while deliberately admitting no family and issuing no
-  full-design receipt.
+  full-design receipt;
+- a strict full-parent design-body reconstruction and seed-slot execution
+  inventory with exact 64/192/1,152 repeated-measures counts; and
+- a development-only path through all crossed graph/core/loop cells that
+  supplies no oracle-truth record to the blind kernels and cannot aggregate
+  or publish a D7 result.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -895,15 +911,17 @@ claim-ineligible ContextBank, exact offline model bytes, bounded rows,
 CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
 real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
-remain `not_run`. This lane cannot select any choice in steps 5-20 above and
+remain `not_run`. This lane cannot select any choice in steps 5-21 above and
 cannot be cited as subject preparation or evidence.
 
-The immediate deliverable is completion and review of the missing
-spectral-moment stress, graph/core/loop, source-closure, lifecycle, and
-terminal surfaces. The current four-case generator and typed design contracts
-are draft foundation only: they are not a D7 full-design freeze, receipt,
-admission, or run. Only a later locked D7 pass and isolated byte-identical D8
-replay could support a scope-specific synthetic-qualified, replayable bundle.
+The immediate deliverable is a reviewed versioned resolution of the D6 v0.1
+identity-bearing cells/stress manifests, followed by construction-diversity
+source closure, D7-specific registry/aggregation application, lifecycle, and
+terminal surfaces. The current four-case generator, seed-free execution
+design, and development prediction inventory are not a D7 full-design freeze,
+receipt, admission, or run. Only a later locked D7 pass and isolated
+byte-identical D8 replay could support a scope-specific synthetic-qualified,
+replayable bundle.
 That still would not mean “find a semantic vortex” or authorize a subject run.
 
 ## 12. Roadmap change rule

@@ -32,6 +32,9 @@ from spirallens.synthetic.spectral_moment_confirmation import (
     SPECTRAL_MOMENT_IMPLEMENTATION_VERSION,
     SPECTRAL_MOMENT_REQUIRED_CASE_SEMANTICS,
     SPECTRAL_MOMENT_SOURCE_PATH,
+    SPECTRAL_MOMENT_STATE_NORMALIZATION_ID,
+    SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE,
+    SPECTRAL_MOMENT_STRESS_TRANSLATION_ID,
 )
 
 from .advancement import (
@@ -75,6 +78,18 @@ def _mechanism_descriptor() -> dict[str, object]:
         "matched_domain": "fixed-seven-by-seven-discrete-grid",
         "fit_evaluation_split": "interleaved-even-fit-odd-evaluation",
         "case_recipes": [item[2] for item in SPECTRAL_MOMENT_CASE_REGISTRY],
+        "state_normalization": {
+            "normalization_id": SPECTRAL_MOMENT_STATE_NORMALIZATION_ID,
+            "scale": SPECTRAL_MOMENT_STATE_NORMALIZATION_SCALE,
+            "rule": "one-over-square-root-of-ambient-dimension",
+        },
+        "state_geometry_warp": "q-plus-w-sin-pi-q-over-pi",
+        "structured_observation_perturbation": (
+            "a-cos-sqrt-two-alpha-plus-row-seed-phase-37-1009"
+        ),
+        "stress_translation_id": SPECTRAL_MOMENT_STRESS_TRANSLATION_ID,
+        "prerequisite_observation_perturbation_suppressed": True,
+        "oracle_free_preparation_api_present": True,
         "seed_source_or_label_excluded_from_identity": True,
     }
 
