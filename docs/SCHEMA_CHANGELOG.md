@@ -4,6 +4,166 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-29 — PR #9 D0-D5 engine hardening
+
+### Changed
+
+- Graph constructor implementation identity advanced to v0.2. Euclidean
+  coordinate magnitudes are now stably sorted before the fixed float64
+  `hypot` reduction, making distances and graph receipts bit-identical under
+  signed coordinate permutations while retaining deterministic
+  vertex-identity tie breaking.
+- The graph metric, edge-weight, tie-policy, and implementation IDs now name
+  that canonical-coordinate-order rule. Existing PR #8 in-memory receipts
+  remain historical v0.1 identities and are not silently reinterpreted.
+- The D3 pipeline execution receipt advances to v0.3. Representation D3 now
+  records two complete base/transformed field executions, all nine matched
+  A-by-B blind-loop cells, 27 reference-rotation, reference-reflection, and
+  loop-reversal estimator reruns, and 45 sealed loop predictions. Each
+  crossed cell retains the O(2) alignment matrix and determinant and
+  mechanically revalidates the determinant-aware signed-total law.
+- The representation field estimate adds two read-only generic crossed-pipeline
+  binding properties. Its serialized receipt and fingerprint are unchanged.
+- The qualification protocol advances to v0.8 with mandatory gate-specific
+  positive claim scopes and a derived repeated-measures design. The closed
+  design records two declared seed blocks, four matched controls, eight paired
+  stress variants per block/control, 64 execution variants, and 32
+  boundary-collapsed D2 scientific input units. It also records
+  `seed_block_independence_proved=false`,
+  `execution_variants_are_independent_replicates=false`, and
+  `inferential_sample_size_claimed=false`.
+- The canonical numeric stress IDs are now `state-geometry-warp` and
+  `structured-observation-perturbation`. The former is a deterministic
+  fixed-grid state-coordinate warp rather than sample density; the latter is a
+  deterministic seeded cosine observation term rather than stochastic noise.
+- D2 requires complete central/wide boundary pairs and exact identity-free
+  estimator-input fingerprint and core-observation agreement before collapsing
+  them for gate counts. The 64 execution variants and all loop evidence remain
+  stored; D2 counts 32 unique scientific input units, while D4/D5 retain 64
+  loop variants.
+- The qualification result advances to v0.9. Every `GateResult` now persists
+  its mandatory positive claim scope: D0 engine/protocol contracts; D1/D3
+  Cartesian surrogate plus representation development checks; D2/D4/D5
+  Cartesian surrogate only. Every core execution summary also persists the
+  boundary- and execution-ID-free D2 scientific-input fingerprint used by the
+  boundary-repeat equality gate.
+- The qualification protocol also retains the exact, selection-seed-
+  free D2-only confounder registry and
+  `core_graph_mode=inherit_field_estimation_graph`. The core prerequisite
+  policy advances to v0.5 and the closed localizer identity advances to v0.3:
+  localized same-section low amplitude alone defines a core candidate.
+  Identifiability, coherence, and support instead qualify measurements on
+  non-core support, while candidate-site degree support is checked
+  independently.
+- The protocol authority boundary now explicitly denies P0 competitor
+  selection, representation D2-D5 transfer, localized core-loop joining, and
+  synthetic qualification. The qualification result persists the corresponding
+  `p0_winner_selected=false`,
+  `representation_d2_d5_qualified=false`, and
+  `localized_core_loop_join_established=false` facts.
+- The qualification evidence bundle advances to v0.4; the D2 confounder cell
+  and matrix receipts advance to v0.2 with probe-row terminology. The typed
+  two-by-A matrix records that no selection seed, oracle scorer, or joint loop
+  registry was consumed. Its high-amplitude local-identifiability-loss decoy
+  must be evaluable `no_core`, and the low-amplitude missing-candidate-support
+  point must abstain with its exact frozen reason.
+- D1 metric validation now uses a closed family/metric mapping from each
+  metric to its exact comparator and frozen protocol threshold field. Every
+  attempted result validation reruns both fixed-development-seed D1 families
+  under the current source-bound engine and requires exact canonical-byte
+  equality with the persisted receipts. The D1 receipt schemas and serialized
+  fields are unchanged; this is stricter validation of existing bytes.
+- The source-binding receipt advances to v0.3 and explicitly records that in-process
+  callable identity, Python/native runtime attestation, and hostile-local-
+  mutation resistance are false. Its transitive local-import closure includes
+  package initializers and rejects unsupported dynamic import primitives.
+- The event-ledger receipt is v0.4 and the result field is
+  `posthoc_logical_dependency_manifest_validated`. The digest chain is a
+  source-enforced, post-score logical dependency reconstruction, not a
+  real-time, durable, or independently observed event log.
+- Selection freeze advances to v0.3, the attempt claim advances to v0.3, and
+  the launch descriptor advances to v0.3. They bind a canonical, no-overwrite
+  pre-seed readiness artifact that the official process publishes and
+  strictly reloads before invoking its seed supplier. The artifact records
+  `chronology_claim=official-process-attested` while cryptographic and
+  human/external-process unseen proofs remain false.
+- `spirallens.prepared-selection-launch-intent.v0.1` is published and strictly
+  reloaded after all F preconditions pass and before the attempt claim is
+  acquired. Raw claims without that earlier exact intent are rejected;
+  crash-gap recovery accepts only the same canonical intent and claim after
+  complete revalidation.
+- `spirallens.selection-launch-authorization.v0.1` is an in-memory capability
+  derived only when the descriptor, store freeze, launch intent, and claim are
+  exact clean tracked blobs at one unchanged G HEAD. The official runner
+  repeats that four-artifact and HEAD check before execution start. The exact
+  three official prepare/launch/run scripts remain part of the engine-bound
+  executable closure and successor verification.
+- `spirallens.selection-execution-start.v0.2` persists the exact launch-
+  authorization digest and its authorized G HEAD. The official start writer
+  accepts the typed capability rather than a caller-supplied digest and
+  revalidates all committed-G companions immediately before the exclusive
+  transition. Custom/development starts require both fields to be null.
+- `spirallens.qualification-result.v0.10`, its evidence root v0.3, and runner
+  v0.4 bind that authorization digest into result identity and canonical
+  evidence. `spirallens.selection-failed-attempt.v0.2` binds the same digest
+  for ordinary after-start failures. Official result and failure terminal
+  publication and reload require the digest to equal the persisted execution
+  start.
+- Generic standalone qualification-result write/load remains available for
+  custom/development protocols only, with null authorization. It now rejects
+  the official closed D0-D5 protocol ID, whose only admissible persistence
+  boundary is the atomic terminal transaction. Provisional constructors may
+  still form non-authoritative in-memory records; this change scopes authority
+  to validated persisted artifacts rather than object construction.
+- Without another serialized schema bump, official execution-start loading,
+  terminal publication, and terminal reload now require the typed launch
+  authorization rather than trusting a digest copied from stored artifacts.
+  Successor-aware validation proves
+  `engine commit -> authorized G -> current HEAD`, exact equality of the four G
+  blobs at authorized/current commits and the clean worktree, and absence of
+  the freeze-keyed start/terminal paths from the authorized G tree. Custom and
+  development chronology keeps both loaded protocol and authorization null.
+- After-start ordinary failures strictly reload the typed failed terminal
+  transaction before re-raising the unchanged original exception.
+  `spirallens.orchestrated-terminal-publication-receipt.v0.1` also covers a
+  result or failed terminal that became visible before a final
+  parent-directory fsync raised. It records terminal kind and identity,
+  strict round-trip status, publication-return status, parent-fsync proof, and
+  permanently false retry authority.
+- Selection consumption remains v0.2. The label-independent
+  `spirallens.selection-attempt-key.v0.1` binds protocol, engine, selection
+  manifest, and seed-family size to one store-local freeze/claim/start/
+  terminal namespace. Result-or-failure publication uses a typed terminal
+  manifest and an exclusive no-replace directory transition on supported
+  Darwin/Linux hosts.
+- Terminal result publication and reload now use successor-aware source
+  validation. The verifier proves
+  `engine.commit -> stored execution HEAD -> current HEAD`, checks every
+  module, official executable, registry, and referent blob at the execution
+  HEAD, repeats current live source verification, reconstructs the exact
+  historical receipt, and requires the existing summary-to-receipt canonical
+  digest equality. No source receipt or result field is dropped or
+  reinterpreted; this closes the engine-commit → execution →
+  artifact-commit lifecycle without accepting sibling histories, historical
+  blob mismatches, or current path drift.
+
+### Compatibility and claim boundary
+
+- This is an implementation-identity change inside the model-free graph
+  and qualification foundation. The D3 records remain fixed-development-seed,
+  oracle-free Level-0 calibration evidence. They do not grant topology,
+  subject, semantic, SAE, causal, or integer authority.
+- The D1 rerun does not read selection seeds and is not cryptographic proof of
+  source integrity or an independent/native-runtime attestation.
+- D2 emits only a Level-0 localized zero/core candidate. It does not prove a
+  vortex, topology, charge quantization, or a core-loop join.
+- Cartesian D2-D5 does not transfer to or select the representation estimator;
+  the fixed-seed representation D1/D3 checks establish only their declared
+  construct and transformation obligations.
+- Successor verification remains source-only Level-0 evidence. It does not
+  attest in-process callables, Python/native runtime state, or hostile local
+  mutation resistance.
+
 ## 2026-07-29 — PR #8 graph and discrete-domain foundation
 
 ### Added
@@ -116,9 +276,14 @@ All three schemas are provisional.
 
 ### Internal diagnostic output
 
-- `spirallens.distribution-validation.v0.1` labels the ephemeral JSON emitted
-  by the repository-only wheel validator. It is not a public persistence
-  schema or Python API, and no downstream artifact may bind it as evidence.
+- `spirallens.distribution-validation.v0.2` labels the ephemeral JSON emitted
+  by the repository-only wheel validator. It retains the dependency-free
+  core/access probe and adds a second fresh-environment installed-wheel import
+  of the dependency-bearing `spirallens.qualification` public surface. Host
+  system/user site packages may supply numerical dependencies for that second
+  probe; the SpiralLens module itself must still resolve from the exact
+  non-editable wheel. It is not a public persistence schema or Python API, and
+  no downstream artifact may bind it as evidence.
 
 ### Compatibility
 

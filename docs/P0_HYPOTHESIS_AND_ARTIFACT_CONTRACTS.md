@@ -389,8 +389,8 @@ these definitions without changing them in response to subject outcomes. It
 does not complete P1. A second, spectral-moment construction-family foundation
 and a secure numeric payload consumer now exist separately; they are not yet a
 qualification bundle or a D1 result. A standalone graph/domain foundation now
-implements three deterministic exhaustive rounded-float64 adjacency
-mechanisms, structural-diversity
+implements three deterministic exhaustive canonical-coordinate-order
+float64 adjacency mechanisms, structural-diversity
 measurement, an exact finite chain complex, and one narrow
 same-induced-support-boundary binding. Those in-memory fingerprints do not
 alter the persisted P0 schemas, bind a field/core/loop, establish topology, or

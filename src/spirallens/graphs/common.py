@@ -55,6 +55,29 @@ class GraphPurpose(str, Enum):
 EnumValue = TypeVar("EnumValue", bound=Enum)
 
 
+def coordinate_order_invariant_euclidean_norm(
+    value: NDArray[np.float64],
+    *,
+    axis: int = -1,
+) -> NDArray[np.float64]:
+    """Evaluate a float64 Euclidean norm in canonical magnitude order.
+
+    Sorting absolute coordinates before the fixed ``hypot`` reduction makes
+    the result bit-identical under signed coordinate permutations. This is
+    required for deterministic distance ties in the graph constructors.
+    """
+
+    source = np.asarray(value)
+    if source.dtype.kind != "f":
+        raise TypeError("Euclidean norm input must have a floating dtype")
+    ordered = np.sort(
+        np.abs(np.asarray(source, dtype="<f8")),
+        axis=axis,
+        kind="stable",
+    )
+    return np.asarray(np.hypot.reduce(ordered, axis=axis), dtype="<f8")
+
+
 def require_mapping(value: object, *, label: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping) or any(not isinstance(key, str) for key in value):
         raise GraphContractError(f"{label} must be a string-keyed mapping")

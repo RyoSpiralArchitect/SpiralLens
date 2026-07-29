@@ -44,6 +44,7 @@ Read these documents before adding a field, graph, loop, or claim:
 - [Experiment Interpretation Ledger](docs/EXPERIMENT_INTERPRETATION_LEDGER.md)
 - [Branched Claim Taxonomy](docs/claim_ladder.md)
 - [Next Experiment Preparation](docs/NEXT_EXPERIMENT_PREPARATION.md)
+- [D0–D5 Closed Cartesian One-Shot Runbook](docs/D0_D5_ONE_SHOT_RUNBOOK.md)
 - [P0 Hypothesis and Artifact Contracts](docs/P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md)
 - [Research-to-Library Roadmap](docs/ROADMAP.md)
 - [Access, Provenance, and Lifecycle Boundary](docs/ACCESS_BOUNDARY.md)
@@ -121,6 +122,177 @@ The mathematical loop/holonomy tools and architecture-factor/null primitives
 exist, and the sampled-winding primitive accepts caller-supplied complex
 values, but no Pythia candidate is wired to a model-derived order parameter,
 matched graph-cycle family, Level 2G result, or Level 2T result.
+
+## D0-D5 qualification engine
+
+The experimental `spirallens.qualification` namespace now implements a
+model-free, source-bound D0-D5 **calibration-selection engine**. This is an
+execution capability, not a selection result. No selection seed outcome is
+asserted by this documentation, D6-D8 are not advanced, and every result type
+is fixed to `synthetic_qualified=false`.
+
+Its scope is deliberately narrower than P0-wide instrument selection. The
+D2-D5 primary matrix qualifies the F2/Cartesian surrogate lane; the
+representation estimator appears only in fixed-development-seed D1/D3
+construct and transformation checks. Consequently the protocol and result
+keep P0-winner selection, representation D2-D5 transfer, and a localized
+core-loop join explicitly unauthorized/false. A later D6 bridge must not
+advance the representation instrument until representation-native D2-D5 or an
+independently reviewed construct-equivalence contract exists.
+
+The engine keeps two questions separate all the way through aggregation:
+
+- D2 localizes or rejects a core from charge-blind core evidence and seals that
+  decision without reading a loop total. Its candidate predicate is localized
+  same-section low amplitude alone: at an exact zero the normalized direction
+  is undefined as a consequence, not as a second predicate. Identifiability,
+  coherence, and support qualify measurements on non-core support, while
+  candidate-site degree support is checked independently.
+- D4 evaluates only an unrounded, integrated signed sampled-phase total on the
+  declared loop representatives. It never emits an integer winding or a
+  topology claim.
+
+The Cartesian selection family supplies four joint controls without collapsing
+those axes: nonzero-with-core, null-with-core, null-without-core, and a
+prerequisite-failure control. The positive control is also the frozen
+field-sensitivity sentinel. Its crossed A-by-B graph receipt must show an
+actual minimum effect size in estimator-consumed field output; different graph
+IDs or one-bit digest changes alone cannot satisfy nonvacuity.
+
+The serialized gate scope is positive and exact: D0 qualifies only engine and
+protocol contracts; D1 and D3 qualify the Cartesian surrogate plus the
+fixed-development representation checks; D2, D4, and D5 qualify the Cartesian
+surrogate only. No D2-D5 gate result can be read as representation evidence.
+
+The closed factory contains two declared seed blocks, four matched controls,
+and eight paired stress variants per seed/control, hence 64 execution variants.
+Those 64 executions are paired repeated measures, not 64 independent
+replicates; seed-block independence is not proved and no inferential sample
+size is claimed. Boundary is a loop construction variant, so D2 collapses its
+central/wide repeats to 32 unique scientific input units only after their
+identity-free estimator-input fingerprint and core observations agree exactly.
+A disagreement or missing repeat fails closed. D4/D5 retain all 64 loop
+execution variants.
+
+D5 scores the exact frozen `boundary`, `state-geometry-warp`, and
+`structured-observation-perturbation` strata at the phantom-instance level.
+`state-geometry-warp` is a deterministic warp of the fixed grid coordinates
+used to construct state features, with strength `0.0` or `0.1` and coordinate
+map `x + s*sin(pi*x)/pi`; it does not change row count and is not a
+sample-density intervention. `structured-observation-perturbation` has scale
+`0.0` or `0.01` and adds the deterministic term
+`a*cos(sqrt(2)*angle + seeded_row_phase)` to observations; it is not
+stochastic noise. Graph cells are repeated nuisance measurements, not
+independent replicates. Prerequisite failures are excluded from
+recall/specificity rate denominators but remain mandatory all-unit controls.
+
+D2 also executes a selection-seed-free core-only falsifier matrix, separate
+from the joint loop controls, across every A graph. A high-amplitude
+off-center point with local identifiability loss must emit evaluable
+`no_core`; a low-amplitude point with missing candidate-site measurement
+support must abstain with the exact frozen support reason. Every D2 core input
+inherits and binds its field-estimation graph.
+
+The D2 output remains a Level-0 localized zero/core **candidate**. It is not
+proof of a vortex, a topological defect, quantized charge, or a successful
+core-loop join.
+
+Selection chronology is a separate fail-closed contract:
+
+1. commit the engine, including the three official executable scripts;
+2. verify the seed-free source closure, publish and strictly reload a
+   no-overwrite pre-seed readiness artifact, and only then invoke the official
+   seed supplier;
+3. publish an unopened protocol and freeze binding the earlier readiness
+   path/digests, source identities, and the
+   unopened seed-family commitment;
+4. commit the readiness artifact, protocol, and freeze as the exact clean
+   tracked F artifacts;
+5. after fully revalidating F and the terminal-publication capability, persist
+   a canonical launch intent before acquiring the one exclusive attempt claim,
+   then publish the launch descriptor;
+6. commit the store freeze, launch intent, attempt claim, and descriptor as the
+   exact clean tracked G artifacts;
+7. in a fresh process, derive an in-memory launch authorization only after all
+   four G artifacts and the unchanged G HEAD have been reverified, then
+   live-reverify that authorization at the official runner entrance and
+   atomically publish one freeze-keyed execution-start transition, binding the
+   authorization digest and authorized G HEAD, before entering a generator;
+   and
+8. atomically publish either the fully revalidated terminal result or a typed
+   failed-attempt artifact together with its consumption receipt and manifest.
+   Both terminal kinds bind the same authorization digest, and terminal
+   publication and reload require the typed authorization, revalidate
+   `engine commit -> authorized G -> current HEAD`, require all four G blobs to
+   remain exact at G/current/worktree, prove that start and terminal paths were
+   absent from G, and require its digest to equal the persisted start lineage.
+
+The official package entry point owns steps 7-8 as one call:
+`run_and_publish_calibration_selection`. The in-memory
+`runner.run_calibration_selection` function remains a module-level development
+primitive and is deliberately absent from the package export surface. Once
+the start marker has been created, an execution or result-publication
+exception is conservatively closed as a typed failed attempt with
+`attested_selection_values_observed=true`, then strictly reloaded. A typed
+terminal-publication receipt is attached to the unchanged original exception
+before it is re-raised; retry authority remains false. If either a result or
+failed terminal became visible before a final parent-directory fsync raised,
+the exact expected terminal is strictly reloaded and the receipt separately
+records `publication_call_returned=false` and
+`parent_directory_durability_fsync_proved=false`.
+
+Raw provisional record constructors can represent non-authoritative in-memory
+objects. Authority begins only at the validated persistence boundary: the
+standalone qualification-result writer and loader reject the official
+protocol ID, whose result may be persisted and reloaded only through the
+start-lineage-bound terminal transaction. Custom/development protocols retain
+standalone persistence and require launch authorization to be `None`.
+
+The readiness chronology claim is `official-process-attested` only:
+cryptographic pre-seed proof and human/external-process unseen proof are both
+false. The direct seed-first protocol builder is a module-level development
+helper and is absent from the curated package export surface; official-ID
+launch and execution require the persisted earlier readiness artifact.
+
+An official one-shot is launched in a fresh interpreter at clean G, after the
+engine, F, and G artifacts are committed; a long-lived process with
+pre-imported, mutable module state is outside the claim. The in-process
+callable check is an accidental-replacement tripwire, not hostile-process
+attestation. Atomic terminal publication uses Darwin `RENAME_EXCL` or Linux
+`RENAME_NOREPLACE` and fails closed on unsupported platforms.
+
+Terminal result validation preserves the exact execution-time source receipt
+after a later artifact-only commit. It proves
+`engine.commit -> stored execution HEAD -> current HEAD`, rechecks every bound
+module, official executable, registry, and referent blob at the execution
+HEAD, performs the full clean live-source verification at current HEAD,
+reconstructs the historical receipt, and requires its canonical digest to
+equal the result's stored source summary. A sibling/non-ancestor HEAD,
+execution-time blob mismatch, or current bound-path/content drift is rejected.
+This permits the intended
+engine-commit → one-shot → terminal-artifact-commit sequence without replacing
+the execution HEAD with the later commit in provenance.
+
+This pre-run `SelectionFreezeArtifact` freezes the D0-D5 attempt; it is not the
+D6 `CalibrationSelectionDecision` that would seal what advances to independent
+confirmation.
+
+The recorded negative-access facts are explicit external attestations, not
+cryptographic proof. The current local store also assumes trusted deletion
+rights: an operator able to remove the claim, execution-start marker, or
+terminal directory can defeat
+its local uniqueness history. A future durable store must make that history
+append-only. A consumed or failed selection is not retried under the same
+protocol and seed family. A process kill cannot run the terminal exception
+handler: a store containing a valid claim and start marker but no terminal
+directory is classified read-only as terminal-aborted, never resumable or
+retryable. Preserve it for forensic inspection and publish a typed failure
+manually; do not invoke the development runner again.
+
+Both the original and successor-aware source receipts remain Level-0,
+source-only checks. They do not attest in-process callable identity,
+Python/native runtime state, or resistance to hostile local mutation.
+
 The exact pairwise reference fails loudly above 10,000 all-pair rows. No
 approximate backend has been promoted yet. A pinned Faiss HNSW range-search
 implementation and its receipt-gated audit path now exist. The first
@@ -254,9 +426,10 @@ No existing P1 protocol, bundle schema, artifact schema, or frozen Pythia
 protocol/receipt bytes are migrated by these additions.
 
 The provisional [`spirallens.graphs`](src/spirallens/graphs) foundation now
-adds three deterministic, exhaustive rounded-float64 adjacency
-mechanisms—mutual-kNN, inclusive fixed-radius, and all-pair
-shared-neighbor—plus structural diversity measurement. A graph-independent
+adds three deterministic, exhaustive
+canonical-coordinate-order Euclidean float64 adjacency mechanisms—mutual-kNN,
+inclusive fixed-radius, and all-pair shared-neighbor—plus structural diversity
+measurement. A graph-independent
 `DiscreteDomainComplex` supplies an exact
 integer oriented triangular complex, and `CycleClassBinding` can certify one
 narrow relation: a graph cycle refines the same caller-declared, induced support
@@ -264,7 +437,8 @@ boundary exactly once. These records are in-memory fingerprints, not
 persistence schemas, and do not verify when or why the caller selected that
 support or refinement rule. The matched relation is not generic homology, a
 latent manifold topology, a core, winding, graph-family cycle invariance, or
-D4 qualification. See
+D4 qualification by themselves. The later D0-D5 engine consumes these records,
+but only a frozen execution can produce a D4 gate result. See
 [Graph and discrete-domain foundation](docs/GRAPH_AND_DISCRETE_DOMAIN_BOUNDARY.md).
 
 Validate one generated canonical instrument manifest:
@@ -515,10 +689,14 @@ to become a general library.
   activation atlases, structural candidate ledgers, versioned provenance, and
   fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
   full-index/subset-query audits, and verified receipt plumbing.
-- **Next — synthetic field/graph qualification:** consume the implemented
-  experimental substrate/order-parameter metadata contracts, compare competing
-  field hypotheses on representation-shaped phantoms, and qualify the full
-  crossed graph-family null before preparing another subject protocol.
+- **Now — synthetic D0-D5 qualification:** harden the implemented closed
+  protocol, separate core and loop evidence, full crossed graph-family null,
+  exact stress strata, source/evidence roots, and one-shot selection
+  chronology. Engine availability alone is not a gate result.
+- **Next — synthetic selection and D6-D8:** execute only the separately frozen
+  unseen selection family, then seal an independent confirmation decision and
+  replayable synthetic bundle. Until that later work passes,
+  `d6_d8_advanced=false` and `synthetic_qualified=false`.
 - **Then — candidate-to-loop integration:** keep geometry/holonomy and
   field/defect paths separate, join them only through explicit same-substrate
   artifacts, and retain Pythia-70M as development material.
@@ -565,10 +743,16 @@ immediate next plan live in the single
   conservative resource preflight, exact executed development graph, and
   current-environment exclusive bundle publisher. It is not a
   calibration-selection or subject-execution boundary;
-- `graphs/` constructs provisional model-free rounded-float64 graph families
-  and a graph-independent discrete-domain foundation from supplied numerical
-  inputs. It remains separate from retrieval and does not qualify a scientific
-  graph, field, core, loop, or topology claim;
+- `graphs/` constructs provisional model-free,
+  canonical-coordinate-order Euclidean float64 graph families and a
+  graph-independent discrete-domain foundation from supplied numerical inputs.
+  It remains separate from retrieval and does not qualify a scientific graph,
+  field, core, loop, or topology claim;
+- `qualification/` contains the experimental, model-free D0-D5 protocol,
+  source/evidence binding, charge-blind core and continuous sampled-loop
+  kernels, crossed aggregation, exclusive attempt chronology, and terminal
+  persistence. Importing or exercising its development API does not run a
+  frozen selection, advance D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
 - `neighbors/` retrieves row-index pairs from unprojected states only; it never

@@ -1,4 +1,4 @@
-"""Deterministic exhaustive rounded-float64 graph constructors."""
+"""Deterministic exhaustive canonical-float64 graph constructors."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from .common import (
     MAX_GRAPH_ESTIMATED_PEAK_BYTES,
     GraphContractError,
     GraphFamily,
+    coordinate_order_invariant_euclidean_norm,
     graph_construction_estimated_peak_bytes,
     module_sha256,
 )
@@ -26,15 +27,15 @@ from .contracts import (
 _FAMILY_METADATA: dict[GraphFamily, tuple[str, str]] = {
     GraphFamily.MUTUAL_KNN: (
         "reciprocal-directed-k-nearest-neighbor",
-        "numpy-exhaustive-rounded-mutual-knn",
+        "numpy-exhaustive-canonical-order-mutual-knn",
     ),
     GraphFamily.FIXED_RADIUS: (
         "inclusive-fixed-euclidean-radius",
-        "numpy-exhaustive-rounded-fixed-radius",
+        "numpy-exhaustive-canonical-order-fixed-radius",
     ),
     GraphFamily.SHARED_NEIGHBOR: (
         "directed-knn-neighborhood-intersection-threshold",
-        "numpy-exhaustive-rounded-shared-neighbor",
+        "numpy-exhaustive-canonical-order-shared-neighbor",
     ),
 }
 
@@ -45,7 +46,7 @@ def _family_identity(family: GraphFamily) -> GraphFamilyIdentity:
         family=family,
         mechanism_id=mechanism_id,
         implementation_id=implementation_id,
-        implementation_version="v0.1",
+        implementation_version="v0.2",
         source_sha256=module_sha256(str(Path(__file__))),
     )
 
@@ -56,20 +57,20 @@ def _pairwise_distances(graph_input: GraphInput) -> np.ndarray:
     distances = np.empty((row_count, row_count), dtype="<f8")
     for row in range(row_count):
         differences = states - states[row]
-        rounded_distances = np.hypot.reduce(
-            np.abs(differences),
+        canonical_distances = coordinate_order_invariant_euclidean_norm(
+            differences,
             axis=1,
         )
-        if not np.all(np.isfinite(rounded_distances)):
+        if not np.all(np.isfinite(canonical_distances)):
             raise GraphContractError(
                 "pairwise distance overflowed the arithmetic bound"
             )
-        collapsed = np.any(differences != 0.0, axis=1) & (rounded_distances == 0.0)
+        collapsed = np.any(differences != 0.0, axis=1) & (canonical_distances == 0.0)
         if np.any(collapsed):
             raise GraphContractError(
                 "nonzero state separation underflowed to zero distance"
             )
-        distances[row] = rounded_distances
+        distances[row] = canonical_distances
     distances[distances == 0.0] = 0.0
     np.fill_diagonal(distances, np.inf)
     return distances

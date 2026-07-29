@@ -1,4 +1,4 @@
-"""Provisional rounded graph and exact discrete-domain foundations.
+"""Provisional canonical-order graph and exact discrete-domain foundations.
 
 The namespace provides immutable in-memory fingerprints over model-free
 numerical inputs. It does not persist records, read a field/core/winding, or
