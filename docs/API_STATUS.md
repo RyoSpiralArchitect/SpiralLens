@@ -31,7 +31,9 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
-| `spirallens.synthetic`, `spirallens.graphs`, future qualification and subject APIs | provisional | model-free generator-family controls plus in-memory exact graph/domain fingerprints; no graph qualification or persistence authority |
+| `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; scientific qualification remains artifact-bound |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol, source binding, local one-shot chronology, custom/development standalone persistence, and descriptor-derived official execution authorization; official result authority requires typed authorization plus the successor-aware start-lineage-bound terminal transaction, while Level-0 Cartesian-surrogate scope grants no global one-shot, topology, subject, or D6-D8 authority |
+| future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
 

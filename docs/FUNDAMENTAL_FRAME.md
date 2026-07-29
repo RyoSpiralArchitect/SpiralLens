@@ -272,6 +272,12 @@ Procrustes connection provide a gauge-accounted geometric field. Effective
 rank, concentration, and spectral gaps can gate whether the plane is
 identifiable.
 
+An O(2) Procrustes alignment may contain a reflection. Therefore a small
+post-alignment section error is not by itself a phase-law check: the
+determinant must be retained, and an independently rerun signed loop
+observable must transform by that determinant. Discarding the determinant or
+silently replacing O(2) by SO(2) can hide a sign fault.
+
 The projector alone has no complex phase and no integer winding. A sampled
 integer requires an additional nonzero, orientable section. If the bundle is
 non-orientable, a forced proper rotation is forbidden; the U(1) charge is
@@ -337,6 +343,10 @@ axis. The estimator either declares `graph_free`, inherits and binds the
 field-estimation graph, or adds a matched-support core graph \(C\) and tests
 \(C\times A\times B\). Core stability cannot be inferred from field/cycle
 agreement while its own graph construction remains hidden.
+
+The current D0-D5 qualification engine chooses exactly
+`inherit_field_estimation_graph`: its field estimate, charge-blind core input,
+and localized-zero candidate are graph-bound to the same declared A cell.
 
 The comparison is over a matched support or homology class, not whichever cycle
 preserves the desired result. Outcomes are:
@@ -426,6 +436,96 @@ loader's scope and does not qualify a referent, graph, or instrument. A subject
 protocol still cannot depend on either path until synthetic qualification
 D0-D8 is complete. See
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
+
+### Current D0-D5 engine boundary
+
+The current model-free qualification engine operationalizes only the Level-0
+D0-D5 calibration-selection layer. Its presence is not evidence that a frozen
+selection has run or passed. Its result contract fixes
+`d6_d8_advanced=false`, `synthetic_qualified=false`, subject/model/semantic
+access to false, and integer/topology authority to false.
+
+The operational split is fundamental rather than a post-hoc control:
+
+- a charge-blind core kernel consumes only field amplitude,
+  identifiability, coherence, support, and a field-estimation graph, then seals
+  `localized_core`, `no_core`, or prerequisite abstention before any loop
+  observable is read. A candidate is defined by localized same-section low
+  amplitude alone; at an exact zero, normalized direction is undefined as a
+  consequence rather than an independent threshold. Identifiability,
+  coherence, and support are measurement-eligibility checks on non-core
+  support, while candidate-site degree support is checked independently. A
+  high-amplitude point with local identifiability loss is explicitly
+  `no_core`;
+- a separate loop kernel consumes the independently estimated field and its
+  own boundary prerequisites, but receives no core prediction, core anchor, or
+  charge. It reports only an unrounded integrated signed sampled-phase total
+  in cycles; closeness to a supplied synthetic integer is an evaluator
+  comparison, not an observed integer winding or topology certificate.
+
+The D2 output is only a Level-0 localized zero/core candidate. It does not
+establish a vortex, defect topology, quantized charge, or a core-loop join.
+
+The closed Cartesian family crosses `localized_core`/`no_core` with
+`nonzero`/`null` rather than using one label for both. Its required controls
+are nonzero-with-core, null-with-core, null-without-core, and
+prerequisite-failure. The nonzero-with-core control is also a
+field-sensitivity sentinel: graph-family nonvacuity requires exact estimator
+input consumption plus a frozen minimum RMS change in substantive field
+outputs. Metadata-only graph differences and digest inequality cannot carry
+that burden.
+
+Every D5 stress stratum is an exact protocol manifest at the phantom-instance
+unit. Field-by-cycle graph cells are repeated nuisance measurements. They are
+collapsed by worst case and are never counted as independent evidence.
+Nonzero/null primaries form the recall/specificity rate universe; the designed
+prerequisite failure is excluded from those rates but remains a mandatory
+all-primary pass condition.
+
+The execution chronology is also part of the evidential object. Before the
+official seed supplier is invoked, the seed-free source closure is verified
+and a canonical no-overwrite readiness artifact is published and strictly
+reloaded. The protocol and unopened selection freeze bind that artifact's
+exact local path and digests and are committed as F. After F is revalidated, a
+canonical launch intent must be persisted before the store-local exclusive
+attempt claim, and the store freeze, intent, claim, and descriptor are
+committed as G. A fresh loader and the official runner independently require
+all four to be exact clean tracked blobs at the same unchanged G HEAD before
+execution can start. The complete executable closure, including the three
+official prepare/launch/run scripts, must also be live-verified and one
+freeze-keyed execution-start marker atomically persisted before any generator
+runs. That marker binds the descriptor-derived authorization digest and
+authorized G HEAD. Either the fully revalidated result or a typed
+failed-attempt artifact binds the same digest and is then published atomically
+with its consumption receipt and terminal manifest; both publication and
+reload require the typed authorization and an exact terminal-to-start lineage
+join. Terminal validation proves
+`engine commit -> authorized G -> current HEAD`, requires every G blob to
+remain exact at the authorized/current commits and clean worktree, and verifies
+that neither the start nor terminal path existed in the authorized G tree.
+The readiness ordering is `official-process-attested`; it is not
+cryptographic or human/external-process unseen proof. The local uniqueness
+guarantee also trusts deletion rights for the claim, start marker, and terminal
+transaction and therefore is not yet an append-only, adversary-resistant run
+ledger. No consumed family is retried under the same protocol identity. This
+pre-run freeze binds the D0-D5 attempt and does not substitute for the later
+D6 `CalibrationSelectionDecision`.
+
+This authority is defined at validated persistence sinks. Provisional record
+constructors may form non-authoritative in-memory objects, but the generic
+standalone result writer/loader rejects the official protocol ID. An official
+result becomes admissible only through the start-lineage-bound terminal
+transaction.
+
+A later artifact-only commit does not rewrite execution provenance. Terminal
+revalidation proves the stored execution HEAD lies between the engine commit
+and current HEAD, verifies every bound module, official executable, registry,
+and referent blob at that historical HEAD, repeats the complete clean
+live-source check, reconstructs the exact historical receipt, and requires its
+original canonical digest through the persisted summary. Sibling histories,
+execution-blob mismatches, and current bound-path or content drift are
+inadmissible. This remains source-only Level-0 evidence, not runtime or
+hostile-process attestation.
 
 ## 9. Historical and experimental consequences
 

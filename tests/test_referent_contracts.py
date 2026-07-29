@@ -179,12 +179,22 @@ def test_referents_export_surface_is_exact() -> None:
 
 def test_tracked_registry_produces_the_frozen_referent_identity() -> None:
     repository = Path(__file__).resolve().parents[1]
+    referent_path = (
+        repository / "protocols" / "order_parameter_referent_contracts_v0_1.json"
+    )
     registry = load_hypothesis_registry(
         repository / "protocols" / "order_parameter_hypothesis_registry_v0_1.yaml"
     )
 
     contract_set = canonical_f0_f4_referent_contracts(registry.canonical_sha256)
+    loaded = referents.load_referent_contract_set(
+        referent_path,
+        expected_source_sha256=contract_set.canonical_sha256,
+        expected_canonical_sha256=contract_set.canonical_sha256,
+    )
 
     assert contract_set.canonical_sha256 == (
         "4108ccda4f2a76920091bf2bf422b97297fe4d91ee54f14e2b03362e53e358f2"
     )
+    assert loaded.contract_set == contract_set
+    assert referent_path.read_bytes() == contract_set.canonical_bytes

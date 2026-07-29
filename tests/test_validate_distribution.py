@@ -22,6 +22,7 @@ _VALIDATOR = importlib.util.module_from_spec(_VALIDATOR_SPEC)
 _VALIDATOR_SPEC.loader.exec_module(_VALIDATOR)
 
 DEFAULT_IMPORTS = _VALIDATOR.DEFAULT_IMPORTS
+DEFAULT_SCIENTIFIC_IMPORTS = _VALIDATOR.DEFAULT_SCIENTIFIC_IMPORTS
 DistributionValidationError = _VALIDATOR.DistributionValidationError
 REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
 REQUIRED_WHEEL_MEMBERS = _VALIDATOR.REQUIRED_WHEEL_MEMBERS
@@ -134,6 +135,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
     assert report["required_imports"] == list(DEFAULT_IMPORTS)
+    assert report["required_scientific_imports"] == list(DEFAULT_SCIENTIFIC_IMPORTS)
     assert report["required_wheel_members"] == list(REQUIRED_WHEEL_MEMBERS)
     assert report["forbidden_imports"] == [
         "faiss",
@@ -153,6 +155,8 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     }
     assert report["installation"]["no_dependencies"] is True
     assert report["installation"]["system_site_packages"] is False
+    assert report["installation"]["scientific_surface_system_site_packages"] is True
+    assert report["installation"]["scientific_surface_user_site_packages"] is True
     assert report["installation"]["wheel_filename"].endswith(".whl")
     assert report["inspection"]["forbidden_imports_loaded"] == []
     assert report["inspection"]["direct_url_editable"] is False
@@ -160,6 +164,13 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert all(
         "site-packages/spirallens" in origin
         for origin in report["inspection"]["module_origins"].values()
+    )
+    assert set(report["scientific_surface_inspection"]["module_origins"]) == set(
+        DEFAULT_SCIENTIFIC_IMPORTS
+    )
+    assert all(
+        "site-packages/spirallens" in origin
+        for origin in report["scientific_surface_inspection"]["module_origins"].values()
     )
     assert sorted(item["kind"] for item in report["artifacts"]) == [
         "sdist",

@@ -23,13 +23,14 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.1"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.2"
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens.core",
     "spirallens.core.canonical",
     "spirallens.access",
 )
+DEFAULT_SCIENTIFIC_IMPORTS = ("spirallens.qualification",)
 FORBIDDEN_IMPORTS = (
     "faiss",
     "huggingface_hub",
@@ -47,6 +48,27 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/graphs/contracts.py",
     "spirallens/graphs/diversity.py",
     "spirallens/graphs/domain.py",
+    "spirallens/qualification/__init__.py",
+    "spirallens/qualification/aggregation.py",
+    "spirallens/qualification/blind.py",
+    "spirallens/qualification/common.py",
+    "spirallens/qualification/contracts.py",
+    "spirallens/qualification/crossed.py",
+    "spirallens/qualification/evidence_bundle.py",
+    "spirallens/qualification/freeze.py",
+    "spirallens/qualification/launch.py",
+    "spirallens/qualification/metamorphic.py",
+    "spirallens/qualification/persistence.py",
+    "spirallens/qualification/pipeline_metamorphic.py",
+    "spirallens/qualification/preparation.py",
+    "spirallens/qualification/prerequisites.py",
+    "spirallens/qualification/protocol.py",
+    "spirallens/qualification/runner.py",
+    "spirallens/qualification/source_binding.py",
+    "spirallens/qualification/winding.py",
+    "spirallens/synthetic/cartesian_fourier_domain_phantom.py",
+    "spirallens/synthetic/cartesian_fourier_estimator.py",
+    "spirallens/synthetic/representation_estimator.py",
 )
 _COPY_IGNORE = (
     ".git",
@@ -394,11 +416,13 @@ def validate_distribution(
     source_root: Path,
     *,
     required_imports: Sequence[str] = DEFAULT_IMPORTS,
+    required_scientific_imports: Sequence[str] = DEFAULT_SCIENTIFIC_IMPORTS,
 ) -> dict[str, object]:
     """Build, install, and inspect the current SpiralLens distribution."""
 
     source_root = source_root.resolve(strict=True)
     imports = tuple(required_imports)
+    scientific_imports = tuple(required_scientific_imports)
     if not imports or any(not isinstance(name, str) or not name for name in imports):
         raise DistributionValidationError(
             "required_imports must contain non-empty module names"
@@ -406,6 +430,16 @@ def validate_distribution(
     if len(set(imports)) != len(imports):
         raise DistributionValidationError(
             "required_imports must not contain duplicates"
+        )
+    if not scientific_imports or any(
+        not isinstance(name, str) or not name for name in scientific_imports
+    ):
+        raise DistributionValidationError(
+            "required_scientific_imports must contain non-empty module names"
+        )
+    if len(set(scientific_imports)) != len(scientific_imports):
+        raise DistributionValidationError(
+            "required_scientific_imports must not contain duplicates"
         )
 
     with tempfile.TemporaryDirectory(
@@ -417,6 +451,7 @@ def validate_distribution(
         extracted_dir = temporary / "extracted"
         wheel_artifact_dir = temporary / "wheel-artifacts"
         environment_root = temporary / "venv"
+        scientific_environment_root = temporary / "scientific-venv"
         neutral_cwd = temporary / "neutral"
         artifact_dir.mkdir()
         wheel_artifact_dir.mkdir()
@@ -505,6 +540,53 @@ def validate_distribution(
             required_imports=imports,
         )
 
+        # Qualification is a scientific surface and intentionally imports its
+        # declared numerical dependencies.  A second fresh environment uses
+        # the host's already-installed system/user dependencies while still
+        # requiring the SpiralLens module itself to originate from this exact
+        # non-editable wheel installation.
+        venv.EnvBuilder(
+            with_pip=True,
+            system_site_packages=True,
+            clear=False,
+            symlinks=True,
+        ).create(scientific_environment_root)
+        scientific_environment = _clean_subprocess_environment(exclude_user_site=False)
+        scientific_python = _venv_executable(
+            scientific_environment_root,
+            "python",
+        )
+        _run(
+            (
+                str(scientific_python),
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--force-reinstall",
+                str(wheel),
+            ),
+            cwd=neutral_cwd,
+            env=scientific_environment,
+        )
+        scientific_probe = _run(
+            (
+                str(scientific_python),
+                "-P",
+                "-c",
+                _PROBE,
+                json.dumps(scientific_imports),
+                json.dumps(()),
+            ),
+            cwd=neutral_cwd,
+            env=scientific_environment,
+        )
+        scientific_inspection = _parse_probe_output(
+            scientific_probe.stdout,
+            environment_root=scientific_environment_root,
+            required_imports=scientific_imports,
+        )
+
         cli = _venv_executable(environment_root, "spirallens")
         if not cli.is_file():
             raise DistributionValidationError(
@@ -553,12 +635,16 @@ def validate_distribution(
             "installation": {
                 "no_dependencies": True,
                 "system_site_packages": False,
+                "scientific_surface_system_site_packages": True,
+                "scientific_surface_user_site_packages": True,
                 "wheel_filename": wheel.name,
             },
             "inspection": inspection,
+            "scientific_surface_inspection": scientific_inspection,
             "required_wheel_members": list(verified_wheel_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),
             "required_imports": list(imports),
+            "required_scientific_imports": list(scientific_imports),
         }
 
 

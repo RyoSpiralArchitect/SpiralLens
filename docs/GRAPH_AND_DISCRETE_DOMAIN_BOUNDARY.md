@@ -22,7 +22,8 @@ family changed and would make graph invariance circular.
 SpiralLens therefore keeps two identities separate:
 
 1. `GraphConstructionReceipt` records one deterministic, exhaustive
-   rounded-float64 adjacency on a bound ordered numerical input.
+   canonical-coordinate-order float64 adjacency on a bound ordered numerical
+   input.
 2. `DiscreteDomainComplex` records an independently declared oriented
    triangular complex on the same row domain.
 
@@ -40,7 +41,8 @@ label, or model-derived outcome.
 
 All three constructors use:
 
-- an exhaustive Euclidean norm evaluated and rounded in float64;
+- an exhaustive Euclidean norm whose absolute coordinates are stably sorted
+  before a fixed float64 `hypot` reduction;
 - identity preprocessing;
 - canonical row-index edges with `left < right`;
 - deterministic ordering;
@@ -48,11 +50,12 @@ All three constructors use:
 - fail-closed detection of non-finite distance arithmetic and nonzero
   separations that underflow to zero.
 
-The metric is deterministic over the supplied float64 values, but it is not
-exact real arithmetic. Distinct real distances may round to the same float64
-value; the declared vertex-identity tie rule then applies. Radius comparison
-uses the rounded norm directly rather than squaring it, avoiding a known
-near-underflow threshold alias.
+The metric is deterministic over the supplied float64 values and bit-identical
+under signed coordinate permutations, but it is not exact real arithmetic.
+Distinct real distances may round to the same float64 value; the declared
+vertex-identity tie rule then applies. Radius comparison uses the canonical
+norm directly rather than squaring it, avoiding a known near-underflow
+threshold alias.
 
 The parameter-aware bounded resource estimate includes conservative Python
 container and dense-output terms and runs before the pairwise allocation. It

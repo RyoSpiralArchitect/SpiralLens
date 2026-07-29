@@ -1,4 +1,4 @@
-"""Typed inputs, specifications, and receipts for rounded graph construction."""
+"""Typed inputs, specifications, and receipts for canonical graph construction."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ from .common import (
     array_fingerprint,
     array_sha256,
     bool_vector,
+    coordinate_order_invariant_euclidean_norm,
     float_matrix,
     float_vector,
     graph_construction_estimated_peak_bytes,
@@ -46,11 +47,13 @@ GRAPH_FAMILY_IDENTITY_RECEIPT_VERSION = "spirallens.graph-family-identity-receip
 GRAPH_SPEC_RECEIPT_VERSION = "spirallens.graph-construction-spec-receipt.v0.1"
 GRAPH_CONSTRUCTION_RECEIPT_VERSION = "spirallens.graph-construction-receipt.v0.1"
 
-GRAPH_METRIC_ID = "exhaustive-rounded-euclidean-float64"
+GRAPH_METRIC_ID = "exhaustive-canonical-coordinate-order-euclidean-float64"
 GRAPH_PREPROCESSING_ID = "identity-no-preprocessing"
 GRAPH_EDGE_ORDER_ID = "row-index-left-right-lexicographic"
-GRAPH_EDGE_WEIGHT_ID = "rounded-euclidean-float64-distance"
-GRAPH_KNN_TIE_POLICY_ID = "rounded-distance-then-vertex-id-then-row-index"
+GRAPH_EDGE_WEIGHT_ID = "canonical-coordinate-order-euclidean-float64-distance"
+GRAPH_KNN_TIE_POLICY_ID = (
+    "canonical-coordinate-order-distance-then-vertex-id-then-row-index"
+)
 
 _GRAPH_RECEIPT_FACTORY_TOKEN = object()
 
@@ -427,7 +430,9 @@ class GraphConstructionReceipt:
             adjacency[left].append(right)
             adjacency[right].append(left)
             difference = graph_input.states[left] - graph_input.states[right]
-            expected_distance = float(np.hypot.reduce(np.abs(difference)))
+            expected_distance = float(
+                coordinate_order_invariant_euclidean_norm(difference)
+            )
             if not math.isfinite(expected_distance):
                 raise GraphContractError(
                     "canonical edge distance overflowed the arithmetic bound"
