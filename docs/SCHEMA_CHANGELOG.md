@@ -4,6 +4,46 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — PR #12 D7 construction foundation
+
+### Added
+
+- `spirallens.spectral-moment-confirmation-*` in-memory development records
+  generate the exact four D6-required case semantics on one matched 7 by 7
+  discrete domain. Estimator-visible arrays and evaluator-only oracle truth are
+  separate, and no confirmation seed has a library default.
+- `spirallens.d7-confirmation-foundation.v0.1` is a canonical internal draft
+  reconstructed only from a `LoadedScopeLimitedD6Decision` returned by the
+  authoritative committed-D6 loader. It binds the D6 decision, embedded
+  admission, loader-source receipt, estimator/trivialization IDs, and inherited
+  graph/cell/stress/threshold/aggregation hashes.
+- The strict foundation reader requires canonical bytes, an expected SHA-256,
+  and the same authoritative D6 receipt, then compares the whole document with
+  a fresh reconstruction. The four case bindings derive from the generator's
+  single canonical case registry.
+- The provisional `CartesianFourierEstimatorInputs` type adds
+  `from_observable_arrays()`, an owner-provided factory that derives its
+  label-free content pseudonym from the exact arrays. Both the Cartesian and
+  spectral-moment generators use this boundary instead of duplicating the
+  private digest algorithm.
+
+### Compatibility and non-migrations
+
+- The new owner factory is a provisional constructor on an already provisional
+  type; it does not mutate existing persisted artifacts or estimator-visible
+  array semantics. New source-bound development receipts naturally carry the
+  updated source identity.
+- The remaining addition is an internal implementation foundation, not a D7
+  protocol, design freeze, receipt, admission, runner, result, or replay API.
+  It is not exported from `spirallens.qualification` or the package root.
+- Same-schema construction-diversity review, committed seed-free source
+  closure, exact seed/execution inventory, stress translation, off-core and
+  crossed graph/core/loop paths, lifecycle, namespace absence, terminal
+  schemas, and atomic publication remain serialized as false.
+- D7 and D8 remain `not_run`; global synthetic qualification, representation,
+  P0, localized core-loop join, integer/topology, semantic, Pythia, and subject
+  authority remain false.
+
 ## 2026-07-29 — PR #11 post-D6 analysis separation
 
 ### Added
