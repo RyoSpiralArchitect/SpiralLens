@@ -893,6 +893,35 @@ There is no D8 promotion helper that can pass from two caller-supplied byte
 strings; typed D7, execution, namespace, source, and replay receipts are still
 required.
 
+### Post-D6 analysis is split before either lane runs
+
+The already-opened PR #9 terminal may be inspected only under the canonical
+`postselection_descriptive_only` plan. That lane declares prior outcome
+exposure, fixed scientific grains, eight mandatory descriptive packages,
+`claim_delta=none`, and an absolute prohibition on D7 design use. It also
+records that planning used opened outcome values; only its runner and result
+remain unexecuted.
+
+A separate canonical D7 structural gap matrix may inspect only the D6 decision
+and a tracked source snapshot. It cannot read the terminal result, terminal
+manifest, consumption, Pythia engineering values, subject values, or unopened
+confirmation values. Its closed vocabulary is `absent`, `contract_only`,
+`implementation_foundation_only`, `evidence_present_but_ineligible`, and
+`blocked`; it has no completion percentage, weighted score, candidate, or
+admission state.
+
+Both artifacts are frozen but unexecuted. PR #11 adds no public analysis
+runner, writer, D7 admission helper, or promotion API. The detailed chronology,
+unit contract, work packages, gap rows, and full research sequence live in
+`docs/POST_D6_ANALYSIS_AND_D7_GAPS.md`.
+
+There is no independent operator or information barrier. Therefore the
+complete D7 family descriptor, admission, protocol, source closure,
+graph/case/stress and aggregation bytes, lifecycle, launch intent, exclusive
+attempt, and absent result namespace must be frozen under a committed receipt
+before the descriptive runner may execute. Any later D7 design change requires
+a new version and review; the prior admission cannot be carried forward.
+
 Any required failure stops. Any required insufficient result blocks. Only D0
 through D8 authorize a later subject-protocol preparation step. They do not
 authorize subject execution.

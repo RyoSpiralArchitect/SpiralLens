@@ -719,12 +719,22 @@ below:
     commit because squash/rebase integration invalidates the authoritative
     lineage, and treat its absolute-path end-to-end reload as local archival
     evidence rather than a cross-worktree test;
-11. implement and admit a genuinely different construction family, run it
-    without overrides or post-selection exclusions, and require complete
-    isolated byte-identical replay before setting any scope-specific D7/D8
-    status; same-family new seeds remain replication and cannot satisfy this
-    item;
-12. only then prepare a new subject manifest with new IDs under the
+11. freeze post-selection descriptive analysis separately from the value-blind
+    D7 structural gap matrix — recorded as two canonical, non-authorizing
+    research artifacts; the descriptive lane cannot tune D7, and the gap lane
+    cannot read the terminal values, name a candidate, or compute progress;
+12. implement and admit a genuinely different construction family, then freeze
+    its complete protocol, source closure, graph/case/stress and aggregation
+    bytes, lifecycle, launch intent, exclusive attempt, and absent output
+    namespace before the post-selection descriptive runner may execute;
+13. after that committed D7 design-freeze receipt exists, execute the separate
+    descriptive result without changing any D7 design byte; any change requires
+    a new version and review;
+14. run the admitted family without overrides or post-selection exclusions,
+    and require complete isolated byte-identical replay before setting any
+    scope-specific D7/D8 status; same-family new seeds remain replication and
+    cannot satisfy this item;
+15. only then prepare a new subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
 
