@@ -1,13 +1,23 @@
 # D7 Confirmation Execution Design
 
-Status: `implemented_seed_free_design`, `not_frozen`, `not_admitted`,
-`not_run`.
+Status: `implemented_seed_free_design_v0_2`,
+`structural_rebinding_proposal_encoded_not_reviewed_or_published`, `not_frozen`,
+`not_admitted`, `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
 execution topology added after the PR #12 construction foundation. It records
 what is now implemented, what the implementation revealed about the D6 v0.1
 admission contract, and which obligations still block a claim-bearing
 confirmation.
+
+The foundation and execution design are internal, unpersisted drafts. Their
+current `v0.2` schemas supersede the earlier internal `v0.1` drafts; there is
+no persisted `v0.1` artifact to migrate. The version change removes
+validation-time current-loader HEAD and source-surface digests from canonical
+D7 identity so that an unchanged parent decision and unchanged design produce
+commit-stable bytes. Construction still requires the authoritative typed D6
+loader receipt and validates that receipt before projecting its stable
+historical identity.
 
 ## 1. Scope
 
@@ -26,9 +36,13 @@ confirmation seed is selected:
 - the same `GraphInput` and A-bound field-estimate join between core and loop
   predictions.
 
-It does not implement a D7 admission, full-design freeze, source-readiness
-receipt, official seed supplier, launch intent, attempt claim, result/failure
-schema, terminal writer, D8 replay, model access, or scientific promotion.
+The separate internal `confirmation_rebinding` contract now types and strictly
+reloads the proposed successor-only cells/stress fulfillment rule described below. It
+does not publish a canonical artifact or implement a D7 admission,
+construction-diversity review, source closure, D7 registry or aggregation
+application, full-design freeze, source-readiness receipt, official seed
+supplier, lifecycle, result/failure schema, terminal writer, D8 replay, model
+access, or scientific promotion.
 
 ## 2. Exact repeated-measures inventory
 
@@ -77,9 +91,14 @@ the D6 sealer and verifies every hash:
 The authoritative D6 loader has already loaded and verified the historical
 terminal result, manifest, and consumption companions. Their raw bytes are not
 direct arguments to, reread by, or retained in the seed-free design. The
-design binds the resulting authoritative D6 identity, including the decision,
-admission, and current-loader source identities; those upstream companions are
-therefore an explicit indirect provenance dependency.
+`v0.2` `D7ParentD6Binding`, foundation, and execution-design bytes bind the
+stable historical decision and admission identities but deliberately exclude
+the ephemeral current-loader HEAD and source-binding digest. The builder still
+requires `LoadedScopeLimitedD6Decision` and reruns its typed receipt validation;
+the current-loader surface is therefore a validation-time prerequisite, not a
+component of canonical D7 identity. This keeps unchanged D7 design bytes stable
+across later clean descendant commits without weakening the authoritative
+loader boundary.
 
 ## 4. D6 v0.1 manifest incompatibility
 
@@ -105,9 +124,27 @@ The design records two separate facts:
   seed-slot projection; and
 - exact parent cells/stress hash satisfaction remains `false`.
 
-Structural equality is not silently reinterpreted as D6 v0.1 admission. A
-reviewed, versioned successor admission or rebinding amendment is required
-before freeze.
+Structural equality is not silently reinterpreted as D6 v0.1 admission. The
+internal `spirallens.d6-d7-structural-rebinding-amendment.v0.1` contract now
+encodes the narrower proposed successor-only rule:
+
+- graph-axis and threshold bodies must retain exact byte identity;
+- cells and stress bodies must have different successor identities;
+- their typed structural-projection digests must match exactly;
+- parent selection identities may not be reused; and
+- the mapping grants neither admission nor execution authority.
+
+Its factory reconstructs the seed-free design from the authoritative D6
+receipt and strict parent protocol. Its strict reader requires the expected
+SHA-256, canonical JSON, bounded bytes, and whole-document equality with that
+reconstruction. The encoded rule remains unreviewed, unpublished, and
+ineffective for admission. This is an implemented internal type and reader,
+not a published amendment artifact.
+
+The historical D6 v0.1 decision and admission bytes remain unchanged. Their
+literal cells/stress requirements are still unsatisfied, so
+`d6_admission_spec_satisfied=false`. The successor rule supplies no retroactive
+pass and no migration of D6 history.
 
 The parent aggregation body also names a `selection-seed-block`, and the
 selection implementation registry cannot become the D7 registry because the
@@ -181,45 +218,61 @@ This is implementation conformance only. The receipt is explicitly
 claim-ineligible, produces no D7 result, and cannot be substituted for a
 future unopened-seed confirmation.
 
-## 8. Seed chronology
+## 8. Freeze chronology
 
-The official seed values remain absent. The required order is:
+The official seed values remain absent. The next change must first separate
+two source-only commits:
 
-1. commit and verify the complete seed-free source closure;
-2. publish and strictly reload a no-overwrite readiness artifact;
-3. invoke the seed supplier once;
-4. require exactly two unique, sorted, nonnegative signed-int64 seeds;
-5. reject every development seed and both parent selection seeds;
-6. bind the numeric seeds to `confirmation-seed-slot-00` and
-   `confirmation-seed-slot-01`;
-7. create the concrete full design and launch artifacts without executing;
-8. commit that design;
-9. issue the freeze receipt in a receipt-only descendant commit; and
-10. execute only after the authoritative loader verifies the ancestry.
+1. **C1 — stable design and closed source set:** publish and strictly reload
+   the canonical seed-free design and reviewed successor-rebinding artifacts;
+   commit them with the complete executable source surface, D7 implementation
+   registry, aggregation application, and reviewed construction-diversity
+   comparison. C1 contains no self-referential source-closure receipt.
+2. **C2 — closure receipt:** from a clean descendant, verify C1 by Git
+   ancestry and exact tracked blobs, issue a receipt that adds no design
+   choices, and commit only that receipt.
 
-Seed values may be public after freeze. The controlled fact is chronology, not
-permanent secrecy.
+Only after C2 may later lifecycle work invoke the seed supplier once, require
+exactly two unique, sorted, nonnegative signed-int64 seeds, reject every
+development and parent selection seed, bind them to
+`confirmation-seed-slot-00` and `confirmation-seed-slot-01`, create the
+concrete full design without execution, and establish the reviewed
+launch/claim/start/terminal chronology. Seed values may be public after freeze.
+The controlled fact is chronology, not permanent secrecy.
+
+Terminal design must not manufacture a placeholder result merely to reserve
+an output shape. A later PR must type the immutable replay target separately
+from the attempt envelope that carries launch authorization, exclusive claim,
+execution start, success/failure outcome, and terminal lineage. Neither object
+exists in this PR.
 
 ## 9. Next blocking PR
 
-The next PR must resolve, before any official seed supply:
+This PR intentionally stops after commit-stable internal draft identity and
+the typed successor-only structural rule. The next PR must resolve, before any
+official seed supply:
 
-- reviewed construction-diversity and source-closure comparison;
-- the versioned D6 cells/stress structural-rebinding contract;
-- D7-specific implementation-registry and aggregation application;
-- concrete result and failure schemas;
-- no-overwrite readiness, launch, attempt, and execution-start chronology;
-- absent terminal namespace verification;
-- atomic terminal publication;
-- the two-commit design/freeze-receipt lineage; and
-- strict isolated replay requirements.
+- published, strictly reloadable stable design and reviewed rebinding
+  artifacts;
+- reviewed construction-diversity and the complete C1 executable source set;
+- D7-specific implementation-registry and aggregation application; and
+- the C1-to-C2 source-closure receipt lineage.
+
+Lifecycle, official seeds, result/failure types, the separate replay-target and
+attempt-envelope schemas, no-overwrite publication, launch, exclusive attempt,
+execution start, terminal publication, and isolated replay follow only after
+that closure. They remain separate obligations rather than being represented
+by placeholders in the source-closure PR.
 
 Until those are complete, the canonical state remains:
 
 ```text
-implemented_seed_free_design
+implemented_seed_free_design_v0_2
+structural_rebinding_proposal_encoded_not_reviewed_or_published
 not_frozen
 not_admitted
 not_run
-exact_parent_manifest_incompatibility_unresolved
+d6_v0_1_exact_admission_unsatisfied
+source_closure_not_verified
+lifecycle_and_terminal_not_implemented
 ```

@@ -875,8 +875,19 @@ required-stress body embeds the same primary IDs in stratum memberships. A
 new-seed confirmation can preserve an exact structural bijection but cannot
 be byte-identical to those two bodies without reusing selection identities.
 The historical D6 bytes are not reinterpreted or rewritten. A reviewed,
-versioned successor admission or structural-rebinding amendment is now an
-explicit pre-D7 obligation.
+versioned successor rule is required for D7 without changing the historical
+exact admission.
+
+That narrower proposal is now encoded internally as
+`spirallens.d6-d7-structural-rebinding-amendment.v0.1`. It carries graph axes
+and thresholds forward with exact byte identity and allows cells/stress to
+fulfill only a D7 successor contract: both successor manifest identities must
+differ from the selection identities while the typed structural-projection
+digests match exactly. The factory and strict reader reconstruct the seed-free
+design from the authoritative D6 receipt and strict parent protocol; they do
+not accept caller-supplied digests as authority. No amendment artifact is
+published, no family is admitted, and the D6 v0.1 exact admission remains
+false. Historical D6 bytes are unchanged.
 
 ### D7 — locked independent calibration
 
@@ -901,13 +912,37 @@ The spectral-moment lane now has a seed-free execution design that:
   without supplying an oracle-truth record to those kernels or producing a
   gate/result.
 
+The `D7ParentD6Binding`, confirmation foundation, and execution design are now
+internal, unpersisted `v0.2` drafts. Their canonical identity omits the
+validation-time current-loader HEAD and source-binding digest so unchanged
+historical inputs remain stable across clean descendant commits. Their
+builders still require and validate the authoritative typed D6 loader receipt;
+the loader surface remains a validation-time prerequisite rather than
+canonical D7 identity.
+
 That is implementation conformance, not D7 evidence. Concrete confirmation
-seeds, reviewed construction-diversity/source closure, the versioned
-D6-to-D7 rebinding, D7-specific registry and aggregation application,
-lifecycle, result/failure types, terminal publication, and isolated replay
-remain absent. Accordingly, no open-mapping or label-only D7 admission
-function exists. See
+seeds, reviewed construction-diversity and source closure, a published stable
+design artifact, D7-specific registry and aggregation application, family
+admission, freeze, lifecycle, result/failure types, terminal publication, and
+isolated replay remain absent. The internal rebinding proposal does not change
+those states. Accordingly, no open-mapping or label-only D7 admission function
+exists. See
 [`D7_CONFIRMATION_EXECUTION_DESIGN.md`](D7_CONFIRMATION_EXECUTION_DESIGN.md).
+
+The next ordering is:
+
+1. commit C1 containing the strictly reloadable stable design and reviewed
+   successor-rebinding artifacts, reviewed construction-diversity comparison,
+   complete executable source set, and D7 registry/aggregation application,
+   but no self-referential source-closure receipt;
+2. from a clean descendant, verify C1 ancestry and exact tracked blobs and
+   commit only the choice-free C2 closure receipt; and
+3. only after C2, define official seeds and the reviewed lifecycle.
+
+The later terminal schema must keep the immutable replay target separate from
+the attempt envelope that binds launch authorization, exclusive claim,
+execution start, success/failure, and terminal lineage. A placeholder result
+must not stand in for either object.
 
 ### D8 — freeze and replay
 
@@ -987,6 +1022,11 @@ The P0 registry, metadata-only canonical schemas, and closed-integrity bundle
 validator are now implemented under this allowance. Their exact boundary and
 remaining non-claims are recorded in
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
+
+The commit-stable internal D7 `v0.2` draft identity and internal `v0.1`
+successor structural-rebinding proposal are also preparation-only contracts. They
+publish no artifact, select no seed, admit no family, verify no source closure,
+and create no lifecycle, terminal, D7, or D8 evidence.
 
 A separate public-example engineering lane may validate the already
 implemented model observation apparatus. It requires a pre-execution protocol

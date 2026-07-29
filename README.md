@@ -126,10 +126,15 @@ development-path conformance are necessary but do not prove construction,
 epistemic, or implementation independence. This foundation freezes no
 confirmation seed or execution inventory, persists no full-design receipt,
 admits no family, exposes no D7 runner or terminal result, and does not advance
-D0-D8.
+D0-D8. The internal, unpersisted parent binding and foundation are now `v0.2`.
+They omit the validation-time current-loader HEAD and source-binding digest
+from canonical identity while still requiring and validating the authoritative
+typed loader receipt. Unchanged historical inputs therefore produce
+commit-stable draft bytes; no persisted `v0.1` draft is migrated.
 
-The next seed-free D7 execution draft now reconstructs the full authoritative
-D6 parent protocol, binds explicit stress translations, and closes the exact
+The internal, unpersisted `v0.2` seed-free D7 execution draft reconstructs the
+full authoritative D6 parent protocol, binds explicit stress translations, and
+closes the exact
 `64` primary / `192` core / `1,152` loop repeated-measures topology. A
 development-only path runs the exact 3A-by-3B graph, core, and continuous-loop
 pipeline using permanently excluded seeds and stops at sealed predictions
@@ -139,7 +144,17 @@ bodies contain selection seeds and seed-bearing IDs. A new-seed confirmation
 can match their typed structural projection but cannot be byte-identical.
 Accordingly the draft records structural equality separately while leaving
 exact parent-manifest satisfaction, D6 admission, freeze, and D7 execution
-false. See the
+false.
+
+The new internal
+`spirallens.d6-d7-structural-rebinding-amendment.v0.1` contract encodes only a
+proposed successor fulfillment rule: graph axes and thresholds remain byte-exact,
+whereas cells and stress manifests receive distinct successor identities whose
+typed structural-projection digest must equal the parent projection. Its
+factory and strict canonical reader reconstruct all authority-bearing inputs;
+it publishes no artifact and grants no admission or execution authority.
+Historical D6 v0.1 bytes remain unchanged and its exact admission remains
+unsatisfied. See the
 [D7 Confirmation Execution Design](docs/D7_CONFIRMATION_EXECUTION_DESIGN.md).
 
 The mathematical loop/holonomy tools and architecture-factor/null primitives
@@ -341,6 +356,13 @@ the archival checks; it does not claim compatibility with the historical
 decision source. Current-source compatibility, historical reexecution, and
 historical D1 recomputation therefore remain false.
 
+Downstream D7 `v0.2` draft identity does not serialize that ephemeral
+validation HEAD or digest. It still accepts only the typed authoritative
+receipt and validates it before deriving the stable historical parent
+projection. Thus the loader check remains mandatory while the unchanged draft
+identity no longer changes merely because validation occurs at a later clean
+descendant commit.
+
 The recorded bundle is also lineage-bound: its source commit must remain an
 ancestor of the loading HEAD. This PR must therefore be integrated with a
 history-preserving merge commit; squash or rebase integration invalidates the
@@ -355,7 +377,10 @@ spectral-moment draft foundation supplies four generated development cases on
 a separate construction path and a typed draft contract, but construction
 diversity still requires same-schema review. It does not freeze or execute the
 required stress, graph, core, loop, lifecycle, result, and replay path. No
-full-design receipt or admission exists. The D6 decision therefore
+full-design receipt or admission exists. The internal structural-rebinding
+proposal encodes only how a D7 successor may fulfill cells/stress
+structurally; it does not satisfy the historical exact D6 v0.1 admission. The
+D6 decision therefore
 seals the only admissible entrance without pretending that an independent
 confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
@@ -784,23 +809,30 @@ to become a general library.
   the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
   until a separately implemented family can satisfy that contract;
   same-family seed changes cannot do so.
-- **Draft — D7 confirmation foundation:** the spectral-moment slice now has
-  four development cases and a typed draft reconstructed from the
-  authoritative D6 loader receipt. It has no frozen confirmation seed or
-  execution inventory, completed diversity review, full-design receipt,
-  admitted family, runner, result, or replay authority.
-- **Implemented, not frozen — seed-free D7 execution topology:** the full D6
-  parent protocol is strictly reconstructed; explicit boundary, state-warp,
-  and observation-perturbation translations produce an exact seed-slot
-  inventory of 64 primary, 192 core, and 1,152 loop cells. The full
+- **Draft v0.2 — D7 confirmation foundation:** the spectral-moment slice has
+  four development cases and a typed, unpersisted draft reconstructed from the
+  authoritative D6 loader receipt. Its canonical parent identity is
+  commit-stable because validation-time current-loader HEAD/digest fields are
+  excluded, while typed receipt validation remains mandatory. It has no frozen
+  confirmation seed or execution inventory, completed diversity review,
+  source closure, full-design receipt, admitted family, runner, result, or
+  replay authority.
+- **Implemented internal v0.2, not frozen — seed-free D7 execution topology:**
+  the full D6 parent protocol is strictly reconstructed; explicit boundary,
+  state-warp, and observation-perturbation translations produce an exact
+  seed-slot inventory of 64 primary, 192 core, and 1,152 loop cells. The full
   graph/field/blind-core/continuous-loop path passes development-only
   conformance on permanently excluded seeds. It produces no D7 gate, result,
   or terminal.
-- **Discovered blocker — D6 v0.1 identity-bearing manifests:** the inherited
-  cells and stress-strata hashes include selection seeds and seed-bearing IDs.
-  The D7 structural projection is equal, but exact parent hash satisfaction is
-  deliberately false. A reviewed versioned rebinding/successor admission
-  contract is required; the implementation does not silently reinterpret D6.
+- **Encoded internal v0.1 proposal, not reviewed or published — successor structural
+  rebinding:** the inherited D6 v0.1 cells and stress-strata hashes include
+  selection seeds and seed-bearing IDs. The typed successor rule carries graph
+  axes and thresholds forward exactly and requires cells/stress
+  structural-projection equality under distinct successor identities. A strict
+  reader reconstructs the complete record. The rule remains ineffective for
+  admission until a later reviewed artifact and receipt. This does not publish an artifact,
+  admit the family, or satisfy the historical exact hashes; D6 v0.1 bytes
+  remain unchanged.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -811,11 +843,16 @@ to become a general library.
   complete D7 family descriptor, admission, protocol, source closure, and
   lifecycle must already be frozen under a committed receipt. See
   [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
-- **Next — resolve admission, then complete and freeze D7:** review and publish
-  the versioned D6-to-D7 structural rebinding, construction-diversity/source
-  closure, D7-specific implementation-registry and aggregation application,
-  lifecycle, result/failure, terminal, and replay surfaces. Only then may a
-  committed full-design receipt admit an attempt.
+- **Next — C1 closed source set, then C2 receipt:** publish and strictly reload
+  the stable seed-free design and reviewed successor-rebinding artifacts; commit
+  them with reviewed construction diversity, the complete executable source
+  set, and D7-specific registry/aggregation bytes in C1, without a
+  self-referential closure receipt. Then verify C1 from a clean descendant and
+  commit a choice-free closure receipt as C2. Only after that boundary may later work add official seeds and
+  lifecycle. Terminal design will keep the immutable replay target separate
+  from the attempt envelope instead of creating a placeholder result. Artifact
+  publication, admission, freeze, seeds, lifecycle, result/failure, terminal,
+  D7, and D8 all remain incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
@@ -883,8 +920,11 @@ immediate next plan live in the single
   source/evidence binding, charge-blind core and continuous sampled-loop
   kernels, crossed aggregation, exclusive attempt chronology, terminal
   persistence, and the scope-limited D6 independent-family admission
-  boundary. Importing it does not run a selection or confirmation, advance
-  global D6-D8, or authorize subject access;
+  boundary. Deep internal modules also hold the unpersisted D7 `v0.2` drafts
+  and `v0.1` successor structural-rebinding type; these are not package
+  exports, artifacts, admission, or execution surfaces. Importing the
+  namespace does not run a selection or confirmation, advance global D6-D8, or
+  authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
 - `neighbors/` retrieves row-index pairs from unprojected states only; it never
