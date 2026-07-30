@@ -912,31 +912,35 @@ The spectral-moment lane now has a seed-free execution design that:
   without supplying an oracle-truth record to those kernels or producing a
   gate/result.
 
-The `D7ParentD6Binding`, confirmation foundation, and execution design are now
-internal, unpersisted `v0.2` drafts. Their canonical identity omits the
+The `D7ParentD6Binding`, confirmation foundation, and execution design began as
+internal `v0.2` drafts. Their canonical identity omits the
 validation-time current-loader HEAD and source-binding digest so unchanged
 historical inputs remain stable across clean descendant commits. Their
 builders still require and validate the authoritative typed D6 loader receipt;
 the loader surface remains a validation-time prerequisite rather than
-canonical D7 identity.
+canonical D7 identity. C1 now embeds the stable seed-free projection of that
+design in one canonical candidate.
 
 That is implementation conformance, not D7 evidence. Concrete confirmation
-seeds, reviewed construction-diversity and source closure, a published stable
-design artifact, D7-specific registry and aggregation application, family
+seeds, declared Git source-set closure, repository-review attestation, family
 admission, freeze, lifecycle, result/failure types, terminal publication, and
-isolated replay remain absent. The internal rebinding proposal does not change
-those states. Accordingly, no open-mapping or label-only D7 admission function
-exists. See
+isolated replay remain absent. C1 records a declared static-bounded
+construction review, stable design, D7 registry/aggregation application,
+successor review contract, and complete declared Python source set, but none
+of those records changes the absent states. Runtime and transitive dependency
+closure are also unattested and lie outside C2's scope. Accordingly, no
+open-mapping or label-only D7 admission function exists. See
 [`D7_CONFIRMATION_EXECUTION_DESIGN.md`](D7_CONFIRMATION_EXECUTION_DESIGN.md).
 
 The next ordering is:
 
-1. commit C1 containing the strictly reloadable stable design and reviewed
-   successor-rebinding artifacts, reviewed construction-diversity comparison,
-   complete executable source set, and D7 registry/aggregation application,
-   but no self-referential source-closure receipt;
-2. from a clean descendant, verify C1 ancestry and exact tracked blobs and
-   commit only the choice-free C2 closure receipt; and
+1. merge the recorded C1 candidate, which declares the source set but embeds
+   neither its future commit nor declared Git source-set closure;
+2. from the exact clean post-merge C1 commit, verify ancestry and exact tracked
+   blobs and commit only the choice-free C2 declared Git source-set-closure
+   receipt; C2 does not execute historical code or attest Python/native
+   runtime, transitive dependencies, in-process identity, or current
+   compatibility; and
 3. only after C2, define official seeds and the reviewed lifecycle.
 
 The later terminal schema must keep the immutable replay target separate from
@@ -980,11 +984,13 @@ unit contract, work packages, gap rows, and full research sequence live in
 `docs/POST_D6_ANALYSIS_AND_D7_GAPS.md`.
 
 There is no independent operator or information barrier. Therefore the
-complete D7 family descriptor, admission, protocol, source closure,
-graph/case/stress and aggregation bytes, lifecycle, launch intent, exclusive
-attempt, and absent result namespace must be frozen under a committed receipt
-before the descriptive runner may execute. Any later D7 design change requires
-a new version and review; the prior admission cannot be carried forward.
+complete D7 family descriptor, admission, protocol, declared Git source-set
+closure, graph/case/stress and aggregation bytes, lifecycle, launch intent,
+exclusive attempt, and absent result namespace must be frozen under a
+committed receipt before the descriptive runner may execute. Runtime and
+transitive dependency closure remain separate obligations. Any later D7
+design change requires a new version and review; the prior admission cannot be
+carried forward.
 
 Any required failure stops. Any required insufficient result blocks. A
 complete applicable D0-D8 chain is necessary before later subject-protocol
@@ -1023,10 +1029,13 @@ validator are now implemented under this allowance. Their exact boundary and
 remaining non-claims are recorded in
 [P0 Hypothesis and Artifact Contracts](P0_HYPOTHESIS_AND_ARTIFACT_CONTRACTS.md).
 
-The commit-stable internal D7 `v0.2` draft identity and internal `v0.1`
-successor structural-rebinding proposal are also preparation-only contracts. They
-publish no artifact, select no seed, admit no family, verify no source closure,
-and create no lifecycle, terminal, D7, or D8 evidence.
+The commit-stable internal D7 `v0.2` draft identity and historical `v0.1`
+successor structural-rebinding proposal remain preparation-only contracts.
+The separately recorded C1 candidate preserves them and adds a review contract,
+declared source set, registry, and aggregation application. It selects no seed,
+admits no family, verifies no declared Git source-set closure, and creates no
+lifecycle, terminal, D7, or D8 evidence. Runtime and transitive dependency
+closure remain unattested.
 
 A separate public-example engineering lane may validate the already
 implemented model observation apparatus. It requires a pre-execution protocol
@@ -1105,8 +1114,9 @@ relabel policy separately. Once a hidden outcome is opened, correction
 requires a new protocol identity and unopened family.
 
 For D0-D5 selection, the official process first verifies the seed-free
-executable source closure, publishes and strictly reloads a canonical
-no-overwrite readiness artifact, and only then invokes its seed supplier. The
+executable source-set closure, which does not attest runtime or transitive
+dependency closure, publishes and strictly reloads a canonical no-overwrite
+readiness artifact, and only then invokes its seed supplier. The
 resulting exact canonical protocol and unopened freeze bind that earlier local
 artifact's path and digests and are committed as F. This is
 `official-process-attested` ordering, not cryptographic or
@@ -1138,9 +1148,10 @@ If the terminal artifact is subsequently committed, publication/reload does
 not substitute the new HEAD for the source receipt captured during execution.
 The successor verifier proves
 `engine.commit -> stored execution HEAD -> current HEAD`, validates the current
-clean source closure, checks every bound module, official executable, registry,
-and referent blob at the execution HEAD, reconstructs that exact historical
-receipt, and calls the existing summary-to-receipt exact-digest verifier. Thus
+clean executable source-set closure, checks every bound module, official
+executable, registry, and referent blob at the execution HEAD, reconstructs
+that exact historical receipt, and calls the existing summary-to-receipt
+exact-digest verifier. Thus
 an artifact-only descendant is admissible, while a sibling history, mismatched
 execution blob, or current path/content drift fails closed.
 

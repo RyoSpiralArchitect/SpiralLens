@@ -126,15 +126,18 @@ development-path conformance are necessary but do not prove construction,
 epistemic, or implementation independence. This foundation freezes no
 confirmation seed or execution inventory, persists no full-design receipt,
 admits no family, exposes no D7 runner or terminal result, and does not advance
-D0-D8. The internal, unpersisted parent binding and foundation are now `v0.2`.
-They omit the validation-time current-loader HEAD and source-binding digest
-from canonical identity while still requiring and validating the authoritative
-typed loader receipt. Unchanged historical inputs therefore produce
-commit-stable draft bytes; no persisted `v0.1` draft is migrated.
+D0-D8. The parent binding and foundation are now `v0.2`. They remain
+unpersisted as standalone/public artifacts, while C1 preserves their exact
+canonical historical bodies inside its Level-0 wrapper. They omit the
+validation-time current-loader HEAD and source-binding digest from canonical
+identity while still requiring and validating the authoritative typed loader
+receipt. Unchanged historical inputs therefore produce commit-stable draft
+bytes; no standalone `v0.1` artifact is migrated.
 
-The internal, unpersisted `v0.2` seed-free D7 execution draft reconstructs the
-full authoritative D6 parent protocol, binds explicit stress translations, and
-closes the exact
+The internal `v0.2` seed-free D7 execution draft remains unpersisted as a
+standalone/public artifact; C1 preserves its exact canonical historical body
+inside the same Level-0 wrapper. It reconstructs the full authoritative D6
+parent protocol, binds explicit stress translations, and closes the exact
 `64` primary / `192` core / `1,152` loop repeated-measures topology. A
 development-only path runs the exact 3A-by-3B graph, core, and continuous-loop
 pipeline using permanently excluded seeds and stops at sealed predictions
@@ -243,7 +246,8 @@ core-loop join.
 Selection chronology is a separate fail-closed contract:
 
 1. commit the engine, including the three official executable scripts;
-2. verify the seed-free source closure, publish and strictly reload a
+2. verify the seed-free declared Git source-set closure (which does not attest
+   runtime or transitive dependency closure), publish and strictly reload a
    no-overwrite pre-seed readiness artifact, and only then invoke the official
    seed supplier;
 3. publish an unopened protocol and freeze binding the earlier readiness
@@ -372,17 +376,28 @@ checkouts exercise the portable loader contracts but skip that local archival
 evidence instead of pretending to relocate it.
 
 D7 and D8 remain explicitly `not_run`. New seeds from the Cartesian closed
-form are replication, not independent-family confirmation. The current
-spectral-moment draft foundation supplies four generated development cases on
-a separate construction path and a typed draft contract, but construction
-diversity still requires same-schema review. It does not freeze or execute the
-required stress, graph, core, loop, lifecycle, result, and replay path. No
-full-design receipt or admission exists. The internal structural-rebinding
-proposal encodes only how a D7 successor may fulfill cells/stress
-structurally; it does not satisfy the historical exact D6 v0.1 admission. The
-D6 decision therefore
-seals the only admissible entrance without pretending that an independent
-confirmation or replay has occurred. Global
+form are replication, not independent-family confirmation. The tracked C1
+artifact at
+[`experiments/qualification/d7_spectral_moment_confirmation_v0_1/c1-seed-free-source-set.json`](experiments/qualification/d7_spectral_moment_confirmation_v0_1/c1-seed-free-source-set.json)
+is one canonical `spirallens.d7-c1-seed-free-source-set.v0.1` candidate with
+claim ceiling `level_0`; its canonical SHA-256 is
+`b7b3b416738c9d02ed76764e35bb131f6bcc6df2948bff200b51df83aee33a5d`.
+It binds the stable seed-free design, a declared
+construction-diversity review limited to static direct source/dependency
+evidence, the D7 implementation registry, the seed-slot aggregation
+application, a successor-rebinding review contract that preserves the
+historical proposal unchanged, and the declared C1 source-set manifest.
+Dynamic/transitive and epistemic independence remain unproved.
+
+C1 embeds neither its post-merge commit identity nor repository-review
+attestation nor a C2 receipt; `source_closure_verified=false`. The choice-free
+C2 issuer/loader is included in the declared source set, but no C2 receipt
+exists in this change. Family admission, full-design freeze, official seeds,
+lifecycle, launch/execution, result/failure, and terminal publication remain
+absent. The historical D6 decision and exact-admission status remain
+unchanged: the successor rule does not satisfy the historical exact D6 v0.1
+hashes. The D6 decision therefore seals the only admissible entrance without
+pretending that an independent confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
 No label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those execution surfaces remain absent until typed
@@ -809,14 +824,17 @@ to become a general library.
   the authoritative bundle above. D7 and D8 remain machine-readable `not_run`
   until a separately implemented family can satisfy that contract;
   same-family seed changes cannot do so.
-- **Draft v0.2 — D7 confirmation foundation:** the spectral-moment slice has
-  four development cases and a typed, unpersisted draft reconstructed from the
-  authoritative D6 loader receipt. Its canonical parent identity is
+- **Recorded C1 candidate — D7 confirmation foundation:** the
+  spectral-moment slice has four development cases and a typed seed-free design
+  reconstructed from the authoritative D6 loader receipt. Its canonical parent identity is
   commit-stable because validation-time current-loader HEAD/digest fields are
-  excluded, while typed receipt validation remains mandatory. It has no frozen
-  confirmation seed or execution inventory, completed diversity review,
-  source closure, full-design receipt, admitted family, runner, result, or
-  replay authority.
+  excluded, while typed receipt validation remains mandatory. C1 binds the
+  complete seed-slot inventory, a static-bounded declared diversity review,
+  registry/aggregation bytes, successor-rebinding review contract, and source
+  manifest. It has no declared Git source-set closure, runtime/transitive
+  dependency closure, repository-review attestation, frozen
+  confirmation seed, full-design receipt, admitted family, lifecycle, runner,
+  result, or replay authority.
 - **Implemented internal v0.2, not frozen — seed-free D7 execution topology:**
   the full D6 parent protocol is strictly reconstructed; explicit boundary,
   state-warp, and observation-perturbation translations produce an exact
@@ -827,15 +845,17 @@ to become a general library.
   prediction semantics. An explicitly supplied seed alone attests no freeze,
   authorization, or chronology, and the kernel produces no D7 gate, result, or
   terminal.
-- **Encoded internal v0.1 proposal, not reviewed or published — successor structural
-  rebinding:** the inherited D6 v0.1 cells and stress-strata hashes include
+- **Encoded historical v0.1 proposal plus C1 review contract — successor
+  structural rebinding:** the inherited D6 v0.1 cells and stress-strata hashes include
   selection seeds and seed-bearing IDs. The typed successor rule carries graph
   axes and thresholds forward exactly and requires cells/stress
   structural-projection equality under distinct successor identities. A strict
-  reader reconstructs the complete record. The rule remains ineffective for
-  admission until a later reviewed artifact and receipt. This does not publish an artifact,
-  admit the family, or satisfy the historical exact hashes; D6 v0.1 bytes
-  remain unchanged.
+  reader reconstructs the unchanged historical proposal. C1 now encodes the
+  exact successor review contract but embeds no repository-review attestation.
+  The rule remains ineffective for admission until later declared Git
+  source-set closure, review, and typed admission. That closure will not attest
+  runtime or transitive dependencies. It does not satisfy the historical exact hashes;
+  D6 v0.1 bytes remain unchanged.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -843,19 +863,22 @@ to become a general library.
   artifact runs an analysis, names a candidate family, computes a progress
   score, or grants execution authority. The descriptive plan records that its
   planning used opened outcome values; before its runner may execute, the
-  complete D7 family descriptor, admission, protocol, source closure, and
-  lifecycle must already be frozen under a committed receipt. See
+  complete D7 family descriptor, admission, protocol, declared Git source-set
+  closure, and lifecycle must already be frozen under a committed receipt.
+  Runtime/transitive closure remains a separate, unattested obligation. See
   [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
-- **Next — C1 closed source set, then C2 receipt:** publish and strictly reload
-  the stable seed-free design and reviewed successor-rebinding artifacts; commit
-  them with reviewed construction diversity, the complete executable source
-  set, and D7-specific registry/aggregation bytes in C1, without a
-  self-referential closure receipt. Then verify C1 from a clean descendant and
-  commit a choice-free closure receipt as C2. Only after that boundary may later work add official seeds and
-  lifecycle. Terminal design will keep the immutable replay target separate
+- **Recorded — C1 declared source set; next — C2 receipt:** C1 is the atomic
+  seed-free candidate described above, not declared Git source-set closure.
+  The next change starts only from the exact clean post-merge C1 commit,
+  re-enumerates and verifies every declared Git-tree blob, and commits only the
+  choice-free C2 receipt. C2 will close only that declared Git source set; it
+  will not execute historical code or attest Python/native runtime,
+  transitive-dependency, in-process identity, or current compatibility.
+  Only after that boundary may later work add official seeds and lifecycle.
+  Terminal design will keep the immutable replay target separate
   from the attempt envelope instead of creating a placeholder result. Artifact
-  publication, admission, freeze, seeds, lifecycle, result/failure, terminal,
-  D7, and D8 all remain incomplete now.
+  closure, admission, freeze, seeds, lifecycle, result/failure, terminal, D7,
+  and D8 all remain incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
@@ -923,11 +946,12 @@ immediate next plan live in the single
   source/evidence binding, charge-blind core and continuous sampled-loop
   kernels, crossed aggregation, exclusive attempt chronology, terminal
   persistence, and the scope-limited D6 independent-family admission
-  boundary. Deep internal modules also hold the unpersisted D7 `v0.2` drafts
-  and `v0.1` successor structural-rebinding type; these are not package
-  exports, artifacts, admission, or execution surfaces. Importing the
-  namespace does not run a selection or confirmation, advance global D6-D8, or
-  authorize subject access;
+  boundary. Deep internal modules now also contain the Level-0 C1 source-set
+  candidate and the choice-free future C2 issuer/loader. They are not exported
+  from `spirallens.qualification` or the package root. No C2 receipt,
+  admission, seed, execution, result, or promotion surface is published.
+  Importing the namespace does not run a selection or confirmation, advance
+  global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
   and MLP paths.
 - `neighbors/` retrieves row-index pairs from unprojected states only; it never

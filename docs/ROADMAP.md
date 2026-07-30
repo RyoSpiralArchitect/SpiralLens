@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding contracts | NumPy/PyYAML plus project contract foundations; the D7 v0.2 drafts, oracle-free seed-slot prediction kernel, and v0.1 successor rule are internal surfaces with no freeze, authorization, admission, source-closure, lifecycle, result, terminal, or D7/D8 authority |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding contracts | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set, while C2 declared Git source-set closure, freeze, authorization, admission, lifecycle, result, terminal, and D7/D8 authority remain absent; C2 will not attest runtime or transitive dependency closure |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -799,10 +799,12 @@ below:
     cannot read the terminal values, name a candidate, or compute progress;
 12. land the spectral-moment draft foundation: exact four-case development
     generation plus a closed typed draft reconstructed only from the
-    authoritative committed-D6 loader receipt. Its current internal,
-    unpersisted `v0.2` identity excludes validation-time current-loader
-    HEAD/digest fields while retaining typed receipt validation, so unchanged
-    inputs are commit-stable. This is not a D7 full-design freeze: it does not
+    authoritative committed-D6 loader receipt. Its current internal `v0.2`
+    identity, now preserved as a canonical historical body inside C1, excludes
+    validation-time current-loader HEAD/digest fields while retaining typed
+    receipt validation, so unchanged inputs are commit-stable. The draft
+    remains unpersisted as a standalone/public artifact. This is not a D7
+    full-design freeze: it does not
     complete same-schema construction-diversity review, selects no
     confirmation seed or execution inventory, persists no receipt, admits no
     family, exposes no runner/result, and leaves D7/D8 `not_run`;
@@ -819,20 +821,27 @@ below:
 14. encode a proposed successor-only fulfillment rule without rewriting D6:
     graph-axis and threshold bodies remain exact, while cells/stress receive
     distinct successor identities whose structural projections match —
-    implemented as an internal `v0.1` factory and strict reader. The proposal
-    remains unreviewed, unpublished, and ineffective for admission; the
-    historical D6 v0.1 exact admission remains false, and
-    family admission, source closure, registry/aggregation application,
-    freeze, seeds, lifecycle, terminal, D7, and D8 remain incomplete;
-15. create **C1**, the published and strictly reloadable stable seed-free
-    design and reviewed successor-rebinding artifacts plus reviewed
-    construction-diversity, the complete executable source set, and
-    D7-specific implementation-registry/aggregation application; commit those
-    exact bytes without a self-referential source receipt or official seed
-    supplier invocation;
-16. create **C2** only from a clean descendant of C1: verify ancestry and every
-    tracked C1 blob, issue a choice-free source-closure receipt, and commit only
-    that receipt;
+    implemented as an internal `v0.1` factory and strict reader. The historical
+    proposal remains unreviewed and ineffective for admission; C1 preserves it
+    unchanged and separately encodes the successor review contract without a
+    repository-review attestation. Historical D6 v0.1 exact admission remains
+    false;
+15. create **C1**, the atomic and strictly reloadable stable seed-free
+    candidate — completed at
+    `experiments/qualification/d7_spectral_moment_confirmation_v0_1/c1-seed-free-source-set.json`.
+    It binds the design, declared static-bounded construction-diversity review,
+    D7 implementation registry, aggregation application, successor review
+    contract, and complete declared `src/spirallens/**/*.py` plus
+    `pyproject.toml` source set. It deliberately embeds no future commit,
+    repository-review attestation, C2 receipt, official seed, admission, or
+    execution authority; declared source set is not declared Git source-set
+    closure;
+16. create **C2** as the unique receipt-only child of the exact clean
+    post-merge C1 commit: verify ancestry and every tracked C1 blob, issue a
+    choice-free declared Git source-set-closure receipt, and commit only that
+    receipt. C2 does not execute historical code or attest Python/native
+    runtime, transitive dependencies, in-process identity, or current
+    compatibility;
 17. only after C2, add official seeds and the lifecycle in a separately
     reviewed sequence. Define the immutable replay target independently from
     the launch/claim/start/outcome attempt envelope; do not create a placeholder
@@ -897,9 +906,11 @@ This library slice adds, without changing that generic behavior:
 - a second spectral-moment construction-family foundation whose exact four
   development cases keep estimator inputs and oracle truth separated; and
 - a closed D7 draft-contract type reconstructed from the authoritative D6
-  loader receipt, now superseded by an internal unpersisted `v0.2` whose
-  canonical identity is stable across validation-only descendant HEAD changes,
-  while deliberately admitting no family and issuing no full-design receipt;
+  loader receipt, now superseded by an internal `v0.2` whose exact canonical
+  historical body is preserved inside C1 while remaining unpersisted as a
+  standalone/public artifact; its identity is stable across validation-only
+  descendant HEAD changes, while deliberately admitting no family and issuing
+  no full-design receipt;
 - a strict full-parent design-body reconstruction and seed-slot execution
   inventory with exact 64/192/1,152 repeated-measures counts; and
 - a development-only path through all crossed graph/core/loop cells that
@@ -908,7 +919,14 @@ This library slice adds, without changing that generic behavior:
 - an internal `v0.1` D6-to-D7 successor-rule proposal that carries graph and threshold
   bodies exactly, rebinds cells/stress only through a matched structural
   projection, strictly reconstructs canonical bytes, and leaves both artifact
-  publication and D6/D7 admission false.
+  publication and D6/D7 admission false; and
+- one atomic six-component C1 candidate that preserves that proposal,
+  records the successor review contract, static-bounded declared diversity
+  review, seed-free design, registry/aggregation application, and declared
+  Python source set; plus the included but not-yet-invoked choice-free C2
+  verifier. C1 is Level-0 source declaration, not declared Git source-set
+  closure or admission. C2 can close only that declared Git source set, not
+  runtime or transitive dependencies.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -938,18 +956,20 @@ instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
 remain `not_run`. This lane cannot select any choice in steps 5-24 above and
 cannot be cited as subject preparation or evidence.
 
-The proposed successor-only fulfillment rule for the D6 v0.1 identity-bearing
-cells/stress manifests is now typed internally but not reviewed or published. The immediate
-deliverable is C1: strictly reloadable stable design and reviewed rebinding
-artifacts plus reviewed construction diversity, the complete executable source
-set, and D7-specific registry/aggregation application. C2 then verifies and
-receipts those exact committed bytes from a
-clean descendant. Lifecycle and terminal work follow C2, with the replay
-target kept separate from the attempt envelope and no placeholder result.
-The current four-case generator, seed-free execution design, rebinding record,
-and development prediction inventory are not a D7 full-design freeze, receipt,
-admission, or run. Historical D6 bytes remain unchanged and exact D6 v0.1
-admission remains false. Only a later locked D7 pass and isolated
+The successor-only fulfillment rule for the D6 v0.1 identity-bearing
+cells/stress manifests remains an unchanged historical proposal. C1 is now
+recorded as a source-only Level-0 candidate: it declares and hashes the
+complete `src/spirallens/**/*.py` plus `pyproject.toml` set, but deliberately
+cannot attest its future commit or declared Git source-set closure. The
+immediate deliverable is the choice-free C2 receipt as the unique receipt-only
+child of the exact clean post-merge C1 commit. It will not attest runtime or
+transitive dependencies. Official seeds and lifecycle remain strictly later.
+Lifecycle and terminal work then keep the
+replay target separate from the attempt envelope and create no placeholder
+result. The current four-case generator, C1 design, rebinding record, and
+development prediction inventory are not a D7 full-design freeze, admission,
+or run. Historical D6 bytes remain unchanged and exact D6 v0.1 admission
+remains false. Only a later locked D7 pass and isolated
 byte-identical D8 replay could support a scope-specific synthetic-qualified,
 replayable bundle.
 That still would not mean “find a semantic vortex” or authorize a subject run.
