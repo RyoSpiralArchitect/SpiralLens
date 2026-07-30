@@ -141,13 +141,14 @@ def validate_d7_authorization_path_absence_receipts(
         authorization.authorization_terminal_path_absence_receipt_sha256,
         "authorization terminal receipt digest",
     )
-    if (
-        output_namespace_receipt.subject_path == terminal_path_receipt.subject_path
-        or _physical_subject_key(output_namespace_receipt)
-        == _physical_subject_key(terminal_path_receipt)
+    if _paths_overlap(
+        output_namespace_receipt.subject_path,
+        terminal_path_receipt.subject_path,
+    ) or _physical_subject_key(output_namespace_receipt) == _physical_subject_key(
+        terminal_path_receipt
     ):
         raise QualificationContractError(
-            "authorization output namespace and terminal path must differ"
+            "authorization output namespace and terminal path must be non-nested"
         )
 
 
@@ -226,13 +227,14 @@ def validate_d7_pre_start_path_absence_receipts(
         start.pre_start_terminal_path_absence_receipt_sha256,
         "pre-start terminal receipt digest",
     )
-    if (
-        output_namespace_receipt.subject_path == terminal_path_receipt.subject_path
-        or _physical_subject_key(output_namespace_receipt)
-        == _physical_subject_key(terminal_path_receipt)
+    if _paths_overlap(
+        output_namespace_receipt.subject_path,
+        terminal_path_receipt.subject_path,
+    ) or _physical_subject_key(output_namespace_receipt) == _physical_subject_key(
+        terminal_path_receipt
     ):
         raise QualificationContractError(
-            "pre-start output namespace and terminal path must differ"
+            "pre-start output namespace and terminal path must be non-nested"
         )
 
 

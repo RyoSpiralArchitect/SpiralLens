@@ -924,7 +924,12 @@ design in one canonical candidate.
 That is implementation conformance, not D7 evidence. Committed C2 now verifies
 the declared historical Git source set, but concrete confirmation seeds,
 repository-review attestation, family admission, freeze, lifecycle,
-result/failure types, terminal publication, and isolated replay remain absent.
+authoritative target binding, terminal publication, and isolated replay remain
+absent. The deep-internal persistence-only slice can now record and reload a
+caller-supplied primary declaration-through-start record prefix as chained
+false-authority envelopes in a dedicated evidence-only lane without
+replacement. It grants neither execution nor scientific authority, cannot be
+promoted in place, and rejects isolated replay before writing any stage.
 C1 records a declared static-bounded construction review, stable design, D7
 registry/aggregation application, successor review contract, and complete
 declared Python source set; C2 changes only the historical Git source-set
@@ -942,8 +947,11 @@ The recorded ordering is:
    does not execute historical code or attest Python/native runtime,
    transitive dependencies, in-process identity, hostile-local-mutation
    resistance, or current compatibility; and
-3. next, type the replay target separately from the attempt envelope, then
-   define official seeds and the reviewed lifecycle.
+3. the replay target and attempt envelope are now typed separately, and the
+   local evidence lane preserves only
+   `caller_supplied_start_record_present_terminal_absent`; next add a distinct
+   verifier-minted authoritative lane before the atomic terminal transaction
+   and authenticated witness-verifier boundary, official seeds, or execution.
 
 The later terminal schema must keep the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

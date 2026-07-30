@@ -49,7 +49,7 @@ aggregation application, and source-set manifest in one canonical candidate.
 C1 cannot attest its own future commit, but the separate committed C2 now
 verifies its declared historical Git source set. Neither artifact implements
 repository-review attestation, D7 admission, full-design freeze, official seed
-supplier, lifecycle, result/failure schema, terminal writer, D8 replay, model
+supplier, authoritative lifecycle, terminal writer, D8 replay, model
 access, or scientific promotion. Runtime and transitive dependency closure
 are outside the C2 receipt's scope and remain unattested.
 
@@ -61,9 +61,19 @@ seed-bearing target independently of attempt-local state, and
 `D7AttemptEnvelopeContractSpec`
 (`spirallens.d7-attempt-envelope-contract-spec.v0.1`) defines one future
 attempt as append-only stage records. These are schema contracts, not
-instances. `LoadedD7ReplayAttemptContractFoundation` remains in memory, no
-writer is exposed, D7/D8 remain `not_run`, and every authority field remains
-false. Both specifications record `status=schema-defined-instance-absent`.
+instances. `LoadedD7ReplayAttemptContractFoundation` remains in memory. A
+separate deep-internal persistence-only writer can record and strictly reload
+caller-supplied primary declaration-through-start records only beneath an
+immutable false-authority store scope and predecessor-chained evidence
+envelopes. Raw lifecycle bytes are not top-level persisted stages, in-place
+promotion is forbidden, and isolated replay is rejected before persistence.
+The writer cannot create the replay target, authorize or observe execution,
+establish `started_unresolved`, or publish a terminal. D7/D8 remain `not_run`,
+and every authority field remains false. Both specifications record
+`status=schema-defined-instance-absent`.
+An interrupted pre-rename staging file blocks reload/retry and is never a
+lifecycle stage. Writers must first quiesce; only a confirmed orphan may enter
+separate offline recovery.
 
 ## 2. Exact repeated-measures inventory
 
@@ -290,9 +300,15 @@ aborted and retry remains unauthorized; absence of the target does not prove
 that the supplier was never invoked. No official seed supplier is invoked by
 the current implementation.
 
-Execution start must bind the exact target, authorization, and claim; match
+Authoritative execution start must bind the exact target, authorization, and claim; match
 the observed source/runtime identity to the target's frozen receipt; and
 recheck that both output namespace and terminal path remain absent. A
+local persistence-only implementation now performs that path-coordinate
+reobservation before exposing a caller-supplied start record as evidence, but
+it does not verify the target, execution identity, source/runtime authority,
+or execution. Its terminal-absence observation is
+`caller_supplied_start_record_present_terminal_absent`, not
+`started_unresolved`. A
 scientific result payload is attempt-independent but still binds the exact
 target, full inventory, aggregation, and result schema. The isolated-replay
 role is derived from an already persisted passed-primary terminal and
@@ -302,11 +318,11 @@ no-replace terminal transaction.
 
 The target, authorization, start, and scientific payload fields are related by
 an explicit closed table of canonical byte-equality constraints. Independently
-well-formed digests are insufficient. A visible execution start without a
-terminal is `started_unresolved`, not inferred aborted. It cannot be retried,
-replayed, or used for D8. It remains unresolved until an append-only
-finalization binds both the start and external abort evidence; a hard crash
-cannot publish an in-process failure record.
+well-formed digests are insufficient. A future verifier-established
+authoritative execution start without a terminal is `started_unresolved`, not
+inferred aborted. It cannot be retried, replayed, or used for D8. It remains
+unresolved until an append-only finalization binds both the start and external
+abort evidence; a hard crash cannot publish an in-process failure record.
 
 The future target itself remains exactly Level 0 and carries the closed
 all-false local authority vector. Admission, launch, result, and D8 authority
@@ -329,12 +345,16 @@ the actual immutable replay target and attempt envelope still do not exist.
 
 ## 9. Next blocking PR
 
-Committed C2 closes the declared historical Git source set, and the two
-canonical contract specifications now fix the target/envelope separation. The
-next PR must implement the concrete append-only lifecycle,
-result/failed-attempt, terminal-manifest, and terminal-consumption schemas and
-their choice-free joins without invoking the official seed supplier or issuing
-seed values.
+Committed C2 closes the declared historical Git source set, the two canonical
+contract specifications fix target/envelope separation, and the
+caller-supplied prefix evidence lane now carries a byte-level false-authority
+boundary. The next PR must add a separate verifier-minted authoritative
+capability/lane that reloads trusted target, launch-intent, source/runtime, and
+execution-identity authorities. It must not promote evidence envelopes in
+place. Only after that boundary is reviewed may a later PR add the atomic
+result/failed-attempt terminal transaction and authenticated external-witness
+finalization, without invoking the official seed supplier or issuing seed
+values.
 
 After that code and the eventual runner are final, a separate exact current
 execution-source/runtime closure and reviewed family admission remain required
