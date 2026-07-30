@@ -4,6 +4,35 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 C2 declared historical Git source-set closure
+
+### Recorded
+
+- The canonical
+  `spirallens.d7-c2-source-closure-receipt.v0.1` artifact has SHA-256
+  `d28a87bce5ec80c3388df1e21bccbc052f34beb637ff86f81f4f502d9fdd71a3`.
+- C2 is the unique receipt-only child
+  `2f4e715a951211af8ca0ca4f6b2f7473134bf92b` of exact post-merge C1
+  `e58a8169b41be688628ab7dda583e68088d3affc`. The normal merge commit is
+  `b79299a7c4ad47947fbeff536c1c609f0da0ccb2`.
+- The committed loader derives rather than accepts those commits and verifies
+  C1/C2 ancestry, the one-file receipt delta, the unchanged C1 bundle, and
+  every declared historical source blob's mode, object identity, size, and
+  digest.
+
+### Compatibility and non-claims
+
+- This is Level-0 declared historical Git source-set closure only. It does not
+  execute historical code or attest Python/native runtime, transitive
+  dependencies, in-process identity, hostile-local-mutation resistance, or
+  current-source compatibility.
+- C1 remains byte-identical and truthfully retains its own
+  `source_closure_verified=false`, because C1 cannot attest its future commit.
+  C2 supplies the separate later receipt; it does not rewrite C1.
+- Repository-review attestation, family admission, full-design freeze,
+  official seeds, lifecycle, execution, result/failure, terminal publication,
+  D7, and D8 remain absent, false, or `not_run`.
+
 ## 2026-07-30 — D7 C1 seed-free source-set candidate and C2 verifier foundation
 
 ### Added

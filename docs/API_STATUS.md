@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate and the pending C2 closure mechanism, without public export, admission, seed, execution, result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate and its committed receipt-only C2 declared-Git-source-set closure, without public export, admission, seed, execution, result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -85,19 +85,22 @@ candidate containing the stable seed-free design, declared static-bounded
 construction review, implementation registry, aggregation application,
 successor-rebinding review contract, and declared source manifest. Declared
 source set is not closure: C1 deliberately embeds no future commit,
-repository-review attestation, or C2 receipt, and
-`source_closure_verified=false`. The second contains the choice-free future C2
-issuer/loader; its code is in the C1 source set, but no C2 receipt exists in
-this change. Neither module is re-exported or compatibility-supported.
+repository-review attestation, or C2 receipt, and its own historical
+`source_closure_verified=false` remains unchanged. The second contains the
+choice-free C2 issuer/loader. Its separately committed receipt binds exact
+post-merge C1 `e58a8169b41be688628ab7dda583e68088d3affc`; the unique
+receipt-introduction commit is
+`2f4e715a951211af8ca0ca4f6b2f7473134bf92b`. Neither module is re-exported or
+compatibility-supported.
 
 Family admission, full-design freeze, official seeds, lifecycle, execution,
 result/failure, terminal publication, D7, and D8 remain absent or `not_run`.
-After a receipt-only C2 from the exact clean post-merge C1 commit, later
-terminal design must type the immutable replay target separately from the
-attempt envelope rather than exposing a placeholder result. C2 closes only
-the declared Git source set; it does not execute historical code or attest
-Python/native runtime, transitive dependencies, in-process identity, or
-current compatibility.
+Later terminal design must type the immutable replay target separately from
+the attempt envelope rather than exposing a placeholder result. Committed C2
+closes only the declared historical Git source set; it does not execute
+historical code or attest Python/native runtime, transitive dependencies,
+in-process identity, hostile-local-mutation resistance, or current
+compatibility.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

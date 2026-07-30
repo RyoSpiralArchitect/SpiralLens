@@ -3,7 +3,7 @@
 Status: `c1_seed_free_source_set_candidate_recorded`,
 `historical_structural_rebinding_proposal_preserved`,
 `successor_rebinding_review_contract_encoded`,
-`c2_declared_git_source_set_closure_pending`, `not_frozen`, `not_admitted`,
+`c2_declared_historical_git_source_set_closed`, `not_frozen`, `not_admitted`,
 `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
@@ -44,11 +44,12 @@ reloads the historical proposed successor-only cells/stress fulfillment rule.
 C1 now preserves that proposal and records a separate successor review
 contract, declared static-bounded construction review, D7 registry,
 aggregation application, and source-set manifest in one canonical candidate.
-It does not implement declared Git source-set closure, repository-review
-attestation, D7 admission, full-design freeze, official seed supplier,
-lifecycle, result/failure schema, terminal writer, D8 replay, model access, or
-scientific promotion. Runtime and transitive dependency closure are outside
-the C2 receipt's scope and remain unattested.
+C1 cannot attest its own future commit, but the separate committed C2 now
+verifies its declared historical Git source set. Neither artifact implements
+repository-review attestation, D7 admission, full-design freeze, official seed
+supplier, lifecycle, result/failure schema, terminal writer, D8 replay, model
+access, or scientific promotion. Runtime and transitive dependency closure
+are outside the C2 receipt's scope and remain unattested.
 
 ## 2. Exact repeated-measures inventory
 
@@ -203,11 +204,11 @@ that no oracle-truth record reaches the blind prediction kernels.
 
 The field estimator remains the current development implementation. C1 binds
 its D7-specific implementation registry and aggregation application and
-declares the Git source set, but that set is not yet closed or admitted. The
-separate post-merge C2 receipt can close only the declared Git-tree source set;
-it does not execute historical code or attest Python/native runtime,
-transitive-dependency, in-process identity, or current compatibility.
-Admission and freeze remain separate later contracts.
+declares the Git source set. The separate committed C2 receipt verifies that
+declared historical Git-tree source set; it does not execute historical code
+or attest Python/native runtime, transitive dependencies, in-process identity,
+hostile-local-mutation resistance, or current compatibility. Admission and
+freeze remain separate later contracts.
 
 The path stops before scoring and aggregation. It does not call D4/D5 collapse,
 create a `GateResult`, create a `QualificationResult`, or publish a terminal.
@@ -230,8 +231,8 @@ future unopened-seed confirmation.
 
 ## 8. Freeze chronology
 
-The official seed values remain absent. The first of two deliberately
-separated source-only commits is now recorded:
+The official seed values remain absent. Both deliberately separated
+source-only commits are now recorded:
 
 1. **C1 — stable design and declared source set, recorded:** one canonical
    candidate binds the seed-free design, historical proposal plus successor
@@ -239,11 +240,14 @@ separated source-only commits is now recorded:
    Python source manifest, D7 implementation registry, and aggregation
    application. C1 contains no self-referential commit or source-closure
    receipt; `source_closure_verified=false`.
-2. **C2 — declared Git source-set closure receipt, next:** from the exact clean
-   post-merge C1 commit, verify Git ancestry and exact tracked blobs, issue a
-   receipt that adds no design choices, and commit only that receipt. It does
-   not execute historical code or attest Python/native runtime, transitive
-   dependencies, in-process identity, or current compatibility.
+2. **C2 — declared historical Git source-set closure receipt, recorded:** the
+   choice-free receipt is the unique receipt-only child of exact clean
+   post-merge C1 `e58a8169b41be688628ab7dda583e68088d3affc`; its
+   introduction commit is `2f4e715a951211af8ca0ca4f6b2f7473134bf92b`.
+   The committed loader verifies Git ancestry and the exact declared C1 source
+   blobs. It does not execute historical code or attest Python/native runtime,
+   transitive dependencies, in-process identity, hostile-local-mutation
+   resistance, or current compatibility.
 
 Only after C2 may later lifecycle work invoke the seed supplier once, require
 exactly two unique, sorted, nonnegative signed-int64 seeds, reject every
@@ -257,22 +261,19 @@ Terminal design must not manufacture a placeholder result merely to reserve
 an output shape. A later PR must type the immutable replay target separately
 from the attempt envelope that carries launch authorization, exclusive claim,
 execution start, success/failure outcome, and terminal lineage. Neither object
-exists in this PR.
+exists yet.
 
 ## 9. Next blocking PR
 
-This change records the atomic C1 candidate and intentionally stops before
-declared Git source-set closure. Before any official seed supply, the next
-receipt-only change must use the exact clean post-merge C1 commit, verify its
-exact bundle and re-enumerated source Git tree, and establish the unique
-C1-to-C2 history without adding a design choice. This receipt will not attest
-runtime or transitive dependency closure.
+Committed C2 closes the declared historical Git source set. Before official
+seed supply, the next change must type the immutable replay target separately
+from the attempt envelope, then define the reviewed lifecycle and one-shot
+seed-supplier chronology without reading confirmation values.
 
-Lifecycle, official seeds, result/failure types, the separate replay-target and
-attempt-envelope schemas, no-overwrite publication, launch, exclusive attempt,
-execution start, terminal publication, and isolated replay follow only after
-that closure. They remain separate obligations rather than being represented
-by placeholders in the source-closure PR.
+Official seeds, result/failure types, no-overwrite publication, launch,
+exclusive attempt, execution start, terminal publication, and isolated replay
+remain separate obligations. None may be represented by a placeholder result
+or inferred from C2 source closure.
 
 Until those are complete, the canonical state remains:
 
@@ -280,11 +281,13 @@ Until those are complete, the canonical state remains:
 c1_seed_free_source_set_candidate_recorded
 historical_structural_rebinding_proposal_preserved
 successor_rebinding_review_contract_encoded
-c2_source_closure_pending
+c2_declared_historical_git_source_set_closed
 not_frozen
 not_admitted
 not_run
 d6_v0_1_exact_admission_unsatisfied
-source_closure_not_verified
+historical_git_source_set_closure_verified
+runtime_and_transitive_closure_unattested
+current_source_compatibility_not_verified
 lifecycle_and_terminal_not_implemented
 ```

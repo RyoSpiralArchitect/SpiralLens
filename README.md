@@ -390,14 +390,25 @@ historical proposal unchanged, and the declared C1 source-set manifest.
 Dynamic/transitive and epistemic independence remain unproved.
 
 C1 embeds neither its post-merge commit identity nor repository-review
-attestation nor a C2 receipt; `source_closure_verified=false`. The choice-free
-C2 issuer/loader is included in the declared source set, but no C2 receipt
-exists in this change. Family admission, full-design freeze, official seeds,
-lifecycle, launch/execution, result/failure, and terminal publication remain
-absent. The historical D6 decision and exact-admission status remain
-unchanged: the successor rule does not satisfy the historical exact D6 v0.1
-hashes. The D6 decision therefore seals the only admissible entrance without
-pretending that an independent confirmation or replay has occurred. Global
+attestation nor a C2 receipt; its own `source_closure_verified=false` remains a
+historical C1 fact. The separate tracked C2 receipt at
+[`experiments/qualification/d7_spectral_moment_confirmation_v0_1/c2-source-closure-receipt.json`](experiments/qualification/d7_spectral_moment_confirmation_v0_1/c2-source-closure-receipt.json)
+has canonical SHA-256
+`d28a87bce5ec80c3388df1e21bccbc052f34beb637ff86f81f4f502d9fdd71a3`.
+It binds exact post-merge C1 commit
+`e58a8169b41be688628ab7dda583e68088d3affc`; its unique receipt-only
+introduction commit is `2f4e715a951211af8ca0ca4f6b2f7473134bf92b`.
+This records declared historical Git source-set closure only. It does not
+execute historical code or attest runtime/transitive dependencies,
+in-process identity, hostile-local-mutation resistance, or current-source
+compatibility.
+
+Family admission, full-design freeze, official seeds, lifecycle,
+launch/execution, result/failure, and terminal publication remain absent. The
+historical D6 decision and exact-admission status remain unchanged: the
+successor rule does not satisfy the historical exact D6 v0.1 hashes. The D6
+decision therefore seals the only admissible entrance without pretending that
+an independent confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
 No label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those execution surfaces remain absent until typed
@@ -448,6 +459,10 @@ The full test suite includes the offline Pythia adapter and Faiss backend:
 python -m pip install -e '.[ann,models,dev]'
 pytest
 ```
+
+Recorded-lineage tests fail closed and require the C1/C2 ancestry they verify
+to be present locally. A shallow clone that omits any required lineage commit
+must deepen or fetch that ancestry before running the full suite.
 
 ## First end-to-end run
 
@@ -831,10 +846,12 @@ to become a general library.
   excluded, while typed receipt validation remains mandatory. C1 binds the
   complete seed-slot inventory, a static-bounded declared diversity review,
   registry/aggregation bytes, successor-rebinding review contract, and source
-  manifest. It has no declared Git source-set closure, runtime/transitive
-  dependency closure, repository-review attestation, frozen
-  confirmation seed, full-design receipt, admitted family, lifecycle, runner,
-  result, or replay authority.
+  manifest. C1 cannot attest its future commit and therefore contains no
+  source-closure receipt itself. The separate committed C2 now verifies its
+  declared historical Git source set, but does not attest runtime/transitive
+  dependency closure, repository review, current-source compatibility, a
+  frozen confirmation seed, full-design receipt, admitted family, lifecycle,
+  runner, result, or replay authority.
 - **Implemented internal v0.2, not frozen — seed-free D7 execution topology:**
   the full D6 parent protocol is strictly reconstructed; explicit boundary,
   state-warp, and observation-perturbation translations produce an exact
@@ -852,10 +869,10 @@ to become a general library.
   structural-projection equality under distinct successor identities. A strict
   reader reconstructs the unchanged historical proposal. C1 now encodes the
   exact successor review contract but embeds no repository-review attestation.
-  The rule remains ineffective for admission until later declared Git
-  source-set closure, review, and typed admission. That closure will not attest
-  runtime or transitive dependencies. It does not satisfy the historical exact hashes;
-  D6 v0.1 bytes remain unchanged.
+  The committed C2 now verifies declared historical Git source-set closure
+  only. The rule remains ineffective until repository review and typed
+  admission; C2 does not attest runtime or transitive dependencies. It does
+  not satisfy the historical exact hashes; D6 v0.1 bytes remain unchanged.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -867,18 +884,17 @@ to become a general library.
   closure, and lifecycle must already be frozen under a committed receipt.
   Runtime/transitive closure remains a separate, unattested obligation. See
   [Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan](docs/POST_D6_ANALYSIS_AND_D7_GAPS.md).
-- **Recorded — C1 declared source set; next — C2 receipt:** C1 is the atomic
-  seed-free candidate described above, not declared Git source-set closure.
-  The next change starts only from the exact clean post-merge C1 commit,
-  re-enumerates and verifies every declared Git-tree blob, and commits only the
-  choice-free C2 receipt. C2 will close only that declared Git source set; it
-  will not execute historical code or attest Python/native runtime,
-  transitive-dependency, in-process identity, or current compatibility.
-  Only after that boundary may later work add official seeds and lifecycle.
-  Terminal design will keep the immutable replay target separate
-  from the attempt envelope instead of creating a placeholder result. Artifact
-  closure, admission, freeze, seeds, lifecycle, result/failure, terminal, D7,
-  and D8 all remain incomplete now.
+- **Recorded — receipt-only C2 declared Git source-set closure:** C2 is the
+  unique receipt-only child of exact clean post-merge C1 and verifies every
+  declared historical Git-tree blob without adding a design choice. Its
+  committed loader succeeds through the merge lineage. It does not execute
+  historical code or attest Python/native runtime, transitive dependencies,
+  in-process identity, hostile-local-mutation resistance, or current
+  compatibility. The next change may define official seeds and lifecycle only
+  after separately typing the immutable replay target and attempt envelope;
+  no placeholder result may stand in for either. Full-design closure,
+  admission, freeze, seeds, lifecycle, result/failure, terminal, D7, and D8 all
+  remain incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
@@ -947,9 +963,10 @@ immediate next plan live in the single
   kernels, crossed aggregation, exclusive attempt chronology, terminal
   persistence, and the scope-limited D6 independent-family admission
   boundary. Deep internal modules now also contain the Level-0 C1 source-set
-  candidate and the choice-free future C2 issuer/loader. They are not exported
-  from `spirallens.qualification` or the package root. No C2 receipt,
-  admission, seed, execution, result, or promotion surface is published.
+  candidate, the choice-free C2 issuer/loader, and its committed
+  declared-Git-source-set receipt. They are not exported from
+  `spirallens.qualification` or the package root. No admission, seed,
+  execution, result, or promotion surface is published.
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
