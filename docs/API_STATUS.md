@@ -120,7 +120,12 @@ isolated-replay derivation requires the complete, internally consistent,
 consumed primary chain and a passed primary result; a caller-supplied role
 label or disconnected digest set is insufficient. The generic scientific
 attempt validator accepts primary attempts only; the combined isolated-replay
-validator requires both that primary chain and the complete replay chain.
+validators require both that primary chain and the complete scientific or
+failed replay chain. They require the same store identity, because alternate
+store global one-shot behavior is unproved. Across primary and replay, the
+five execution/intent/key/namespace/path identifiers and four
+authorization/pre-start absence-receipt digests form disjoint sets. Both deep
+modules declare an empty `__all__`; direct named deep imports remain internal.
 Neither module loads a target, verifies external witness bytes, touches a
 namespace, writes a record, publishes a terminal, or grants authority.
 

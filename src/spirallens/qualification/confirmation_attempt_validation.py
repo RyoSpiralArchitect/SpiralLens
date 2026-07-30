@@ -12,6 +12,8 @@ from typing import Protocol
 from . import confirmation_attempt_records as r
 from .common import QualificationContractError
 
+__all__: tuple[str, ...] = ()
+
 _EXACT_RECORD_TYPES = {
     "declaration": r.D7AttemptDeclarationRecord,
     "authorization": r.D7LaunchAuthorizationRecord,
@@ -520,16 +522,12 @@ def validate_d7_isolated_replay_role_evidence(
         _same(expected, getattr(evidence, name), name)
 
 
-def validate_d7_isolated_replay_attempt_chain(
+def _validate_d7_isolated_replay_prefix(
     *,
     declaration: r.D7AttemptDeclarationRecord,
     authorization: r.D7LaunchAuthorizationRecord,
     claim: r.D7AttemptClaimRecord,
     start: r.D7ExecutionStartRecord,
-    payload: r.D7ScientificResultPayload,
-    result: r.D7ScientificResultRecord,
-    manifest: r.D7TerminalManifestRecord,
-    consumption: r.D7TerminalConsumptionRecord,
     primary_declaration: r.D7AttemptDeclarationRecord,
     primary_authorization: r.D7LaunchAuthorizationRecord,
     primary_claim: r.D7AttemptClaimRecord,
@@ -560,6 +558,113 @@ def validate_d7_isolated_replay_attempt_chain(
         claim=claim,
         start=start,
     )
+    _same(
+        primary_declaration.store_identity_sha256,
+        declaration.store_identity_sha256,
+        "isolated replay store identity",
+    )
+    for label, primary_value, replay_value in (
+        (
+            "execution identity",
+            primary_declaration.execution_identity_receipt_sha256,
+            declaration.execution_identity_receipt_sha256,
+        ),
+        (
+            "launch intent",
+            primary_declaration.launch_intent_sha256,
+            declaration.launch_intent_sha256,
+        ),
+        (
+            "attempt key",
+            primary_declaration.attempt_key_sha256,
+            declaration.attempt_key_sha256,
+        ),
+        (
+            "output namespace",
+            primary_declaration.output_namespace_identity_sha256,
+            declaration.output_namespace_identity_sha256,
+        ),
+        (
+            "terminal path",
+            primary_declaration.terminal_path_identity_sha256,
+            declaration.terminal_path_identity_sha256,
+        ),
+    ):
+        if primary_value == replay_value:
+            raise QualificationContractError(
+                f"isolated replay {label} must differ from primary"
+            )
+    primary_absence_receipts = {
+        primary_authorization.authorization_output_namespace_absence_receipt_sha256,
+        primary_authorization.authorization_terminal_path_absence_receipt_sha256,
+        primary_start.pre_start_output_namespace_absence_receipt_sha256,
+        primary_start.pre_start_terminal_path_absence_receipt_sha256,
+    }
+    replay_absence_receipts = {
+        authorization.authorization_output_namespace_absence_receipt_sha256,
+        authorization.authorization_terminal_path_absence_receipt_sha256,
+        start.pre_start_output_namespace_absence_receipt_sha256,
+        start.pre_start_terminal_path_absence_receipt_sha256,
+    }
+    if primary_absence_receipts & replay_absence_receipts:
+        raise QualificationContractError(
+            "isolated replay absence receipts must be disjoint from primary"
+        )
+    primary_identifiers = {
+        primary_declaration.execution_identity_receipt_sha256,
+        primary_declaration.launch_intent_sha256,
+        primary_declaration.attempt_key_sha256,
+        primary_declaration.output_namespace_identity_sha256,
+        primary_declaration.terminal_path_identity_sha256,
+        *primary_absence_receipts,
+    }
+    replay_identifiers = {
+        declaration.execution_identity_receipt_sha256,
+        declaration.launch_intent_sha256,
+        declaration.attempt_key_sha256,
+        declaration.output_namespace_identity_sha256,
+        declaration.terminal_path_identity_sha256,
+        *replay_absence_receipts,
+    }
+    if primary_identifiers & replay_identifiers:
+        raise QualificationContractError(
+            "isolated replay identifier sets must be disjoint from primary"
+        )
+
+
+def validate_d7_isolated_replay_attempt_chain(
+    *,
+    declaration: r.D7AttemptDeclarationRecord,
+    authorization: r.D7LaunchAuthorizationRecord,
+    claim: r.D7AttemptClaimRecord,
+    start: r.D7ExecutionStartRecord,
+    payload: r.D7ScientificResultPayload,
+    result: r.D7ScientificResultRecord,
+    manifest: r.D7TerminalManifestRecord,
+    consumption: r.D7TerminalConsumptionRecord,
+    primary_declaration: r.D7AttemptDeclarationRecord,
+    primary_authorization: r.D7LaunchAuthorizationRecord,
+    primary_claim: r.D7AttemptClaimRecord,
+    primary_start: r.D7ExecutionStartRecord,
+    primary_payload: r.D7ScientificResultPayload,
+    primary_result: r.D7ScientificResultRecord,
+    primary_manifest: r.D7TerminalManifestRecord,
+    primary_consumption: r.D7TerminalConsumptionRecord,
+) -> None:
+    _validate_d7_isolated_replay_prefix(
+        declaration=declaration,
+        authorization=authorization,
+        claim=claim,
+        start=start,
+        primary_declaration=primary_declaration,
+        primary_authorization=primary_authorization,
+        primary_claim=primary_claim,
+        primary_start=primary_start,
+        primary_payload=primary_payload,
+        primary_result=primary_result,
+        primary_manifest=primary_manifest,
+        primary_consumption=primary_consumption,
+    )
     validate_d7_scientific_terminal_chain(
         claim=claim,
         start=start,
@@ -567,6 +672,51 @@ def validate_d7_isolated_replay_attempt_chain(
         result=result,
         manifest=manifest,
         consumption=consumption,
+    )
+
+
+def validate_d7_isolated_replay_failed_attempt_chain(
+    *,
+    declaration: r.D7AttemptDeclarationRecord,
+    authorization: r.D7LaunchAuthorizationRecord,
+    claim: r.D7AttemptClaimRecord,
+    start: r.D7ExecutionStartRecord,
+    evidence: r.D7FailureEvidenceRecord,
+    failed_attempt: r.D7FailedAttemptRecord,
+    manifest: r.D7TerminalManifestRecord,
+    consumption: r.D7TerminalConsumptionRecord,
+    primary_declaration: r.D7AttemptDeclarationRecord,
+    primary_authorization: r.D7LaunchAuthorizationRecord,
+    primary_claim: r.D7AttemptClaimRecord,
+    primary_start: r.D7ExecutionStartRecord,
+    primary_payload: r.D7ScientificResultPayload,
+    primary_result: r.D7ScientificResultRecord,
+    primary_manifest: r.D7TerminalManifestRecord,
+    primary_consumption: r.D7TerminalConsumptionRecord,
+    finalization: r.D7StartedUnresolvedFinalizationRecord | None = None,
+) -> None:
+    _validate_d7_isolated_replay_prefix(
+        declaration=declaration,
+        authorization=authorization,
+        claim=claim,
+        start=start,
+        primary_declaration=primary_declaration,
+        primary_authorization=primary_authorization,
+        primary_claim=primary_claim,
+        primary_start=primary_start,
+        primary_payload=primary_payload,
+        primary_result=primary_result,
+        primary_manifest=primary_manifest,
+        primary_consumption=primary_consumption,
+    )
+    validate_d7_failed_terminal_chain(
+        claim=claim,
+        start=start,
+        evidence=evidence,
+        failed_attempt=failed_attempt,
+        manifest=manifest,
+        consumption=consumption,
+        finalization=finalization,
     )
 
 

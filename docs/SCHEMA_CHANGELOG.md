@@ -40,14 +40,20 @@ promote a claim.
   Isolated-replay role evidence is derived only after validating the complete
   consumed, passed-primary chain. A replay attempt is accepted only by a
   combined validator that rejoins that complete primary chain and the complete
-  replay chain; the generic scientific-attempt validator is primary-only.
+  scientific or failed replay chain; the generic scientific-attempt validator
+  is primary-only. Replay stays in the same store identity because
+  alternate-store global one-shot behavior is unproved. Across primary and
+  replay, the five execution/intent/key/namespace/path identifiers and four
+  authorization/pre-start absence-receipt digests must form disjoint sets.
 
 ### Compatibility and non-claims
 
 - These are deep-internal type and structural-validation surfaces. They may
   construct and round-trip in-memory values, but create no official or
   persisted attempt record, filesystem writer, loader, namespace claim,
-  terminal transaction, witness verifier, runner, seed, or authority.
+  terminal transaction, witness verifier, runner, seed, or authority. Both
+  modules declare an empty `__all__`; direct named deep imports remain
+  unsupported internals.
 - The terminal identity graph is acyclic: the manifest binds the typed
   scientific-result or failed-attempt artifact and its immutable members;
   consumption binds the manifest. The manifest never binds consumption.

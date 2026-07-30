@@ -24,17 +24,23 @@ def _prefix(
     *,
     target: str | None = None,
     role: r.D7AttemptRoleEvidence | None = None,
+    store: str | None = None,
+    launch_intent: str | None = None,
+    execution_identity: str | None = None,
+    output_namespace: str | None = None,
+    terminal_path: str | None = None,
+    authorization_namespace_absence: str | None = None,
 ) -> SimpleNamespace:
     target = target or _h("target")
     declaration = r.D7AttemptDeclarationRecord(
         target,
-        _h(f"{label}-intent"),
+        launch_intent or _h(f"{label}-intent"),
         role or r.D7PrimaryRoleEvidence(),
-        _h(f"{label}-store"),
-        _h(f"{label}-namespace"),
-        _h(f"{label}-terminal"),
+        store or _h(f"{label}-store"),
+        output_namespace or _h(f"{label}-namespace"),
+        terminal_path or _h(f"{label}-terminal"),
         "a" * 40,
-        _h(f"{label}-identity"),
+        execution_identity or _h(f"{label}-identity"),
     )
     authorization = r.D7LaunchAuthorizationRecord(
         declaration.canonical_sha256,
@@ -49,7 +55,8 @@ def _prefix(
         declaration.store_identity_sha256,
         declaration.output_namespace_identity_sha256,
         declaration.terminal_path_identity_sha256,
-        _h(f"{label}-authorization-namespace-absence"),
+        authorization_namespace_absence
+        or _h(f"{label}-authorization-namespace-absence"),
         _h(f"{label}-authorization-terminal-absence"),
     )
     claim = r.D7AttemptClaimRecord(
@@ -332,6 +339,25 @@ def test_every_record_has_strict_canonical_roundtrip_and_golden_vector() -> None
             cls.from_canonical_bytes(
                 noncanonical, expected_sha256=hashlib.sha256(noncanonical).hexdigest()
             )
+
+
+def test_nested_json_constants_are_type_strict() -> None:
+    scientific = _scientific()
+    manifest = scientific.manifest.to_dict()
+    required_consumption = manifest["required_consumption"]
+    assert type(required_consumption) is dict
+    required_consumption["manifest_sha256_must_be_bound"] = 1
+    with pytest.raises(QualificationContractError, match="required_consumption"):
+        r.D7TerminalManifestRecord.from_dict(manifest)
+
+    failed = _failed(external=True)
+    assert failed.finalization
+    finalization = failed.finalization.to_dict()
+    assertions = finalization["verification_receipt_required_assertions"]
+    assert type(assertions) is dict
+    assertions["aggregate_outcome_observed"] = 0
+    with pytest.raises(QualificationContractError, match="assertions"):
+        r.D7StartedUnresolvedFinalizationRecord.from_dict(finalization)
 
 
 def test_prefix_requires_exact_types_and_every_frozen_join() -> None:
@@ -657,6 +683,19 @@ def _isolated_arguments(chain: SimpleNamespace) -> dict[str, object]:
     }
 
 
+def _attempt_arguments(chain: SimpleNamespace) -> dict[str, object]:
+    return {
+        "declaration": chain.prefix.declaration,
+        "authorization": chain.prefix.authorization,
+        "claim": chain.prefix.claim,
+        "start": chain.prefix.start,
+        "payload": chain.payload,
+        "result": chain.result,
+        "manifest": chain.manifest,
+        "consumption": chain.consumption,
+    }
+
+
 def test_isolated_replay_rejects_fabricated_or_nonpass_primary() -> None:
     primary = _scientific()
     arguments = _isolated_arguments(primary)
@@ -667,24 +706,97 @@ def test_isolated_replay_rejects_fabricated_or_nonpass_primary() -> None:
             "isolated",
             target=primary.prefix.declaration.replay_target_sha256,
             role=evidence,
+            store=primary.prefix.declaration.store_identity_sha256,
         )
     )
-    isolated_arguments = {
-        "declaration": isolated.prefix.declaration,
-        "authorization": isolated.prefix.authorization,
-        "claim": isolated.prefix.claim,
-        "start": isolated.prefix.start,
-        "payload": isolated.payload,
-        "result": isolated.result,
-        "manifest": isolated.manifest,
-        "consumption": isolated.consumption,
-    }
+    isolated_arguments = _attempt_arguments(isolated)
     v.validate_d7_isolated_replay_attempt_chain(
         **isolated_arguments,
         **arguments,
     )
     with pytest.raises(QualificationContractError, match="combined"):
         v.validate_d7_scientific_attempt_chain(**isolated_arguments)
+    for field, value, message in (
+        (
+            "execution_identity",
+            primary.prefix.declaration.execution_identity_receipt_sha256,
+            "execution identity",
+        ),
+        (
+            "output_namespace",
+            primary.prefix.declaration.output_namespace_identity_sha256,
+            "output namespace",
+        ),
+        (
+            "terminal_path",
+            primary.prefix.declaration.terminal_path_identity_sha256,
+            "terminal path",
+        ),
+        (
+            "launch_intent",
+            primary.prefix.declaration.launch_intent_sha256,
+            "launch intent",
+        ),
+        (
+            "authorization_namespace_absence",
+            primary.prefix.authorization.authorization_output_namespace_absence_receipt_sha256,
+            "absence receipts",
+        ),
+    ):
+        reused = _scientific(
+            prefix=_prefix(
+                f"isolated-reused-{field}",
+                target=primary.prefix.declaration.replay_target_sha256,
+                role=evidence,
+                store=primary.prefix.declaration.store_identity_sha256,
+                **{field: value},
+            )
+        )
+        with pytest.raises(QualificationContractError, match=message):
+            v.validate_d7_isolated_replay_attempt_chain(
+                **_attempt_arguments(reused),
+                **arguments,
+            )
+    for label, overrides in (
+        (
+            "cross-kind-identity",
+            {"execution_identity": (primary.prefix.declaration.launch_intent_sha256)},
+        ),
+        (
+            "cross-kind-absence",
+            {
+                "authorization_namespace_absence": (
+                    primary.prefix.declaration.output_namespace_identity_sha256
+                )
+            },
+        ),
+    ):
+        reused = _scientific(
+            prefix=_prefix(
+                f"isolated-reused-{label}",
+                target=primary.prefix.declaration.replay_target_sha256,
+                role=evidence,
+                store=primary.prefix.declaration.store_identity_sha256,
+                **overrides,
+            )
+        )
+        with pytest.raises(QualificationContractError, match="identifier sets"):
+            v.validate_d7_isolated_replay_attempt_chain(
+                **_attempt_arguments(reused),
+                **arguments,
+            )
+    alternate_store = _scientific(
+        prefix=_prefix(
+            "isolated-alternate-store",
+            target=primary.prefix.declaration.replay_target_sha256,
+            role=evidence,
+        )
+    )
+    with pytest.raises(QualificationContractError, match="store identity"):
+        v.validate_d7_isolated_replay_attempt_chain(
+            **_attempt_arguments(alternate_store),
+            **arguments,
+        )
     fabricated_evidence = replace(
         evidence,
         primary_attempt_claim_sha256=_h("disconnected-primary-claim"),
@@ -694,6 +806,7 @@ def test_isolated_replay_rejects_fabricated_or_nonpass_primary() -> None:
             "fabricated-isolated",
             target=primary.prefix.declaration.replay_target_sha256,
             role=fabricated_evidence,
+            store=primary.prefix.declaration.store_identity_sha256,
         )
     )
     with pytest.raises(QualificationContractError, match="primary_attempt_claim"):
@@ -721,6 +834,58 @@ def test_isolated_replay_rejects_fabricated_or_nonpass_primary() -> None:
     failed_primary = _scientific(state=r.D7ScientificResultState.FAIL)
     with pytest.raises(QualificationContractError, match="passed primary"):
         v.derive_d7_isolated_replay_role_evidence(**_isolated_arguments(failed_primary))
+
+
+def test_failed_isolated_replay_requires_the_same_primary_and_separation() -> None:
+    primary = _scientific()
+    primary_arguments = _isolated_arguments(primary)
+    role = v.derive_d7_isolated_replay_role_evidence(**primary_arguments)
+    failed = _failed(
+        prefix=_prefix(
+            "failed-isolated",
+            target=primary.prefix.declaration.replay_target_sha256,
+            role=role,
+            store=primary.prefix.declaration.store_identity_sha256,
+        )
+    )
+    v.validate_d7_isolated_replay_failed_attempt_chain(
+        declaration=failed.prefix.declaration,
+        authorization=failed.prefix.authorization,
+        claim=failed.prefix.claim,
+        start=failed.prefix.start,
+        evidence=failed.evidence,
+        failed_attempt=failed.failed,
+        manifest=failed.manifest,
+        consumption=failed.consumption,
+        **primary_arguments,
+    )
+    fabricated_role = replace(
+        role,
+        primary_terminal_consumption_sha256=_h("fabricated-consumption"),
+    )
+    fabricated = _failed(
+        prefix=_prefix(
+            "failed-isolated-fabricated",
+            target=primary.prefix.declaration.replay_target_sha256,
+            role=fabricated_role,
+            store=primary.prefix.declaration.store_identity_sha256,
+        )
+    )
+    with pytest.raises(
+        QualificationContractError,
+        match="primary_terminal_consumption_sha256",
+    ):
+        v.validate_d7_isolated_replay_failed_attempt_chain(
+            declaration=fabricated.prefix.declaration,
+            authorization=fabricated.prefix.authorization,
+            claim=fabricated.prefix.claim,
+            start=fabricated.prefix.start,
+            evidence=fabricated.evidence,
+            failed_attempt=fabricated.failed,
+            manifest=fabricated.manifest,
+            consumption=fabricated.consumption,
+            **primary_arguments,
+        )
 
 
 def test_manifest_reserved_mapping_inventory_and_acyclicity() -> None:
@@ -788,6 +953,8 @@ def test_manifest_reserved_mapping_inventory_and_acyclicity() -> None:
 
 
 def test_no_operational_api_or_root_reexports() -> None:
+    assert r.__all__ == ()
+    assert v.__all__ == ()
     allowed_functions = {
         "d7_attempt_key_sha256",
         "derive_d7_isolated_replay_role_evidence",

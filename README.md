@@ -450,8 +450,12 @@ and recheck namespace absence. The current records and joins bind only the
 corresponding digests. Every scientific payload must bind the exact target and
 full inventory. Isolated replay derives its role from an already consumed,
 passed primary terminal; a caller label is insufficient. A complete isolated
-attempt is accepted only by the combined validator that rejoins both the full
-passed-primary chain and the full replay chain. The schema-only
+attempt, whether scientific or failed, is accepted only by a combined
+validator that rejoins both the full passed-primary chain and the full replay
+chain. Because alternate-store global one-shot behavior is unproved, both
+chains must bind the same store identity. Across primary and replay, the five
+execution/intent/key/namespace/path identifiers and four absence-receipt
+digests must form disjoint sets. The schema-only
 outcome-to-manifest-to-consumption joins are an explicit closed table of
 canonical byte equalities, not independently named digests. A visible start
 without terminal is `started_unresolved`, never inferred aborted from elapsed

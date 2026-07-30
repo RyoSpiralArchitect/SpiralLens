@@ -25,6 +25,8 @@ from spirallens.core.canonical import (
 
 from .common import QualificationContractError
 
+__all__: tuple[str, ...] = ()
+
 D7_PRIMARY_ROLE_EVIDENCE_SCHEMA_VERSION = "spirallens.d7-primary-role-evidence.v0.1"
 D7_ISOLATED_REPLAY_ROLE_EVIDENCE_SCHEMA_VERSION = (
     "spirallens.d7-isolated-replay-role-evidence.v0.1"
@@ -344,6 +346,23 @@ def _json_constants(values: Mapping[str, object]) -> dict[str, object]:
     return {key: _json_constant(value) for key, value in values.items()}
 
 
+def _strict_json_equal(expected: object, observed: object) -> bool:
+    if type(expected) is not type(observed):
+        return False
+    if type(expected) is dict:
+        if any(type(key) is not str for key in observed) or set(expected) != set(
+            observed
+        ):
+            return False
+        return all(_strict_json_equal(expected[key], observed[key]) for key in expected)
+    if type(expected) is list:
+        return len(expected) == len(observed) and all(
+            _strict_json_equal(left, right)
+            for left, right in zip(expected, observed, strict=True)
+        )
+    return expected == observed
+
+
 def _record_constants(
     schema_version: str,
     record_kind: str | None = None,
@@ -423,7 +442,7 @@ def _decode_record(
     for name, expected_value in constants.items():
         observed = item[name]
         expected_json = _json_constant(expected_value)
-        if type(observed) is not type(expected_json) or observed != expected_json:
+        if not _strict_json_equal(expected_json, observed):
             raise QualificationContractError(f"{name} must equal {expected_json!r}")
     decoded: dict[str, object] = {}
     decoders = (
@@ -1519,7 +1538,7 @@ class D7StartedUnresolvedFinalizationRecord(_CanonicalRecord):
             ],
             "aggregate_outcome_observed": False,
         }
-        if dict(assertions) != expected:
+        if not _strict_json_equal(expected, assertions):
             raise QualificationContractError(
                 "verification receipt assertions differ from finalization"
             )
