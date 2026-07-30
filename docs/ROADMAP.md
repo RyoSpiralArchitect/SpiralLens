@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications now define later contracts without creating official instances; deep-internal concrete record schemas and pure outcome → manifest → consumption joins partially complete step 18, while official target/attempt instances, persistence, freeze, authorization, admission, seeds, execution, terminal publication, finalization, runner, replay comparison, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until those operational surfaces are final |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications now define later contracts without creating official instances; deep-internal record, result-component, absence-receipt, failure-payload, external-receipt schemas and pure structural joins partially complete step 18, while target authority, observers/verifiers, official instances, persistence, freeze, authorization, admission, seeds, execution, terminal publication, finalization, runner, replay comparison, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until those operational surfaces are final |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -870,17 +870,20 @@ below:
     `started_unresolved` unless a later verifier establishes a witness for that
     exact start and identity. Target/attempt instances, repository or store
     loaders, writers, authority, atomic publication, witness verification,
-    finalization, execution capability, runner, replay comparison, and the
-    concrete byte/schema validators behind result-component, absence-receipt,
-    failure-payload, and external-verification contract bindings remain
-    deferred. Before persistence, implement those payload contracts as a
-    separate reviewed slice: D7-specific canonical wrappers may reuse the
-    existing core/loop and, after explicit projection review, stratum row
-    validators internally, but the D0-D5 enclosing schemas cannot be renamed
-    as D7 evidence. The event-lane projection, joined primary-unit row, and
-    four-state gate row require new D7 types. Add a concrete path-absence
-    receipt, failure payload, and external-abort verification receipt before
-    any digest is treated as verified evidence;
+    finalization, execution capability, runner, and replay comparison remain
+    deferred. The separately reviewed canonical payload slice is now
+    implemented: D7-specific wrappers reuse the core/loop and reviewed stratum
+    row validators inside new enclosing schemas, while event-lane, joined
+    primary-unit, and four-state gate rows remain D7-specific. Pure validators
+    close all six component bytes through 1,344 event lanes, 64 cell-derived
+    primaries, six strata, gate summary, and outer result bindings. Canonical
+    authorization/pre-start path-absence receipts, failure payloads, and
+    external-abort receipts are also structurally joined to the attempt
+    records. This does not load the target or gate manifest, observe a
+    filesystem, authenticate a witness, reserve a destination, authorize a
+    finalizer, or prove TOCTOU/post-publication inode safety. Those operational
+    producers and authorities must be added before any structurally valid
+    caller bytes are treated as observed or verified evidence;
 19. only after those execution surfaces are final, issue an exact current
     execution-source/runtime receipt, complete reviewed family admission, and
     establish seed-free readiness. C2 cannot satisfy this item, and no seed is
@@ -1018,13 +1021,16 @@ dependencies. The separate canonical replay-target and attempt-envelope
 contract specifications are implemented in memory, but no concrete instance
 is persisted. Step 18 is now partially complete: two deep-internal modules
 define the concrete canonical record schemas and pure structural joins for
-declaration through consumption. Their acyclic outcome → manifest →
-consumption graph keeps scientific `pass`/`fail`/`insufficient` distinct from
-infrastructure failure. The start schema binds an external execution identity,
-but no witness verifier exists; start without terminal therefore remains
-`started_unresolved`. Result components, absence receipts, failure payloads,
-and external verification receipts currently have fixed bindings rather than
-implemented byte schemas. No repository/store loader, writer, publisher,
+declaration through consumption, and four further deep-internal modules now
+close the canonical result-component, absence-receipt, failure-payload, and
+external-receipt byte shapes. Their acyclic outcome → manifest → consumption
+graph keeps scientific `pass`/`fail`/`insufficient` distinct from
+infrastructure failure. The result bundle mechanically rejoins cells,
+primaries, strata, four-state gates, and the outer payload, but target exact
+sets and gate evidence still require an authoritative target loader. The start
+schema binds an external execution identity, but no filesystem observer or
+witness verifier exists; start without terminal therefore remains
+`started_unresolved`. No repository/store loader, writer, publisher,
 authority, execution capability, runner, finalizer, replay comparator,
 official seed, or official record instance is introduced. After those
 operational surfaces and the runner are final, a new exact current

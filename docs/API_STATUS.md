@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, and a schema-only D7 attempt-record/validation layer, without public export, persistence, admission, seed, execution, result publication, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, and schema-only D7 attempt-record, evidence-receipt, result-component, and structural-validation layers, without public export, persistence, admission, seed, execution, result publication, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -129,14 +129,32 @@ modules declare an empty `__all__`; direct named deep imports remain internal.
 Neither module loads a target, verifies external witness bytes, touches a
 namespace, writes a record, publishes a terminal, or grants authority.
 
-The scientific-result and failure envelopes bind fixed filenames, future
-payload contract IDs, canonical digests, byte counts, and record-count
-semantics. They do not yet define or validate the six result-component
-payloads, the authorization/pre-start absence receipts, the failure evidence
-payload, or the external-abort verification receipt. Those identifiers cannot
-turn arbitrary caller bytes into valid evidence; their concrete payload
-schemas and byte-level verifiers remain required before persistence or
-execution.
+The separate deep-internal
+`confirmation_result_components` and
+`confirmation_result_component_validation` modules define canonical,
+attempt-independent bytes and pure structural joins for all six result
+components. Their closed bundle contains exactly 1,344 event lanes, 192 core
+cells, 1,152 loop cells, 64 cell-derived joined primaries, six mechanically
+derived strata, and four-state gate rows bound to the outer result. They
+enforce digest-before-parse, canonical row reconstruction, exact Cartesian
+cell structure, seed-slot case pairing, graph-fingerprint functionality, and
+a structural floor that prevents incomplete evidence from becoming an
+aggregate pass. They do not load the authoritative target; exact target
+inventory and seed values, case/stratum membership, graph nonvacuity,
+aggregation thresholds, gate definitions, and gate-evidence semantics
+therefore remain unverified. Event-stage hashes bind declared structure; they
+do not prove that execution occurred or establish producer chronology.
+
+The deep-internal `confirmation_attempt_evidence` and
+`confirmation_attempt_evidence_validation` modules define canonical bytes and
+pure joins for authorization/pre-start path-absence receipts, in-process or
+external failure payloads, and external-abort verification receipts. The path
+receipts bind normalized lowercase-ASCII paths, parent device/inode identity,
+and distinct authorization/pre-start observations. They are directly
+constructible point-in-time assertions: no filesystem observer, reservation,
+TOCTOU protection, or post-publication inode proof is implemented. A
+schema-valid external receipt is likewise not an authenticated witness,
+verified abort, or finalization capability.
 
 The replay contracts and attempt records are specifications and types, not
 official replay-target or attempt-envelope instances. They have no filesystem
@@ -161,12 +179,13 @@ finalization binds external abort evidence.
 Family admission, full-design freeze, official seeds, persisted lifecycle,
 execution, result/failure publication, terminal publication, D7, and D8
 remain absent or `not_run`. The next internal change must define and validate
-the bound payload and receipt bytes before append-only persistence and atomic
-no-replace terminal publication are implemented. It must not invoke the
-official seed supplier or issue seed values. Committed C2 closes only the
-declared historical Git source set; it does not execute historical code or
-attest Python/native runtime, transitive dependencies, in-process identity,
-hostile-local-mutation resistance, or current compatibility.
+the filesystem observer/producer, external-verifier authority, authoritative
+target joins, and append-only atomic no-replace persistence without weakening
+the byte schemas now present. It must not invoke the official seed supplier or
+issue seed values. Committed C2 closes only the declared historical Git source
+set; it does not execute historical code or attest Python/native runtime,
+transitive dependencies, in-process identity, hostile-local-mutation
+resistance, or current compatibility.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
