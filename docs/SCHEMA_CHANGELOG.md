@@ -4,6 +4,67 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 caller-supplied prefix evidence persistence
+
+### Added
+
+- The deep-internal `confirmation_attempt_persistence` module persists a
+  caller-supplied Level-0 primary declaration, launch-authorization record,
+  claim record, and start record beneath an immutable store scope and four
+  predecessor-chained envelopes in `d7-prefix-evidence-only-v0/`. Raw
+  lifecycle records are never top-level stage files. The scope and envelopes
+  permanently encode false authority/capability fields and prohibit in-place
+  promotion.
+- Every envelope is canonical, bounded, descriptor-read, digest-checked before
+  parse, and published by descriptor-relative native exclusive rename plus file
+  and parent-directory fsync. Darwin `renameatx_np(RENAME_EXCL, ...)` and Linux
+  `renameat2(RENAME_NOREPLACE)` branches are present; other platforms fail
+  closed. Only the current Darwin host is qualified by this change.
+- A hard interruption before rename may leave a dot-prefixed staging entry.
+  Its presence blocks retry/reload and never counts as a stage or authority.
+  Automatic scavenging is omitted because it cannot safely distinguish an
+  orphan from a concurrent live writer. Writers must first quiesce; only a
+  confirmed orphan may enter separate offline recovery.
+- Authorization and pre-start absence receipts are content-addressed
+  companions. Before authorization or start becomes visible, the writer
+  reobserves the declared real store root, parent device/inode, and absent
+  output/terminal leaf. Stage envelopes remain strictly non-idempotent; even
+  identical existing bytes are a conflict.
+- A complete strict reload preserves all structural joins and classifies exact
+  caller-supplied start-record plus terminal absence only as
+  `caller_supplied_start_record_present_terminal_absent`. Any file, directory,
+  symlink, or otherwise unverified terminal entry is
+  `terminal_path_present_unverified`. The inspection records
+  `execution_observed=false` and `started_unresolved_established=false`;
+  neither state authorizes retry, replay, or D8.
+- Prefix validators now expose separate authorization and claim joins so each
+  persisted stage can revalidate its complete predecessor set. Output and
+  terminal subjects must be non-nested within one attempt as well as across
+  isolated primary/replay attempts.
+- Isolated-replay declarations are rejected before the evidence lane is
+  created because passed-primary terminal consumption cannot yet be loaded
+  authoritatively.
+
+### Compatibility and non-claims
+
+- The module declares an empty `__all__` and is not re-exported. Persisted scope
+  and envelope bytes, not only ephemeral Python identities, set
+  `authority_granted=false`; no official replay target, attempt, seed, launch
+  authorization, execution capability, result, or D7/D8 status is created.
+- Path reobservation is a trusted-local-operator check, not reservation,
+  hostile-process TOCTOU resistance, or post-publication inode proof. The
+  append-only property assumes store entries are not administratively
+  deleted.
+- No terminal transaction or external-abort finalizer is exposed. The
+  directly constructible external receipt remains structurally valid but
+  unauthenticated and cannot mint finalization authority. A later operational
+  verifier must issue a separate non-caller-constructible capability and write
+  a distinct authoritative lane; evidence envelopes cannot be promoted in
+  place.
+- C2 does not close this source. Exact current execution-source/runtime
+  closure, authoritative target joins, admission, freeze, official seeds,
+  terminal publication, isolated replay, D7, and D8 remain future work.
+
 ## 2026-07-30 — D7 result-component and attempt-evidence payload schemas
 
 ### Added
@@ -100,8 +161,9 @@ promote a claim.
 - The terminal identity graph is acyclic: the manifest binds the typed
   scientific-result or failed-attempt artifact and its immutable members;
   consumption binds the manifest. The manifest never binds consumption.
-- A visible start without a terminal remains `started_unresolved`. Elapsed
-  time, process absence, or a caller assertion cannot finalize it.
+- In the future authoritative lifecycle, a verifier-established visible start
+  without a terminal remains `started_unresolved`. Elapsed time, process
+  absence, or a caller assertion cannot finalize it.
 - At this record-layer introduction, the six result-component payload schemas,
   absence-receipt schemas, failure payload, external-abort receipt, and their
   byte validators were still unimplemented. The later entry above adds those

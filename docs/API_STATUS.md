@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, and schema-only D7 attempt-record, evidence-receipt, result-component, and structural-validation layers, without public export, persistence, admission, seed, execution, result publication, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, D7 attempt/evidence/result schemas and joins, and a no-replace caller-supplied primary-prefix evidence lane whose persisted scope/envelopes explicitly deny authority, execution, finalization, and in-place promotion, without public export, target authority, admission, seed, execution capability, terminal publication, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -152,14 +152,46 @@ external failure payloads, and external-abort verification receipts. The path
 receipts bind normalized absolute POSIX parents, lowercase portable ASCII
 leaves, parent device/inode identity, and distinct authorization/pre-start
 observations. They are directly constructible point-in-time assertions: no
-filesystem observer, reservation, TOCTOU protection, or post-publication inode
-proof is implemented. A schema-valid external receipt is likewise not an
+authority follows from construction alone. The persistence writer reobserves
+their local parent/leaf coordinates, but no reservation, hostile-process
+TOCTOU protection, or post-publication inode proof is implemented. A
+schema-valid external receipt is likewise not an
 authenticated witness, verified abort, or finalization capability.
 
+The deep-internal `confirmation_attempt_persistence` module persists a
+caller-supplied primary declaration, launch-authorization record, claim record,
+and start record only as evidence. A no-replace immutable store scope and four
+predecessor-chained envelopes occupy the dedicated
+`d7-prefix-evidence-only-v0/` namespace; raw lifecycle-record bytes are never
+top-level stage files. Scope and envelope bytes permanently record false
+authority/capability fields and prohibit in-place promotion. Files are
+canonical, digest-before-parse, bounded descriptor reads and are published by
+descriptor-relative native exclusive rename with file and parent-directory
+fsync; Darwin/Linux syscall branches exist and other platforms fail closed,
+but only the current Darwin host is qualified by this slice. The
+four absence receipts are content-addressed. Authorization/start evidence
+reobserves the declared real parent device/inode and absent leaf. Every
+existing envelope conflicts even when its bytes are identical. This is a
+trusted-local-operator, persistence-only boundary: it does not load the target,
+verify source/runtime or execution-identity authority, reserve a namespace,
+resist a hostile concurrent administrator, or prove post-publication inode
+disjointness.
+An interrupted pre-rename publication may leave a dot-prefixed staging entry.
+Any such entry blocks lane/evidence reload and retry, is never interpreted as
+a stage, and first requires live writers to quiesce. Only a confirmed orphan
+may enter a separate offline operator recovery protocol; automatic scavenging
+is not exposed.
+Its terminal inspection can report only
+`caller_supplied_start_record_present_terminal_absent` or
+`terminal_path_present_unverified`; it explicitly records
+`execution_observed=false` and `started_unresolved_established=false`.
+
 The replay contracts and attempt records are specifications and types, not
-official replay-target or attempt-envelope instances. They have no filesystem
-writer, persist no artifact, expose no official seed supplier, and grant no
-lifecycle or execution authority. The seed-supply contract requires
+official replay-target or authoritative attempt-envelope instances. The local
+prefix writer embeds those supplied primary types beneath a distinct
+false-authority envelope; it exposes no official seed supplier and grants no
+lifecycle or execution authority. Isolated replay is rejected before
+persistence because passed-primary consumption cannot yet be established. The seed-supply contract requires
 final-code source/runtime closure and reviewed family admission before a
 future exclusive seed-supply claim and single supplier invocation. It then
 requires atomic full-design/target publication and a committed freeze receipt
@@ -172,20 +204,26 @@ or runner code. A later exact closure of the then-current execution source and
 runtime is required after those surfaces are final.
 
 Target, authorization, start, and result fields are joined by a closed table
-of canonical byte equalities. A visible start without terminal remains
+of canonical byte equalities. In the future authoritative lane, a
+verifier-established visible start without terminal remains
 `started_unresolved`; it blocks retry, replay, and D8 until a later append-only
-finalization binds external abort evidence.
+finalization binds external abort evidence. The present evidence-only lane
+cannot establish that state.
 
-Family admission, full-design freeze, official seeds, persisted lifecycle,
-execution, result/failure publication, terminal publication, D7, and D8
-remain absent or `not_run`. The next internal change must define and validate
-the filesystem observer/producer, external-verifier authority, authoritative
-target joins, and append-only atomic no-replace persistence without weakening
-the byte schemas now present. It must not invoke the official seed supplier or
-issue seed values. Committed C2 closes only the declared historical Git source
-set; it does not execute historical code or attest Python/native runtime,
-transitive dependencies, in-process identity, hostile-local-mutation
-resistance, or current compatibility.
+Family admission, full-design freeze, official seeds, authoritative lifecycle,
+execution, result/failure publication, terminal publication, D7, and D8 remain
+absent or `not_run`. The next internal change must add a distinct
+verifier-minted authoritative capability/lane with authoritative target,
+launch-intent, source/runtime, and execution-identity joins; it may consume but
+never promote the evidence envelopes in place. Only after that boundary is
+reviewed may a later change add the atomic terminal transaction and an
+operational witness verifier that alone can mint external-abort finalization
+capability. The directly constructible receipt remains insufficient. No such
+change may invoke the official seed supplier or issue seed values.
+Committed C2 closes only the declared historical Git source set; it does not
+execute historical code or attest Python/native runtime, transitive
+dependencies, in-process identity, hostile-local-mutation resistance, or
+current compatibility.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

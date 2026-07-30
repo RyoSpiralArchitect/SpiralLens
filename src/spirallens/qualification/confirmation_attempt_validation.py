@@ -86,27 +86,15 @@ _COORDINATE_FIELDS = _names(
 )
 
 
-def validate_d7_attempt_prefix(
+def validate_d7_authorized_attempt(
     *,
     declaration: r.D7AttemptDeclarationRecord,
     authorization: r.D7LaunchAuthorizationRecord,
-    claim: r.D7AttemptClaimRecord,
-    start: r.D7ExecutionStartRecord,
 ) -> None:
-    _types(
-        declaration=declaration,
-        authorization=authorization,
-        claim=claim,
-        start=start,
-    )
-    _links(
-        (declaration, authorization, "attempt_declaration_sha256"),
-        (declaration, claim, "attempt_declaration_sha256"),
-        (authorization, claim, "launch_authorization_sha256"),
-        (declaration, start, "attempt_declaration_sha256"),
-        (authorization, start, "launch_authorization_sha256"),
-        (claim, start, "attempt_claim_sha256"),
-    )
+    """Join a declaration to its authorization before any claim exists."""
+
+    _types(declaration=declaration, authorization=authorization)
+    _links((declaration, authorization, "attempt_declaration_sha256"))
     _fields(
         declaration,
         authorization,
@@ -117,6 +105,31 @@ def validate_d7_attempt_prefix(
             "output_namespace_identity_sha256 terminal_path_identity_sha256"
         ),
     )
+    _distinct(
+        "identity, source/runtime, and runtime spec",
+        declaration.execution_identity_receipt_sha256,
+        authorization.execution_source_runtime_receipt_sha256,
+        authorization.runtime_specification_sha256,
+    )
+
+
+def validate_d7_claimed_attempt(
+    *,
+    declaration: r.D7AttemptDeclarationRecord,
+    authorization: r.D7LaunchAuthorizationRecord,
+    claim: r.D7AttemptClaimRecord,
+) -> None:
+    """Join the complete pre-start prefix through its exclusive claim."""
+
+    validate_d7_authorized_attempt(
+        declaration=declaration,
+        authorization=authorization,
+    )
+    _types(claim=claim)
+    _links(
+        (declaration, claim, "attempt_declaration_sha256"),
+        (authorization, claim, "launch_authorization_sha256"),
+    )
     _fields(
         declaration,
         claim,
@@ -125,6 +138,26 @@ def validate_d7_attempt_prefix(
             "replay_target_sha256 attempt_key_sha256 "
             "execution_identity_receipt_sha256 store_identity_sha256"
         ),
+    )
+
+
+def validate_d7_attempt_prefix(
+    *,
+    declaration: r.D7AttemptDeclarationRecord,
+    authorization: r.D7LaunchAuthorizationRecord,
+    claim: r.D7AttemptClaimRecord,
+    start: r.D7ExecutionStartRecord,
+) -> None:
+    validate_d7_claimed_attempt(
+        declaration=declaration,
+        authorization=authorization,
+        claim=claim,
+    )
+    _types(start=start)
+    _links(
+        (declaration, start, "attempt_declaration_sha256"),
+        (authorization, start, "launch_authorization_sha256"),
+        (claim, start, "attempt_claim_sha256"),
     )
     _fields(
         declaration,
@@ -152,12 +185,6 @@ def validate_d7_attempt_prefix(
         authorization.authorization_terminal_path_absence_receipt_sha256,
         start.pre_start_output_namespace_absence_receipt_sha256,
         start.pre_start_terminal_path_absence_receipt_sha256,
-    )
-    _distinct(
-        "identity, source/runtime, and runtime spec",
-        declaration.execution_identity_receipt_sha256,
-        authorization.execution_source_runtime_receipt_sha256,
-        authorization.runtime_specification_sha256,
     )
 
 

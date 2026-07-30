@@ -423,15 +423,36 @@ Step 18 is now partially implemented in the separate deep-internal
 `spirallens.qualification.confirmation_attempt_validation` modules, with
 separate `confirmation_attempt_evidence`,
 `confirmation_attempt_evidence_validation`,
+`confirmation_attempt_persistence`,
 `confirmation_result_components`, and
 `confirmation_result_component_validation` payload layers. They define closed
 canonical schemas for the future declaration, authorization, claim, start,
 scientific-result or infrastructure-failure outcome, terminal manifest,
 terminal consumption, the six result components, path-absence receipts,
 failure payload, and external-abort receipt, together with pure structural
-joins between those values. This is a type and validation layer only: it
-creates no official or persisted record instance, writes no file, claims no
-attempt, starts no execution, and grants no authority.
+joins between those values. The persistence slice can now write and strictly
+reload a caller-supplied Level-0 primary declaration → authorization → claim
+→ start record prefix as evidence only. Raw lifecycle records are never the
+top-level persisted files. An immutable store-scope record and four chained
+`spirallens.d7-prefix-persistence-envelope.v0.1` files live under the distinct
+`d7-prefix-evidence-only-v0/` lane; their canonical bytes bind the embedded
+record, predecessor envelope, store/lane identity, and
+`authority_granted=false`, `authoritative_lifecycle_eligible=false`, and
+capability-false constants. In-place promotion is forbidden. The slice
+content-addresses the four absence receipts, reobserves their parent inode and
+absent leaf, and publishes with descriptor-relative native exclusive rename
+plus file and parent-directory fsync. Darwin `renameatx_np(RENAME_EXCL, ...)`
+or Linux `renameat2(RENAME_NOREPLACE)` is selected and other platforms fail
+closed. This slice is validated only on the current Darwin host; it does not
+claim cross-platform qualification. Existing envelope paths are never
+replaced.
+If a process or host dies after staging-file fsync but before rename, a
+dot-prefixed `.tmp` entry can remain. Lane/evidence opens then fail closed:
+the orphan is never loaded as a stage or authority and retry is blocked until
+writers are quiescent and, only if the entry is confirmed orphaned, an offline
+operator recovery protocol removes the exact staging entry.
+Automatic scavenging is intentionally absent because it would be unsafe
+against a still-running concurrent writer.
 
 The attempt envelope is not one mutable nullable record. Its stage order
 remains attempt declaration, launch authorization, exclusive attempt claim,
@@ -449,10 +470,12 @@ then-current execution source and runtime remains mandatory after the
 lifecycle, result, terminal, and runner code are final; the historical C2
 receipt does not close any of those later surfaces.
 
-The future execution-start operation must rejoin the observed runtime to the
+An authoritative future execution-start operation must rejoin the observed runtime to the
 target's frozen source/runtime receipt, bind an external execution identity,
-and recheck namespace absence. The current records and joins bind only the
-corresponding digests. Every scientific payload must bind the exact target and
+and recheck namespace absence. The persistence writer reobserves the declared
+parent device/inode and absent output/terminal leaf, but it can only join the
+already supplied source/runtime and execution-identity digests; it cannot
+establish their authority. Every scientific payload must bind the exact target and
 full inventory. Isolated replay derives its role from an already consumed,
 passed primary terminal; a caller label is insufficient. A complete isolated
 attempt, whether scientific or failed, is accepted only by a combined
@@ -462,12 +485,13 @@ chains must bind the same store identity. Across primary and replay, the five
 execution/intent/key/namespace/path identifiers and four absence-receipt
 digests must form disjoint sets. The schema-only
 outcome-to-manifest-to-consumption joins are an explicit closed table of
-canonical byte equalities, not independently named digests. A visible start
-without terminal is `started_unresolved`, never inferred aborted from elapsed
-time, process absence, or a caller assertion. It remains unresolved, with
-retry, replay, and D8 blocked, unless a later finalizer verifies an external
-witness bound to that exact start and execution identity. No such witness
-verifier or finalizer exists yet. Likewise, the six result-component payloads,
+canonical byte equalities, not independently named digests. In the future
+authoritative lifecycle, a verifier-established visible start without terminal
+is `started_unresolved`, never inferred aborted from elapsed time, process
+absence, or a caller assertion. It remains unresolved, with retry, replay, and
+D8 blocked, unless a later finalizer verifies an external witness bound to that
+exact start and execution identity. No authoritative-start verifier, witness
+verifier, or finalizer exists yet. Likewise, the six result-component payloads,
 authorization/pre-start absence receipts, failure evidence payload, and
 external-abort verification receipt now have deep-internal canonical byte
 schemas. Expected SHA-256 is checked before parsing, exact local types and byte
@@ -477,14 +501,25 @@ attempt/result envelopes. The result-component join closes 1,344 event lanes
 strata, four-state gates, and the outer result bindings. It cannot establish
 target-inventory or gate-definition authority without a concrete loaded
 target. The directly constructible path receipts remain point-in-time
-assertions rather than proof that a filesystem observer ran; they acquire no
-reservation and prove neither TOCTOU resistance nor post-publication inode
-disjointness. A schema-valid external receipt likewise does not authenticate
-its observer or verifier and cannot authorize finalization.
+assertions when used outside the persistence writer. Inside that writer,
+their filesystem coordinates are reobserved before the enclosing stage becomes
+visible. The observation acquires no reservation and proves neither
+hostile-process TOCTOU resistance nor post-publication inode disjointness. A
+schema-valid external receipt likewise does not authenticate its observer or
+verifier and cannot authorize finalization.
 
-Family admission, full-design freeze, official seeds, concrete lifecycle
-instances, persistence, launch/execution, result/failure publication, terminal
-publication, abort finalization, runner, and replay comparison remain absent.
+Family admission, full-design freeze, official seeds, authoritative
+target-bound lifecycle instances, launch/execution capability,
+result/failure publication, terminal publication, abort finalization, runner,
+and replay comparison remain absent. The local prefix store is a
+persistence-only evidence mechanism: a strictly loaded caller-supplied start
+record with an absent terminal entry is only
+`caller_supplied_start_record_present_terminal_absent`; any file, directory,
+symlink, or malformed terminal entry is
+`terminal_path_present_unverified`. Neither establishes execution or
+`started_unresolved`, and both keep retry, replay, and D8 unauthorized.
+Isolated-replay declarations are rejected before persistence because this
+slice cannot load and consume an authoritative passed-primary terminal.
 The historical D6 decision and exact-admission status remain unchanged: the
 successor rule does not satisfy the historical exact D6 v0.1 hashes. The D6
 decision therefore seals the only admissible entrance without pretending that
@@ -492,8 +527,8 @@ an independent confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant. No
 label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those operational surfaces remain deferred until a
-concrete target, final-code source/runtime closure, typed persistence, and
-isolated-replay receipts exist.
+concrete target, final-code source/runtime closure, terminal transaction,
+verified witness capability, and isolated-replay receipts exist.
 
 The recorded negative-access facts, including the absence of admitted
 confirmation-value access before sealing, are explicit external attestations,
@@ -973,8 +1008,8 @@ to become a general library.
   historical code or attest Python/native runtime, transitive dependencies,
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
-- **Implemented contract-only; step 18 partially complete at the schema
-  layer — replay target and attempt envelope:** two canonical, unpersisted
+- **Implemented deep-internal contract and prefix-persistence slice; step 18
+  remains partial — replay target and attempt envelope:** two canonical, unpersisted
   internal specifications keep the future immutable seed-bearing replay target
   separate from the append-only attempt chronology. Separate deep-internal
   record and validation modules now define the concrete canonical schemas and
@@ -983,9 +1018,10 @@ to become a general library.
   identity flow is acyclic: outcome → manifest → consumption. Scientific
   `pass`, `fail`, and `insufficient` remain results; infrastructure failure
   remains a separate non-scientific terminal variant, and no placeholder
-  result may stand in for either. Start binds an external execution identity,
-  while a start without a terminal remains `started_unresolved` unless a
-  future verified external witness supports finalization. After final-code
+  result may stand in for either. A future verifier-established authoritative
+  start binds an external execution identity and remains
+  `started_unresolved` without a terminal unless a future verified external
+  witness supports finalization. After final-code
   source/runtime closure and reviewed family admission, a future seed-supply
   lifecycle must acquire its exclusive claim before the single supplier
   invocation. It then atomically publishes the seed-bearing full design and
@@ -994,15 +1030,23 @@ to become a general library.
   supply is aborted and cannot be retried; target absence alone is not evidence
   that the supplier was never invoked. The future target remains exactly Level
   0 and its local authority vector remains all-false. No concrete target,
-  official or persisted attempt instance, official seed, persisted lifecycle
-  record, authority, writer, runner, publisher, finalizer, or replay comparator
-  is created here. Exact closure of the final current execution source and
+  official or authoritative attempt instance, official seed, execution
+  capability, runner, terminal publisher, finalizer, or replay comparator is
+  created here. The separate local writer now persists and strictly reloads
+  the four-stage caller-supplied Level-0 primary prefix as chained,
+  false-authority envelopes in a dedicated evidence-only lane without
+  replacement. It reobserves authorization/pre-start absence coordinates, but
+  grants no authority; a start record plus terminal absence is only
+  `caller_supplied_start_record_present_terminal_absent`, while any terminal
+  entry is unverified presence. It cannot establish execution,
+  `started_unresolved`, or isolated-replay provenance. Exact closure of the final current execution source and
   runtime follows only after those operational code surfaces are complete.
   Deep-internal canonical component, absence-receipt, evidence-payload, and
   verification-receipt byte schemas now reject arbitrary or noncanonical
   caller bytes and perform pure structural joins. They do not load the frozen
-  target, observe a filesystem, authenticate an external witness, persist a
-  record, or authorize a finalizer. Target-bound exact inventory and gate
+  target or authenticate an external witness. The persistence slice observes
+  only the declared local path coordinates and cannot authorize a finalizer.
+  Target-bound exact inventory and gate
   semantics therefore remain deferred. Full-design closure, admission,
   freeze, seeds, execution, terminal publication, D7, and D8 all remain
   incomplete now.
