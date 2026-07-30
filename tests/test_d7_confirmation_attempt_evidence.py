@@ -24,21 +24,24 @@ def _prefix(
     *,
     store_identity: str | None = None,
     store_root: str = "/tmp/spirallens-d7-store",
+    resolved_parent: str | None = None,
+    parent_inode: int = 23,
     output_leaf: str | None = None,
     terminal_leaf: str | None = None,
     role_evidence: r.D7AttemptRoleEvidence | None = None,
 ) -> SimpleNamespace:
     store_identity = store_identity or _h("shared-store")
+    resolved_parent = resolved_parent or store_root
     output_leaf = output_leaf or f"{label}-output"
     terminal_leaf = terminal_leaf or f"{label}-terminal"
     output_identity = e.d7_path_identity_sha256(
         store_identity_sha256=store_identity,
-        resolved_parent_realpath=store_root,
+        resolved_parent_realpath=resolved_parent,
         subject_basename=output_leaf,
     )
     terminal_identity = e.d7_path_identity_sha256(
         store_identity_sha256=store_identity,
-        resolved_parent_realpath=store_root,
+        resolved_parent_realpath=resolved_parent,
         subject_basename=terminal_leaf,
     )
     declaration = r.D7AttemptDeclarationRecord(
@@ -70,7 +73,7 @@ def _prefix(
             store_identity_sha256=declaration.store_identity_sha256,
             subject_path_identity_sha256=identity,
             store_root_realpath=store_root,
-            resolved_parent_realpath=store_root,
+            resolved_parent_realpath=resolved_parent,
             subject_basename=leaf,
             parent_device=17,
             parent_inode=inode,
@@ -80,13 +83,13 @@ def _prefix(
         e.D7AbsentPathSubject.OUTPUT_NAMESPACE,
         output_leaf,
         output_identity,
-        23,
+        parent_inode,
     )
     authorization_terminal = authorization_receipt(
         e.D7AbsentPathSubject.TERMINAL_PATH,
         terminal_leaf,
         terminal_identity,
-        23,
+        parent_inode,
     )
     authorization = r.D7LaunchAuthorizationRecord(
         attempt_declaration_sha256=declaration.canonical_sha256,
@@ -141,7 +144,7 @@ def _prefix(
             store_identity_sha256=declaration.store_identity_sha256,
             subject_path_identity_sha256=identity,
             store_root_realpath=store_root,
-            resolved_parent_realpath=store_root,
+            resolved_parent_realpath=resolved_parent,
             subject_basename=leaf,
             parent_device=17,
             parent_inode=inode,
@@ -151,13 +154,13 @@ def _prefix(
         e.D7AbsentPathSubject.OUTPUT_NAMESPACE,
         output_leaf,
         output_identity,
-        23,
+        parent_inode,
     )
     pre_start_terminal = pre_start_receipt(
         e.D7AbsentPathSubject.TERMINAL_PATH,
         terminal_leaf,
         terminal_identity,
-        23,
+        parent_inode,
     )
     start = r.D7ExecutionStartRecord(
         attempt_declaration_sha256=declaration.canonical_sha256,
@@ -489,6 +492,24 @@ def test_absence_chain_requires_stable_parent_and_isolated_paths() -> None:
             replay_pre_start_output=physical_alias.pre_start_output,
             replay_pre_start_terminal=physical_alias.pre_start_terminal,
         )
+    nested = _prefix(
+        "replay-nested",
+        resolved_parent=primary.authorization_output.subject_path,
+        parent_inode=24,
+        role_evidence=_isolated_role(),
+    )
+    _validate_absence(nested)
+    with pytest.raises(QualificationContractError, match="non-nested"):
+        ev.validate_d7_isolated_replay_path_disjointness(
+            primary_authorization_output=primary.authorization_output,
+            primary_authorization_terminal=primary.authorization_terminal,
+            primary_pre_start_output=primary.pre_start_output,
+            primary_pre_start_terminal=primary.pre_start_terminal,
+            replay_authorization_output=nested.authorization_output,
+            replay_authorization_terminal=nested.authorization_terminal,
+            replay_pre_start_output=nested.pre_start_output,
+            replay_pre_start_terminal=nested.pre_start_terminal,
+        )
 
 
 def test_in_process_failure_payload_is_concrete_and_structurally_joined() -> None:
@@ -609,6 +630,11 @@ def test_external_abort_receipt_rejects_weak_or_disconnected_assertions() -> Non
     )
     with pytest.raises(QualificationContractError, match="exact string"):
         e.D7ExternalAbortVerificationReceipt.from_dict(document)
+    with pytest.raises(QualificationContractError, match="receipt cap"):
+        replace(
+            failure.receipt,
+            failure_evidence_payload_byte_count=(e.MAX_D7_ATTEMPT_EVIDENCE_BYTES + 1),
+        )
     wrong = replace(
         failure.receipt,
         observation_payload_sha256=_h("wrong-observation"),

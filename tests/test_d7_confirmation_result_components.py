@@ -548,6 +548,15 @@ def test_d0_d5_relabel_and_bool_int_laundering_are_rejected(
         c.D7JoinedPrimaryUnitOutcome.from_dict(joined)
 
 
+def test_direct_mapping_cycles_raise_contract_error(bundle: _Bundle) -> None:
+    document = bundle.core.to_dict()
+    recursive: list[object] = []
+    recursive.append(recursive)
+    document["records"] = recursive
+    with pytest.raises(QualificationContractError, match="recursive JSON"):
+        c.D7CoreCellOutcomesPayload.from_dict(document)
+
+
 def test_reused_rows_must_be_canonically_self_reconstructing(bundle: _Bundle) -> None:
     row = next(
         item

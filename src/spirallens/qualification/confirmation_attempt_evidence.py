@@ -815,7 +815,7 @@ class D7ExternalAbortVerificationReceipt(_CanonicalEvidence):
             "failure_evidence_payload_byte_count",
             1,
         )
-        if self.failure_evidence_payload_byte_count > r.MAX_D7_RESULT_COMPONENT_BYTES:
+        if self.failure_evidence_payload_byte_count > MAX_D7_ATTEMPT_EVIDENCE_BYTES:
             raise QualificationContractError(
                 "failure evidence payload exceeds the external receipt cap"
             )

@@ -89,7 +89,12 @@ def _sequence(value: object, label: str) -> list[object]:
     return value
 
 
-def _strict_json(value: object, label: str = "value") -> None:
+def _strict_json(
+    value: object,
+    label: str = "value",
+    *,
+    _ancestors: frozenset[int] = frozenset(),
+) -> None:
     if value is None or type(value) in {str, bool, int}:
         return
     if type(value) is float:
@@ -99,14 +104,34 @@ def _strict_json(value: object, label: str = "value") -> None:
             raise QualificationContractError(f"{label} must not be negative zero")
         return
     if type(value) is list:
+        identity = id(value)
+        if identity in _ancestors:
+            raise QualificationContractError(
+                f"{label} contains a recursive JSON container"
+            )
+        descendants = _ancestors | {identity}
         for index, member in enumerate(value):
-            _strict_json(member, f"{label}[{index}]")
+            _strict_json(
+                member,
+                f"{label}[{index}]",
+                _ancestors=descendants,
+            )
         return
     if type(value) is dict:
         if any(type(key) is not str for key in value):
             raise QualificationContractError(f"{label} keys must be built-in strings")
+        identity = id(value)
+        if identity in _ancestors:
+            raise QualificationContractError(
+                f"{label} contains a recursive JSON container"
+            )
+        descendants = _ancestors | {identity}
         for key, member in value.items():
-            _strict_json(member, f"{label}.{key}")
+            _strict_json(
+                member,
+                f"{label}.{key}",
+                _ancestors=descendants,
+            )
         return
     raise QualificationContractError(
         f"{label} contains non-built-in JSON type {type(value).__name__}"

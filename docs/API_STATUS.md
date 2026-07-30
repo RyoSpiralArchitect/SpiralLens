@@ -149,12 +149,12 @@ The deep-internal `confirmation_attempt_evidence` and
 `confirmation_attempt_evidence_validation` modules define canonical bytes and
 pure joins for authorization/pre-start path-absence receipts, in-process or
 external failure payloads, and external-abort verification receipts. The path
-receipts bind normalized lowercase-ASCII paths, parent device/inode identity,
-and distinct authorization/pre-start observations. They are directly
-constructible point-in-time assertions: no filesystem observer, reservation,
-TOCTOU protection, or post-publication inode proof is implemented. A
-schema-valid external receipt is likewise not an authenticated witness,
-verified abort, or finalization capability.
+receipts bind normalized absolute POSIX parents, lowercase portable ASCII
+leaves, parent device/inode identity, and distinct authorization/pre-start
+observations. They are directly constructible point-in-time assertions: no
+filesystem observer, reservation, TOCTOU protection, or post-publication inode
+proof is implemented. A schema-valid external receipt is likewise not an
+authenticated witness, verified abort, or finalization capability.
 
 The replay contracts and attempt records are specifications and types, not
 official replay-target or attempt-envelope instances. They have no filesystem

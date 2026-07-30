@@ -7,6 +7,8 @@ observer, authorize finalization, or grant scientific authority.
 
 from __future__ import annotations
 
+from pathlib import PurePosixPath
+
 from . import confirmation_attempt_evidence as e
 from . import confirmation_attempt_records as r
 from . import confirmation_attempt_validation as v
@@ -32,6 +34,16 @@ def _physical_subject_key(
         receipt.parent_device,
         receipt.parent_inode,
         receipt.subject_basename,
+    )
+
+
+def _paths_overlap(left: str, right: str) -> bool:
+    left_path = PurePosixPath(left)
+    right_path = PurePosixPath(right)
+    return (
+        left_path == right_path
+        or left_path in right_path.parents
+        or right_path in left_path.parents
     )
 
 
@@ -373,9 +385,14 @@ def validate_d7_isolated_replay_path_disjointness(
         replay_authorization_output.subject_path,
         replay_authorization_terminal.subject_path,
     }
-    if primary_paths & replay_paths:
+    if any(
+        _paths_overlap(primary_path, replay_path)
+        for primary_path in primary_paths
+        for replay_path in replay_paths
+    ):
         raise QualificationContractError(
-            "primary and replay output/terminal realpaths must be disjoint"
+            "primary and replay output/terminal realpaths must be disjoint "
+            "and non-nested"
         )
     primary_identities = {
         primary_authorization_output.subject_path_identity_sha256,
