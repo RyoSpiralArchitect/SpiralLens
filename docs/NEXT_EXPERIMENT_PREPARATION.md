@@ -921,27 +921,29 @@ the loader surface remains a validation-time prerequisite rather than
 canonical D7 identity. C1 now embeds the stable seed-free projection of that
 design in one canonical candidate.
 
-That is implementation conformance, not D7 evidence. Concrete confirmation
-seeds, declared Git source-set closure, repository-review attestation, family
-admission, freeze, lifecycle, result/failure types, terminal publication, and
-isolated replay remain absent. C1 records a declared static-bounded
-construction review, stable design, D7 registry/aggregation application,
-successor review contract, and complete declared Python source set, but none
-of those records changes the absent states. Runtime and transitive dependency
-closure are also unattested and lie outside C2's scope. Accordingly, no
-open-mapping or label-only D7 admission function exists. See
+That is implementation conformance, not D7 evidence. Committed C2 now verifies
+the declared historical Git source set, but concrete confirmation seeds,
+repository-review attestation, family admission, freeze, lifecycle,
+result/failure types, terminal publication, and isolated replay remain absent.
+C1 records a declared static-bounded construction review, stable design, D7
+registry/aggregation application, successor review contract, and complete
+declared Python source set; C2 changes only the historical Git source-set
+closure state. Runtime and transitive dependency closure are unattested and
+lie outside C2's scope. Accordingly, no open-mapping or label-only D7 admission
+function exists. See
 [`D7_CONFIRMATION_EXECUTION_DESIGN.md`](D7_CONFIRMATION_EXECUTION_DESIGN.md).
 
-The next ordering is:
+The recorded ordering is:
 
-1. merge the recorded C1 candidate, which declares the source set but embeds
-   neither its future commit nor declared Git source-set closure;
-2. from the exact clean post-merge C1 commit, verify ancestry and exact tracked
-   blobs and commit only the choice-free C2 declared Git source-set-closure
-   receipt; C2 does not execute historical code or attest Python/native
-   runtime, transitive dependencies, in-process identity, or current
-   compatibility; and
-3. only after C2, define official seeds and the reviewed lifecycle.
+1. C1 records the declared source set while embedding neither its future commit
+   nor a source-closure receipt;
+2. the unique receipt-only C2 child of exact post-merge C1 verifies ancestry
+   and the exact declared C1 source blobs without adding a design choice; C2
+   does not execute historical code or attest Python/native runtime,
+   transitive dependencies, in-process identity, hostile-local-mutation
+   resistance, or current compatibility; and
+3. next, type the replay target separately from the attempt envelope, then
+   define official seeds and the reviewed lifecycle.
 
 The later terminal schema must keep the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
@@ -1032,10 +1034,10 @@ remaining non-claims are recorded in
 The commit-stable internal D7 `v0.2` draft identity and historical `v0.1`
 successor structural-rebinding proposal remain preparation-only contracts.
 The separately recorded C1 candidate preserves them and adds a review contract,
-declared source set, registry, and aggregation application. It selects no seed,
-admits no family, verifies no declared Git source-set closure, and creates no
-lifecycle, terminal, D7, or D8 evidence. Runtime and transitive dependency
-closure remain unattested.
+declared source set, registry, and aggregation application. The committed C2
+receipt verifies that historical Git source set only. It selects no seed,
+admits no family, and creates no lifecycle, terminal, D7, or D8 evidence.
+Runtime and transitive dependency closure remain unattested.
 
 A separate public-example engineering lane may validate the already
 implemented model observation apparatus. It requires a pre-execution protocol

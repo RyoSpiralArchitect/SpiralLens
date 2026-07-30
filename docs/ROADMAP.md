@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding contracts | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set, while C2 declared Git source-set closure, freeze, authorization, admission, lifecycle, result, terminal, and D7/D8 authority remain absent; C2 will not attest runtime or transitive dependency closure |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding contracts | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only, while freeze, authorization, admission, lifecycle, result, terminal, and D7/D8 authority remain absent; runtime/transitive dependency closure is unattested |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -837,16 +837,19 @@ below:
     execution authority; declared source set is not declared Git source-set
     closure;
 16. create **C2** as the unique receipt-only child of the exact clean
-    post-merge C1 commit: verify ancestry and every tracked C1 blob, issue a
-    choice-free declared Git source-set-closure receipt, and commit only that
-    receipt. C2 does not execute historical code or attest Python/native
-    runtime, transitive dependencies, in-process identity, or current
-    compatibility;
-17. only after C2, add official seeds and the lifecycle in a separately
-    reviewed sequence. Define the immutable replay target independently from
+    post-merge C1 commit — completed. C2 binds
+    `e58a8169b41be688628ab7dda583e68088d3affc`; its unique
+    receipt-introduction commit is
+    `2f4e715a951211af8ca0ca4f6b2f7473134bf92b`. The committed loader verifies
+    ancestry and every declared C1 source blob. C2 does not execute historical
+    code or attest Python/native runtime, transitive dependencies, in-process
+    identity, hostile-local-mutation resistance, or current compatibility;
+17. only after C2, first define the immutable replay target independently from
     the launch/claim/start/outcome attempt envelope; do not create a placeholder
-    result to stand in for either. Result/failure and terminal publication
-    remain absent until that separation and no-overwrite chronology are typed;
+    result to stand in for either. Then add official seeds and the reviewed
+    lifecycle in a separately reviewed sequence. Result/failure and terminal
+    publication remain absent until that separation and no-overwrite chronology
+    are typed;
 18. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
@@ -923,10 +926,10 @@ This library slice adds, without changing that generic behavior:
 - one atomic six-component C1 candidate that preserves that proposal,
   records the successor review contract, static-bounded declared diversity
   review, seed-free design, registry/aggregation application, and declared
-  Python source set; plus the included but not-yet-invoked choice-free C2
-  verifier. C1 is Level-0 source declaration, not declared Git source-set
-  closure or admission. C2 can close only that declared Git source set, not
-  runtime or transitive dependencies.
+  Python source set; plus the choice-free C2 verifier and committed receipt.
+  C1 remains a Level-0 source declaration that cannot attest its future
+  commit; C2 verifies only that declared historical Git source set, not runtime
+  or transitive dependencies, admission, or current compatibility.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -961,10 +964,11 @@ cells/stress manifests remains an unchanged historical proposal. C1 is now
 recorded as a source-only Level-0 candidate: it declares and hashes the
 complete `src/spirallens/**/*.py` plus `pyproject.toml` set, but deliberately
 cannot attest its future commit or declared Git source-set closure. The
-immediate deliverable is the choice-free C2 receipt as the unique receipt-only
-child of the exact clean post-merge C1 commit. It will not attest runtime or
-transitive dependencies. Official seeds and lifecycle remain strictly later.
-Lifecycle and terminal work then keep the
+choice-free C2 receipt is now recorded as the unique receipt-only child of the
+exact clean post-merge C1 commit. It does not attest runtime or transitive
+dependencies. The immediate deliverable is the separate replay-target and
+attempt-envelope contract, followed by official seeds and reviewed lifecycle.
+Lifecycle and terminal work keep the
 replay target separate from the attempt envelope and create no placeholder
 result. The current four-case generator, C1 design, rebinding record, and
 development prediction inventory are not a D7 full-design freeze, admission,
