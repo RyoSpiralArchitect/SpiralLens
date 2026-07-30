@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding contracts | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only, while freeze, authorization, admission, lifecycle, result, terminal, and D7/D8 authority remain absent; runtime/transitive dependency closure is unattested |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications now define later contracts without creating instances, while freeze, authorization, admission, seeds, lifecycle records, result, terminal, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until the lifecycle/result/terminal/runner surfaces are final |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -845,34 +845,52 @@ below:
     code or attest Python/native runtime, transitive dependencies, in-process
     identity, hostile-local-mutation resistance, or current compatibility;
 17. only after C2, first define the immutable replay target independently from
-    the launch/claim/start/outcome attempt envelope; do not create a placeholder
-    result to stand in for either. Then add official seeds and the reviewed
-    lifecycle in a separately reviewed sequence. Result/failure and terminal
-    publication remain absent until that separation and no-overwrite chronology
-    are typed;
-18. after that committed D7 design-freeze receipt exists, execute the separate
+    the launch/claim/start/outcome attempt envelope — implemented at the
+    contract-specification level by the canonical, unpersisted
+    `D7ReplayTargetContractSpec` and `D7AttemptEnvelopeContractSpec`. Neither is
+    a replay-target or attempt instance. The latter fixes an append-only
+    declaration → authorization → exclusive claim → start →
+    scientific-result-or-failed-attempt → manifest → consumption model,
+    rather than one mutable nullable object. The future target is exactly
+    Level 0 with an all-false local authority vector. Do not create a
+    placeholder result to stand in for any of these objects;
+18. implement the concrete append-only lifecycle, scientific-result or
+    failed-attempt union, atomic terminal transaction, isolated-replay joins,
+    evidenced `started_unresolved` finalization, and eventual runner in a
+    separately reviewed sequence without invoking the supplier or issuing
+    seeds;
+19. only after those execution surfaces are final, issue an exact current
+    execution-source/runtime receipt, complete reviewed family admission, and
+    establish seed-free readiness. C2 cannot satisfy this item, and no seed is
+    supplied here;
+20. acquire the exclusive seed-supply claim, invoke the supplier once,
+    atomically publish the exact seed-bearing full design and replay target,
+    then commit their freeze receipt before launch intent. A claim without
+    target publication is `seed_supply_aborted` and non-retryable; target
+    absence never proves that the supplier was not invoked;
+21. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-19. run the admitted family without overrides or post-selection exclusions,
+22. run the admitted family without overrides or post-selection exclusions,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status; same-family new seeds remain replication and
     cannot satisfy this item;
-20. only then begin the separate representation-native F0-F4 selection lane;
+23. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-21. establish the same-substrate field/core/loop join, persist the frozen
+24. establish the same-substrate field/core/loop join, persist the frozen
     same-field core-degeneracy scalar and nested-radius profile, and retain the
     architecture-accounted sampled-winding estimate distribution with its
     unrounded cycle totals and residuals; only when the convention permits it
     may calibration-side integer/topology eligibility be assessed;
-22. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+25. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
     detection-limit surface over injection amplitude, declared
     perturbation/noise, and sampling density, including density-stratified
     exact-recall and graph-family matched-class gates;
-23. apply the preregistered M1 transition/stop rule. Pythia-70M remains
+26. apply the preregistered M1 transition/stop rule. Pythia-70M remains
     plumbing-only; an exhausted qualification budget ends `insufficient`
     rather than extending instrumentation indefinitely; and
-24. only after those separately reviewed M1 gates prepare and externally
+27. only after those separately reviewed M1 gates prepare and externally
     witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
@@ -929,7 +947,15 @@ This library slice adds, without changing that generic behavior:
   Python source set; plus the choice-free C2 verifier and committed receipt.
   C1 remains a Level-0 source declaration that cannot attest its future
   commit; C2 verifies only that declared historical Git source set, not runtime
-  or transitive dependencies, admission, or current compatibility.
+  or transitive dependencies, admission, or current compatibility; and
+- canonical in-memory `spirallens.d7-replay-target-contract-spec.v0.1` and
+  `spirallens.d7-attempt-envelope-contract-spec.v0.1` specifications,
+  reconstructed only after the pinned C2 history is reverified. They define a
+  future content-addressed, attempt-independent target and a separate
+  append-only attempt lineage without persisting either instance, exposing a
+  seed supplier, or granting authority. Because C2 is historical-only, a later
+  exact current execution-source/runtime closure must follow the completed
+  lifecycle, result, terminal, and runner code.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -966,11 +992,15 @@ complete `src/spirallens/**/*.py` plus `pyproject.toml` set, but deliberately
 cannot attest its future commit or declared Git source-set closure. The
 choice-free C2 receipt is now recorded as the unique receipt-only child of the
 exact clean post-merge C1 commit. It does not attest runtime or transitive
-dependencies. The immediate deliverable is the separate replay-target and
-attempt-envelope contract, followed by official seeds and reviewed lifecycle.
-Lifecycle and terminal work keep the
-replay target separate from the attempt envelope and create no placeholder
-result. The current four-case generator, C1 design, rebinding record, and
+dependencies. The separate canonical replay-target and attempt-envelope
+contract specifications are now implemented in memory, but no concrete
+instance is persisted. The immediate deliverable is the append-only
+lifecycle/result/failure/terminal schema implementation without invoking the
+official seed supplier. After those surfaces and the runner are final, a new
+exact current execution-source/runtime closure is required; C2 cannot supply
+it. Lifecycle and terminal work keep the replay target separate from the
+attempt envelope and create no placeholder result. The current four-case
+generator, C1 design, rebinding record, contract specifications, and
 development prediction inventory are not a D7 full-design freeze, admission,
 or run. Historical D6 bytes remain unchanged and exact D6 v0.1 admission
 remains false. Only a later locked D7 pass and isolated
