@@ -4,6 +4,65 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 replay-target and attempt-envelope contract specifications
+
+### Added
+
+- The deep-internal canonical
+  `spirallens.d7-replay-target-contract-spec.v0.1`
+  (`D7ReplayTargetContractSpec`) defines the required identity and
+  source/runtime bindings of a future immutable, seed-bearing replay target
+  while forbidding attempt-local paths, authorization, outcomes, terminal
+  lineage, gates, and placeholder output.
+- The separate canonical
+  `spirallens.d7-attempt-envelope-contract-spec.v0.1`
+  (`D7AttemptEnvelopeContractSpec`) binds the replay-target contract and
+  defines append-only attempt declaration, launch authorization, exclusive
+  claim, execution start, scientific-result-or-failed-attempt, terminal
+  manifest, and terminal consumption stages. Attempt stages may bind but cannot redefine
+  the target identity or its seed, design, graph/cycle, aggregation, result
+  schema, or family choices.
+- Start must exactly rejoin target, authorization, claim, and observed runtime
+  while rechecking namespace absence. Scientific payloads bind the exact
+  target and full inventory. Isolated replay derives from a consumed,
+  passed-primary terminal, and the final result/failure, manifest, and
+  consumption publish as one atomic no-replace transaction.
+- `load_d7_replay_attempt_contract_foundation()` internally reruns the pinned
+  committed-C2 verifier and reconstructs both specs in memory. It accepts no
+  caller-supplied loaded closure, expected digest, seed, result, namespace,
+  authorization, or prebuilt mapping.
+- The seed-supply contract orders final-code source/runtime closure and
+  reviewed family admission before its exclusive claim and one supplier
+  invocation, then atomic no-replace full-design/target publication and a
+  committed freeze receipt before launch intent. A claim without a published
+  target is an aborted, non-retryable seed supply; target absence does not
+  prove that the supplier was invoked.
+- The future target's claim ceiling is exactly Level 0 and its local authority
+  truth vector is closed and all-false; nested authority extensions are
+  forbidden.
+- Target, authorization, start, and scientific-result bindings are connected
+  by an explicit closed table of canonical byte equalities. A start without a
+  terminal remains `started_unresolved`, blocks retry/replay/D8, and can be
+  finalized only by an append-only record binding external abort evidence.
+
+### Compatibility and non-claims
+
+- Both specs are canonical but unpersisted internal surfaces. No writer,
+  replay-target instance, attempt-envelope instance, official seed inventory,
+  lifecycle record, result/failure, terminal, or replay artifact is created.
+- The append-only stage model is a contract, not an implemented lifecycle.
+  The next PR may implement the concrete lifecycle, result/failed-attempt, and
+  terminal schemas, but must not invoke the official seed supplier or issue
+  seed values.
+- C2 verifies only the historical C1 Git source set. It does not close this
+  module or later lifecycle, result, terminal, or runner code. After those
+  execution surfaces are final, a separate exact current execution-source and
+  runtime closure is required before any seed-bearing target may be issued.
+- Family admission, full-design freeze, launch/execution, D7, D8, synthetic
+  qualification, and every scientific, representation, semantic,
+  integer/topology, model, Pythia, and subject authority remain absent, false,
+  or `not_run`.
+
 ## 2026-07-30 — D7 C2 declared historical Git source-set closure
 
 ### Recorded

@@ -38,6 +38,7 @@ DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification.confirmation_execution_kernel",
     "spirallens.qualification.confirmation_protocol",
     "spirallens.qualification.confirmation_rebinding",
+    "spirallens.qualification.confirmation_replay_contracts",
     "spirallens.qualification.confirmation_source_closure",
     "spirallens.synthetic.spectral_moment_confirmation",
 )
@@ -69,6 +70,7 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/confirmation_execution_kernel.py",
     "spirallens/qualification/confirmation_protocol.py",
     "spirallens/qualification/confirmation_rebinding.py",
+    "spirallens/qualification/confirmation_replay_contracts.py",
     "spirallens/qualification/confirmation_source_closure.py",
     "spirallens/qualification/contracts.py",
     "spirallens/qualification/crossed.py",

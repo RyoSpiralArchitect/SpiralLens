@@ -3,8 +3,10 @@
 Status: `c1_seed_free_source_set_candidate_recorded`,
 `historical_structural_rebinding_proposal_preserved`,
 `successor_rebinding_review_contract_encoded`,
-`c2_declared_historical_git_source_set_closed`, `not_frozen`, `not_admitted`,
-`not_run`.
+`c2_declared_historical_git_source_set_closed`,
+`replay_target_contract_spec_defined`,
+`attempt_envelope_contract_spec_defined`, `instances_absent`, `not_frozen`,
+`not_admitted`, `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
 execution topology added after the PR #12 construction foundation. It records
@@ -50,6 +52,18 @@ repository-review attestation, D7 admission, full-design freeze, official seed
 supplier, lifecycle, result/failure schema, terminal writer, D8 replay, model
 access, or scientific promotion. Runtime and transitive dependency closure
 are outside the C2 receipt's scope and remain unattested.
+
+The internal `confirmation_replay_contracts` module now adds two canonical,
+unpersisted specifications after revalidating that pinned C1/C2 history:
+`D7ReplayTargetContractSpec`
+(`spirallens.d7-replay-target-contract-spec.v0.1`) defines the future immutable
+seed-bearing target independently of attempt-local state, and
+`D7AttemptEnvelopeContractSpec`
+(`spirallens.d7-attempt-envelope-contract-spec.v0.1`) defines one future
+attempt as append-only stage records. These are schema contracts, not
+instances. `LoadedD7ReplayAttemptContractFoundation` remains in memory, no
+writer is exposed, D7/D8 remain `not_run`, and every authority field remains
+false. Both specifications record `status=schema-defined-instance-absent`.
 
 ## 2. Exact repeated-measures inventory
 
@@ -248,32 +262,89 @@ source-only commits are now recorded:
    blobs. It does not execute historical code or attest Python/native runtime,
    transitive dependencies, in-process identity, hostile-local-mutation
    resistance, or current compatibility.
+3. **Replay/attempt contract specifications, implemented but unpersisted:**
+   `load_d7_replay_attempt_contract_foundation()` internally reruns the pinned
+   committed-C2 verifier and choice-freely reconstructs both canonical specs.
+   It does not accept a caller-provided source-closure wrapper or expected
+   digest. The replay-target spec remains outcome- and attempt-path-free. The
+   attempt-envelope spec binds the target contract but creates no target or
+   attempt instance.
 
-Only after C2 may later lifecycle work invoke the seed supplier once, require
-exactly two unique, sorted, nonnegative signed-int64 seeds, reject every
-development and parent selection seed, bind them to
-`confirmation-seed-slot-00` and `confirmation-seed-slot-01`, create the
-concrete full design without execution, and establish the reviewed
-launch/claim/start/terminal chronology. Seed values may be public after freeze.
-The controlled fact is chronology, not permanent secrecy.
+The attempt contract rejects a mutable nullable envelope. Its future records
+are append-only and ordered: attempt declaration, launch authorization,
+exclusive attempt claim, execution start, exactly one scientific result or
+failed-attempt record, terminal manifest, and terminal consumption. Attempt
+records bind but may not redefine the concrete target's seed inventory,
+thresholds, graph/cycle inventory, aggregation, result schema, construction
+family, or identity.
+
+The separate seed-supply chronology is also closed before values exist:
+final lifecycle/result/terminal/runner review, exact current execution-source
+and runtime closure, seed-free readiness, reviewed family admission, exclusive
+seed-supply claim, one supplier invocation, atomic no-replace publication of
+the seed-bearing full design and target, a committed full-design freeze
+receipt, then launch intent.
+The supplier may be invoked only after the claim and at most once. If the
+claim exists but target publication does not complete, the seed supply is
+aborted and retry remains unauthorized; absence of the target does not prove
+that the supplier was never invoked. No official seed supplier is invoked by
+the current implementation.
+
+Execution start must bind the exact target, authorization, and claim; match
+the observed source/runtime identity to the target's frozen receipt; and
+recheck that both output namespace and terminal path remain absent. A
+scientific result payload is attempt-independent but still binds the exact
+target, full inventory, aggregation, and result schema. The isolated-replay
+role is derived from an already persisted passed-primary terminal and
+consumption receipt, not from a caller label. Result or failed-attempt,
+manifest, and consumption records are staged and exposed only as one atomic
+no-replace terminal transaction.
+
+The target, authorization, start, and scientific payload fields are related by
+an explicit closed table of canonical byte-equality constraints. Independently
+well-formed digests are insufficient. A visible execution start without a
+terminal is `started_unresolved`, not inferred aborted. It cannot be retried,
+replayed, or used for D8. It remains unresolved until an append-only
+finalization binds both the start and external abort evidence; a hard crash
+cannot publish an in-process failure record.
+
+The future target itself remains exactly Level 0 and carries the closed
+all-false local authority vector. Admission, launch, result, and D8 authority
+are established only by later exact typed joins; they cannot be nested into or
+inferred from the target record.
+
+Only after the lifecycle and its result, failed-attempt, terminal, and runner
+code are final may a later receipt close the exact current execution source
+and runtime. C2 cannot do that: it closes only the historical C1 Git source
+set and covers none of these later surfaces. A later seed-bearing target must
+bind that new receipt, exactly two unique, sorted, nonnegative signed-int64
+seeds, rejection of every development and parent selection seed, the
+`confirmation-seed-slot-00` and `confirmation-seed-slot-01` mapping, the
+admission receipt, and the complete frozen design. Seed values may be public
+after freeze; the controlled fact is chronology, not permanent secrecy.
 
 Terminal design must not manufacture a placeholder result merely to reserve
-an output shape. A later PR must type the immutable replay target separately
-from the attempt envelope that carries launch authorization, exclusive claim,
-execution start, success/failure outcome, and terminal lineage. Neither object
-exists yet.
+an output shape. The two contract specifications now type the separation, but
+the actual immutable replay target and attempt envelope still do not exist.
 
 ## 9. Next blocking PR
 
-Committed C2 closes the declared historical Git source set. Before official
-seed supply, the next change must type the immutable replay target separately
-from the attempt envelope, then define the reviewed lifecycle and one-shot
-seed-supplier chronology without reading confirmation values.
+Committed C2 closes the declared historical Git source set, and the two
+canonical contract specifications now fix the target/envelope separation. The
+next PR must implement the concrete append-only lifecycle,
+result/failed-attempt, terminal-manifest, and terminal-consumption schemas and
+their choice-free joins without invoking the official seed supplier or issuing
+seed values.
 
-Official seeds, result/failure types, no-overwrite publication, launch,
-exclusive attempt, execution start, terminal publication, and isolated replay
-remain separate obligations. None may be represented by a placeholder result
-or inferred from C2 source closure.
+After that code and the eventual runner are final, a separate exact current
+execution-source/runtime closure and reviewed family admission remain required
+before the exclusive seed-supply claim. Only the subsequent single supplier
+invocation may feed atomic full-design/target publication and its committed
+freeze receipt. Official seeds, concrete replay target, attempt instances,
+admission, full-design freeze, no-overwrite publication, launch, exclusive
+attempt, execution start, terminal publication, and isolated replay remain
+separate obligations. None may be represented by a placeholder result or
+inferred from C2 source closure.
 
 Until those are complete, the canonical state remains:
 
@@ -282,6 +353,10 @@ c1_seed_free_source_set_candidate_recorded
 historical_structural_rebinding_proposal_preserved
 successor_rebinding_review_contract_encoded
 c2_declared_historical_git_source_set_closed
+replay_target_contract_spec_defined
+attempt_envelope_contract_spec_defined
+replay_target_instance_absent
+attempt_envelope_instance_absent
 not_frozen
 not_admitted
 not_run
@@ -289,5 +364,6 @@ d6_v0_1_exact_admission_unsatisfied
 historical_git_source_set_closure_verified
 runtime_and_transitive_closure_unattested
 current_source_compatibility_not_verified
-lifecycle_and_terminal_not_implemented
+current_execution_source_runtime_closure_absent
+lifecycle_result_terminal_and_runner_not_implemented
 ```

@@ -403,6 +403,43 @@ execute historical code or attest runtime/transitive dependencies,
 in-process identity, hostile-local-mutation resistance, or current-source
 compatibility.
 
+The deep-internal
+`spirallens.qualification.confirmation_replay_contracts` module now
+reconstructs two canonical but unpersisted Level-0 specifications:
+`D7ReplayTargetContractSpec`
+(`spirallens.d7-replay-target-contract-spec.v0.1`) defines what a future
+immutable, seed-bearing replay target must bind, while
+`D7AttemptEnvelopeContractSpec`
+(`spirallens.d7-attempt-envelope-contract-spec.v0.1`) defines the separate
+append-only chronology for one future attempt. The choice-free
+`load_d7_replay_attempt_contract_foundation()` entry point internally reruns
+the pinned committed-C2 verifier; it accepts neither a caller-supplied source
+closure nor expected digest. Both specification bytes are canonical, but no
+specification artifact is written and neither an actual replay target nor an
+attempt envelope exists.
+
+The future attempt envelope is not one mutable nullable record. Its declared
+stage order is attempt declaration, launch authorization, exclusive attempt
+claim, execution start, exactly one scientific-result or failed-attempt
+record, terminal manifest, and terminal consumption. Attempt records may bind the
+future concrete replay-target digest but may not redefine its seeds, design,
+thresholds, graph/cycle inventory, aggregation, result schema, construction
+family, or identity. A separate exact closure of the then-current execution
+source and runtime remains mandatory after the lifecycle, result, terminal,
+and runner code are final; the historical C2 receipt does not close any of
+those later surfaces.
+
+Execution start must rejoin the observed runtime to the target's frozen
+source/runtime receipt and recheck namespace absence. Every scientific payload
+must bind the exact target and full inventory. Isolated replay derives its
+role from an already consumed, passed primary terminal; a caller label is
+insufficient. Result/failure, manifest, and consumption become visible only
+as one atomic no-replace terminal transaction. These joins are an explicit
+closed table of canonical byte equalities, not independently named digests.
+A visible start without terminal is `started_unresolved`, never inferred
+aborted: retry, replay, and D8 remain blocked until an append-only finalization
+binds the start plus external abort evidence.
+
 Family admission, full-design freeze, official seeds, lifecycle,
 launch/execution, result/failure, and terminal publication remain absent. The
 historical D6 decision and exact-admission status remain unchanged: the
@@ -890,11 +927,27 @@ to become a general library.
   committed loader succeeds through the merge lineage. It does not execute
   historical code or attest Python/native runtime, transitive dependencies,
   in-process identity, hostile-local-mutation resistance, or current
-  compatibility. The next change may define official seeds and lifecycle only
-  after separately typing the immutable replay target and attempt envelope;
-  no placeholder result may stand in for either. Full-design closure,
-  admission, freeze, seeds, lifecycle, result/failure, terminal, D7, and D8 all
-  remain incomplete now.
+  compatibility.
+- **Implemented contract-only — replay target and attempt envelope:** two
+  canonical, unpersisted internal specifications now keep the future immutable
+  seed-bearing replay target separate from the append-only attempt chronology.
+  The attempt model freezes distinct declaration, authorization, claim, start,
+  outcome/failure, manifest, and consumption stages; no placeholder result may
+  stand in for any stage. After final-code source/runtime closure and reviewed
+  family admission, a future seed-supply lifecycle must acquire its exclusive
+  claim before the single supplier invocation. It then atomically publishes
+  the seed-bearing full design and target, commits their freeze receipt, and
+  only then creates launch intent. If the claim exists but atomic target
+  publication does not complete, the seed supply is aborted and cannot be
+  retried; target absence alone is not evidence that the supplier was never
+  invoked. The future target remains exactly Level 0 and its local authority
+  vector remains all-false. No concrete target, attempt instance, official
+  seed, lifecycle record, result, or authority is created here. The next PR
+  implements the concrete lifecycle/result/failure/terminal schemas without
+  invoking the supplier or issuing seeds. Exact closure of the final current
+  execution source and runtime follows only after those code surfaces are
+  complete. Full-design closure, admission, freeze, seeds, execution,
+  terminal, D7, and D8 all remain incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
@@ -964,8 +1017,9 @@ immediate next plan live in the single
   persistence, and the scope-limited D6 independent-family admission
   boundary. Deep internal modules now also contain the Level-0 C1 source-set
   candidate, the choice-free C2 issuer/loader, and its committed
-  declared-Git-source-set receipt. They are not exported from
-  `spirallens.qualification` or the package root. No admission, seed,
+  declared-Git-source-set receipt, plus canonical unpersisted replay-target and
+  append-only attempt-envelope contract specifications. They are not exported
+  from `spirallens.qualification` or the package root. No admission, seed,
   execution, result, or promotion surface is published.
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;
