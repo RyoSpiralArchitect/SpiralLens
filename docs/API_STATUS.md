@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a single scope-limited D6 surrogate-profile decision with embedded admission spec; publish is provisional until a clean tracked descendant reload, and the archival loader proves neither current-engine compatibility nor reexecution; internal D7 v0.2 draft and v0.1 successor-rebinding types add no public or persisted surface, and D7/D8/global synthetic, topology, representation, and subject authority remain false |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate and the pending C2 closure mechanism, without public export, admission, seed, execution, result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -49,19 +49,23 @@ The spectral-moment four-case generator and
 development surfaces. Its builder and strict reader accept only an
 authoritative committed-D6 loader receipt, but it deliberately exposes no
 full-design freeze, source-closure, admission, lifecycle, execution, result, or
-promotion surface. `D7ParentD6Binding` and the foundation are now internal,
-unpersisted `v0.2` drafts. Their canonical identity excludes the ephemeral
-current-loader HEAD and source-binding digest, while construction still
-requires and validates the typed authoritative loader receipt. The prior
-internal `v0.1` drafts have no persisted artifacts or migration surface.
+promotion surface. `D7ParentD6Binding` and the foundation are now internal
+`v0.2` drafts. They remain unpersisted as standalone/public artifacts, while
+C1 preserves their exact canonical historical bodies inside its Level-0
+wrapper. Their canonical identity excludes the ephemeral current-loader HEAD
+and source-binding digest, while construction still requires and validates the
+typed authoritative loader receipt. The prior internal `v0.1` drafts have no
+standalone artifacts or migration surface.
 
 `spirallens.qualification.confirmation_execution_design`,
 `spirallens.qualification.confirmation_execution_kernel`, and
 `spirallens.qualification.confirmation_crossed_development` are also internal.
 The first requires a strict full parent-protocol load and constructs a
-commit-stable, unpersisted `v0.2` seed-slot execution draft. The second is the
-single oracle-free numerical prediction kernel for an explicitly supplied
-seed; supplying one attests no freeze, authorization, or chronology. The third
+commit-stable `v0.2` seed-slot execution draft. That draft remains unpersisted
+as a standalone/public artifact, while C1 preserves its exact canonical
+historical body inside the Level-0 wrapper. The second is the single
+oracle-free numerical prediction kernel for an explicitly supplied seed;
+supplying one attests no freeze, authorization, or chronology. The third
 remains a development adapter that accepts only permanently excluded seeds and
 stops at sealed predictions. None of these modules is exported
 from `spirallens.qualification` or the package root. Their schemas and call
@@ -69,22 +73,31 @@ signatures may change before pre-1.0 stabilization. They expose no freeze,
 official seed supplier, admission, gate, result, terminal writer, replay, or
 promotion API.
 
-`spirallens.qualification.confirmation_rebinding` is another internal surface.
-Its `v0.1` factory and strict canonical reader encode a proposed successor-only
-fulfillment rule: graph-axis and threshold bodies remain byte-exact, while D7 cells/stress
-manifests use distinct identities with an exactly matched typed structural
-projection. The rule is explicitly unreviewed, unpublished, and ineffective
-for admission. It neither mutates nor reinterprets D6 v0.1, whose exact
-admission remains false. No amendment artifact, source closure, D7 implementation
-registry, aggregation application, family admission, freeze, seed, lifecycle,
-terminal, D7, or D8 state is published or completed.
+`spirallens.qualification.confirmation_rebinding` remains an internal
+historical-proposal surface. Its `v0.1` factory and strict reader encode a
+successor-only structural rule without mutating D6 v0.1; exact historical
+admission remains false.
 
-The next internal qualification slice is ordered as C1 stable design and
-reviewed rebinding artifacts plus a complete executable source set, followed
-by a choice-free C2 closure receipt from a clean descendant. C1 contains no
-self-referential source receipt. Lifecycle comes later. Its terminal design must type the immutable
-replay target separately from the attempt envelope rather than exposing a
-placeholder result.
+`spirallens.qualification.confirmation_c1` and
+`spirallens.qualification.confirmation_source_closure` are also deep internal
+modules. The first persists one atomic, strictly reloadable Level-0 C1
+candidate containing the stable seed-free design, declared static-bounded
+construction review, implementation registry, aggregation application,
+successor-rebinding review contract, and declared source manifest. Declared
+source set is not closure: C1 deliberately embeds no future commit,
+repository-review attestation, or C2 receipt, and
+`source_closure_verified=false`. The second contains the choice-free future C2
+issuer/loader; its code is in the C1 source set, but no C2 receipt exists in
+this change. Neither module is re-exported or compatibility-supported.
+
+Family admission, full-design freeze, official seeds, lifecycle, execution,
+result/failure, terminal publication, D7, and D8 remain absent or `not_run`.
+After a receipt-only C2 from the exact clean post-merge C1 commit, later
+terminal design must type the immutable replay target separately from the
+attempt envelope rather than exposing a placeholder result. C2 closes only
+the declared Git source set; it does not execute historical code or attest
+Python/native runtime, transitive dependencies, in-process identity, or
+current compatibility.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

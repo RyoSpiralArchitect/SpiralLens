@@ -32,11 +32,13 @@ DEFAULT_IMPORTS = (
 )
 DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification",
+    "spirallens.qualification.confirmation_c1",
     "spirallens.qualification.confirmation_crossed_development",
     "spirallens.qualification.confirmation_execution_design",
     "spirallens.qualification.confirmation_execution_kernel",
     "spirallens.qualification.confirmation_protocol",
     "spirallens.qualification.confirmation_rebinding",
+    "spirallens.qualification.confirmation_source_closure",
     "spirallens.synthetic.spectral_moment_confirmation",
 )
 FORBIDDEN_IMPORTS = (
@@ -61,11 +63,13 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/aggregation.py",
     "spirallens/qualification/blind.py",
     "spirallens/qualification/common.py",
+    "spirallens/qualification/confirmation_c1.py",
     "spirallens/qualification/confirmation_crossed_development.py",
     "spirallens/qualification/confirmation_execution_design.py",
     "spirallens/qualification/confirmation_execution_kernel.py",
     "spirallens/qualification/confirmation_protocol.py",
     "spirallens/qualification/confirmation_rebinding.py",
+    "spirallens/qualification/confirmation_source_closure.py",
     "spirallens/qualification/contracts.py",
     "spirallens/qualification/crossed.py",
     "spirallens/qualification/evidence_bundle.py",

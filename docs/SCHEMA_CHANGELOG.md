@@ -4,6 +4,42 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 C1 seed-free source-set candidate and C2 verifier foundation
+
+### Added
+
+- One atomic internal `spirallens.d7-c1-seed-free-source-set.v0.1` candidate
+  binds six canonical components:
+  `spirallens.d7-stable-seed-free-execution-design.v0.1`,
+  `spirallens.d7-construction-diversity-review.v0.1`,
+  `spirallens.d7-confirmation-implementation-registry.v0.1`,
+  `spirallens.d7-confirmation-aggregation-application.v0.1`,
+  `spirallens.d7-successor-rebinding-review-contract.v0.1`, and
+  `spirallens.d7-c1-source-set-manifest.v0.1`.
+- The aggregation component embeds
+  `spirallens.d7-confirmation-evaluation-design.v0.1` and
+  `spirallens.d7-locked-confirmation-aggregation.v0.1`.
+- `spirallens.d7-c2-source-closure-receipt.v0.1` and its choice-free
+  issuer/loader are implemented and included in the C1 declared source set.
+  The schema and code exist so they can be reviewed before C1 is merged; no C2
+  receipt is issued in this change.
+
+### Compatibility and non-migrations
+
+- C1 is a Level-0 repository artifact and deep internal pre-1.0 surface, not a
+  package-root or `spirallens.qualification` export. It declares and hashes
+  `src/spirallens/**/*.py` plus `pyproject.toml`; it does not attest its future
+  commit, repository review, runtime dependency closure, or source closure.
+- The construction review is explicitly limited to declared static direct
+  source/dependency evidence. Dynamic/transitive and epistemic independence
+  remain unproved. The successor component encodes a review contract while
+  preserving the historical unreviewed proposal unchanged; no repository
+  review attestation is embedded.
+- C2 must be created separately from the clean post-merge C1 and must commit
+  only its receipt. Family admission, full-design freeze, official seeds,
+  lifecycle, launch/execution, result/failure, terminal publication, D7, and
+  D8 remain absent, false, or `not_run`.
+
 ## 2026-07-30 — D7 seed-slot prediction-kernel extraction
 
 ### Added

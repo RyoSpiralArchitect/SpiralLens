@@ -1,8 +1,10 @@
 # D7 Confirmation Execution Design
 
-Status: `implemented_seed_free_design_v0_2`,
-`structural_rebinding_proposal_encoded_not_reviewed_or_published`, `not_frozen`,
-`not_admitted`, `not_run`.
+Status: `c1_seed_free_source_set_candidate_recorded`,
+`historical_structural_rebinding_proposal_preserved`,
+`successor_rebinding_review_contract_encoded`,
+`c2_declared_git_source_set_closure_pending`, `not_frozen`, `not_admitted`,
+`not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
 execution topology added after the PR #12 construction foundation. It records
@@ -10,14 +12,15 @@ what is now implemented, what the implementation revealed about the D6 v0.1
 admission contract, and which obligations still block a claim-bearing
 confirmation.
 
-The foundation and execution design are internal, unpersisted drafts. Their
-current `v0.2` schemas supersede the earlier internal `v0.1` drafts; there is
-no persisted `v0.1` artifact to migrate. The version change removes
-validation-time current-loader HEAD and source-surface digests from canonical
-D7 identity so that an unchanged parent decision and unchanged design produce
-commit-stable bytes. Construction still requires the authoritative typed D6
-loader receipt and validates that receipt before projecting its stable
-historical identity.
+The foundation and execution design remain unpersisted as standalone/public
+draft artifacts. C1 now preserves their exact canonical `v0.2` historical
+bodies inside one Level-0 wrapper. Those schemas supersede the earlier
+internal `v0.1` drafts; there is no standalone `v0.1` artifact to migrate. The
+version change removes validation-time current-loader HEAD and source-surface
+digests from canonical D7 identity so that an unchanged parent decision and
+unchanged design produce commit-stable bytes. Construction still requires the
+authoritative typed D6 loader receipt and validates that receipt before
+projecting its stable historical identity.
 
 ## 1. Scope
 
@@ -36,13 +39,16 @@ confirmation seed is selected:
 - the same `GraphInput` and A-bound field-estimate join between core and loop
   predictions.
 
-The separate internal `confirmation_rebinding` contract now types and strictly
-reloads the proposed successor-only cells/stress fulfillment rule described below. It
-does not publish a canonical artifact or implement a D7 admission,
-construction-diversity review, source closure, D7 registry or aggregation
-application, full-design freeze, source-readiness receipt, official seed
-supplier, lifecycle, result/failure schema, terminal writer, D8 replay, model
-access, or scientific promotion.
+The separate internal `confirmation_rebinding` contract types and strictly
+reloads the historical proposed successor-only cells/stress fulfillment rule.
+C1 now preserves that proposal and records a separate successor review
+contract, declared static-bounded construction review, D7 registry,
+aggregation application, and source-set manifest in one canonical candidate.
+It does not implement declared Git source-set closure, repository-review
+attestation, D7 admission, full-design freeze, official seed supplier,
+lifecycle, result/failure schema, terminal writer, D8 replay, model access, or
+scientific promotion. Runtime and transitive dependency closure are outside
+the C2 receipt's scope and remain unattested.
 
 ## 2. Exact repeated-measures inventory
 
@@ -195,9 +201,13 @@ claimed to be label-blind. The generator necessarily constructs the latent
 signal used to synthesize observations; the narrower and testable statement is
 that no oracle-truth record reaches the blind prediction kernels.
 
-The field estimator is the current development implementation. It is not
-called D7-locked or source-closed until the next PR publishes the D7-specific
-implementation registry and closure.
+The field estimator remains the current development implementation. C1 binds
+its D7-specific implementation registry and aggregation application and
+declares the Git source set, but that set is not yet closed or admitted. The
+separate post-merge C2 receipt can close only the declared Git-tree source set;
+it does not execute historical code or attest Python/native runtime,
+transitive-dependency, in-process identity, or current compatibility.
+Admission and freeze remain separate later contracts.
 
 The path stops before scoring and aggregation. It does not call D4/D5 collapse,
 create a `GateResult`, create a `QualificationResult`, or publish a terminal.
@@ -220,17 +230,20 @@ future unopened-seed confirmation.
 
 ## 8. Freeze chronology
 
-The official seed values remain absent. The next change must first separate
-two source-only commits:
+The official seed values remain absent. The first of two deliberately
+separated source-only commits is now recorded:
 
-1. **C1 — stable design and closed source set:** publish and strictly reload
-   the canonical seed-free design and reviewed successor-rebinding artifacts;
-   commit them with the complete executable source surface, D7 implementation
-   registry, aggregation application, and reviewed construction-diversity
-   comparison. C1 contains no self-referential source-closure receipt.
-2. **C2 — closure receipt:** from a clean descendant, verify C1 by Git
-   ancestry and exact tracked blobs, issue a receipt that adds no design
-   choices, and commit only that receipt.
+1. **C1 — stable design and declared source set, recorded:** one canonical
+   candidate binds the seed-free design, historical proposal plus successor
+   review contract, declared static-bounded construction review, complete
+   Python source manifest, D7 implementation registry, and aggregation
+   application. C1 contains no self-referential commit or source-closure
+   receipt; `source_closure_verified=false`.
+2. **C2 — declared Git source-set closure receipt, next:** from the exact clean
+   post-merge C1 commit, verify Git ancestry and exact tracked blobs, issue a
+   receipt that adds no design choices, and commit only that receipt. It does
+   not execute historical code or attest Python/native runtime, transitive
+   dependencies, in-process identity, or current compatibility.
 
 Only after C2 may later lifecycle work invoke the seed supplier once, require
 exactly two unique, sorted, nonnegative signed-int64 seeds, reject every
@@ -248,15 +261,12 @@ exists in this PR.
 
 ## 9. Next blocking PR
 
-This PR intentionally stops after commit-stable internal draft identity and
-the typed successor-only structural rule. The next PR must resolve, before any
-official seed supply:
-
-- published, strictly reloadable stable design and reviewed rebinding
-  artifacts;
-- reviewed construction-diversity and the complete C1 executable source set;
-- D7-specific implementation-registry and aggregation application; and
-- the C1-to-C2 source-closure receipt lineage.
+This change records the atomic C1 candidate and intentionally stops before
+declared Git source-set closure. Before any official seed supply, the next
+receipt-only change must use the exact clean post-merge C1 commit, verify its
+exact bundle and re-enumerated source Git tree, and establish the unique
+C1-to-C2 history without adding a design choice. This receipt will not attest
+runtime or transitive dependency closure.
 
 Lifecycle, official seeds, result/failure types, the separate replay-target and
 attempt-envelope schemas, no-overwrite publication, launch, exclusive attempt,
@@ -267,8 +277,10 @@ by placeholders in the source-closure PR.
 Until those are complete, the canonical state remains:
 
 ```text
-implemented_seed_free_design_v0_2
-structural_rebinding_proposal_encoded_not_reviewed_or_published
+c1_seed_free_source_set_candidate_recorded
+historical_structural_rebinding_proposal_preserved
+successor_rebinding_review_contract_encoded
+c2_source_closure_pending
 not_frozen
 not_admitted
 not_run
