@@ -32,6 +32,8 @@ DEFAULT_IMPORTS = (
 )
 DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification",
+    "spirallens.qualification.confirmation_attempt_evidence",
+    "spirallens.qualification.confirmation_attempt_evidence_validation",
     "spirallens.qualification.confirmation_attempt_records",
     "spirallens.qualification.confirmation_attempt_validation",
     "spirallens.qualification.confirmation_c1",
@@ -41,6 +43,8 @@ DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification.confirmation_protocol",
     "spirallens.qualification.confirmation_rebinding",
     "spirallens.qualification.confirmation_replay_contracts",
+    "spirallens.qualification.confirmation_result_component_validation",
+    "spirallens.qualification.confirmation_result_components",
     "spirallens.qualification.confirmation_source_closure",
     "spirallens.synthetic.spectral_moment_confirmation",
 )
@@ -66,6 +70,8 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/aggregation.py",
     "spirallens/qualification/blind.py",
     "spirallens/qualification/common.py",
+    "spirallens/qualification/confirmation_attempt_evidence.py",
+    "spirallens/qualification/confirmation_attempt_evidence_validation.py",
     "spirallens/qualification/confirmation_attempt_records.py",
     "spirallens/qualification/confirmation_attempt_validation.py",
     "spirallens/qualification/confirmation_c1.py",
@@ -75,6 +81,8 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/confirmation_protocol.py",
     "spirallens/qualification/confirmation_rebinding.py",
     "spirallens/qualification/confirmation_replay_contracts.py",
+    "spirallens/qualification/confirmation_result_component_validation.py",
+    "spirallens/qualification/confirmation_result_components.py",
     "spirallens/qualification/confirmation_source_closure.py",
     "spirallens/qualification/contracts.py",
     "spirallens/qualification/crossed.py",

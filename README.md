@@ -420,13 +420,18 @@ attempt envelope exists.
 
 Step 18 is now partially implemented in the separate deep-internal
 `spirallens.qualification.confirmation_attempt_records` and
-`spirallens.qualification.confirmation_attempt_validation` modules. They
-define closed canonical schemas for the future declaration, authorization,
-claim, start, scientific-result or infrastructure-failure outcome, terminal
-manifest, and terminal consumption, together with pure structural joins
-between those records. This is a type and validation layer only: it creates no
-official or persisted record instance, writes no file, claims no attempt,
-starts no execution, and grants no authority.
+`spirallens.qualification.confirmation_attempt_validation` modules, with
+separate `confirmation_attempt_evidence`,
+`confirmation_attempt_evidence_validation`,
+`confirmation_result_components`, and
+`confirmation_result_component_validation` payload layers. They define closed
+canonical schemas for the future declaration, authorization, claim, start,
+scientific-result or infrastructure-failure outcome, terminal manifest,
+terminal consumption, the six result components, path-absence receipts,
+failure payload, and external-abort receipt, together with pure structural
+joins between those values. This is a type and validation layer only: it
+creates no official or persisted record instance, writes no file, claims no
+attempt, starts no execution, and grants no authority.
 
 The attempt envelope is not one mutable nullable record. Its stage order
 remains attempt declaration, launch authorization, exclusive attempt claim,
@@ -464,9 +469,18 @@ retry, replay, and D8 blocked, unless a later finalizer verifies an external
 witness bound to that exact start and execution identity. No such witness
 verifier or finalizer exists yet. Likewise, the six result-component payloads,
 authorization/pre-start absence receipts, failure evidence payload, and
-external-abort verification receipt are currently bound only by future
-contract ID where applicable, digest, size, count, and reserved filename.
-Their concrete payload schemas and byte-level validators do not exist yet.
+external-abort verification receipt now have deep-internal canonical byte
+schemas. Expected SHA-256 is checked before parsing, exact local types and byte
+counts are enforced, and pure joins connect those bytes to the existing
+attempt/result envelopes. The result-component join closes 1,344 event lanes
+(192 core and 1,152 loop), 64 cell-derived joined primaries, six required
+strata, four-state gates, and the outer result bindings. It cannot establish
+target-inventory or gate-definition authority without a concrete loaded
+target. The directly constructible path receipts remain point-in-time
+assertions rather than proof that a filesystem observer ran; they acquire no
+reservation and prove neither TOCTOU resistance nor post-publication inode
+disjointness. A schema-valid external receipt likewise does not authenticate
+its observer or verifier and cannot authorize finalization.
 
 Family admission, full-design freeze, official seeds, concrete lifecycle
 instances, persistence, launch/execution, result/failure publication, terminal
@@ -984,10 +998,14 @@ to become a general library.
   record, authority, writer, runner, publisher, finalizer, or replay comparator
   is created here. Exact closure of the final current execution source and
   runtime follows only after those operational code surfaces are complete.
-  Component, absence-receipt, evidence-payload, and verification-receipt byte
-  schemas also remain future work; current contract IDs do not validate
-  arbitrary caller bytes. Full-design closure, admission, freeze, seeds,
-  execution, terminal publication, D7, and D8 all remain incomplete now.
+  Deep-internal canonical component, absence-receipt, evidence-payload, and
+  verification-receipt byte schemas now reject arbitrary or noncanonical
+  caller bytes and perform pure structural joins. They do not load the frozen
+  target, observe a filesystem, authenticate an external witness, persist a
+  record, or authorize a finalizer. Target-bound exact inventory and gate
+  semantics therefore remain deferred. Full-design closure, admission,
+  freeze, seeds, execution, terminal publication, D7, and D8 all remain
+  incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for

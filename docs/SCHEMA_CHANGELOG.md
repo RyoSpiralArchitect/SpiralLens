@@ -4,6 +4,49 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 result-component and attempt-evidence payload schemas
+
+### Added
+
+- The deep-internal `confirmation_result_components` module defines six
+  distinct canonical, attempt-independent D7 payload schemas. Their schema
+  versions remain separate from the frozen component contract IDs, and
+  canonical-byte loading requires the expected SHA-256 before parsing.
+- The matching pure structural validator rejoins exactly 1,344 event lanes
+  (192 core and 1,152 loop cells), 64 joined primary units, six required
+  strata, four-state aggregate gates, and the outer scientific-result
+  bindings. Every event stage is derived from exact outcome fields. Primary
+  summaries are reconciled from their cells; graph axes, fingerprints,
+  seed-slot case pairs, canonical row reconstruction, and structural
+  non-pass floors are enforced.
+- The deep-internal `confirmation_attempt_evidence` module defines canonical
+  authorization/pre-start path-absence receipts, an exact in-process/external
+  failure-payload union, and an external-abort verification receipt. Its pure
+  validator binds actual start bytes, evidence and failed-attempt records,
+  external finalization records, authorization/pre-start continuity, and
+  isolated primary/replay path separation.
+- Path identities accept normalized absolute POSIX parents and lowercase
+  portable ASCII leaves. Isolation rejects both textual aliases and repeated
+  parent-device/inode/leaf identities.
+
+### Compatibility and non-claims
+
+- All four modules are deep internal, declare an empty `__all__`, and add no
+  package-root export. They create no official instance and provide no loader,
+  writer, persistence transaction, runner, seed supplier, or authority.
+- Target exact-set closure, gate definitions, and gate-evidence semantics
+  remain unavailable until an authoritative replay-target loader exists. The
+  structural bundle validator cannot authorize any scientific result.
+- Path-absence receipts are directly constructible, point-in-time assertions.
+  No filesystem observer, destination reservation, TOCTOU resistance, or
+  post-publication inode-disjointness proof exists yet.
+- A schema-valid external-abort receipt does not authenticate the observer,
+  verifier, observation, source/runtime identity, or actor separation. No
+  witness verifier or finalizer capability is introduced.
+- C2 does not close these sources. Exact current execution-source/runtime
+  closure, admission, freeze, official seeds, persistence, execution,
+  publication, D7, and D8 remain future work.
+
 ## 2026-07-30 — D7 attempt-record and structural-validation schemas
 
 ### Added
@@ -59,11 +102,11 @@ promote a claim.
   consumption binds the manifest. The manifest never binds consumption.
 - A visible start without a terminal remains `started_unresolved`. Elapsed
   time, process absence, or a caller assertion cannot finalize it.
-- The six result-component payload schemas, absence-receipt schemas, failure
-  evidence payload schema, external-abort verification-receipt schema, and
-  their byte-level validators remain unimplemented. Their contract IDs,
-  filenames, digests, sizes, counts, and joins are bindings for those future
-  artifacts, not evidence that arbitrary caller bytes satisfy them.
+- At this record-layer introduction, the six result-component payload schemas,
+  absence-receipt schemas, failure payload, external-abort receipt, and their
+  byte validators were still unimplemented. The later entry above adds those
+  structural byte contracts without adding observation, witness, persistence,
+  or scientific authority.
 - C2 does not close these new sources. A later exact closure of the final
   execution source and runtime remains mandatory before official seed supply,
   target freeze, authorization, or execution.
