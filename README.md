@@ -418,51 +418,82 @@ closure nor expected digest. Both specification bytes are canonical, but no
 specification artifact is written and neither an actual replay target nor an
 attempt envelope exists.
 
-The future attempt envelope is not one mutable nullable record. Its declared
-stage order is attempt declaration, launch authorization, exclusive attempt
-claim, execution start, exactly one scientific-result or failed-attempt
-record, terminal manifest, and terminal consumption. Attempt records may bind the
-future concrete replay-target digest but may not redefine its seeds, design,
-thresholds, graph/cycle inventory, aggregation, result schema, construction
-family, or identity. A separate exact closure of the then-current execution
-source and runtime remains mandatory after the lifecycle, result, terminal,
-and runner code are final; the historical C2 receipt does not close any of
-those later surfaces.
+Step 18 is now partially implemented in the separate deep-internal
+`spirallens.qualification.confirmation_attempt_records` and
+`spirallens.qualification.confirmation_attempt_validation` modules. They
+define closed canonical schemas for the future declaration, authorization,
+claim, start, scientific-result or infrastructure-failure outcome, terminal
+manifest, and terminal consumption, together with pure structural joins
+between those records. This is a type and validation layer only: it creates no
+official or persisted record instance, writes no file, claims no attempt,
+starts no execution, and grants no authority.
 
-Execution start must rejoin the observed runtime to the target's frozen
-source/runtime receipt and recheck namespace absence. Every scientific payload
-must bind the exact target and full inventory. Isolated replay derives its
-role from an already consumed, passed primary terminal; a caller label is
-insufficient. Result/failure, manifest, and consumption become visible only
-as one atomic no-replace terminal transaction. These joins are an explicit
-closed table of canonical byte equalities, not independently named digests.
-A visible start without terminal is `started_unresolved`, never inferred
-aborted: retry, replay, and D8 remain blocked until an append-only finalization
-binds the start plus external abort evidence.
+The attempt envelope is not one mutable nullable record. Its stage order
+remains attempt declaration, launch authorization, exclusive attempt claim,
+execution start, exactly one scientific-result or infrastructure-failure
+record, terminal manifest, and terminal consumption. The structural identity
+graph is acyclic: the manifest binds the typed outcome, and consumption binds
+the manifest; the manifest does not bind consumption back to itself. Attempt
+records may bind the future concrete replay-target digest but may not redefine
+its seeds, design, thresholds, graph/cycle inventory, aggregation, result
+schema, construction family, or identity. Scientific `pass`, `fail`, and
+`insufficient` are result outcomes that consume the future attempt.
+Infrastructure failure is a distinct non-scientific outcome, and `not_run`
+cannot be used as a placeholder result. A separate exact closure of the
+then-current execution source and runtime remains mandatory after the
+lifecycle, result, terminal, and runner code are final; the historical C2
+receipt does not close any of those later surfaces.
 
-Family admission, full-design freeze, official seeds, lifecycle,
-launch/execution, result/failure, and terminal publication remain absent. The
-historical D6 decision and exact-admission status remain unchanged: the
+The future execution-start operation must rejoin the observed runtime to the
+target's frozen source/runtime receipt, bind an external execution identity,
+and recheck namespace absence. The current records and joins bind only the
+corresponding digests. Every scientific payload must bind the exact target and
+full inventory. Isolated replay derives its role from an already consumed,
+passed primary terminal; a caller label is insufficient. A complete isolated
+attempt, whether scientific or failed, is accepted only by a combined
+validator that rejoins both the full passed-primary chain and the full replay
+chain. Because alternate-store global one-shot behavior is unproved, both
+chains must bind the same store identity. Across primary and replay, the five
+execution/intent/key/namespace/path identifiers and four absence-receipt
+digests must form disjoint sets. The schema-only
+outcome-to-manifest-to-consumption joins are an explicit closed table of
+canonical byte equalities, not independently named digests. A visible start
+without terminal is `started_unresolved`, never inferred aborted from elapsed
+time, process absence, or a caller assertion. It remains unresolved, with
+retry, replay, and D8 blocked, unless a later finalizer verifies an external
+witness bound to that exact start and execution identity. No such witness
+verifier or finalizer exists yet. Likewise, the six result-component payloads,
+authorization/pre-start absence receipts, failure evidence payload, and
+external-abort verification receipt are currently bound only by future
+contract ID where applicable, digest, size, count, and reserved filename.
+Their concrete payload schemas and byte-level validators do not exist yet.
+
+Family admission, full-design freeze, official seeds, concrete lifecycle
+instances, persistence, launch/execution, result/failure publication, terminal
+publication, abort finalization, runner, and replay comparison remain absent.
+The historical D6 decision and exact-admission status remain unchanged: the
 successor rule does not satisfy the historical exact D6 v0.1 hashes. The D6
 decision therefore seals the only admissible entrance without pretending that
 an independent confirmation or replay has occurred. Global
-`d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant.
-No label-only D7 admission validator or caller-supplied byte-comparison D8
-validator is exposed; those execution surfaces remain absent until typed
-result/evidence and isolated-replay receipts exist.
+`d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant. No
+label-only D7 admission validator or caller-supplied byte-comparison D8
+validator is exposed; those operational surfaces remain deferred until a
+concrete target, final-code source/runtime closure, typed persistence, and
+isolated-replay receipts exist.
 
 The recorded negative-access facts, including the absence of admitted
 confirmation-value access before sealing, are explicit external attestations,
 not cryptographic proof. The current local store also assumes trusted deletion
 rights: an operator able to remove the claim, execution-start marker, or
-terminal directory can defeat
-its local uniqueness history. A future durable store must make that history
-append-only. A consumed or failed selection is not retried under the same
-protocol and seed family. A process kill cannot run the terminal exception
-handler: a store containing a valid claim and start marker but no terminal
-directory is classified read-only as terminal-aborted, never resumable or
-retryable. Preserve it for forensic inspection and publish a typed failure
-manually; do not invoke the development runner again.
+terminal directory can defeat its local uniqueness history. A future durable
+store must make that history append-only. In the historical D0-D5 selection
+lifecycle, a consumed or failed selection is not retried under the same
+protocol and seed family, and its older process-kill recovery remains
+selection-specific. D7 deliberately does not inherit a manual
+`terminal-aborted` inference: a valid D7 claim and start without a complete
+terminal remains `started_unresolved`. Preserve it for forensic inspection;
+do not publish a failure without the future verified external-witness path,
+and do not invoke a development runner again.
 
 Both the original and successor-aware source receipts remain Level-0,
 source-only checks. They do not attest in-process callable identity,
@@ -928,26 +959,35 @@ to become a general library.
   historical code or attest Python/native runtime, transitive dependencies,
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
-- **Implemented contract-only — replay target and attempt envelope:** two
-  canonical, unpersisted internal specifications now keep the future immutable
-  seed-bearing replay target separate from the append-only attempt chronology.
-  The attempt model freezes distinct declaration, authorization, claim, start,
-  outcome/failure, manifest, and consumption stages; no placeholder result may
-  stand in for any stage. After final-code source/runtime closure and reviewed
-  family admission, a future seed-supply lifecycle must acquire its exclusive
-  claim before the single supplier invocation. It then atomically publishes
-  the seed-bearing full design and target, commits their freeze receipt, and
-  only then creates launch intent. If the claim exists but atomic target
-  publication does not complete, the seed supply is aborted and cannot be
-  retried; target absence alone is not evidence that the supplier was never
-  invoked. The future target remains exactly Level 0 and its local authority
-  vector remains all-false. No concrete target, attempt instance, official
-  seed, lifecycle record, result, or authority is created here. The next PR
-  implements the concrete lifecycle/result/failure/terminal schemas without
-  invoking the supplier or issuing seeds. Exact closure of the final current
-  execution source and runtime follows only after those code surfaces are
-  complete. Full-design closure, admission, freeze, seeds, execution,
-  terminal, D7, and D8 all remain incomplete now.
+- **Implemented contract-only; step 18 partially complete at the schema
+  layer — replay target and attempt envelope:** two canonical, unpersisted
+  internal specifications keep the future immutable seed-bearing replay target
+  separate from the append-only attempt chronology. Separate deep-internal
+  record and validation modules now define the concrete canonical schemas and
+  pure structural joins for declaration, authorization, claim, start,
+  scientific result or infrastructure failure, manifest, and consumption. The
+  identity flow is acyclic: outcome → manifest → consumption. Scientific
+  `pass`, `fail`, and `insufficient` remain results; infrastructure failure
+  remains a separate non-scientific terminal variant, and no placeholder
+  result may stand in for either. Start binds an external execution identity,
+  while a start without a terminal remains `started_unresolved` unless a
+  future verified external witness supports finalization. After final-code
+  source/runtime closure and reviewed family admission, a future seed-supply
+  lifecycle must acquire its exclusive claim before the single supplier
+  invocation. It then atomically publishes the seed-bearing full design and
+  target, commits their freeze receipt, and only then creates launch intent. If
+  the claim exists but atomic target publication does not complete, the seed
+  supply is aborted and cannot be retried; target absence alone is not evidence
+  that the supplier was never invoked. The future target remains exactly Level
+  0 and its local authority vector remains all-false. No concrete target,
+  official or persisted attempt instance, official seed, persisted lifecycle
+  record, authority, writer, runner, publisher, finalizer, or replay comparator
+  is created here. Exact closure of the final current execution source and
+  runtime follows only after those operational code surfaces are complete.
+  Component, absence-receipt, evidence-payload, and verification-receipt byte
+  schemas also remain future work; current contract IDs do not validate
+  arbitrary caller bytes. Full-design closure, admission, freeze, seeds,
+  execution, terminal publication, D7, and D8 all remain incomplete now.
   Execute without overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for

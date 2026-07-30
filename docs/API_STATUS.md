@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, and canonical unpersisted replay-target/attempt-envelope contract specifications, without public export, admission, seed, execution, result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, and a schema-only D7 attempt-record/validation layer, without public export, persistence, admission, seed, execution, result publication, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -110,33 +110,62 @@ loader internally and returns only an in-memory
 source-closure wrapper, expected digest, seed, result, namespace, or
 authorization.
 
-These are schema specifications, not replay-target or attempt-envelope
-instances. They have no filesystem writer, persist no artifact, expose no
-official seed supplier, and grant no lifecycle or execution authority. The
-seed-supply contract requires final-code source/runtime closure and reviewed
-family admission before a future exclusive seed-supply claim and single
-supplier invocation. It then requires atomic full-design/target publication
-and a committed freeze receipt before launch intent. A claim left without an
-atomically published target is terminally aborted and non-retryable; absence
-of the target does not prove the supplier was invoked. The target-local claim
-ceiling stays exactly Level 0 and its authority vector stays all-false. C2
-closes only the historical C1 source set and does not cover this module or
-later lifecycle, result, terminal, or runner code. A later exact closure of
-the then-current execution source and runtime is required after those surfaces
-are final.
+`spirallens.qualification.confirmation_attempt_records` and
+`spirallens.qualification.confirmation_attempt_validation` are separate deep
+internal modules. The first defines closed canonical records for role
+evidence, declaration, authorization, claim, start, scientific result or
+infrastructure failure, terminal manifest, and consumption. The second
+performs pure structural joins over already constructed typed records. Its
+isolated-replay derivation requires the complete, internally consistent,
+consumed primary chain and a passed primary result; a caller-supplied role
+label or disconnected digest set is insufficient. The generic scientific
+attempt validator accepts primary attempts only; the combined isolated-replay
+validators require both that primary chain and the complete scientific or
+failed replay chain. They require the same store identity, because alternate
+store global one-shot behavior is unproved. Across primary and replay, the
+five execution/intent/key/namespace/path identifiers and four
+authorization/pre-start absence-receipt digests form disjoint sets. Both deep
+modules declare an empty `__all__`; direct named deep imports remain internal.
+Neither module loads a target, verifies external witness bytes, touches a
+namespace, writes a record, publishes a terminal, or grants authority.
+
+The scientific-result and failure envelopes bind fixed filenames, future
+payload contract IDs, canonical digests, byte counts, and record-count
+semantics. They do not yet define or validate the six result-component
+payloads, the authorization/pre-start absence receipts, the failure evidence
+payload, or the external-abort verification receipt. Those identifiers cannot
+turn arbitrary caller bytes into valid evidence; their concrete payload
+schemas and byte-level verifiers remain required before persistence or
+execution.
+
+The replay contracts and attempt records are specifications and types, not
+official replay-target or attempt-envelope instances. They have no filesystem
+writer, persist no artifact, expose no official seed supplier, and grant no
+lifecycle or execution authority. The seed-supply contract requires
+final-code source/runtime closure and reviewed family admission before a
+future exclusive seed-supply claim and single supplier invocation. It then
+requires atomic full-design/target publication and a committed freeze receipt
+before launch intent. A claim left without an atomically published target is
+terminally aborted and non-retryable; absence of the target does not prove the
+supplier was invoked. The target-local claim ceiling stays exactly Level 0
+and its authority vector stays all-false. C2 closes only the historical C1
+source set and does not cover these modules or later persistence, terminal,
+or runner code. A later exact closure of the then-current execution source and
+runtime is required after those surfaces are final.
 
 Target, authorization, start, and result fields are joined by a closed table
 of canonical byte equalities. A visible start without terminal remains
 `started_unresolved`; it blocks retry, replay, and D8 until a later append-only
 finalization binds external abort evidence.
 
-Family admission, full-design freeze, official seeds, lifecycle, execution,
-result/failure, terminal publication, D7, and D8 remain absent or `not_run`.
-The next internal change may implement the concrete lifecycle,
-result/failed-attempt, and terminal schemas, but must not invoke the official
-seed supplier or issue seed values. Committed C2 closes only the declared
-historical Git source set; it does not execute historical code or attest
-Python/native runtime, transitive dependencies, in-process identity,
+Family admission, full-design freeze, official seeds, persisted lifecycle,
+execution, result/failure publication, terminal publication, D7, and D8
+remain absent or `not_run`. The next internal change must define and validate
+the bound payload and receipt bytes before append-only persistence and atomic
+no-replace terminal publication are implemented. It must not invoke the
+official seed supplier or issue seed values. Committed C2 closes only the
+declared historical Git source set; it does not execute historical code or
+attest Python/native runtime, transitive dependencies, in-process identity,
 hostile-local-mutation resistance, or current compatibility.
 
 The package root deliberately does not re-export provisional scientific APIs.

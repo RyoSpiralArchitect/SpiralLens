@@ -32,6 +32,8 @@ DEFAULT_IMPORTS = (
 )
 DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification",
+    "spirallens.qualification.confirmation_attempt_records",
+    "spirallens.qualification.confirmation_attempt_validation",
     "spirallens.qualification.confirmation_c1",
     "spirallens.qualification.confirmation_crossed_development",
     "spirallens.qualification.confirmation_execution_design",
@@ -64,6 +66,8 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/qualification/aggregation.py",
     "spirallens/qualification/blind.py",
     "spirallens/qualification/common.py",
+    "spirallens/qualification/confirmation_attempt_records.py",
+    "spirallens/qualification/confirmation_attempt_validation.py",
     "spirallens/qualification/confirmation_c1.py",
     "spirallens/qualification/confirmation_crossed_development.py",
     "spirallens/qualification/confirmation_execution_design.py",

@@ -4,6 +4,74 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-30 — D7 attempt-record and structural-validation schemas
+
+### Added
+
+- The deep-internal
+  `spirallens.qualification.confirmation_attempt_records` module defines
+  canonical v0.1 role-evidence, declaration, authorization, claim, start,
+  gate-summary, result-component, scientific-result, failure-evidence,
+  externally evidenced `started_unresolved` finalization, failed-attempt,
+  terminal-member, terminal-manifest, and terminal-consumption records.
+- Authorization binds the exact execution-source/runtime receipt and runtime
+  specification digests that start must observe again. Authorization-time and
+  pre-start namespace/path absence-receipt digests are separate and must all
+  be distinct; this type layer does not define or verify the receipt bytes.
+- Required gates retain the four-valued
+  `pass`/`fail`/`insufficient`/`not_run` vocabulary. A `not_run` gate is
+  persisted and forces the overall scientific result to `insufficient`;
+  overall `not_run` is not a result.
+- The scientific-result envelope fixes the complete component inventory,
+  filenames, future payload contract IDs, record-count semantics, aggregation
+  precedence, reason-code rules, claim ceiling, and byte caps. Infrastructure
+  failure is a separate terminal variant, always records
+  `aggregate_outcome_observed=false`, and carries a tri-state confirmation
+  value-access fact.
+- Failure evidence binds a bounded evidence payload under a fixed future
+  contract ID. An externally evidenced abort additionally binds a bounded
+  verification receipt under its own future contract ID and a finalization
+  record; all applicable byte identities are members of the immutable
+  terminal inventory.
+- The separate
+  `spirallens.qualification.confirmation_attempt_validation` module implements
+  pure typed joins for the attempt prefix, scientific and failed terminal
+  chains, externally evidenced unresolved finalization, and isolated replay.
+  Isolated-replay role evidence is derived only after validating the complete
+  consumed, passed-primary chain. A replay attempt is accepted only by a
+  combined validator that rejoins that complete primary chain and the complete
+  scientific or failed replay chain; the generic scientific-attempt validator
+  is primary-only. Replay stays in the same store identity because
+  alternate-store global one-shot behavior is unproved. Across primary and
+  replay, the five execution/intent/key/namespace/path identifiers and four
+  authorization/pre-start absence-receipt digests must form disjoint sets.
+
+### Compatibility and non-claims
+
+- These are deep-internal type and structural-validation surfaces. They may
+  construct and round-trip in-memory values, but create no official or
+  persisted attempt record, filesystem writer, loader, namespace claim,
+  terminal transaction, witness verifier, runner, seed, or authority. Both
+  modules declare an empty `__all__`; direct named deep imports remain
+  unsupported internals.
+- The terminal identity graph is acyclic: the manifest binds the typed
+  scientific-result or failed-attempt artifact and its immutable members;
+  consumption binds the manifest. The manifest never binds consumption.
+- A visible start without a terminal remains `started_unresolved`. Elapsed
+  time, process absence, or a caller assertion cannot finalize it.
+- The six result-component payload schemas, absence-receipt schemas, failure
+  evidence payload schema, external-abort verification-receipt schema, and
+  their byte-level validators remain unimplemented. Their contract IDs,
+  filenames, digests, sizes, counts, and joins are bindings for those future
+  artifacts, not evidence that arbitrary caller bytes satisfy them.
+- C2 does not close these new sources. A later exact closure of the final
+  execution source and runtime remains mandatory before official seed supply,
+  target freeze, authorization, or execution.
+- Family admission, full-design freeze, official seeds, persistence,
+  launch/execution, result or failure publication, terminal publication,
+  witness verification, D7, D8, and every higher scientific claim remain
+  absent, false, or `not_run`.
+
 ## 2026-07-30 — D7 replay-target and attempt-envelope contract specifications
 
 ### Added
@@ -51,9 +119,10 @@ promote a claim.
   replay-target instance, attempt-envelope instance, official seed inventory,
   lifecycle record, result/failure, terminal, or replay artifact is created.
 - The append-only stage model is a contract, not an implemented lifecycle.
-  The next PR may implement the concrete lifecycle, result/failed-attempt, and
-  terminal schemas, but must not invoke the official seed supplier or issue
-  seed values.
+  The later record-schema slice documented above implements structural
+  lifecycle, scientific-result/infrastructure-failure, and terminal types and
+  joins only. It still does not persist an instance, invoke the official seed
+  supplier, or issue seed values.
 - C2 verifies only the historical C1 Git source set. It does not close this
   module or later lifecycle, result, terminal, or runner code. After those
   execution surfaces are final, a separate exact current execution-source and
