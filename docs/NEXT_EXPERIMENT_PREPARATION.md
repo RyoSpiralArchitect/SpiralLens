@@ -924,9 +924,9 @@ design in one canonical candidate.
 That is implementation conformance, not D7 evidence. Committed C2 now verifies
 the declared historical Git source set, but concrete confirmation seeds,
 repository-review attestation, family admission, freeze, lifecycle,
-authoritative target binding, terminal publication, and isolated replay remain
-absent. The deep-internal persistence-only slice can now record and reload a
-caller-supplied primary declaration-through-start record prefix as chained
+authoritative target binding, official terminal publication, and isolated
+replay remain absent. The deep-internal persistence-only slice can now record
+and reload a caller-supplied primary declaration-through-start record prefix as chained
 false-authority envelopes in a dedicated evidence-only lane without
 replacement. It grants neither execution nor scientific authority, cannot be
 promoted in place, and rejects isolated replay before writing any stage.
@@ -977,13 +977,34 @@ Registry completeness is evaluated only against the explicitly bound registry
 sources and counts; it is not evidence that a trusted supplier or historical
 parent was consulted.
 
+Roadmap item 19 now adds mechanics without changing that authority boundary.
+One deep-internal writer stages a complete structural scientific-result or
+failed-attempt inventory, hardens descriptor-relative publication against
+races, staging remnants, symlink/hardlink/FIFO/unknown-member substitution,
+and file-identity drift, publishes it by native no-replace directory rename,
+and strictly reloads it. A private primary-only post-start runner handoff
+validates the complete target projection and six-component result behind a
+single zero-argument producer callback. No issuer for that ownership exists,
+and the full official exact executor/aggregation remains behind the callback.
+
+For external aborts, a canonical two-signature Ed25519 observer/verifier
+envelope is a required closed-inventory member. The integrated path verifies
+against explicit runtime pins, performs fixed live prefix/terminal-coordinate
+revalidation, derives the finalization and terminal records, publishes without
+replacement, and strictly reloads; existing terminals can be strictly
+reauthenticated to the same pins. This is authentication relative to those
+pins only. It establishes no pin/trust-root provenance, official authority,
+wall-clock freshness, authoritative start, observed execution, scientific
+eligibility, retry/replay authority, D7, or D8. No supplier or official seed
+was used, and no official execution occurred.
+
 The next execution-preparation order is:
 
-1. finish the terminal transaction, external-witness verification, and runner
-   mechanics without an official execution and without invoking the seed
-   supplier;
-2. implement a fused verify-and-exclusive-start operation that reopens and
-   revalidates trusted inputs, performs live physical and absence checks, and
+1. retain the completed terminal transaction, external-witness verification
+   relative to explicit pins, and typed runner mechanics as non-authorizing
+   and non-scientific;
+2. next implement a fused verify-and-exclusive-start operation that reopens
+   and revalidates trusted inputs, performs live physical and absence checks, and
    transitions directly into the exclusive start without returning or
    accepting a reusable authorization token;
 3. only after those code surfaces are final, close the exact current
@@ -993,7 +1014,7 @@ The next execution-preparation order is:
    freeze, and persist launch intent after that freeze; and
 5. invoke the fused start operation.
 
-The later terminal schema must keep the immutable replay target separate from
+The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
 execution start, success/failure, and terminal lineage. A placeholder result
 must not stand in for either object.

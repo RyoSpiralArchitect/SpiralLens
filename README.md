@@ -490,8 +490,10 @@ authoritative lifecycle, a verifier-established visible start without terminal
 is `started_unresolved`, never inferred aborted from elapsed time, process
 absence, or a caller assertion. It remains unresolved, with retry, replay, and
 D8 blocked, unless a later finalizer verifies an external witness bound to that
-exact start and execution identity. No authoritative-start verifier, witness
-verifier, or finalizer exists yet. Likewise, the six result-component payloads,
+exact start and execution identity. Pin-relative observer/verifier signature
+and terminal-finalization mechanics now exist, but no authoritative-start
+issuer or official trust-root provenance connects them to an official attempt.
+Likewise, the six result-component payloads,
 authorization/pre-start absence receipts, failure evidence payload, and
 external-abort verification receipt now have deep-internal canonical byte
 schemas. Expected SHA-256 is checked before parsing, exact local types and byte
@@ -553,8 +555,9 @@ issued.
 
 Family admission, full-design freeze, official seeds, authoritative
 target-bound lifecycle instances, launch/execution capability,
-result/failure publication, terminal publication, abort finalization, runner,
-and replay comparison remain absent. The local prefix store is a
+official result/failure publication, authoritative terminal publication,
+official abort finalization, an official runner, and replay comparison remain
+absent. The local prefix store is a
 persistence-only evidence mechanism: a strictly loaded caller-supplied start
 record with an absent terminal entry is only
 `caller_supplied_start_record_present_terminal_absent`; any file, directory,
@@ -570,8 +573,9 @@ an independent confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant. No
 label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those operational surfaces remain deferred until a
-concrete target, final-code source/runtime closure, terminal transaction,
-verified witness capability, and isolated-replay receipts exist.
+concrete target, final-code source/runtime closure, authoritative ownership and
+trust-root provenance, fused start, official terminal lineage, and
+isolated-replay receipts exist.
 
 The recorded negative-access facts, including the absence of admitted
 confirmation-value access before sealing, are explicit external attestations,
@@ -584,8 +588,9 @@ protocol and seed family, and its older process-kill recovery remains
 selection-specific. D7 deliberately does not inherit a manual
 `terminal-aborted` inference: a valid D7 claim and start without a complete
 terminal remains `started_unresolved`. Preserve it for forensic inspection;
-do not publish a failure without the future verified external-witness path,
-and do not invoke a development runner again.
+the implemented pin-relative external-witness mechanics cannot be used as an
+official finalizer until authoritative ownership and trust-root provenance
+exist, and a development runner must not be invoked again.
 
 Both the original and successor-aware source receipts remain Level-0,
 source-only checks. They do not attest in-process callable identity,
@@ -1051,9 +1056,10 @@ to become a general library.
   historical code or attest Python/native runtime, transitive dependencies,
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
-- **Implemented deep-internal contract, prefix-persistence, and authority-input
-  prerequisite slices; step 18 remains partial — replay target and attempt
-  envelope:** two canonical, unpersisted
+- **Implemented deep-internal contract, prefix-persistence,
+  authority-prerequisite, and item-19 terminal/witness/runner mechanics; step
+  18 authority remains partial — replay target and attempt envelope:** two
+  canonical, unpersisted
   internal specifications keep the future immutable seed-bearing replay target
   separate from the append-only attempt chronology. Separate deep-internal
   record and validation modules now define the concrete canonical schemas and
@@ -1075,7 +1081,7 @@ to become a general library.
   that the supplier was never invoked. The future target remains exactly Level
   0 and its local authority vector remains all-false. No concrete target,
   official or authoritative attempt instance, official seed, execution
-  capability, runner, terminal publisher, finalizer, or replay comparator is
+  capability, official runner/terminal/finalizer, or replay comparator is
   created here. The separate local writer now persists and strictly reloads
   the four-stage caller-supplied Level-0 primary prefix as chained,
   false-authority envelopes in a dedicated evidence-only lane without
@@ -1088,8 +1094,9 @@ to become a general library.
   Deep-internal canonical component, absence-receipt, evidence-payload, and
   verification-receipt byte schemas now reject arbitrary or noncanonical
   caller bytes and perform pure structural joins. They do not load the frozen
-  target or authenticate an external witness. The persistence slice observes
-  only the declared local path coordinates and cannot authorize a finalizer.
+  target or authenticate an external witness. The prefix-persistence slice
+  observes only the declared local path coordinates and cannot authorize a
+  finalizer.
   A further non-authorizing bundle now gives canonical structure to a concrete
   subset of the later prerequisites. Dedicated target-admission,
   target-full-design, and target-source/runtime leaves carry only explicit
@@ -1105,12 +1112,39 @@ to become a general library.
   factory; the loader applies its size cap, then verifies the digest before
   parsing, and translates canonical parse errors. It authenticates none of
   these inputs and emits no reusable token. Authoritative target-bound exact
-  inventory and gate semantics therefore remain deferred. Full-design closure,
-  admission, freeze, seeds, execution, terminal publication, D7, and D8 all
-  remain incomplete now. The operational order is now explicit: finish
-  terminal/witness/runner mechanics without an official run; implement a fused
-  verify-and-exclusive-start operation with no reusable authorization token;
-  close the exact final source/runtime and family admission; invoke the seed
+  inventory and gate semantics therefore remain deferred. Separate
+  deep-internal mechanics now atomically publish one closed structural
+  result/failed-attempt terminal by descriptor-relative native no-replace
+  directory rename and strictly reload it. The writer rejects competing
+  attempt-scoped staging entries, symlink/hardlink/FIFO or unknown-member
+  substitution, file-identity drift, parent/stage descriptor drift, and
+  uncertain cleanup; it fsyncs members, staging directory, and terminal
+  parent, with parent-fsync failure reported rather than laundered. A typed
+  primary-only post-start runner handoff projects replay target, full
+  inventory, aggregation, and result-schema identities into the complete
+  six-component output. Its only scientific boundary is a zero-argument
+  producer callback; the exact official executor and aggregation remain
+  outside that callback and are not implemented here.
+
+  External abort mechanics now persist a two-signature Ed25519 observer plus
+  verifier envelope as a required member of the closed failed-terminal
+  inventory. One integrated operation verifies that envelope against explicit
+  runtime pins, performs its fixed live prefix/terminal-coordinate
+  revalidation, derives the finalization/failed-attempt/manifest/consumption
+  records, publishes with no replacement, and strictly reloads the exact
+  visible terminal. A second path strictly reloads and reauthenticates an
+  existing terminal to the same explicit pins. This proves signature
+  authentication only relative to caller-supplied runtime pins. It proves no
+  trust-root provenance, official authority, wall-clock freshness,
+  authoritative start, or observed execution. The private post-start
+  ownership type has deliberately no issuer in this change. Full-design
+  closure, admission, freeze, official seeds, the supplier, official exact
+  execution/aggregation, scientific eligibility, D7, and D8 all remain
+  incomplete or `not_run`. The operational order is now explicit: treat the
+  terminal/witness/runner mechanics as implemented without an official run;
+  next implement a fused verify-and-exclusive-start operation with no reusable
+  authorization token; close the exact final source/runtime and family
+  admission; invoke the seed
   supplier once and atomically publish target/full design before committing
   freeze and launch intent; then invoke the fused start. Execute without
   overrides and require complete isolated byte replay. Only a

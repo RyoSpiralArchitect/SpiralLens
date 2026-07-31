@@ -872,7 +872,9 @@ def _directory_flags() -> int:
 
 
 def _file_read_flags() -> int:
-    flags = os.O_RDONLY
+    # O_NONBLOCK is inert for regular files and prevents a hostile FIFO from
+    # blocking before the descriptor-level regular-file check can reject it.
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)
     for name in ("O_NOFOLLOW", "O_CLOEXEC"):
         flags |= getattr(os, name, 0)
     return flags

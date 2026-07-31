@@ -327,6 +327,13 @@ def _failure_members(
                     evidence.external_verification_receipt_sha256,
                     evidence.external_verification_receipt_byte_count,
                 ),
+                _member(
+                    r.D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_FILENAME,
+                    r.D7TerminalMemberKind.SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE,
+                    r.D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_CONTRACT_ID,
+                    finalization.signed_external_abort_witness_envelope_sha256,
+                    finalization.signed_external_abort_witness_envelope_byte_count,
+                ),
             ]
         )
     return _sorted_members(members)

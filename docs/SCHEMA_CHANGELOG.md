@@ -4,6 +4,67 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-31 — D7 terminal, external-witness, and post-start runner mechanics
+
+### Added
+
+- The deep-internal `confirmation_attempt_terminal_persistence` module now
+  persists one complete scientific-result or failed-attempt structural
+  terminal as a closed directory inventory. Every canonical member, manifest,
+  and consumption record is staged and fsynced before one descriptor-relative
+  native no-replace directory rename; publication is followed by strict reload
+  of the exact inventory, digests, record types, joins, and file identities.
+- Terminal persistence fails closed on a competing attempt-scoped stage,
+  destination race, symlink, hardlink, FIFO, missing/extra/unknown member,
+  staged-byte or file-identity mutation, parent/stage descriptor drift, and
+  cleanup whose ownership cannot be proved. A failed terminal-parent fsync is
+  reported as `parent_directory_fsync_proved=false`, not silently converted to
+  a durability claim.
+- `spirallens.d7-external-abort-witness-statement.v0.1` and
+  `spirallens.d7-signed-external-abort-witness-envelope.v0.1` bind the exact
+  replay target, attempt/start, execution identity, failure payload, structural
+  receipt, external observation, store/terminal coordinates, three separated
+  principals, observer/verifier key identities, and the explicit runtime
+  trust-root digest. The envelope carries separate Ed25519 observer and
+  verifier signatures. Its canonical file is a required immutable member of
+  an evidenced-abort failed-terminal inventory, and the finalization record
+  binds its digest and byte count.
+- The deep-internal external terminal operation performs one joined sequence:
+  digest-first envelope loading and signature verification against explicit
+  runtime pins; fixed live revalidation of prefix, terminal coordinates,
+  parent identity, and terminal absence; internal derivation of the
+  finalization, failed-attempt, manifest, and consumption records; one-shot
+  witness consumption; atomic no-replace publication; and strict reload.
+  Existing external-abort terminals can be strictly reloaded and
+  reauthenticated to exact supplied pins.
+- The deep-internal post-start runner accepts only a private,
+  nonserializable, primary-confirmation ownership handoff and one zero-argument
+  producer callback. It validates all six result components and the outer
+  payload, including the replay-target/full-inventory/aggregation/result-schema
+  projection, before preparing a typed terminal handoff. Ordinary exceptions
+  retain their identity and may receive a typed in-process failure handoff;
+  `BaseException` is not reclassified as an abort.
+
+### Compatibility and non-claims
+
+- These modules declare empty `__all__` values and introduce no supported or
+  provisional public Python API. The terminal/witness/runner work completes
+  roadmap item 19 as mechanics only; roadmap item 20, the fused
+  verify-and-exclusive-start operation, is next.
+- Witness authentication is exactly `explicit-runtime-pins-only`. The supplied
+  pins do not prove SpiralLens trust-root provenance or official authority,
+  and the envelope has no wall-clock freshness proof. The private post-start
+  ownership object has no issuer in this change.
+- No official target/start, supplier, seed, exact scientific executor or
+  aggregation, execution observation, scientific eligibility, retry/replay
+  authority, D7, or D8 is created. The complete official executor and
+  aggregation remain separately auditable behind the zero-argument producer
+  callback.
+- The new signed-witness member extends only the previously unpersisted
+  provisional evidenced-abort terminal shape. No earlier C1, C2, D6,
+  caller-prefix evidence, or historical result bytes are rewritten or
+  promoted.
+
 ## 2026-07-31 — D7 non-authorizing launch-authority prerequisite inputs
 
 ### Added

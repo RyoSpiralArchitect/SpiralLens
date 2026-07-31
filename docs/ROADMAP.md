@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, and structural-join layers, a no-replace caller-supplied prefix evidence lane, and a non-authorizing authority-prerequisite input candidate partially complete step 18, while live verification, target authority, witness verification, official instances, freeze, admission, seeds, fused exclusive start, terminal publication, runner, replay, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until the operational surfaces are final |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, and typed post-start runner mechanics complete roadmap item 19 without an official instance or run; runtime-pin provenance, authoritative target/start issuance, admission, freeze, official seeds, fused exclusive start, official exact execution/aggregation, replay, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until the operational surfaces are final |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -882,9 +882,8 @@ below:
     `caller_supplied_start_record_present_terminal_absent`; every terminal
     entry is `terminal_path_present_unverified`. It establishes neither
     execution nor `started_unresolved`, and isolated replay is rejected before
-    persistence. Authoritative target/attempt instances,
-    terminal publication, witness verification, finalization, execution
-    capability, runner, and replay comparison remain deferred. The separately
+    persistence. Authoritative target/attempt instances and replay comparison
+    remain deferred. The separately
     reviewed canonical payload slice is now
     implemented: D7-specific wrappers reuse the core/loop and reviewed stratum
     row validators inside new enclosing schemas, while event-lane, joined
@@ -923,9 +922,22 @@ below:
     authority;
 19. implement the atomic result/failed-attempt terminal transaction,
     authenticated external-witness verification/finalization path, and
-    eventual runner mechanics in a separately reviewed sequence. Do not invoke
-    the official supplier, issue a seed, or perform an official execution in
-    this item;
+    eventual runner mechanics in a separately reviewed sequence —
+    **implemented as deep-internal mechanics without an official run**. The
+    structural writer publishes one closed inventory by descriptor-relative
+    native no-replace directory rename, then strictly reloads it; race,
+    staging-orphan, symlink, hardlink, FIFO, unknown-member, file-identity, and
+    descriptor-drift checks fail closed. The primary-only typed runner rejoins
+    the target projection and accepts only one zero-argument scientific
+    producer callback. The external path persists a two-signature Ed25519
+    observer/verifier envelope in the failed-terminal inventory and performs
+    verify → fixed live revalidation → record derivation → no-replace publish
+    → strict reload. Authentication is relative only to explicitly supplied
+    runtime pins: trust-root provenance, official authority, wall-clock
+    freshness, ownership issuance, execution observation, scientific
+    eligibility, retry/replay, D7, and D8 are not established. The official
+    supplier was not invoked, no seed was issued, and no official exact
+    executor/aggregation or execution was introduced;
 20. implement one fused verify-and-exclusive-start operation. It must reopen
     and authenticate the exact target, launch intent, source/runtime closure,
     admission, execution identity, and physical store/lane; live-reobserve
@@ -1083,9 +1095,9 @@ infrastructure failure. The result bundle mechanically rejoins cells,
 primaries, strata, four-state gates, and the outer payload, but target exact
 sets and gate evidence still require an authoritative target loader. The start
 schema binds an external execution identity. The prefix writer reobserves only
-the declared local path coordinates; no source/runtime authority or witness
-verifier exists. PR #23 now adds an eighth deep-internal module whose strict
-loader returns only a non-authorizing structural candidate. Dedicated
+the declared local path coordinates; that reobservation establishes no
+source/runtime authority. PR #23 now adds an eighth deep-internal module whose
+strict loader returns only a non-authorizing structural candidate. Dedicated
 caller-claimed target admission, exact-full-design, and exact-source/runtime
 leaves record `identity_authenticated=false`. Typed exclusive-claim and
 single-invocation inputs causally join supplier, registries, readiness,
@@ -1097,13 +1109,21 @@ binding has no raw
 `from_bytes` factory; the loader applies its size cap, verifies the digest
 before parsing, and translates canonical parse errors. It authenticates no
 caller, receipt, registry, claim, invocation, or publication, performs no live
-observation, and emits no reusable capability. No terminal
-publisher, authoritative target/store loader,
-execution capability, runner, finalizer, replay comparator, official seed, or
-official record instance is introduced. After those
-operational surfaces, a fused verify-and-exclusive-start operation, and the
-runner are final, a new exact current execution-source/runtime closure and
-reviewed admission are required; C2 cannot supply them. Only afterward may
+observation, and emits no reusable capability. Roadmap item 19 now adds
+deep-internal terminal/witness/runner mechanics: a closed atomic structural
+terminal with descriptor-relative no-replace publication and strict reload; a
+primary-only typed post-start handoff with target-projection validation; and a
+persisted two-signature Ed25519 observer/verifier witness whose integrated
+external-abort path verifies, live-revalidates fixed coordinates, derives the
+terminal chain, publishes once, and strictly reloads. Signature
+authentication is only relative to explicit runtime pins. There is no
+trust-root provenance, wall-clock freshness, private-ownership issuer,
+authoritative target/store loader, fused start, replay comparator, official
+seed, official executor/aggregator, execution observation, scientific
+eligibility, or official record instance. Item 20, one fused
+verify-and-exclusive-start operation, is therefore next. After that surface is
+final, a new exact current execution-source/runtime closure and reviewed
+admission are required; C2 cannot supply them. Only afterward may
 the supplier be invoked once, target/full design be published and frozen,
 launch intent be persisted, and the fused start be invoked. Lifecycle and
 terminal work keep the replay target separate from the attempt envelope and

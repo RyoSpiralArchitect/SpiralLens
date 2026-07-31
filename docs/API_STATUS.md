@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, D7 attempt/evidence/result schemas and joins, a no-replace caller-supplied primary-prefix evidence lane, and a non-authorizing structural candidate for a concrete subset of later launch-authority prerequisites; none is a public export, authoritative target, admission, seed, execution capability, terminal publication, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, and a typed post-start runner handoff; none is a public export, authoritative target/start issuer, trusted pin root, admission, seed, official executor, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -230,6 +230,47 @@ unopened-seed boundary has been verified. The typed invocation is likewise a
 caller-claimed structural input, not evidence that a supplier ran. No
 reusable capability is emitted.
 
+The deep-internal `confirmation_attempt_terminal_persistence` module now
+accepts an already persisted prefix plus one completely joined structural
+terminal and exposes the whole closed inventory by a descriptor-relative
+native no-replace directory rename. It strictly reloads the manifest,
+consumption, outcome, and every immutable member by exact digest, type, file
+identity, and inventory. Competing attempt-scoped staging entries, uncertain
+cleanup, a destination race, stage/parent descriptor drift, symlinks,
+hardlinks, FIFOs, missing/extra members, and byte mutation fail closed. Member,
+stage-directory, and parent-directory fsync are distinct facts; a failed final
+parent fsync remains reported as durability unproved. Structural publication
+does not authenticate the prefix, observe execution, or make a scientific
+result eligible.
+
+The deep-internal `confirmation_runner` module accepts only a private,
+nonserializable primary-confirmation post-start handoff and a zero-argument
+scientific producer callback. It validates the complete six-component bundle
+and rejoins the callback's replay-target, full-inventory, aggregation, and
+result-schema projection to that handoff before preparing a typed terminal.
+Ordinary `Exception` objects are re-raised unchanged after best-effort
+attachment of a typed in-process failed-terminal handoff; `BaseException` is
+not converted into abort evidence. No function in this change issues the
+private ownership object. The official exact executor and aggregation remain
+separately auditable behind the callback and are not implemented by this
+runner slice.
+
+The deep-internal `confirmation_external_witness` and
+`confirmation_terminal_operations` modules add the mechanics-only external
+abort path. A canonical Ed25519 envelope contains separate observer and
+verifier signatures and is persisted as a required immutable failed-terminal
+member. The integrated operation accepts no preverified capability and no
+caller-supplied finalization/manifest/consumption records: it verifies against
+explicit runtime pins, performs the fixed live prefix and terminal-coordinate
+revalidation, derives the terminal chain, consumes the one-shot witness,
+publishes without replacement, and strictly reloads. Existing terminals can
+also be strictly reloaded and reauthenticated to exact pins. The returned
+receipt means `explicit-runtime-pins-only`; it records
+`trust_root_provenance_verified=false`, `wall_clock_freshness_proved=false`,
+`authoritative_start_proved=false`, `execution_observed=false`, and
+`scientific_claim_eligible=false`. Caller-supplied pins are configuration, not
+official SpiralLens trust-root provenance or authority.
+
 The replay contracts and attempt records are specifications and types, not
 official replay-target or authoritative attempt-envelope instances. The local
 prefix writer embeds those supplied primary types beneath a distinct
@@ -255,14 +296,15 @@ finalization binds external abort evidence. The present evidence-only lane
 cannot establish that state.
 
 Family admission, full-design freeze, official seeds, authoritative lifecycle,
-execution, result/failure publication, terminal publication, D7, and D8 remain
-absent or `not_run`. The next sequence is deliberately operational rather
-than token-based:
+execution, official result/failure publication, scientific eligibility, D7,
+and D8 remain absent or `not_run`. Structural terminal publication is now a
+deep-internal mechanics surface only. The next sequence is deliberately
+operational rather than token-based:
 
-1. finish terminal-transaction, external-witness, and runner mechanics without
-   invoking the supplier or performing an official run;
-2. implement one fused verify-and-exclusive-start operation that reopens and
-   verifies the authoritative inputs, reobserves physical identity and
+1. retain the completed terminal-transaction, external-witness, and typed
+   runner mechanics as non-authorizing and non-scientific;
+2. next implement one fused verify-and-exclusive-start operation that reopens
+   and verifies the authoritative inputs, reobserves physical identity and
    absence, and transitions directly into the exclusive start; it must emit no
    reusable serialized or caller-returnable authorization token;
 3. only after those final code surfaces exist, issue exact current

@@ -38,6 +38,15 @@ D7_FAILURE_EVIDENCE_PAYLOAD_SCHEMA_VERSION = (
 D7_EXTERNAL_ABORT_VERIFICATION_RECEIPT_SCHEMA_VERSION = (
     "spirallens.d7-external-abort-verification-receipt.v0.1"
 )
+D7_EXTERNAL_ABORT_WITNESS_STATEMENT_SCHEMA_VERSION = (
+    "spirallens.d7-external-abort-witness-statement.v0.1"
+)
+D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_SCHEMA_VERSION = (
+    "spirallens.d7-signed-external-abort-witness-envelope.v0.1"
+)
+D7_EXTERNAL_WITNESS_RUNTIME_TRUST_ROOT_SCHEMA_VERSION = (
+    "spirallens.d7-external-witness-runtime-trust-root.v0.1"
+)
 
 D7_AUTHORIZATION_PATH_ABSENCE_RECEIPT_CONTRACT_ID = (
     "spirallens.d7-authorization-path-absence-receipt-contract.v0.1"
@@ -47,6 +56,12 @@ D7_PRE_START_PATH_ABSENCE_RECEIPT_CONTRACT_ID = (
 )
 D7_EXTERNAL_ABORT_VERIFIER_CONTRACT_ID = (
     "spirallens.d7-external-abort-verifier-contract.v0.1"
+)
+D7_EXTERNAL_ABORT_OBSERVER_SIGNATURE_CONTEXT = (
+    "spirallens.d7-external-abort-observer-signature.v0.1"
+)
+D7_EXTERNAL_ABORT_VERIFIER_SIGNATURE_CONTEXT = (
+    "spirallens.d7-external-abort-verifier-signature.v0.1"
 )
 D7_PATH_IDENTITY_SCHEME = "spirallens.d7-path-identity.v0.1"
 D7_FAILURE_RECORD_SCOPE = "d7-spectral-moment-confirmation-attempt-failure-only"
@@ -58,6 +73,7 @@ _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 _PATH_LEAF_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,254}$")
 _EXCEPTION_CLASS_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]{0,255}$")
+_ED25519_SIGNATURE_RE = re.compile(r"^[0-9a-f]{128}$")
 
 
 class D7AbsentPathSubject(str, Enum):
@@ -105,6 +121,15 @@ def _sha256(value: object, label: str) -> str:
     result = _string(value, label)
     if _SHA256_RE.fullmatch(result) is None:
         raise QualificationContractError(f"{label} must be a lowercase SHA-256")
+    return result
+
+
+def _ed25519_signature(value: object, label: str) -> str:
+    result = _string(value, label)
+    if _ED25519_SIGNATURE_RE.fullmatch(result) is None:
+        raise QualificationContractError(
+            f"{label} must be one lowercase 64-byte Ed25519 signature"
+        )
     return result
 
 
@@ -198,6 +223,77 @@ def d7_path_identity_sha256(
             "store_identity_sha256": store,
             "resolved_parent_realpath": parent,
             "subject_basename": basename,
+        }
+    )
+
+
+def d7_external_witness_runtime_trust_root_sha256(
+    *,
+    execution_principal_id: str,
+    execution_identity_receipt_sha256: str,
+    observer_principal_id: str,
+    observer_identity_receipt_sha256: str,
+    observer_public_key_sha256: str,
+    verifier_principal_id: str,
+    verifier_source_runtime_receipt_sha256: str,
+    verifier_public_key_sha256: str,
+) -> str:
+    """Hash one explicit runtime pin set without granting D7 authority."""
+
+    execution_principal = _slug(execution_principal_id, "execution_principal_id")
+    observer_principal = _slug(observer_principal_id, "observer_principal_id")
+    verifier_principal = _slug(verifier_principal_id, "verifier_principal_id")
+    if len({execution_principal, observer_principal, verifier_principal}) != 3:
+        raise QualificationContractError(
+            "execution, observer, and verifier principals must differ"
+        )
+    execution_identity = _sha256(
+        execution_identity_receipt_sha256,
+        "execution_identity_receipt_sha256",
+    )
+    observer_identity = _sha256(
+        observer_identity_receipt_sha256,
+        "observer_identity_receipt_sha256",
+    )
+    observer_key = _sha256(
+        observer_public_key_sha256,
+        "observer_public_key_sha256",
+    )
+    verifier_runtime = _sha256(
+        verifier_source_runtime_receipt_sha256,
+        "verifier_source_runtime_receipt_sha256",
+    )
+    verifier_key = _sha256(
+        verifier_public_key_sha256,
+        "verifier_public_key_sha256",
+    )
+    if len({execution_identity, observer_identity, verifier_runtime}) != 3:
+        raise QualificationContractError(
+            "execution, observer, and verifier receipts must differ"
+        )
+    if observer_key == verifier_key:
+        raise QualificationContractError(
+            "observer and verifier public keys must differ"
+        )
+    return canonical_json_sha256(
+        {
+            "schema_version": (D7_EXTERNAL_WITNESS_RUNTIME_TRUST_ROOT_SCHEMA_VERSION),
+            "signature_algorithm": "ed25519",
+            "execution_principal": {
+                "principal_id": execution_principal,
+                "identity_receipt_sha256": execution_identity,
+            },
+            "observer_principal": {
+                "principal_id": observer_principal,
+                "identity_receipt_sha256": observer_identity,
+                "public_key_sha256": observer_key,
+            },
+            "verifier_principal": {
+                "principal_id": verifier_principal,
+                "source_runtime_receipt_sha256": verifier_runtime,
+                "public_key_sha256": verifier_key,
+            },
+            "authenticated_principal_separation_required": True,
         }
     )
 
@@ -981,3 +1077,425 @@ class D7ExternalAbortVerificationReceipt(_CanonicalEvidence):
                 "verification_method",
             ),  # type: ignore[arg-type]
         )
+
+
+@dataclass(frozen=True, slots=True)
+class D7ExternalAbortWitnessStatement(_CanonicalEvidence):
+    """Caller-serializable statement; authenticated status is runtime-only."""
+
+    replay_target_sha256: str
+    attempt_key_sha256: str
+    execution_start_sha256: str
+    execution_identity_receipt_sha256: str
+    failure_evidence_payload_sha256: str
+    failure_evidence_payload_byte_count: int
+    structural_verification_receipt_sha256: str
+    structural_verification_receipt_byte_count: int
+    observer_identity_receipt_sha256: str
+    verifier_source_runtime_receipt_sha256: str
+    observation_kind: D7ExternalAbortObservationKind
+    observation_payload_sha256: str
+    store_identity_sha256: str
+    terminal_path_identity_sha256: str
+    store_root_realpath: str
+    terminal_parent_realpath: str
+    terminal_basename: str
+    terminal_parent_device: int
+    terminal_parent_inode: int
+    execution_principal_id: str
+    observer_principal_id: str
+    verifier_principal_id: str
+    observer_public_key_sha256: str
+    verifier_public_key_sha256: str
+    runtime_trust_root_sha256: str
+
+    _LABEL: ClassVar[str] = "D7 external-abort witness statement"
+
+    def __post_init__(self) -> None:
+        for name in (
+            "replay_target_sha256",
+            "attempt_key_sha256",
+            "execution_start_sha256",
+            "execution_identity_receipt_sha256",
+            "failure_evidence_payload_sha256",
+            "structural_verification_receipt_sha256",
+            "observer_identity_receipt_sha256",
+            "verifier_source_runtime_receipt_sha256",
+            "observation_payload_sha256",
+            "store_identity_sha256",
+            "terminal_path_identity_sha256",
+            "observer_public_key_sha256",
+            "verifier_public_key_sha256",
+            "runtime_trust_root_sha256",
+        ):
+            _sha256(getattr(self, name), name)
+        for name in (
+            "failure_evidence_payload_byte_count",
+            "structural_verification_receipt_byte_count",
+        ):
+            value = _plain_int(getattr(self, name), name, 1)
+            if value > MAX_D7_ATTEMPT_EVIDENCE_BYTES:
+                raise QualificationContractError(f"{name} exceeds the witness cap")
+        if type(self.observation_kind) is not D7ExternalAbortObservationKind:
+            raise TypeError(
+                "observation_kind must be an exact D7ExternalAbortObservationKind"
+            )
+        root = _realpath(self.store_root_realpath, "store_root_realpath")
+        parent = _realpath(self.terminal_parent_realpath, "terminal_parent_realpath")
+        basename = _basename(self.terminal_basename, "terminal_basename")
+        _plain_int(self.terminal_parent_device, "terminal_parent_device")
+        _plain_int(self.terminal_parent_inode, "terminal_parent_inode", 1)
+        if not _path_is_within(root, parent):
+            raise QualificationContractError(
+                "terminal parent must remain within the store root"
+            )
+        expected_path_identity = d7_path_identity_sha256(
+            store_identity_sha256=self.store_identity_sha256,
+            resolved_parent_realpath=parent,
+            subject_basename=basename,
+        )
+        if self.terminal_path_identity_sha256 != expected_path_identity:
+            raise QualificationContractError(
+                "terminal_path_identity_sha256 differs from witness coordinates"
+            )
+        principals = tuple(
+            _slug(getattr(self, name), name)
+            for name in (
+                "execution_principal_id",
+                "observer_principal_id",
+                "verifier_principal_id",
+            )
+        )
+        if len(set(principals)) != 3:
+            raise QualificationContractError(
+                "execution, observer, and verifier principals must differ"
+            )
+        if self.observer_public_key_sha256 == self.verifier_public_key_sha256:
+            raise QualificationContractError(
+                "observer and verifier public keys must differ"
+            )
+        expected_trust_root = d7_external_witness_runtime_trust_root_sha256(
+            execution_principal_id=self.execution_principal_id,
+            execution_identity_receipt_sha256=(self.execution_identity_receipt_sha256),
+            observer_principal_id=self.observer_principal_id,
+            observer_identity_receipt_sha256=(self.observer_identity_receipt_sha256),
+            observer_public_key_sha256=self.observer_public_key_sha256,
+            verifier_principal_id=self.verifier_principal_id,
+            verifier_source_runtime_receipt_sha256=(
+                self.verifier_source_runtime_receipt_sha256
+            ),
+            verifier_public_key_sha256=self.verifier_public_key_sha256,
+        )
+        if self.runtime_trust_root_sha256 != expected_trust_root:
+            raise QualificationContractError(
+                "runtime_trust_root_sha256 differs from authenticated principals"
+            )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": D7_EXTERNAL_ABORT_WITNESS_STATEMENT_SCHEMA_VERSION,
+            "record_kind": "external-abort-witness-statement",
+            "record_scope": D7_FAILURE_RECORD_SCOPE,
+            "claim_ceiling": r.D7_RECORD_CLAIM_CEILING,
+            "witness_claim": "authenticated-external-observation-only",
+            "replay_target_sha256": self.replay_target_sha256,
+            "attempt_key_sha256": self.attempt_key_sha256,
+            "execution_start_sha256": self.execution_start_sha256,
+            "execution_identity_receipt_sha256": (
+                self.execution_identity_receipt_sha256
+            ),
+            "failure_evidence_payload_sha256": (self.failure_evidence_payload_sha256),
+            "failure_evidence_payload_byte_count": (
+                self.failure_evidence_payload_byte_count
+            ),
+            "structural_verification_receipt_sha256": (
+                self.structural_verification_receipt_sha256
+            ),
+            "structural_verification_receipt_byte_count": (
+                self.structural_verification_receipt_byte_count
+            ),
+            "observer_identity_receipt_sha256": (self.observer_identity_receipt_sha256),
+            "verifier_source_runtime_receipt_sha256": (
+                self.verifier_source_runtime_receipt_sha256
+            ),
+            "observation_kind": self.observation_kind.value,
+            "observation_payload_sha256": self.observation_payload_sha256,
+            "store_identity_sha256": self.store_identity_sha256,
+            "terminal_path_identity_sha256": self.terminal_path_identity_sha256,
+            "store_root_realpath": self.store_root_realpath,
+            "terminal_parent_realpath": self.terminal_parent_realpath,
+            "terminal_basename": self.terminal_basename,
+            "terminal_parent_device": self.terminal_parent_device,
+            "terminal_parent_inode": self.terminal_parent_inode,
+            "execution_principal_id": self.execution_principal_id,
+            "observer_principal_id": self.observer_principal_id,
+            "verifier_principal_id": self.verifier_principal_id,
+            "observer_public_key_sha256": self.observer_public_key_sha256,
+            "verifier_public_key_sha256": self.verifier_public_key_sha256,
+            "runtime_trust_root_sha256": self.runtime_trust_root_sha256,
+            "observation_method": (
+                "authenticated-external-event-plus-terminal-inspection-v0.1"
+            ),
+            "external_event_evidenced": True,
+            "terminal_directory_entry_absent": True,
+            "elapsed_time_alone_sufficient": False,
+            "process_absence_alone_sufficient": False,
+            "caller_assertion_alone_sufficient": False,
+            "official_d7_authority_granted": False,
+            "execution_authority_granted": False,
+            "finalization_authority_granted": False,
+        }
+
+    @classmethod
+    def from_dict(cls, value: object) -> Self:
+        document = _mapping(value, cls._LABEL)
+        constants = {
+            "schema_version": D7_EXTERNAL_ABORT_WITNESS_STATEMENT_SCHEMA_VERSION,
+            "record_kind": "external-abort-witness-statement",
+            "record_scope": D7_FAILURE_RECORD_SCOPE,
+            "claim_ceiling": r.D7_RECORD_CLAIM_CEILING,
+            "witness_claim": "authenticated-external-observation-only",
+            "observation_method": (
+                "authenticated-external-event-plus-terminal-inspection-v0.1"
+            ),
+            "external_event_evidenced": True,
+            "terminal_directory_entry_absent": True,
+            "elapsed_time_alone_sufficient": False,
+            "process_absence_alone_sufficient": False,
+            "caller_assertion_alone_sufficient": False,
+            "official_d7_authority_granted": False,
+            "execution_authority_granted": False,
+            "finalization_authority_granted": False,
+        }
+        sha_fields = {
+            "replay_target_sha256",
+            "attempt_key_sha256",
+            "execution_start_sha256",
+            "execution_identity_receipt_sha256",
+            "failure_evidence_payload_sha256",
+            "structural_verification_receipt_sha256",
+            "observer_identity_receipt_sha256",
+            "verifier_source_runtime_receipt_sha256",
+            "observation_payload_sha256",
+            "store_identity_sha256",
+            "terminal_path_identity_sha256",
+            "observer_public_key_sha256",
+            "verifier_public_key_sha256",
+            "runtime_trust_root_sha256",
+        }
+        integer_fields = {
+            "failure_evidence_payload_byte_count",
+            "structural_verification_receipt_byte_count",
+            "terminal_parent_device",
+            "terminal_parent_inode",
+        }
+        string_fields = {
+            "store_root_realpath",
+            "terminal_parent_realpath",
+            "terminal_basename",
+            "execution_principal_id",
+            "observer_principal_id",
+            "verifier_principal_id",
+        }
+        _exact_keys(
+            document,
+            set(constants)
+            | sha_fields
+            | integer_fields
+            | string_fields
+            | {"observation_kind"},
+            cls._LABEL,
+        )
+        for name, expected in constants.items():
+            _constant(document[name], expected, f"{cls._LABEL} {name}")
+        values: dict[str, object] = {
+            name: _sha256(document[name], name) for name in sha_fields
+        }
+        values.update(
+            {
+                "failure_evidence_payload_byte_count": _plain_int(
+                    document["failure_evidence_payload_byte_count"],
+                    "failure_evidence_payload_byte_count",
+                    1,
+                ),
+                "structural_verification_receipt_byte_count": _plain_int(
+                    document["structural_verification_receipt_byte_count"],
+                    "structural_verification_receipt_byte_count",
+                    1,
+                ),
+                "terminal_parent_device": _plain_int(
+                    document["terminal_parent_device"],
+                    "terminal_parent_device",
+                ),
+                "terminal_parent_inode": _plain_int(
+                    document["terminal_parent_inode"],
+                    "terminal_parent_inode",
+                    1,
+                ),
+                "store_root_realpath": _realpath(
+                    document["store_root_realpath"],
+                    "store_root_realpath",
+                ),
+                "terminal_parent_realpath": _realpath(
+                    document["terminal_parent_realpath"],
+                    "terminal_parent_realpath",
+                ),
+                "terminal_basename": _basename(
+                    document["terminal_basename"],
+                    "terminal_basename",
+                ),
+                "execution_principal_id": _slug(
+                    document["execution_principal_id"],
+                    "execution_principal_id",
+                ),
+                "observer_principal_id": _slug(
+                    document["observer_principal_id"],
+                    "observer_principal_id",
+                ),
+                "verifier_principal_id": _slug(
+                    document["verifier_principal_id"],
+                    "verifier_principal_id",
+                ),
+                "observation_kind": _enum(
+                    D7ExternalAbortObservationKind,
+                    document["observation_kind"],
+                    "observation_kind",
+                ),
+            }
+        )
+        return cls(**values)  # type: ignore[arg-type]
+
+
+@dataclass(frozen=True, slots=True)
+class D7SignedExternalAbortWitnessEnvelope(_CanonicalEvidence):
+    """Canonical signed bytes; verification creates a separate runtime value."""
+
+    statement: D7ExternalAbortWitnessStatement
+    observer_signature: str
+    verifier_signature: str
+
+    _LABEL: ClassVar[str] = "D7 signed external-abort witness envelope"
+
+    def __post_init__(self) -> None:
+        if type(self.statement) is not D7ExternalAbortWitnessStatement:
+            raise TypeError(
+                "statement must be an exact D7ExternalAbortWitnessStatement"
+            )
+        _ed25519_signature(self.observer_signature, "observer_signature")
+        _ed25519_signature(self.verifier_signature, "verifier_signature")
+
+    @property
+    def observer_signed_bytes(self) -> bytes:
+        return canonical_json_bytes(
+            {
+                "signature_context": D7_EXTERNAL_ABORT_OBSERVER_SIGNATURE_CONTEXT,
+                "statement_sha256": self.statement.canonical_sha256,
+                "statement": self.statement.to_dict(),
+            }
+        )
+
+    @property
+    def verifier_signed_bytes(self) -> bytes:
+        return canonical_json_bytes(
+            {
+                "signature_context": D7_EXTERNAL_ABORT_VERIFIER_SIGNATURE_CONTEXT,
+                "statement_sha256": self.statement.canonical_sha256,
+                "runtime_trust_root_sha256": (self.statement.runtime_trust_root_sha256),
+                "observer_public_key_sha256": (
+                    self.statement.observer_public_key_sha256
+                ),
+                "verifier_public_key_sha256": (
+                    self.statement.verifier_public_key_sha256
+                ),
+                "observer_signature": self.observer_signature,
+            }
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": (
+                D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_SCHEMA_VERSION
+            ),
+            "record_kind": "signed-external-abort-witness-envelope",
+            "claim_ceiling": r.D7_RECORD_CLAIM_CEILING,
+            "signature_algorithm": "ed25519",
+            "statement": self.statement.to_dict(),
+            "statement_sha256": self.statement.canonical_sha256,
+            "observer_signed_payload_sha256": sha256_bytes(self.observer_signed_bytes),
+            "observer_signature": self.observer_signature,
+            "verifier_signed_payload_sha256": sha256_bytes(self.verifier_signed_bytes),
+            "verifier_signature": self.verifier_signature,
+            "serialized_capability": False,
+            "official_d7_authority_granted": False,
+            "execution_authority_granted": False,
+            "finalization_authority_granted": False,
+        }
+
+    @classmethod
+    def from_dict(cls, value: object) -> Self:
+        document = _mapping(value, cls._LABEL)
+        constants = {
+            "schema_version": (
+                D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_SCHEMA_VERSION
+            ),
+            "record_kind": "signed-external-abort-witness-envelope",
+            "claim_ceiling": r.D7_RECORD_CLAIM_CEILING,
+            "signature_algorithm": "ed25519",
+            "serialized_capability": False,
+            "official_d7_authority_granted": False,
+            "execution_authority_granted": False,
+            "finalization_authority_granted": False,
+        }
+        _exact_keys(
+            document,
+            set(constants)
+            | {
+                "statement",
+                "statement_sha256",
+                "observer_signed_payload_sha256",
+                "observer_signature",
+                "verifier_signed_payload_sha256",
+                "verifier_signature",
+            },
+            cls._LABEL,
+        )
+        for name, expected in constants.items():
+            _constant(document[name], expected, f"{cls._LABEL} {name}")
+        statement = D7ExternalAbortWitnessStatement.from_dict(document["statement"])
+        result = cls(
+            statement=statement,
+            observer_signature=_ed25519_signature(
+                document["observer_signature"],
+                "observer_signature",
+            ),
+            verifier_signature=_ed25519_signature(
+                document["verifier_signature"],
+                "verifier_signature",
+            ),
+        )
+        for label, expected, observed in (
+            (
+                "statement_sha256",
+                statement.canonical_sha256,
+                _sha256(document["statement_sha256"], "statement_sha256"),
+            ),
+            (
+                "observer_signed_payload_sha256",
+                sha256_bytes(result.observer_signed_bytes),
+                _sha256(
+                    document["observer_signed_payload_sha256"],
+                    "observer_signed_payload_sha256",
+                ),
+            ),
+            (
+                "verifier_signed_payload_sha256",
+                sha256_bytes(result.verifier_signed_bytes),
+                _sha256(
+                    document["verifier_signed_payload_sha256"],
+                    "verifier_signed_payload_sha256",
+                ),
+            ),
+        ):
+            if observed != expected:
+                raise QualificationContractError(f"{label} differs")
+        return result
