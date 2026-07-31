@@ -58,7 +58,7 @@ D7_STARTED_UNRESOLVED_FINALIZATION_SCHEMA_VERSION = (
 )
 D7_FAILED_ATTEMPT_SCHEMA_VERSION = "spirallens.d7-failed-attempt.v0.1"
 D7_TERMINAL_MEMBER_BINDING_SCHEMA_VERSION = "spirallens.d7-terminal-member-binding.v0.1"
-D7_TERMINAL_MANIFEST_SCHEMA_VERSION = "spirallens.d7-terminal-manifest.v0.1"
+D7_TERMINAL_MANIFEST_SCHEMA_VERSION = "spirallens.d7-terminal-manifest.v0.2"
 D7_TERMINAL_CONSUMPTION_SCHEMA_VERSION = "spirallens.d7-terminal-consumption.v0.1"
 
 D7_ATTEMPT_KEY_SCHEME = "spirallens.d7-attempt-key.v0.1"
@@ -1708,6 +1708,9 @@ class D7TerminalManifestRecord(_CanonicalRecord):
     terminal_artifact_kind: D7TerminalArtifactKind
     terminal_artifact_sha256: str
     immutable_members: tuple[D7TerminalMemberBinding, ...]
+    authoritative_start_manifest_sha256: str | None = None
+    authoritative_start_directory_identity_sha256: str | None = None
+    authority_verification_evidence_sha256: str | None = None
 
     schema_version: ClassVar[str] = D7_TERMINAL_MANIFEST_SCHEMA_VERSION
     claim_ceiling: ClassVar[str] = D7_RECORD_CLAIM_CEILING
@@ -1720,6 +1723,32 @@ class D7TerminalManifestRecord(_CanonicalRecord):
 
     def __post_init__(self) -> None:
         _CanonicalRecord.__post_init__(self)
+        lineage = (
+            self.authoritative_start_manifest_sha256,
+            self.authoritative_start_directory_identity_sha256,
+            self.authority_verification_evidence_sha256,
+        )
+        if any(member is None for member in lineage):
+            if any(member is not None for member in lineage):
+                raise QualificationContractError(
+                    "authoritative-start terminal lineage must be all present or all absent"
+                )
+        else:
+            for name, member in (
+                (
+                    "authoritative_start_manifest_sha256",
+                    self.authoritative_start_manifest_sha256,
+                ),
+                (
+                    "authoritative_start_directory_identity_sha256",
+                    self.authoritative_start_directory_identity_sha256,
+                ),
+                (
+                    "authority_verification_evidence_sha256",
+                    self.authority_verification_evidence_sha256,
+                ),
+            ):
+                _sha256(member, name)
         if type(self.immutable_members) is not tuple or any(
             type(member) is not D7TerminalMemberBinding
             for member in self.immutable_members
@@ -1760,6 +1789,15 @@ class D7TerminalManifestRecord(_CanonicalRecord):
             self._SHA_FIELDS,
             terminal_artifact_kind=self.terminal_artifact_kind.value,
             immutable_members=[item.to_dict() for item in self.immutable_members],
+            authoritative_start_manifest_sha256=(
+                self.authoritative_start_manifest_sha256
+            ),
+            authoritative_start_directory_identity_sha256=(
+                self.authoritative_start_directory_identity_sha256
+            ),
+            authority_verification_evidence_sha256=(
+                self.authority_verification_evidence_sha256
+            ),
             required_consumption={
                 "filename": D7_TERMINAL_CONSUMPTION_FILENAME,
                 "schema_version": D7_TERMINAL_CONSUMPTION_SCHEMA_VERSION,
@@ -1785,6 +1823,11 @@ class D7TerminalManifestRecord(_CanonicalRecord):
                 consumption_sha256_present=False,
             ),
             sha_fields=(*_TERMINAL_COORDINATE_FIELDS, "terminal_artifact_sha256"),
+            optional_sha_fields=(
+                "authoritative_start_manifest_sha256",
+                "authoritative_start_directory_identity_sha256",
+                "authority_verification_evidence_sha256",
+            ),
             raw_fields=("terminal_artifact_kind", "immutable_members"),
         )
         values["terminal_artifact_kind"] = _pop_enum(

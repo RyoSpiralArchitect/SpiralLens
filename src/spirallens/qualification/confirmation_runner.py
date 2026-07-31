@@ -1,10 +1,10 @@
-"""Deep-internal post-start orchestration for one future D7 confirmation.
+"""Deep-internal post-start orchestration for one prospective D7 confirmation.
 
-This module begins strictly after a future fused verifier/start issuer has
-transferred a private ownership object.  That issuer is intentionally absent
-here.  The runner accepts neither a supplier, a seed, nor an execution-start
-record as an independent argument: the only scientific boundary is one
-zero-argument callback.
+This module begins strictly after the sibling fused verifier/start operation
+has transferred a private ownership object.  This module itself issues no
+ownership.  The runner accepts neither a supplier, a seed, nor an
+execution-start record as an independent argument: the only scientific
+boundary is one zero-argument callback.
 
 The callback may keep the exact scientific executor and aggregator separately
 auditable.  Its returned six-component bundle is checked by the existing
@@ -24,6 +24,7 @@ converted into abort evidence.
 from __future__ import annotations
 
 import re
+import threading
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -77,22 +78,28 @@ class _NonSerializable:
 
 
 class _D7PostStartOwnership(_NonSerializable):
-    """Private proof-carrying handoff expected from a future fused issuer.
+    """Private proof-carrying handoff issued only inside the fused operation.
 
     Possession of this object is not itself a public authority claim.  The
     constructor token exists only to make accidental direct construction fail;
-    this module deliberately provides no issuer function.
+    this module deliberately provides no issuer function of its own.
     """
 
     __slots__ = (
         "_aggregation_sha256",
+        "_authoritative_start_directory_identity_sha256",
+        "_authoritative_start_manifest_sha256",
         "_authorization",
         "_claim",
         "_declaration",
         "_full_inventory_sha256",
+        "_requires_authoritative_start",
         "_result_schema_sha256",
+        "_run_consumed",
+        "_run_lock",
         "_sealed",
         "_start",
+        "_terminal_publication_consumed",
     )
 
     def __init__(
@@ -105,6 +112,9 @@ class _D7PostStartOwnership(_NonSerializable):
         full_inventory_sha256: str,
         aggregation_sha256: str,
         result_schema_sha256: str,
+        authoritative_start_manifest_sha256: str,
+        authoritative_start_directory_identity_sha256: str,
+        requires_authoritative_start: bool,
         _factory_token: object,
     ) -> None:
         if _factory_token is not _POST_START_OWNERSHIP_FACTORY_TOKEN:
@@ -133,6 +143,14 @@ class _D7PostStartOwnership(_NonSerializable):
             ("full_inventory_sha256", full_inventory_sha256),
             ("aggregation_sha256", aggregation_sha256),
             ("result_schema_sha256", result_schema_sha256),
+            (
+                "authoritative_start_manifest_sha256",
+                authoritative_start_manifest_sha256,
+            ),
+            (
+                "authoritative_start_directory_identity_sha256",
+                authoritative_start_directory_identity_sha256,
+            ),
         ):
             if type(value) is not str or re.fullmatch(r"[0-9a-f]{64}", value) is None:
                 raise QualificationContractError(
@@ -149,6 +167,16 @@ class _D7PostStartOwnership(_NonSerializable):
         self._full_inventory_sha256 = full_inventory_sha256
         self._aggregation_sha256 = aggregation_sha256
         self._result_schema_sha256 = result_schema_sha256
+        self._authoritative_start_manifest_sha256 = authoritative_start_manifest_sha256
+        self._authoritative_start_directory_identity_sha256 = (
+            authoritative_start_directory_identity_sha256
+        )
+        if type(requires_authoritative_start) is not bool:
+            raise TypeError("requires_authoritative_start must be a plain boolean")
+        self._requires_authoritative_start = requires_authoritative_start
+        self._run_lock = threading.Lock()
+        self._run_consumed = False
+        self._terminal_publication_consumed = False
         self._sealed = True
 
     @property
@@ -178,6 +206,60 @@ class _D7PostStartOwnership(_NonSerializable):
     @property
     def result_schema_sha256(self) -> str:
         return self._result_schema_sha256
+
+    @property
+    def authoritative_start_manifest_sha256(self) -> str:
+        return self._authoritative_start_manifest_sha256
+
+    @property
+    def authoritative_start_directory_identity_sha256(self) -> str:
+        return self._authoritative_start_directory_identity_sha256
+
+    @property
+    def requires_authoritative_start(self) -> bool:
+        return self._requires_authoritative_start
+
+    def _consume_for_run(self) -> None:
+        """Irreversibly consume the sole callback entry before invoking it."""
+
+        with self._run_lock:
+            if self._run_consumed:
+                raise QualificationContractError(
+                    "D7 post-start ownership was already consumed"
+                )
+            object.__setattr__(self, "_run_consumed", True)
+
+    def _consume_for_terminal_publication(self) -> None:
+        """Consume the sole terminal-publication attempt before filesystem I/O."""
+
+        with self._run_lock:
+            if not self._run_consumed:
+                raise QualificationContractError(
+                    "D7 terminal publication requires consumed callback ownership"
+                )
+            if self._terminal_publication_consumed:
+                raise QualificationContractError(
+                    "D7 terminal publication ownership was already consumed"
+                )
+            object.__setattr__(self, "_terminal_publication_consumed", True)
+
+    def _consume_for_external_finalization(self) -> None:
+        """Atomically exclude both callback entry and prepared publication."""
+
+        with self._run_lock:
+            if self._run_consumed or self._terminal_publication_consumed:
+                raise QualificationContractError(
+                    "D7 post-start ownership was already consumed"
+                )
+            object.__setattr__(self, "_run_consumed", True)
+            object.__setattr__(self, "_terminal_publication_consumed", True)
+
+    def _invalidate_all(self) -> None:
+        """Irreversibly close callback and publication authority."""
+
+        with self._run_lock:
+            object.__setattr__(self, "_run_consumed", True)
+            object.__setattr__(self, "_terminal_publication_consumed", True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -548,6 +630,7 @@ def prepare_d7_post_start_terminal(
         raise TypeError("ownership must be an exact private D7 post-start handoff")
     if not callable(scientific_producer):
         raise TypeError("scientific_producer must be callable")
+    ownership._consume_for_run()
 
     failure_stage = r.D7FailureStage.EXECUTION_KERNEL
     reason_code = "scientific-producer-exception"

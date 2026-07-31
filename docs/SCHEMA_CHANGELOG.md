@@ -4,6 +4,100 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-31 — D7 fused verification and structural-start mechanics
+
+### Added
+
+- `spirallens.d7-fused-authority-launch-descriptor.v0.1` defines the closed
+  nine-member, current-HEAD locator and integrity inventory consumed by the
+  deep-internal fused operation. Descriptor bytes carry no expected digest,
+  trust token, or official authority by themselves.
+- `spirallens.d7-fused-start-verification-evidence.v0.1`,
+  `spirallens.d7-authoritative-start-member-binding.v0.1`, and
+  `spirallens.d7-authoritative-start-manifest.v0.1` bind one same-call
+  verification observation and one atomic structural start directory in the
+  dedicated `d7-authoritative-start-v0/` lane.
+- Verification-evidence replay is strict: exact fields, types, constants,
+  digests, commit syntax, and canonical round-trip are required. The start
+  writer and loader reparse the descriptor and evidence and rejoin the complete
+  descriptor inventory plus attempt, replay-target, launch-intent,
+  execution-identity, runtime-specification, and full-design-freeze bindings.
+  Repository-HEAD, canonical-origin, source-tree, dependency-set, callable,
+  and process observation digests are preserved but are not recomputed or
+  independently reauthenticated by structural reload. Terminal lineage binds
+  the exact evidence bytes, not the truth of those live observations.
+- The following identifiers are internal digest domains, not independently
+  persisted public schemas:
+  `spirallens.d7-canonical-origin-observation.v0.1`,
+  `spirallens.d7-fused-start-source-tree-observation.v0.1`,
+  `spirallens.d7-fused-start-installed-dependency-set.v0.1`,
+  `spirallens.d7-fused-start-callable-identity.v0.1`,
+  `spirallens.d7-fused-start-process-identity.v0.1`, and
+  `spirallens.d7-authoritative-start-directory-identity.v0.1`.
+
+### Changed
+
+- `spirallens.d7-launch-authority-input-bundle.v0.2` supersedes `v0.1`.
+  `spirallens.d7-physical-store-lane-identity.v0.2` likewise supersedes
+  `v0.1`; its exact lane is now `d7-authoritative-start-v0`, while that lane
+  and the earlier evidence lane both remain persistence-reserved.
+- `spirallens.d7-terminal-manifest.v0.2` supersedes `v0.1`. It adds a lineage
+  group in which the authoritative-start manifest SHA-256, authoritative-start
+  directory-identity SHA-256, and fused authority verification-evidence
+  SHA-256 are either all non-null or all null. This permits the item-20
+  terminal path to bind the exact structural start while retaining the
+  structural item-19 form with all three canonical JSON values set to `null`.
+- The evidence-only item-19 external finalizer now atomically consumes both
+  callback entry and prepared-terminal publication before verification, so a
+  visible external-abort terminal cannot be followed by a callback through the
+  same private ownership.
+- Repository/store tree disjointness is now checked through descriptor-relative
+  physical device/inode ancestry in both directions. Path case or spelling
+  cannot turn an in-repository store, containing store, or identical directory
+  into a disjoint tree.
+- When an ordinary producer exception publishes a failed terminal but the final
+  terminal-parent fsync is unproved, the fused path now makes a best-effort
+  attempt to attach the visible terminal identity and explicit durability
+  warning to the same exception.
+- Every fused-path exit after private ownership construction now atomically
+  invalidates both callback entry and terminal publication. A pre-dispatch
+  exception or traceback-retained object cannot re-enter the producer.
+- These version changes affect deep-internal candidate bytes only. No
+  repository-tracked or official `v0.1` launch bundle, physical identity, or
+  terminal manifest is migrated. Out-of-tree deep-internal `v0.1` bytes are
+  incompatible and unsupported; no migration API is provided, and no earlier
+  C1, C2, D6, or evidence-prefix bytes are rewritten.
+
+### Compatibility and non-claims
+
+- The new modules remain deep internal with empty `__all__` values. This
+  completes roadmap item 20 as mechanics implemented but not officially
+  invoked; it adds no supported or provisional public Python API.
+- Runtime matching is limited to the declared tracked source and runtime-lock
+  bytes, installed distribution names/versions, interpreter executable bytes,
+  producer source/code identity, and selected process-envelope fields. It is
+  not closure of installed package files, loaded native libraries, mutable
+  module globals, callable defaults or closures, unrecorded environment state,
+  model state, or data state.
+- Structural start bytes and their strict loader grant no authority and do not
+  establish `started_unresolved`. The fused path makes at most one terminal
+  publication attempt; hard exit or `BaseException`, post-start drift,
+  unproved start-parent fsync, or success/failure publication error can leave a
+  visible structural start with no terminal. The item-19 external finalizer is
+  evidence-only and cannot accept the item-20 authoritative-start transaction.
+  This does not alter the contract rule that a future verifier-established
+  authoritative start without a terminal is `started_unresolved`; it clarifies
+  that the item-20 structural start bytes and loader do not themselves
+  establish that prerequisite.
+- No tracked fused descriptor, `requirements-d7-runtime-lock.txt`, exact-current
+  source/runtime artifacts, reviewed admission or readiness, official supplier
+  claim or invocation, seed-bearing full design or replay target, freeze,
+  launch intent, official start or terminal instance, official producer or
+  exact aggregation, D7/D8 result, or replay is added. Current-main equality
+  and honest-local reobservation do not prove signed trust-root provenance,
+  hermetic runtime closure, hostile-local mutation resistance, or resistance
+  to administrative deletion. Frozen planning-protocol JSON remains unchanged.
+
 ## 2026-07-31 — D7 terminal, external-witness, and post-start runner mechanics
 
 ### Added

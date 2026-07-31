@@ -984,35 +984,76 @@ races, staging remnants, symlink/hardlink/FIFO/unknown-member substitution,
 and file-identity drift, publishes it by native no-replace directory rename,
 and strictly reloads it. A private primary-only post-start runner handoff
 validates the complete target projection and six-component result behind a
-single zero-argument producer callback. No issuer for that ownership exists,
-and the full official exact executor/aggregation remains behind the callback.
+single zero-argument producer callback. Roadmap item 20 now issues that
+ownership only inside one deep-internal raw-descriptor → canonical
+`origin/main` → declared source/runtime, callable/process, physical identity,
+and absence observation → no-replace start transition. Repository/store tree
+disjointness is proved by descriptor-relative device/inode ancestry rather
+than path spelling. It requires start-parent
+fsync proof, repeats those observations after the start becomes visible, and
+consumes ownership before callback entry. Every exit after ownership
+construction invalidates both callback entry and terminal publication,
+including a failure before runner dispatch. The runtime surface is limited to
+tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock,
+installed distribution names/versions, interpreter executable bytes, producer
+source/code identity, and selected process-envelope fields. It does not close
+installed package files, loaded native libraries, mutable module globals,
+callable defaults or closures, unrecorded environment state, model state, or
+data state. No caller can supply or receive ownership, and the full official
+producer and exact aggregation remain behind the callback.
+
+The strict start loader grants no authority and explicitly does not establish
+`started_unresolved`. The fused call makes at most one terminal-publication
+attempt. Hard exit or `BaseException`, post-start drift, unproved start-parent
+fsync, or success/failure publication error can leave a visible structural
+start with no terminal and retry still forbidden. If an ordinary exception
+does publish a visible failed terminal whose final parent fsync is unproved,
+the fused path makes a best-effort attempt to attach its terminal identity and
+durability warning to that same exception.
 
 For external aborts, a canonical two-signature Ed25519 observer/verifier
 envelope is a required closed-inventory member. The integrated path verifies
-against explicit runtime pins, performs fixed live prefix/terminal-coordinate
-revalidation, derives the finalization and terminal records, publishes without
-replacement, and strictly reloads; existing terminals can be strictly
+against explicit runtime pins only after atomically consuming callback entry
+and prepared-terminal publication. It performs fixed live
+prefix/terminal-coordinate revalidation, derives the finalization and terminal
+records, publishes without replacement, and strictly reloads; existing
+terminals can be strictly
 reauthenticated to the same pins. This is authentication relative to those
 pins only. It establishes no pin/trust-root provenance, official authority,
 wall-clock freshness, authoritative start, observed execution, scientific
 eligibility, retry/replay authority, D7, or D8. No supplier or official seed
 was used, and no official execution occurred.
+The item-19 finalizer accepts only the evidence-only loaded prefix; it cannot
+accept or reauthenticate the item-20 authoritative-start transaction.
+Authoritative-start-compatible external-abort integration therefore remains a
+pre-item-24 blocker.
 
 The next execution-preparation order is:
 
 1. retain the completed terminal transaction, external-witness verification
    relative to explicit pins, and typed runner mechanics as non-authorizing
    and non-scientific;
-2. next implement a fused verify-and-exclusive-start operation that reopens
-   and revalidates trusted inputs, performs live physical and absence checks, and
-   transitions directly into the exclusive start without returning or
-   accepting a reusable authorization token;
-3. only after those code surfaces are final, close the exact current
-   execution source/runtime and reviewed family admission;
+2. retain the completed fused verify-and-exclusive-start mechanics without
+   creating an official descriptor or officially invoking them; their canonical
+   `origin/main`, declared source/runtime and callable/process, disjoint-store,
+   two-pass absence, no-replace start plus parent-fsync proof, and one-callback
+   checks emit no reusable authorization token;
+3. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
+   official producer and exact aggregation, issue the exact-current source and
+   runtime artifacts, and complete reviewed family admission plus seed-free
+   readiness;
 4. acquire the exclusive seed-supply claim, invoke the supplier once, publish
    the exact seed-bearing target and full design atomically, commit their
-   freeze, and persist launch intent after that freeze; and
-5. invoke the fused start operation.
+   freeze, persist launch intent after that freeze, and execute item 23's
+   already separated descriptive result without changing D7 design bytes;
+5. before item 24, create and commit the closed nine-member fused descriptor
+   and pass strict verification-evidence replay/rejoin, recognizing that
+   structural replay preserves but does not recompute or independently
+   reauthenticate its live-observation digests and that terminal lineage binds
+   the evidence bytes only; pass temporary Git/runtime end-to-end validation
+   and authoritative-start-compatible external-abort integration; and
+6. make item 24 the first official fused invocation, requiring an exact
+   terminal outcome and complete isolated byte replay.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

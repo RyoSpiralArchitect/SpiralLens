@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, and a typed post-start runner handoff; none is a public export, authoritative target/start issuer, trusted pin root, admission, seed, official executor, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, and same-call fused verify/start/callback/terminal-attempt mechanics; none is a public export or an official descriptor, target, start/run instance, trusted pin root, admission, seed, exact executor, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -250,10 +250,18 @@ and rejoins the callback's replay-target, full-inventory, aggregation, and
 result-schema projection to that handoff before preparing a typed terminal.
 Ordinary `Exception` objects are re-raised unchanged after best-effort
 attachment of a typed in-process failed-terminal handoff; `BaseException` is
-not converted into abort evidence. No function in this change issues the
-private ownership object. The official exact executor and aggregation remain
-separately auditable behind the callback and are not implemented by this
-runner slice.
+not converted into abort evidence. The runner module itself issues no private
+ownership. `confirmation_fused_start` is the sole deep-internal issuer: after
+durable structural-start publication, strict reload, and unchanged second-pass
+observations, it constructs and consumes the handoff within the same call.
+Ownership is never accepted, serialized, cached, or returned, and every exit
+after its construction atomically invalidates both callback entry and terminal
+publication, including a failure before runner dispatch. The official
+producer and exact aggregation remain separately auditable behind the callback
+and are not implemented by this runner slice. If a handled ordinary exception
+leaves a failed terminal visible while its final parent fsync is unproved, the
+fused path makes a best-effort attempt to attach the terminal identity and
+explicit durability warning to that same exception.
 
 The deep-internal `confirmation_external_witness` and
 `confirmation_terminal_operations` modules add the mechanics-only external
@@ -263,13 +271,48 @@ member. The integrated operation accepts no preverified capability and no
 caller-supplied finalization/manifest/consumption records: it verifies against
 explicit runtime pins, performs the fixed live prefix and terminal-coordinate
 revalidation, derives the terminal chain, consumes the one-shot witness,
-publishes without replacement, and strictly reloads. Existing terminals can
+publishes without replacement, and strictly reloads. It atomically consumes
+both callback entry and prepared-terminal publication before verification.
+Existing terminals can
 also be strictly reloaded and reauthenticated to exact pins. The returned
 receipt means `explicit-runtime-pins-only`; it records
 `trust_root_provenance_verified=false`, `wall_clock_freshness_proved=false`,
 `authoritative_start_proved=false`, `execution_observed=false`, and
 `scientific_claim_eligible=false`. Caller-supplied pins are configuration, not
 official SpiralLens trust-root provenance or authority.
+
+The deep-internal `confirmation_fused_authority`,
+`confirmation_authoritative_start_persistence`, and
+`confirmation_fused_start` modules complete roadmap item 20 as mechanics only.
+They reopen a committed closed nine-member descriptor at clean current HEAD,
+match live canonical `origin/main`, and verify the declared observation
+surface: tracked `src/spirallens/**`, `pyproject.toml`, and the required runtime
+lock; installed distribution names/versions; interpreter executable bytes;
+producer source/code identity; selected process-envelope fields; physical
+store/lane identity whose repository/store disjointness is proved from
+descriptor-relative device/inode ancestry rather than path spelling; and
+output/terminal absence. This is not hermetic closure
+of installed package files, loaded native libraries, mutable module globals,
+callable defaults or closures, unrecorded environment state, model state, or
+data state.
+
+The dedicated `d7-authoritative-start-v0/` transaction is structurally named,
+not an official authority grant. Its strict loader reports
+`authority_authenticated=false`, `authority_granted=false`, and
+`started_unresolved_established=false`; visible start bytes with no terminal
+block retry but do not by themselves establish the named lifecycle state. The
+loader strictly reparses the descriptor and verification evidence and rejoins
+their inventory and persisted start bindings; no official descriptor instance
+exists yet. Repository-HEAD, canonical-origin, source-tree, dependency-set,
+callable, and process observation digests are preserved, not recomputed or
+independently reauthenticated by structural reload. Terminal lineage binds the
+evidence bytes rather than those live facts. The
+fused call performs at most one terminal-publication attempt. Hard exit or
+`BaseException`, post-start drift, unproved start-parent fsync, or success/
+failure publication error can leave a visible start with no terminal. The
+item-19 external finalizer remains typed to its evidence-only prefix and does
+not accept this authoritative-start transaction, so authoritative-start-
+compatible external-abort integration remains open.
 
 The replay contracts and attempt records are specifications and types, not
 official replay-target or authoritative attempt-envelope instances. The local
@@ -289,11 +332,12 @@ or runner code. A later exact closure of the then-current execution source and
 runtime is required after those surfaces are final.
 
 Target, authorization, start, and result fields are joined by a closed table
-of canonical byte equalities. In the future authoritative lane, a
-verifier-established visible start without terminal remains
-`started_unresolved`; it blocks retry, replay, and D8 until a later append-only
-finalization binds external abort evidence. The present evidence-only lane
-cannot establish that state.
+of canonical byte equalities. Neither the evidence-only prefix lane nor the
+new structural-start lane establishes `started_unresolved` from bytes alone.
+A future official reauthentication must bind the exact authority evidence and
+durable start before assigning that lifecycle interpretation. The current
+evidence-only external finalizer cannot perform that rejoin for the item-20
+start type.
 
 Family admission, full-design freeze, official seeds, authoritative lifecycle,
 execution, official result/failure publication, scientific eligibility, D7,
@@ -303,18 +347,34 @@ operational rather than token-based:
 
 1. retain the completed terminal-transaction, external-witness, and typed
    runner mechanics as non-authorizing and non-scientific;
-2. next implement one fused verify-and-exclusive-start operation that reopens
-   and verifies the authoritative inputs, reobserves physical identity and
-   absence, and transitions directly into the exclusive start; it must emit no
-   reusable serialized or caller-returnable authorization token;
-3. only after those final code surfaces exist, issue exact current
-   execution-source/runtime closure and reviewed family admission;
-4. claim seed supply, invoke the supplier once, publish the exact target and
-   full design, commit the freeze, and only then persist launch intent; and
-5. invoke the fused start operation.
+2. retain the completed deep-internal fused transition mechanics without an
+   official descriptor or invocation. They accept only a raw current-HEAD
+   descriptor and zero-argument producer, match the declared source/runtime,
+   callable/process, physical, and absence surfaces, publish one no-replace
+   start, require its parent fsync to be proved, repeat those observations, and
+   consume private ownership before callback; they emit no reusable
+   authorization token;
+3. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
+   exact official producer and aggregation, issue the exact-current source and
+   runtime artifacts, and complete reviewed family admission plus seed-free
+   readiness;
+4. for items 22-23, claim and invoke seed supply once, publish the exact target
+   and full design, commit the freeze, persist launch intent, and execute the
+   already separated descriptive result without changing D7 design bytes;
+5. before item 24, create and commit the closed nine-member descriptor and
+   pass strict verification-evidence replay/rejoin, temporary Git/runtime
+   end-to-end validation, and authoritative-start-compatible external-abort
+   integration; and
+6. make item 24 the first official fused invocation, requiring an exact
+   terminal outcome and complete isolated byte replay.
 
 The directly constructible records remain insufficient throughout this
 sequence. Evidence envelopes cannot be promoted in place.
+The fused module is also deep internal and has an empty `__all__`. No official
+descriptor, fixed runtime lock, exact-current closure, admission/readiness,
+target/freeze/intent instance, start, terminal, or run has been created.
+Canonical-origin equality is a scoped live Git-transport trust rule, not
+signed trust-root provenance or hostile-local-operator resistance.
 Committed C2 closes only the declared historical Git source set; it does not
 execute historical code or attest Python/native runtime, transitive
 dependencies, in-process identity, hostile-local-mutation resistance, or

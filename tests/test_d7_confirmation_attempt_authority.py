@@ -282,7 +282,7 @@ def _bundle() -> authority.D7LaunchAuthorityInputBundle:
         store_path="/var/tmp/spirallens-d7",
         store_device=101,
         store_inode=202,
-        lane_path=("/var/tmp/spirallens-d7/d7-prefix-evidence-only-v0"),
+        lane_path=("/var/tmp/spirallens-d7/d7-authoritative-start-v0"),
         lane_device=101,
         lane_inode=303,
         lane_parent_device=101,
@@ -1004,7 +1004,7 @@ def test_physical_attempt_role_is_fixed_to_primary_confirmation() -> None:
         (
             "lane_path",
             "/var/tmp/spirallens-d7/wrong-lane",
-            "exact evidence-only child",
+            "exact authoritative-start child",
         ),
         (
             "terminal_path",
@@ -1092,11 +1092,11 @@ def test_lane_physical_identity_must_differ_from_store() -> None:
         )
 
 
-def test_output_cannot_be_nested_under_the_reserved_evidence_lane() -> None:
+def test_output_cannot_be_nested_under_the_reserved_authoritative_start_lane() -> None:
     physical = _bundle().physical_store_lane_identity
     with pytest.raises(
         authority.D7AuthorityInputError,
-        match="reserved|evidence lane",
+        match="reserved|authoritative-start lane",
     ):
         replace(
             physical,
@@ -1135,7 +1135,8 @@ def test_output_cannot_use_a_declared_reserved_physical_alias(
     else:
         changes = {
             "output_namespace_path": (
-                f"{physical.store_path}/alias/{authority.D7_EVIDENCE_LANE_BASENAME}"
+                f"{physical.store_path}/alias/"
+                f"{authority.D7_AUTHORITATIVE_START_LANE_BASENAME}"
             ),
             "output_parent_device": physical.store_device,
             "output_parent_inode": physical.store_inode,
@@ -1152,6 +1153,7 @@ def test_output_cannot_use_a_declared_reserved_physical_alias(
     "subject",
     (
         "/var/tmp/spirallens-d7/d7-prefix-evidence-only-v0/output",
+        "/var/tmp/spirallens-d7/d7-authoritative-start-v0/output",
         "/var/tmp/spirallens-d7/d7-attempt-evidence/output",
         ("/var/tmp/spirallens-d7/" + "8" * 64 + ".attempt-declaration.envelope.json"),
         ("/var/tmp/spirallens-d7/" + "9" * 64 + ".attempt-claim.json"),

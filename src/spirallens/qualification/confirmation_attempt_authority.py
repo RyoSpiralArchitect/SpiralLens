@@ -8,8 +8,9 @@ execution, or mint a reusable capability.
 
 The only loader accepts one bounded byte string and its expected digest.  It
 checks that digest before parsing and performs no callbacks or external I/O.
-An eventual authoritative path must reopen trusted sources and fuse live
-verification directly with an exclusive start transition.
+The separate fused path reopens a Git-rooted inventory and joins its declared
+live observation surface directly to an exclusive start transition; this
+module's caller-constructible records remain non-authorizing.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ __all__: tuple[str, ...] = ()
 MAX_D7_LAUNCH_AUTHORITY_INPUT_BYTES = 2 * 1024 * 1024
 MAX_D7_DECLARED_PATH_BYTES = 4096
 D7_LAUNCH_AUTHORITY_INPUT_BUNDLE_SCHEMA_VERSION = (
-    "spirallens.d7-launch-authority-input-bundle.v0.1"
+    "spirallens.d7-launch-authority-input-bundle.v0.2"
 )
 D7_AUTHORITY_ARTIFACT_BINDING_SCHEMA_VERSION = (
     "spirallens.d7-authority-artifact-binding.v0.1"
@@ -56,7 +57,7 @@ D7_EXECUTION_IDENTITY_INPUT_SCHEMA_VERSION = (
     "spirallens.d7-execution-identity-input.v0.1"
 )
 D7_PHYSICAL_STORE_LANE_IDENTITY_SCHEMA_VERSION = (
-    "spirallens.d7-physical-store-lane-identity.v0.1"
+    "spirallens.d7-physical-store-lane-identity.v0.2"
 )
 D7_REPLAY_TARGET_INPUT_SCHEMA_VERSION = (
     "spirallens.d7-spectral-moment-replay-target.v0.1"
@@ -120,6 +121,7 @@ D7_CONFIRMATION_SEED_SLOT_IDS = (
     "confirmation-seed-slot-01",
 )
 D7_EVIDENCE_LANE_BASENAME = "d7-prefix-evidence-only-v0"
+D7_AUTHORITATIVE_START_LANE_BASENAME = "d7-authoritative-start-v0"
 D7_EVIDENCE_DIRECTORY_BASENAME = "d7-attempt-evidence"
 D7_CONFIRMATION_GENERATOR_FAMILY_ID = "spectral-moment-confirmation-grid-v0.1"
 
@@ -315,6 +317,7 @@ def _reserved_persistence_paths(
     store = PurePosixPath(store_path)
     return (
         (store / D7_EVIDENCE_LANE_BASENAME).as_posix(),
+        (store / D7_AUTHORITATIVE_START_LANE_BASENAME).as_posix(),
         (store / D7_EVIDENCE_DIRECTORY_BASENAME).as_posix(),
         (store / f"{attempt_key_sha256}.attempt-declaration.envelope.json").as_posix(),
         (store / f"{attempt_key_sha256}.launch-authorization.envelope.json").as_posix(),
@@ -1754,9 +1757,12 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             ("terminal_parent_inode", self.terminal_parent_inode),
         ):
             _plain_int(value, label=name, minimum=1)
-        if lane != (PurePosixPath(store) / D7_EVIDENCE_LANE_BASENAME).as_posix():
+        if (
+            lane
+            != (PurePosixPath(store) / D7_AUTHORITATIVE_START_LANE_BASENAME).as_posix()
+        ):
             raise D7AuthorityInputError(
-                "lane_path must be the exact evidence-only child of store_path"
+                "lane_path must be the exact authoritative-start child of store_path"
             )
         if (
             self.lane_parent_device,
@@ -1773,7 +1779,7 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             self.store_inode,
         ):
             raise D7AuthorityInputError(
-                "evidence lane physical identity must differ from the store"
+                "authoritative-start lane physical identity must differ from the store"
             )
         if not _is_descendant(output, store) or not _is_descendant(
             terminal,
@@ -1823,7 +1829,7 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             basename = subject_key[2]
             if parent_coordinates == (self.lane_device, self.lane_inode):
                 raise D7AuthorityInputError(
-                    f"{label} parent aliases the reserved evidence lane"
+                    f"{label} parent aliases the reserved authoritative-start lane"
                 )
             if parent_coordinates == (
                 self.store_device,
