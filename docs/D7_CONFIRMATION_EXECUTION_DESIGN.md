@@ -92,11 +92,14 @@ inventory/full-design/target publication. The corresponding claim,
 invocation, chronology, inventory-output, and atomic-publication verification
 fields all remain false; no supplier invocation is performed.
 
-The physical input fixes the exact attempt key, normalized
-store/lane/output/terminal paths, positive store/lane/parent device/inode
-coordinates, and the lane-parent-to-store relationship. It excludes the
-persistence-reserved lane, evidence directory, attempt-envelope leaves, and
-chronology leaf. The artifact-binding surface intentionally has no raw
+The physical input fixes the `primary-confirmation` role and derives the exact
+attempt key from the canonical replay-target digest with the existing attempt
+record function. It binds normalized store/lane/output/terminal paths,
+positive store/lane/parent device/inode coordinates, and the
+lane-parent-to-store relationship while requiring distinct store and lane
+identities. It excludes the persistence-reserved lane, evidence directory,
+attempt-envelope leaves, and chronology leaf by lexical and known declared
+physical identity. The artifact-binding surface intentionally has no raw
 `from_bytes` factory. Double-slash aliases, embedded NUL, and overlong declared
 paths are rejected before the persistence boundary. The strict loader applies
 the input-size cap before hashing, verifies the expected bundle digest before
@@ -401,7 +404,8 @@ structural bundle. Dedicated caller-claimed target admission, full-design, and
 source/runtime leaves remain unauthenticated. The typed exclusive claim and
 single invocation causally connect supplier, registries, readiness,
 caller-alleged receipts, official inventory, and atomic publication, while the
-physical input binds the exact attempt key and positive store/lane identities
+physical input binds the primary-role target-derived attempt key and positive,
+distinct store/lane identities
 and excludes persistence-reserved paths. The loader has no raw artifact
 `from_bytes` path; it applies a size cap, verifies the digest before parsing,
 and translates canonical parse errors. These requirements are concrete enough

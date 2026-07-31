@@ -27,6 +27,8 @@ from spirallens.core.canonical import (
     sha256_bytes,
 )
 
+from . import confirmation_attempt_records as attempt_records
+
 __all__: tuple[str, ...] = ()
 
 MAX_D7_LAUNCH_AUTHORITY_INPUT_BYTES = 2 * 1024 * 1024
@@ -1722,6 +1724,9 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
     terminal_parent_inode: int
 
     schema_version: ClassVar[str] = D7_PHYSICAL_STORE_LANE_IDENTITY_SCHEMA_VERSION
+    attempt_role: ClassVar[str] = (
+        attempt_records.D7AttemptRole.PRIMARY_CONFIRMATION.value
+    )
 
     def __post_init__(self) -> None:
         _slug(self.physical_identity_id, label="physical_identity_id")
@@ -1763,6 +1768,13 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             raise D7AuthorityInputError(
                 "lane parent physical coordinates must equal the store"
             )
+        if (self.lane_device, self.lane_inode) == (
+            self.store_device,
+            self.store_inode,
+        ):
+            raise D7AuthorityInputError(
+                "evidence lane physical identity must differ from the store"
+            )
         if not _is_descendant(output, store) or not _is_descendant(
             terminal,
             store,
@@ -1799,6 +1811,30 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             self.terminal_parent_inode,
             PurePosixPath(terminal).name,
         )
+        reserved_top_level_basenames = {
+            PurePosixPath(path).name
+            for path in _reserved_persistence_paths(store, attempt_key)
+        }
+        for label, subject_key in (
+            ("output namespace", output_key),
+            ("terminal subject", terminal_key),
+        ):
+            parent_coordinates = subject_key[:2]
+            basename = subject_key[2]
+            if parent_coordinates == (self.lane_device, self.lane_inode):
+                raise D7AuthorityInputError(
+                    f"{label} parent aliases the reserved evidence lane"
+                )
+            if parent_coordinates == (
+                self.store_device,
+                self.store_inode,
+            ) and (
+                basename in reserved_top_level_basenames
+                or _PERSISTENCE_CHRONOLOGY_LEAF_RE.fullmatch(basename) is not None
+            ):
+                raise D7AuthorityInputError(
+                    f"{label} physical key aliases a persistence-reserved path"
+                )
         if output_key == terminal_key:
             raise D7AuthorityInputError(
                 "output and terminal resolve to the same physical subject key"
@@ -1864,6 +1900,7 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             "schema_version",
             "physical_identity_id",
             "attempt_key_sha256",
+            "attempt_role",
             "store_path",
             "store_device",
             "store_inode",
@@ -1888,6 +1925,8 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
         _exact_keys(item, fields, label="physical store/lane identity")
         if item["schema_version"] != cls.schema_version:
             raise D7AuthorityInputError("physical identity schema differs")
+        if item["attempt_role"] != cls.attempt_role:
+            raise D7AuthorityInputError("physical attempt role differs")
         _false(item["live_reobserved"], label="live_reobserved")
         _false(item["path_absence_observed"], label="path_absence_observed")
         result = cls(
@@ -1991,6 +2030,7 @@ class D7PhysicalStoreLaneIdentityRecord(_CanonicalRecordMixin):
             "schema_version": self.schema_version,
             "physical_identity_id": self.physical_identity_id,
             "attempt_key_sha256": self.attempt_key_sha256,
+            "attempt_role": self.attempt_role,
             "store_path": self.store_path,
             "store_device": self.store_device,
             "store_inode": self.store_inode,
@@ -2789,6 +2829,14 @@ class D7LaunchAuthorityInputBundle(_CanonicalRecordMixin):
         ):
             raise D7AuthorityInputError(
                 "target parent protocol binding differs from exclusion source"
+            )
+        expected_attempt_key = attempt_records.d7_attempt_key_sha256(
+            replay_target_sha256=self.replay_target.canonical_sha256,
+            attempt_role=attempt_records.D7AttemptRole.PRIMARY_CONFIRMATION,
+        )
+        if self.physical_store_lane_identity.attempt_key_sha256 != expected_attempt_key:
+            raise D7AuthorityInputError(
+                "physical attempt key differs from replay target and primary role"
             )
 
         _require_record_binding(

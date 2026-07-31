@@ -201,11 +201,14 @@ admission and source/runtime receipts, official inventory, and atomic
 inventory/full-design/target publication. All claim, invocation, chronology,
 inventory-output, and publication verification fields remain false.
 
-The physical input binds the exact attempt key, normalized store/lane/output/
-terminal paths, positive store/lane/parent device/inode coordinates, and the
-lane-parent-to-store relationship. It excludes persistence-reserved evidence,
-attempt-envelope, and chronology paths, and rejects double-slash aliases,
-embedded NUL, and overlong declared paths. The artifact-binding API has no raw
+The physical input fixes the `primary-confirmation` role and derives the exact
+attempt key from the canonical replay-target digest. It binds normalized
+store/lane/output/terminal paths, positive store/lane/parent device/inode
+coordinates, and the lane-parent-to-store relationship while requiring the
+lane identity to differ from the store. It excludes persistence-reserved
+evidence, attempt-envelope, and chronology paths by both lexical path and
+known declared physical key, and rejects double-slash aliases, embedded NUL,
+and overlong declared paths. The artifact-binding API has no raw
 `from_bytes` factory. The strict bundle loader applies its byte-size cap first,
 checks the expected SHA-256 before parsing, translates malformed, deeply
 nested, and oversized-numeric JSON parser failures into
@@ -217,7 +220,8 @@ observation, physical reobservation, and execution claims as false.
 This module does not make caller records trustworthy. A canonical record,
 matching digest, serialized “capability,” or caller-chosen token is still
 caller-constructible data and cannot establish authority. The physical
-identity record describes normalized paths, the exact attempt key, and
+identity record describes normalized paths, the target-and-primary-role-bound
+attempt key, and
 declared device/inode coordinates; it is not a live filesystem observation,
 reservation, or exclusive claim. “Complete” seed registries mean complete
 relative to the explicitly bound registry sources and counts in this

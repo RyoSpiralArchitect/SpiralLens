@@ -910,8 +910,10 @@ below:
     official inventory and atomic inventory/full-design/target publication.
     Claim, invocation, chronology, inventory-output, and publication
     verification remain false. The physical input carries the exact attempt
-    key, normalized paths, positive store/lane/parent device/inode identities,
-    and persistence-reserved path exclusions. The artifact binding has no raw
+    key derived from the target and fixed primary role, normalized paths,
+    positive store/lane/parent device/inode identities, a distinct store/lane
+    identity requirement, and lexical plus known-physical-alias
+    persistence-reserved path exclusions. The artifact binding has no raw
     `from_bytes` factory. The strict loader applies the byte-size cap, checks
     the expected digest before parsing, translates canonical parse errors, and
     checks structural joins only. It authenticates no source, seed registry,
@@ -1088,8 +1090,10 @@ caller-claimed target admission, exact-full-design, and exact-source/runtime
 leaves record `identity_authenticated=false`. Typed exclusive-claim and
 single-invocation inputs causally join supplier, registries, readiness,
 caller-alleged receipt bindings, official inventory, and atomic publication.
-The physical input binds the exact attempt key, positive store/lane identities,
-and persistence-reserved path exclusions. The artifact binding has no raw
+The physical input binds the target-and-primary-role-derived attempt key,
+positive distinct store/lane identities, and lexical plus
+known-physical-alias persistence-reserved path exclusions. The artifact
+binding has no raw
 `from_bytes` factory; the loader applies its size cap, verifies the digest
 before parsing, and translates canonical parse errors. It authenticates no
 caller, receipt, registry, claim, invocation, or publication, performs no live

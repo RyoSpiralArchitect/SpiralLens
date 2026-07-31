@@ -9,6 +9,7 @@ import pytest
 
 from spirallens.core.canonical import canonical_json_bytes, sha256_bytes
 from spirallens.qualification import confirmation_attempt_authority as authority
+from spirallens.qualification import confirmation_attempt_records
 from spirallens.qualification import confirmation_replay_contracts
 
 
@@ -272,7 +273,12 @@ def _bundle() -> authority.D7LaunchAuthorityInputBundle:
     )
     physical = authority.D7PhysicalStoreLaneIdentityRecord(
         physical_identity_id="physical-store-lane-identity-v0-1",
-        attempt_key_sha256="8" * 64,
+        attempt_key_sha256=confirmation_attempt_records.d7_attempt_key_sha256(
+            replay_target_sha256=target.canonical_sha256,
+            attempt_role=(
+                confirmation_attempt_records.D7AttemptRole.PRIMARY_CONFIRMATION
+            ),
+        ),
         store_path="/var/tmp/spirallens-d7",
         store_device=101,
         store_inode=202,
@@ -934,6 +940,12 @@ def test_freeze_and_launch_commit_and_design_joins_fail_closed() -> None:
 def test_physical_contract_allows_nested_lane_and_shared_parent() -> None:
     physical = _bundle().physical_store_lane_identity
     serialized = physical.to_dict()
+    expected_attempt_key = confirmation_attempt_records.d7_attempt_key_sha256(
+        replay_target_sha256=_bundle().replay_target.canonical_sha256,
+        attempt_role=(confirmation_attempt_records.D7AttemptRole.PRIMARY_CONFIRMATION),
+    )
+    assert physical.attempt_key_sha256 == expected_attempt_key
+    assert serialized["attempt_role"] == "primary-confirmation"
     assert physical.lane_path.startswith(f"{physical.store_path}/")
     assert serialized["lane_device"] == physical.lane_device
     assert serialized["lane_inode"] == physical.lane_inode
@@ -944,6 +956,46 @@ def test_physical_contract_allows_nested_lane_and_shared_parent() -> None:
         physical.output_subject_identity_sha256
         != physical.terminal_subject_identity_sha256
     )
+
+
+def test_physical_attempt_key_must_match_target_and_primary_role() -> None:
+    bundle = _bundle()
+    physical = replace(
+        bundle.physical_store_lane_identity,
+        attempt_key_sha256="f" * 64,
+    )
+    intent = replace(
+        bundle.launch_intent,
+        physical_identity_binding=_bind(
+            "physical-store-lane-identity",
+            physical,
+        ),
+    )
+    intent_transition = replace(
+        bundle.chronology[-1],
+        subject_bindings=(_bind("launch-intent", intent),),
+    )
+
+    with pytest.raises(
+        authority.D7AuthorityInputError,
+        match="attempt key.*target.*primary role",
+    ):
+        replace(
+            bundle,
+            physical_store_lane_identity=physical,
+            launch_intent=intent,
+            chronology=(*bundle.chronology[:-1], intent_transition),
+        )
+
+
+def test_physical_attempt_role_is_fixed_to_primary_confirmation() -> None:
+    document = copy.deepcopy(_bundle().physical_store_lane_identity.to_dict())
+    document["attempt_role"] = "isolated-byte-replay"
+    with pytest.raises(
+        authority.D7AuthorityInputError,
+        match="attempt role",
+    ):
+        authority.D7PhysicalStoreLaneIdentityRecord.from_dict(document)
 
 
 @pytest.mark.parametrize(
@@ -1027,6 +1079,19 @@ def test_lane_identity_digest_rejects_coordinate_substitution() -> None:
         authority.D7PhysicalStoreLaneIdentityRecord.from_dict(document)
 
 
+def test_lane_physical_identity_must_differ_from_store() -> None:
+    physical = _bundle().physical_store_lane_identity
+    with pytest.raises(
+        authority.D7AuthorityInputError,
+        match="lane physical identity.*differ",
+    ):
+        replace(
+            physical,
+            lane_device=physical.store_device,
+            lane_inode=physical.store_inode,
+        )
+
+
 def test_output_cannot_be_nested_under_the_reserved_evidence_lane() -> None:
     physical = _bundle().physical_store_lane_identity
     with pytest.raises(
@@ -1037,6 +1102,50 @@ def test_output_cannot_be_nested_under_the_reserved_evidence_lane() -> None:
             physical,
             output_namespace_path=f"{physical.lane_path}/output",
         )
+
+
+@pytest.mark.parametrize(
+    "alias_kind",
+    (
+        "reserved-top-level-leaf",
+        "reserved-lane-parent",
+        "reserved-lane-leaf",
+    ),
+)
+def test_output_cannot_use_a_declared_reserved_physical_alias(
+    alias_kind: str,
+) -> None:
+    physical = _bundle().physical_store_lane_identity
+    changes: dict[str, object]
+    if alias_kind == "reserved-top-level-leaf":
+        changes = {
+            "output_namespace_path": (
+                f"{physical.store_path}/alias/"
+                f"{physical.attempt_key_sha256}.execution-start.envelope.json"
+            ),
+            "output_parent_device": physical.store_device,
+            "output_parent_inode": physical.store_inode,
+        }
+    elif alias_kind == "reserved-lane-parent":
+        changes = {
+            "output_namespace_path": f"{physical.store_path}/lane-alias/output",
+            "output_parent_device": physical.lane_device,
+            "output_parent_inode": physical.lane_inode,
+        }
+    else:
+        changes = {
+            "output_namespace_path": (
+                f"{physical.store_path}/alias/{authority.D7_EVIDENCE_LANE_BASENAME}"
+            ),
+            "output_parent_device": physical.store_device,
+            "output_parent_inode": physical.store_inode,
+        }
+
+    with pytest.raises(
+        authority.D7AuthorityInputError,
+        match="reserved|aliases",
+    ):
+        replace(physical, **changes)
 
 
 @pytest.mark.parametrize(

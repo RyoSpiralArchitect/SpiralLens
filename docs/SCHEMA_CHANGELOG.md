@@ -39,12 +39,15 @@ promote a claim.
   launch-intent inputs. The chronology keeps the full-design freeze distinct
   from and prior to launch intent, but does not establish that any alleged
   event occurred.
-- Physical identity binds the exact attempt key and normalized absolute paths.
-  It requires positive device/inode coordinates for the store, evidence lane,
-  lane parent, output parent, and terminal parent; binds the lane's parent
-  identity to the store; and rejects output/terminal overlap with each other
-  and with the persistence-reserved lane, evidence directory, attempt-specific
-  declaration/authorization/claim/start envelopes, and chronology leaf. No
+- Physical identity fixes the `primary-confirmation` role and derives the exact
+  attempt key from the canonical replay-target digest. It binds normalized
+  absolute paths, requires positive device/inode coordinates for the store,
+  evidence lane, lane parent, output parent, and terminal parent; binds the
+  lane's parent identity to the store while requiring the lane identity to
+  differ; and rejects output/terminal overlap with each other and with the
+  persistence-reserved lane, evidence directory, attempt-specific
+  declaration/authorization/claim/start envelopes, and chronology leaf by
+  lexical path or known declared physical key. No
   live filesystem observation, absence check, reservation, or hostile-process
   protection follows from the record. Double-slash aliases, embedded NUL, and
   overlong declared paths are rejected before persistence.

@@ -939,7 +939,8 @@ single-supplier-invocation inputs causally join the supplier, development and
 parent registries, readiness, caller-alleged admission and source/runtime
 receipts, official inventory, and atomic inventory/full-design/target
 publication; all verification fields remain false. The physical input carries
-the exact attempt key, positive store/lane/parent device/inode coordinates,
+the target-and-primary-role-derived attempt key, positive distinct
+store/lane and parent device/inode coordinates,
 and persistence-reserved path exclusions. The artifact binding has no raw
 `from_bytes` factory. The bundle loader applies its size cap, verifies the
 digest before parsing, translates canonical parse failures, and proves only

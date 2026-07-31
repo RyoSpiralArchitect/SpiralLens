@@ -524,11 +524,14 @@ receipts, official inventory, and atomic target/full-design publication. Every
 claim, invocation, chronology, inventory-output, and publication verification
 field remains false, and no supplier is invoked.
 
-The physical input fixes the exact attempt key and normalized store, evidence
-lane, output, and terminal paths; requires positive store/lane/parent
-device/inode coordinates; binds the lane parent to the store; and rejects
-overlap with the persistence-reserved evidence, attempt-envelope, and
-chronology paths. These are still declared coordinates, not observations.
+The physical input fixes the `primary-confirmation` role and derives the exact
+attempt key from the canonical replay-target digest with the existing attempt
+record function. It binds normalized store, evidence-lane, output, and terminal
+paths; requires positive store/lane/parent device/inode coordinates; binds the
+lane parent to the store while requiring the lane identity to differ; and
+rejects both lexical and declared-physical-key aliases to the
+persistence-reserved lane, evidence, attempt-envelope, and chronology paths.
+These are still declared coordinates, not observations.
 Double-slash aliases, embedded NUL, and overlong declared paths are rejected
 before they can diverge from the persistence realpath boundary.
 The generic artifact binding intentionally has no raw `from_bytes` factory.
@@ -1094,9 +1097,11 @@ to become a general library.
   single-invocation inputs causally join the supplier, both seed-exclusion
   registries, readiness, caller-alleged receipt bindings, official inventory,
   and atomic inventory/full-design/target publication. The physical input
-  carries the exact attempt key plus positive store/lane/parent coordinates
+  carries the target-and-primary-role-derived attempt key plus positive
+  store/lane/parent coordinates, requires distinct store and lane identities,
   and excludes every persistence-reserved lane, evidence, attempt-envelope,
-  and chronology path. The artifact-binding surface has no raw `from_bytes`
+  and chronology path lexically and by known physical alias. The
+  artifact-binding surface has no raw `from_bytes`
   factory; the loader applies its size cap, then verifies the digest before
   parsing, and translates canonical parse errors. It authenticates none of
   these inputs and emits no reusable token. Authoritative target-bound exact
