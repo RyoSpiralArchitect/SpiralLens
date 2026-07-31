@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import product
-from typing import ClassVar
+from typing import ClassVar, Mapping
 
 from spirallens.core.canonical import (
     CanonicalJsonError,
@@ -1496,6 +1496,128 @@ def build_seed_free_d7_confirmation_execution_design(
         inventory=inventory,
         manifest_compatibility=compatibility,
     )
+
+
+def _build_recorded_c1_d7_confirmation_execution_design(
+    *,
+    parent_protocol: LoadedQualificationProtocol,
+    recorded_document: Mapping[str, object],
+) -> D7ConfirmationExecutionDesignDraft:
+    """Reconstruct the typed design embedded in the committed C1 bytes.
+
+    The historical D6 launch descriptor contains checkout-local absolute paths,
+    so it is not a portable way to recreate the already-reviewed C1 design.
+    This private path instead accepts only the exact C1-embedded D6 binding,
+    rejoins it to the independently loaded canonical parent-protocol bodies,
+    and then derives every remaining design member with the normal builders.
+    The final full-document equality check prevents this archival bridge from
+    becoming a general caller-authored D6/design constructor.
+    """
+
+    parent = _loaded_parent(parent_protocol)
+    if not isinstance(recorded_document, Mapping) or any(
+        type(key) is not str for key in recorded_document
+    ):
+        raise QualificationContractError(
+            "recorded C1 execution design must be a string-keyed mapping"
+        )
+    recorded = dict(recorded_document)
+    parent_d6_document = recorded.get("parent_d6")
+    parent_document = recorded.get("parent")
+    if not isinstance(parent_d6_document, Mapping) or not isinstance(
+        parent_document, Mapping
+    ):
+        raise QualificationContractError(
+            "recorded C1 design lacks typed parent bindings"
+        )
+    parent_d6_values = dict(parent_d6_document)
+    parent_values = dict(parent_document)
+
+    parent_d6_fields = (
+        "d6_decision_id",
+        "d6_decision_source_sha256",
+        "d6_decision_canonical_sha256",
+        "d6_decision_source_commit",
+        "admission_spec_id",
+        "admission_spec_sha256",
+        "selection_terminal_binding_sha256",
+        "selection_generator_family_id",
+        "selection_construction_family_id",
+        "selection_implementation_registry_sha256",
+        "required_surrogate_estimator_id",
+        "required_surrogate_trivialization_id",
+        "required_graph_axes_sha256",
+        "required_stress_strata_sha256",
+        "required_cells_manifest_sha256",
+        "locked_thresholds_sha256",
+        "locked_aggregation_sha256",
+    )
+    if any(name not in parent_d6_values for name in parent_d6_fields):
+        raise QualificationContractError("recorded C1 D6 binding fields are incomplete")
+    parent_d6 = object.__new__(D7ParentD6Binding)
+    for name in parent_d6_fields:
+        object.__setattr__(parent_d6, name, parent_d6_values[name])
+    parent_d6.__post_init__()
+    if parent_d6.to_dict() != parent_d6_values:
+        raise QualificationContractError(
+            "recorded C1 D6 binding differs from its typed reconstruction"
+        )
+
+    protocol = parent.protocol
+    bodies = ConfirmationDesignBodySet.from_protocol(protocol)
+    observed_parent = {
+        "protocol_id": protocol.protocol_id,
+        "protocol_source_sha256": parent.source_sha256,
+        "protocol_canonical_sha256": parent.canonical_sha256,
+        "graph_axes_sha256": bodies.graph_axes_sha256,
+        "required_cells_manifest_sha256": bodies.required_cells_sha256,
+        "required_stress_strata_sha256": bodies.required_stress_sha256,
+        "locked_thresholds_sha256": bodies.thresholds_sha256,
+        "locked_aggregation_sha256": bodies.aggregation_sha256,
+        "selection_implementation_registry_sha256": canonical_json_sha256(
+            protocol.implementation_registry.to_dict()
+        ),
+        "selection_seed_count": len(protocol.selection.seeds),
+    }
+    if any(parent_values.get(name) != value for name, value in observed_parent.items()):
+        raise QualificationContractError(
+            "canonical parent protocol bodies differ from recorded C1"
+        )
+    parent_binding = D7ParentProtocolDesignBinding(
+        _factory_token=_D7_PARENT_PROTOCOL_BINDING_FACTORY_TOKEN,
+        **observed_parent,
+    )
+    if parent_binding.to_dict() != parent_values:
+        raise QualificationContractError(
+            "recorded C1 parent binding differs from typed reconstruction"
+        )
+
+    stress = D7ConfirmationStressTranslation.from_parent(parent)
+    inventory = _inventory_template(parent, stress)
+    compatibility = _manifest_compatibility(
+        parent,
+        parent_binding,
+        inventory,
+        stress,
+    )
+    result = D7ConfirmationExecutionDesignDraft(
+        _factory_token=_D7_CONFIRMATION_EXECUTION_DESIGN_FACTORY_TOKEN,
+        parent_d6=parent_d6,
+        parent=parent_binding,
+        seed_policy=D7ConfirmationSeedPolicy(),
+        graph_axes=protocol.graphs,
+        domain=protocol.domain,
+        thresholds=protocol.thresholds,
+        coverage_policy=protocol.coverage_policy,
+        stress_translation=stress,
+        inventory=inventory,
+        manifest_compatibility=compatibility,
+    )
+    if result.to_dict() != recorded:
+        raise QualificationContractError(
+            "recorded C1 execution design differs from authoritative reconstruction"
+        )
+    return result
 
 
 __all__ = [

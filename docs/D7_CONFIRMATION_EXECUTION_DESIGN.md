@@ -11,7 +11,11 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `authoritative_start_transaction_schema_defined`,
 `strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised`,
 `fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked`,
-`canonical_d7_launch_descriptor_absent`, `d7_runtime_lock_absent`,
+`d7_runtime_lock_exact_tracked`,
+`fixed_official_zero_argument_producer_implemented_deep_internal`,
+`exact_full_inventory_aggregation_and_full_design_builders_implemented_deep_internal`,
+`installed_inventory_exact_equality_enforced`,
+`canonical_d7_launch_descriptor_absent`,
 `current_execution_source_runtime_closure_absent`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `not_frozen`, `not_admitted`, `not_run`.
@@ -28,9 +32,16 @@ bodies inside one Level-0 wrapper. Those schemas supersede the earlier
 internal `v0.1` drafts; there is no standalone `v0.1` artifact to migrate. The
 version change removes validation-time current-loader HEAD and source-surface
 digests from canonical D7 identity so that an unchanged parent decision and
-unchanged design produce commit-stable bytes. Construction still requires the
-authoritative typed D6 loader receipt and validates that receipt before
-projecting its stable historical identity.
+unchanged design produce commit-stable bytes. Ordinary or novel construction
+still requires the authoritative typed D6 loader receipt and validates that
+receipt before projecting its stable historical identity.
+
+PR26 adds one private, recorded-C1-only archival reconstruction route for the
+fixed producer. It first verifies pinned C1/C2, loads the exact parent protocol,
+reconstructs the typed design from the C1-embedded binding, and requires
+whole-document equality with the design recorded in C1. It is not a general
+alternate construction path or a historical reinterpretation of D6 or C1, and
+it accepts no caller-authored design.
 
 ## 1. Scope
 
@@ -151,7 +162,7 @@ claim that their statistical independence has been proved.
 ## 3. Full parent-design reconstruction
 
 The D6 decision stores hashes, not enough typed bytes to reconstruct all
-runtime choices. The D7 builder therefore requires both:
+runtime choices. The ordinary or novel D7 builder therefore requires both:
 
 1. an authoritative `LoadedScopeLimitedD6Decision`; and
 2. the strict `LoadedQualificationProtocol` whose canonical identity is bound
@@ -176,12 +187,14 @@ terminal result, manifest, and consumption companions. Their raw bytes are not
 direct arguments to, reread by, or retained in the seed-free design. The
 `v0.2` `D7ParentD6Binding`, foundation, and execution-design bytes bind the
 stable historical decision and admission identities but deliberately exclude
-the ephemeral current-loader HEAD and source-binding digest. The builder still
-requires `LoadedScopeLimitedD6Decision` and reruns its typed receipt validation;
-the current-loader surface is therefore a validation-time prerequisite, not a
-component of canonical D7 identity. This keeps unchanged D7 design bytes stable
-across later clean descendant commits without weakening the authoritative
-loader boundary.
+the ephemeral current-loader HEAD and source-binding digest. That ordinary or
+novel builder still requires `LoadedScopeLimitedD6Decision` and reruns its typed
+receipt validation; the current-loader surface is therefore a validation-time
+prerequisite, not a component of canonical D7 identity. This keeps unchanged D7
+design bytes stable across later clean descendant commits without weakening the
+authoritative loader boundary. The PR26 archival route described above is the
+recorded-C1-only exception; it does not weaken or replace this construction
+contract.
 
 ## 4. D6 v0.1 manifest incompatibility
 
@@ -348,11 +361,13 @@ live canonical-origin facts and matches the declared source/runtime,
 callable/process, physical, and absence observation surfaces inside the call,
 publishes a no-replace structural start, requires the start-parent fsync to be
 proved, repeats those observations, and consumes private ownership before
-callback without emitting a reusable token. Now that this surface is final,
-item 21 must add and freeze
-`requirements-d7-runtime-lock.txt`, name the official producer and exact
-aggregation, issue exact-current source/runtime artifacts, establish seed-free
-readiness, and complete reviewed family admission. The later
+callback without emitting a reusable token. PR26 now completes the code-side
+portion of item 21: it tracks the exact `requirements-d7-runtime-lock.txt`,
+fixes the deep-internal zero-argument official producer and exact
+full-inventory, aggregation, and full-design builders, and enforces exact
+equality of the complete installed distribution name/version inventory. It does
+not issue a positive exact-current source/runtime receipt, establish seed-free
+readiness, or complete reviewed family admission. The later
 seed-bearing sequence is an exclusive seed-supply claim, one supplier
 invocation, atomic no-replace publication of the seed-bearing full design and
 target, a committed full-design freeze receipt, then launch intent. Only then
@@ -404,7 +419,16 @@ supplier, or independent start record. A zero-argument producer callback must
 return all six components plus the outer payload; the runner validates the
 complete bundle and requires its replay-target/full-inventory/aggregation/
 result-schema projection to match ownership before preparing a typed terminal.
-The exact official executor and aggregation remain outside this mechanic.
+The runner remains generic; a separate PR26 deep-internal surface fixes the
+zero-argument official producer and exact full-inventory, aggregation, and
+full-design builders behind this callback boundary. Their implementation is not
+an official invocation or artifact publication.
+The shared PR26 producer/validator path also mechanically rederives the exact
+six stratum memberships from canonical joined-primary stress assignments and
+reconstructs the exact four-gate manifest, definitions, states, reasons,
+evidence digests, and outer-result reasons. This closes code-side structural
+consistency only. It is not authority, invocation, execution evidence,
+publication, or a D7 run.
 Every exit after ownership construction atomically invalidates callback-entry
 and terminal-publication authority, including failure before runner dispatch.
 Ordinary exceptions retain their identity and may trigger a failed-terminal
@@ -452,8 +476,9 @@ are established only by later exact typed joins; they cannot be nested into or
 inferred from the target record.
 
 Now that the lifecycle, result, failed-attempt, terminal, runner, and fused
-mechanics are final, item 21 must close the exact-current execution source and
-runtime with newly reviewed artifacts. C2 cannot do that: it closes only the
+mechanics are final, the still-open portion of item 21 must close the
+exact-current execution source and runtime with newly reviewed positive
+artifacts. C2 cannot do that: it closes only the
 historical C1 Git source set and covers none of these later surfaces. A later seed-bearing target must
 bind that new receipt, exactly two unique, sorted, nonnegative signed-int64
 seeds, rejection of every development and parent selection seed, the
@@ -495,9 +520,10 @@ proven from descriptor-relative device/inode ancestry rather than path
 spelling, two-pass absence checks, a closed structurally named
 authoritative-start transaction, and at most one callback. Here
 “source/runtime” is only the declared surface:
-tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock,
-installed distribution names/versions, interpreter executable bytes, producer
-source/code identity, and selected process-envelope fields. Installed package
+tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock, exact
+equality of the complete installed distribution name/version inventory,
+interpreter executable bytes, producer source/code identity, and selected
+process-envelope fields. Installed package
 files, loaded native libraries, mutable module globals, callable defaults or
 closures, unrecorded environment state, model state, and data state are not
 closed. The structural start loader alone grants no
@@ -505,11 +531,12 @@ authority and does not establish `started_unresolved`; hard exit, unproved
 start-parent durability, post-start drift, or success/failure terminal
 publication error may leave those start bytes visible without a terminal. The
 fused path makes at most one terminal-publication attempt, not a terminal
-durability guarantee. It does not provide signed trust-root provenance,
-wall-clock freshness, an
-official descriptor or invocation, official supplier or seeds, official
-executor/aggregation, an execution-observation receipt, scientific
-eligibility, D7, or D8.
+durability guarantee. PR26 provides the fixed producer and exact full-inventory,
+aggregation, and full-design builders as code-side ingredients only. It does
+not provide signed trust-root provenance, wall-clock freshness, an official
+descriptor or invocation, official supplier or seeds, a positive exact-current
+source/runtime receipt, an
+execution-observation receipt, scientific eligibility, D7, or D8.
 
 The reviewed successor order is:
 
@@ -521,10 +548,11 @@ The reviewed successor order is:
 3. retain the implemented fused verify-and-exclusive-start mechanics without
    creating an official descriptor or officially invoking them; they serialize,
    return, cache, and accept no reusable authorization token;
-4. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
-   official producer and exact aggregation, issue the exact-current source and
-   runtime artifacts, and complete reviewed family admission plus seed-free
-   readiness;
+4. retain item 21's exact runtime lock, fixed zero-argument official producer,
+   exact full-inventory, aggregation, and full-design builders, and
+   installed-inventory equality check as code-side ingredients only; issue the
+   positive exact-current source and runtime artifacts and complete reviewed
+   family admission plus seed-free readiness;
 5. acquire the seed-supply claim, invoke the supplier once, atomically publish
    the seed-bearing full design and target, commit the freeze, and only then
    persist launch intent; execute item 23's separate descriptive result without
@@ -565,11 +593,13 @@ current_execution_source_runtime_closure_absent
 terminal_witness_runner_mechanics_implemented_non_authorizing
 fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
 canonical_d7_launch_descriptor_absent
-d7_runtime_lock_absent
+d7_runtime_lock_exact_tracked
+fixed_official_zero_argument_producer_implemented_deep_internal
+exact_full_inventory_aggregation_and_full_design_builders_implemented_deep_internal
+installed_inventory_exact_equality_enforced
 official_authoritative_start_instance_absent
 official_d7_run_absent
 strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised
 temporary_git_runtime_end_to_end_validation_pending
 authoritative_start_external_abort_integration_pending
-official_executor_and_aggregation_absent
 ```

@@ -883,10 +883,10 @@ That narrower proposal is now encoded internally as
 and thresholds forward with exact byte identity and allows cells/stress to
 fulfill only a D7 successor contract: both successor manifest identities must
 differ from the selection identities while the typed structural-projection
-digests match exactly. The factory and strict reader reconstruct the seed-free
-design from the authoritative D6 receipt and strict parent protocol; they do
-not accept caller-supplied digests as authority. No amendment artifact is
-published, no family is admitted, and the D6 v0.1 exact admission remains
+digests match exactly. The ordinary or novel factory and the strict reader
+reconstruct the seed-free design from the authoritative D6 receipt and strict
+parent protocol; neither accepts caller-supplied digests as authority. No
+amendment artifact is published, no family is admitted, and the D6 v0.1 exact admission remains
 false. Historical D6 bytes are unchanged.
 
 ### D7 — locked independent calibration
@@ -900,7 +900,8 @@ replication, not construction-family independence.
 
 The spectral-moment lane now has a seed-free execution design that:
 
-- requires the authoritative D6 receipt and strict full parent protocol;
+- for ordinary or novel construction, requires the authoritative D6 receipt
+  and strict full parent protocol;
 - reconstructs every parent design-body hash;
 - requires explicit boundary, state-warp, and observation-perturbation
   assignments;
@@ -915,11 +916,18 @@ The spectral-moment lane now has a seed-free execution design that:
 The `D7ParentD6Binding`, confirmation foundation, and execution design began as
 internal `v0.2` drafts. Their canonical identity omits the
 validation-time current-loader HEAD and source-binding digest so unchanged
-historical inputs remain stable across clean descendant commits. Their
-builders still require and validate the authoritative typed D6 loader receipt;
-the loader surface remains a validation-time prerequisite rather than
+historical inputs remain stable across clean descendant commits. Their ordinary
+or novel builders still require and validate the authoritative typed D6 loader
+receipt; the loader surface remains a validation-time prerequisite rather than
 canonical D7 identity. C1 now embeds the stable seed-free projection of that
 design in one canonical candidate.
+
+PR26 adds one private, recorded-C1-only archival reconstruction route for the
+fixed producer. It first verifies pinned C1/C2, loads the exact parent protocol,
+reconstructs the typed design from the C1-embedded binding, and requires
+whole-document equality with the design recorded in C1. It is not a general
+alternate construction path or a historical reinterpretation of D6 or C1, and
+it accepts no caller-authored design.
 
 That is implementation conformance, not D7 evidence. Committed C2 now verifies
 the declared historical Git source set, but concrete confirmation seeds,
@@ -994,13 +1002,16 @@ fsync proof, repeats those observations after the start becomes visible, and
 consumes ownership before callback entry. Every exit after ownership
 construction invalidates both callback entry and terminal publication,
 including a failure before runner dispatch. The runtime surface is limited to
-tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock,
-installed distribution names/versions, interpreter executable bytes, producer
-source/code identity, and selected process-envelope fields. It does not close
+tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock, exact
+equality of the complete installed distribution name/version inventory,
+interpreter executable bytes, producer source/code identity, and selected
+process-envelope fields. It does not close
 installed package files, loaded native libraries, mutable module globals,
 callable defaults or closures, unrecorded environment state, model state, or
-data state. No caller can supply or receive ownership, and the full official
-producer and exact aggregation remain behind the callback.
+data state. No caller can supply or receive ownership. A separate PR26
+deep-internal surface fixes the zero-argument official producer and exact
+full-inventory, aggregation, and full-design builders behind the callback
+boundary; it does not create an official invocation or authority artifact.
 
 The strict start loader grants no authority and explicitly does not establish
 `started_unresolved`. The fused call makes at most one terminal-publication
@@ -1038,10 +1049,11 @@ The next execution-preparation order is:
    `origin/main`, declared source/runtime and callable/process, disjoint-store,
    two-pass absence, no-replace start plus parent-fsync proof, and one-callback
    checks emit no reusable authorization token;
-3. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
-   official producer and exact aggregation, issue the exact-current source and
-   runtime artifacts, and complete reviewed family admission plus seed-free
-   readiness;
+3. retain item 21's exact `requirements-d7-runtime-lock.txt`, fixed
+   zero-argument official producer, exact full-inventory, aggregation, and
+   full-design builders, and installed-inventory equality check as code-side
+   ingredients only; issue the positive exact-current source and runtime
+   artifacts and complete reviewed family admission plus seed-free readiness;
 4. acquire the exclusive seed-supply claim, invoke the supplier once, publish
    the exact seed-bearing target and full design atomically, commit their
    freeze, persist launch intent after that freeze, and execute item 23's

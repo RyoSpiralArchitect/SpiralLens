@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; exact-current source/runtime closure, reviewed admission/readiness, runtime-lock artifact, authoritative target/freeze/intent instances, official seeds, official exact execution/aggregation, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; positive exact-current source/runtime receipts, reviewed admission/readiness, a canonical descriptor, authoritative target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -798,10 +798,11 @@ below:
     D7 structural gap matrix — recorded as two canonical, non-authorizing
     research artifacts; the descriptive lane cannot tune D7, and the gap lane
     cannot read the terminal values, name a candidate, or compute progress;
-12. land the spectral-moment draft foundation: exact four-case development
-    generation plus a closed typed draft reconstructed only from the
-    authoritative committed-D6 loader receipt. Its current internal `v0.2`
-    identity, now preserved as a canonical historical body inside C1, excludes
+12. land the spectral-moment draft foundation: for ordinary or novel
+    construction, exact four-case development generation plus a closed typed
+    draft reconstructed only from the authoritative committed-D6 loader receipt.
+    Its current internal `v0.2` identity, now preserved as a canonical
+    historical body inside C1, excludes
     validation-time current-loader HEAD/digest fields while retaining typed
     receipt validation, so unchanged inputs are commit-stable. The draft
     remains unpersisted as a standalone/public artifact. This is not a D7
@@ -939,8 +940,10 @@ below:
     runtime pins: trust-root provenance, official authority, wall-clock
     freshness, ownership issuance, execution observation, scientific
     eligibility, retry/replay, D7, and D8 are not established. The official
-    supplier was not invoked, no seed was issued, and no official exact
-    executor/aggregation or execution was introduced;
+    supplier was not invoked, no seed was issued, and no official execution was
+    introduced. PR26 later fixes the separately auditable deep-internal
+    zero-argument producer and exact full-inventory, aggregation, and
+    full-design builders without turning item 19 into an official run;
 20. implement one fused verify-and-exclusive-start operation —
     **implemented as deep-internal mechanics without an official invocation**.
     The only operation accepts a raw current-HEAD descriptor path and one
@@ -968,20 +971,31 @@ below:
     equality; it is not resistance to a hostile local operator, trust-root
     signature proof, an official start instance, or a scientific result. The
     declared surface covers tracked `src/spirallens/**`, `pyproject.toml`, the
-    required runtime lock, installed distribution names/versions, interpreter
-    executable bytes, producer source/code identity, and selected process
-    fields; it does not close installed package files, loaded native libraries,
+    required runtime lock, exact equality of the complete installed
+    distribution name/version inventory, interpreter executable bytes,
+    producer source/code identity, and selected process fields; it does not
+    close installed package files, loaded native libraries,
     mutable module globals, callable defaults or closures, unrecorded
     environment state, model state, or data state. The operation makes at most
     one terminal-publication attempt. Hard exit or `BaseException`, post-start
     drift, unproved start-parent fsync, or success/failure publication error can
     leave a visible structural start with no terminal. Item-19 external-abort
     finalization remains evidence-only and cannot accept this start type;
-21. only after those execution surfaces are final, add and freeze
-    `requirements-d7-runtime-lock.txt`, finalize the exact official producer
-    and aggregation, issue the exact-current source/runtime artifacts, complete
-    reviewed family admission, and establish seed-free readiness. C2 cannot
-    satisfy this item, and no seed is supplied here;
+21. close the code-side execution ingredients before positive authority —
+    **partially complete**. PR26 tracks the exact
+    `requirements-d7-runtime-lock.txt`, fixes the deep-internal zero-argument
+    official producer and exact full-inventory, aggregation, and full-design
+    builders, and enforces exact equality of the complete installed
+    distribution name/version inventory. Its design load is one private,
+    recorded-C1-only archival reconstruction route: pinned C1/C2 verification,
+    exact parent
+    protocol loading, and whole-document equality with the design recorded in
+    C1 are mandatory. It is not a general alternate construction path or a
+    historical reinterpretation of D6 or C1, and it accepts no caller-authored
+    design.
+    Positive exact-current source/runtime receipts, reviewed family
+    admission, and seed-free readiness remain absent. C2 cannot satisfy those
+    remaining obligations, and no seed is supplied here;
 22. acquire the exclusive seed-supply claim, invoke the supplier once,
     atomically publish the exact seed-bearing full design and replay target,
     then commit their freeze receipt before launch intent. A claim without
@@ -1081,8 +1095,9 @@ This library slice adds, without changing that generic behavior:
   future content-addressed, attempt-independent target and a separate
   append-only attempt lineage without persisting either instance, exposing a
   seed supplier, or granting authority. Because C2 is historical-only, item
-  21's exact-current execution-source/runtime artifacts remain absent and must
-  follow the completed lifecycle, result, terminal, runner, and fused mechanics.
+  21's positive exact-current execution-source/runtime artifacts remain absent
+  and must follow the completed lifecycle, result, terminal, runner, and fused
+  mechanics.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1164,10 +1179,11 @@ reopened as a closed inventory, bound to live canonical `origin/main`, declared
 source/runtime and callable/process observation surfaces, a tree-disjoint physical
 store, two absence passes, a durable no-replace structurally named
 authoritative-start transaction, and one-use callback ownership. The declared
-surface covers tracked source and lock bytes, installed distribution
-names/versions, interpreter executable bytes, producer source/code identity,
-and selected process fields; package files, loaded native libraries, mutable
-module globals, callable defaults/closures, unrecorded environment, model
+surface covers tracked source and lock bytes, exact equality of the complete
+installed distribution name/version inventory, interpreter executable bytes,
+producer source/code identity, and selected process fields; package files,
+loaded native libraries, mutable module globals, callable defaults/closures,
+unrecorded environment, model
 state, and data state remain unclosed. Success or an ordinary handled failure
 causes at most one terminal-publication attempt; publication failure, hard exit
 or `BaseException`, unproved start-parent fsync, or post-start drift can leave
@@ -1177,17 +1193,20 @@ future official same-call invocation plus its verified transition could
 justify that lifecycle interpretation. The path emits no reusable
 authorization capability and a post-start mismatch enters no callback. This
 gives the private ownership type an issuer only inside that
-exact call; structural loaders still grant no authority. There is no official
-descriptor, runtime lock, exact-current closure, reviewed admission/readiness,
-target/freeze/intent instance, replay comparator, official seed, official
-executor/aggregator, execution-observation receipt, scientific eligibility,
-or official record instance. The item-19 evidence-only finalizer cannot accept
-the item-20 structural-start type. Item 21 is therefore next: add and freeze
-the runtime lock, name the official producer and exact aggregation, issue new
-exact-current source/runtime artifacts, and complete readiness plus reviewed
-admission; C2 cannot supply them. Only afterward may
-the supplier be invoked once, target/full design be published and frozen,
-launch intent be persisted, and the nine-member descriptor be created and
+exact call; structural loaders still grant no authority. PR26 now provides the
+exact runtime lock, fixed deep-internal zero-argument official producer, exact
+full-inventory, aggregation, and full-design builders, and installed-inventory
+equality check as code-side item-21 ingredients only. There is no official
+descriptor, positive exact-current source/runtime receipt, reviewed
+admission/readiness,
+target/freeze/intent instance, replay comparator, official seed,
+execution-observation receipt, scientific eligibility, invocation/run, or
+official record instance. The item-19 evidence-only finalizer cannot accept
+the item-20 structural-start type. The positive-authority remainder of item
+21 is therefore next: issue the exact-current source/runtime artifacts and
+complete readiness plus reviewed admission; C2 cannot supply them. Only
+afterward may the supplier be invoked once, target/full design be published and
+frozen, launch intent be persisted, and the nine-member descriptor be created and
 committed. Strict verification-evidence replay/rejoin, temporary Git/runtime
 end-to-end validation, and authoritative-start-compatible external-abort
 integration must pass before item 24 becomes the first official fused

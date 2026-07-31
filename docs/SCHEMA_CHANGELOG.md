@@ -4,6 +4,51 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-31 — D7 exact runtime lock and fixed official-execution ingredients
+
+### Added
+
+- The exact tracked `requirements-d7-runtime-lock.txt` fixes the declared D7
+  Python distribution inventory used by the deep-internal runtime boundary.
+- A deep-internal zero-argument official producer and exact full-inventory,
+  aggregation, and full-design builders now fix the code-side execution and
+  construction rules. Their existence does not publish an official full design
+  or invoke a run.
+
+### Changed
+
+- Runtime validation now requires exact equality of the complete installed
+  distribution name/version inventory. Missing, extra, or version-drifted
+  distributions fail closed.
+- The fixed producer has one private, recorded-C1-only archival reconstruction
+  route. It first verifies pinned C1/C2, loads the exact parent protocol,
+  reconstructs the typed design from the C1-embedded binding, and requires
+  whole-document equality with the design recorded in C1. This is not a general
+  alternate construction path or a historical reinterpretation of D6 or C1,
+  and it accepts no caller-authored design.
+- The shared producer/validator path mechanically rederives the exact six
+  stratum memberships from canonical joined-primary stress assignments and
+  reconstructs the exact four-gate manifest, definitions, states, reasons,
+  evidence digests, and outer-result reasons. These are code-side structural
+  consistency checks, not authority or execution evidence.
+- Roadmap item 21 is now code-side partial rather than wholly absent: the lock,
+  fixed producer, exact full-inventory, aggregation, and full-design builders,
+  and installed-inventory equality check exist, while its positive authority
+  artifacts and decisions do not.
+
+### Compatibility and non-claims
+
+- The new surfaces remain deep internal and add no supported or provisional
+  public Python API.
+- No positive exact-current source/runtime receipt, readiness, admission,
+  canonical descriptor, supplier invocation, seed, seed-bearing target or
+  full-design publication, freeze, launch intent, official run, D7 result, or
+  D8 replay is created. The lock, fixed producer, exact full-inventory,
+  aggregation, and full-design builders, and inventory-equality check cannot
+  substitute for those artifacts.
+- Earlier C1, C2, D6, replay/attempt, evidence-prefix, terminal, and fused-start
+  bytes are not rewritten or promoted.
+
 ## 2026-07-31 — D7 fused verification and structural-start mechanics
 
 ### Added
@@ -570,9 +615,9 @@ promote a claim.
   `spirallens.d7-confirmation-foundation.v0.2`, and
   `spirallens.d7-confirmation-execution-design-draft.v0.2` supersede their
   internal, unpersisted `v0.1` drafts. Canonical D7 identity no longer contains
-  the validation-time current-loader HEAD or source-binding digest. Builders
-  still require `LoadedScopeLimitedD6Decision` and validate its typed
-  authoritative receipt before deriving the stable historical parent
+  the validation-time current-loader HEAD or source-binding digest. Ordinary or
+  novel builders still require `LoadedScopeLimitedD6Decision` and validate its
+  typed authoritative receipt before deriving the stable historical parent
   projection.
 - `spirallens.d6-d7-structural-rebinding-amendment.v0.1` and its internal
   `d7-seed-free-design-identity`, `d7-exact-carry-forward`,
