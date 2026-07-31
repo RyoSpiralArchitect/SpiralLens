@@ -4,6 +4,61 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-31 — D7 item-21 positive-authority artifact chain
+
+### Added
+
+- PR27 defines deep-internal issuance and strict reload boundaries for three
+  distinct tracked item-21 artifacts: exact source/runtime receipt, seed-free
+  readiness, and scoped reviewed successor-family admission. The source commit
+  does not issue any of them and freezes all PR27 documentation. Three later
+  artifact-only direct children add and strictly reload/rejoin them in order.
+- The commit chronology is fail-closed. After all PR27 source code and
+  documentation are final, the source/runtime receipt must be the only addition
+  in its direct-child commit, readiness the only addition in the next direct
+  child, and admission the only addition in the next direct child. Merges,
+  intervening changes, combined-artifact commits, and embedded future-child
+  identities do not satisfy the receipt-only chain.
+
+### Changed
+
+- Roadmap item 21 is complete only after all three artifacts are tracked in
+  that exact commit order, strictly reloaded, and pass their exact
+  source/runtime and chronology rejoin checks. Implemented schemas, issuers,
+  loaders, or uncommitted working-tree artifacts do not complete the item. It
+  is partial at the source commit and complete at the final PR27 tip after the
+  third artifact-only child.
+- C2 remains the historical C1 Git source-set closure only. Existing
+  caller-constructible authority-prerequisite records keep false authority and
+  verification fields and are not promoted or accepted in place of the three
+  positive artifacts.
+- With the versioned v0.1 loader retained, historical reload reconstructs the
+  source inventory and runtime lock from the item-21 source commit plus fixed
+  v0.1 pins, not current builder identities. Current readiness separately
+  rejects any later live execution-source or exact-runtime drift. A
+  source-changing item-22
+  implementation must therefore publish and review a versioned exact-current
+  re-anchor at `item22-current-source-runtime-reanchor.json`, outside the
+  reserved `item22-seed-supply/` namespace, bind it to this chain, and do so
+  before its exclusive claim or supplier call.
+
+### Compatibility and non-claims
+
+- The chain retains the existing honest-local boundary. It observes its
+  declared source/runtime surface but performs no canonical-origin check and
+  explicitly records that equality as unverified. It is not signed trust-root
+  provenance, hostile-local-operator resistance, or closure of package files,
+  native libraries, mutable runtime state, unrecorded environment, models, or
+  data.
+- Neither the source commit nor the three artifact-only children create an
+  item-22 exclusive supplier claim or invocation, official seed, atomic
+  seed-bearing target/full-design publication, or committed freeze. At the
+  final PR27 tip, launch intent, the canonical nine-member descriptor, official
+  invocation/start/run/terminal/result, D7, and D8 remain absent or `not_run`.
+- No future R/Q/A introduction commit or precomputed R/Q/A artifact digest is
+  embedded in the source commit; fixed historical predecessor hashes, schema
+  identities, and reserved future paths remain explicit inputs to the verifier.
+
 ## 2026-07-31 — D7 exact runtime lock and fixed official-execution ingredients
 
 ### Added
