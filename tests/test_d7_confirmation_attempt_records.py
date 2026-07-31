@@ -223,6 +223,8 @@ def _failed(
             evidence.canonical_sha256,
             evidence.external_verification_receipt_sha256 or "",
             evidence.external_verification_receipt_byte_count or 0,
+            _h("signed-external-witness-envelope"),
+            193,
         )
         if external
         else None
@@ -315,8 +317,8 @@ def test_every_record_has_strict_canonical_roundtrip_and_golden_vector() -> None
         "b2feadd23b2036a00feed9509b639240201120df8c6d81c085c8dca43df6b721",
         "2f67c6fb535bd62350f171493e8a898c19959691d67fa59dde6486fd02ab9e9c",
         "7bf30285c87b38c0a6081dc551389776c0c26e8d5d9716a929c6cfcd17bce798",
-        "263d6339f55cd4f92a4b957f3ba2dbbec8e157f325739b1d9cb846a0ebe901e8",
-        "c7347754cce7e619f814ebd377b0035fa23c2f74bdc93ee4e860eea6f6a8b870",
+        "59ba52b4d743e20ef697fc4bf7d540d7352762ed63a726dd832b22185e9312d5",
+        "06efe4ed6d7b2492552fc05f3aa83e41a68e92be3be13f93b7c025a198437faa",
         "c214d63a15da4075809f4aa74f80e3adc46a6b548c8e8877ace14b010b626cfd",
         "0098c21867e82149c418a903f05d04797b9710143ccb9716bac47e6b8f74f84e",
         "7ebb576e0d5fab363947b21a4eabac83984a7315f869d9be8169821bc16ddbf9",
@@ -654,6 +656,7 @@ def test_external_abort_has_evidence_verification_and_exact_inventory() -> None:
                 r.D7_FAILED_ATTEMPT_FILENAME,
                 r.D7_FAILURE_EVIDENCE_FILENAME,
                 r.D7_FAILURE_EVIDENCE_PAYLOAD_FILENAME,
+                r.D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_FILENAME,
                 r.D7_STARTED_UNRESOLVED_FINALIZATION_FILENAME,
             )
         )
@@ -667,6 +670,40 @@ def test_external_abort_has_evidence_verification_and_exact_inventory() -> None:
             finalization=replace(
                 chain.finalization, external_abort_evidence_sha256=_h("fabricated")
             ),
+        )
+    envelope_member = next(
+        member
+        for member in chain.manifest.immutable_members
+        if member.member_kind
+        is r.D7TerminalMemberKind.SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE
+    )
+    assert envelope_member.member_contract_id == (
+        r.D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_CONTRACT_ID
+    )
+    assert envelope_member.member_canonical_sha256 == (
+        chain.finalization.signed_external_abort_witness_envelope_sha256
+    )
+    missing_envelope = replace(
+        chain.manifest,
+        immutable_members=tuple(
+            member
+            for member in chain.manifest.immutable_members
+            if member.member_kind
+            is not r.D7TerminalMemberKind.SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE
+        ),
+    )
+    with pytest.raises(QualificationContractError, match="manifest members"):
+        v.validate_d7_failed_terminal_chain(
+            claim=chain.prefix.claim,
+            start=chain.prefix.start,
+            evidence=chain.evidence,
+            failed_attempt=chain.failed,
+            manifest=missing_envelope,
+            consumption=replace(
+                chain.consumption,
+                terminal_manifest_sha256=missing_envelope.canonical_sha256,
+            ),
+            finalization=chain.finalization,
         )
 
 

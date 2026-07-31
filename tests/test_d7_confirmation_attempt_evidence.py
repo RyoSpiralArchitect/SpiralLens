@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import copy
 import hashlib
+import pickle
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -12,6 +14,7 @@ from spirallens.core.canonical import canonical_json_bytes, sha256_bytes
 from spirallens.qualification import confirmation_attempt_evidence as e
 from spirallens.qualification import confirmation_attempt_evidence_validation as ev
 from spirallens.qualification import confirmation_attempt_records as r
+from spirallens.qualification import confirmation_external_witness as w
 from spirallens.qualification.common import QualificationContractError
 
 
@@ -332,6 +335,10 @@ def _external_failure(prefix: SimpleNamespace) -> SimpleNamespace:
         external_abort_evidence_sha256=evidence.canonical_sha256,
         external_verification_receipt_sha256=receipt.canonical_sha256,
         external_verification_receipt_byte_count=len(receipt.canonical_bytes),
+        signed_external_abort_witness_envelope_sha256=_h(
+            "unbound-signed-external-witness-envelope"
+        ),
+        signed_external_abort_witness_envelope_byte_count=1,
     )
     failed = r.D7FailedAttemptRecord(
         replay_target_sha256=payload.replay_target_sha256,
@@ -349,6 +356,162 @@ def _external_failure(prefix: SimpleNamespace) -> SimpleNamespace:
         evidence=evidence,
         finalization=finalization,
         failed=failed,
+    )
+
+
+def _signed_external_witness(
+    prefix: SimpleNamespace | None = None,
+) -> SimpleNamespace:
+    ed25519 = pytest.importorskip("cryptography.hazmat.primitives.asymmetric.ed25519")
+    serialization = pytest.importorskip("cryptography.hazmat.primitives.serialization")
+    prefix = prefix or _prefix()
+    failure = _external_failure(prefix)
+    observer_private_key = ed25519.Ed25519PrivateKey.generate()
+    verifier_private_key = ed25519.Ed25519PrivateKey.generate()
+    observer_public_key = observer_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    verifier_public_key = verifier_private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+    trust_root = w.D7PinnedExternalWitnessTrustRoot(
+        execution_principal_id="execution-worker",
+        execution_identity_receipt_sha256=(
+            prefix.start.execution_identity_receipt_sha256
+        ),
+        observer_principal_id="external-observer",
+        observer_identity_receipt_sha256=(
+            failure.receipt.observer_identity_receipt_sha256
+        ),
+        observer_public_key=observer_public_key,
+        verifier_principal_id="independent-verifier",
+        verifier_source_runtime_receipt_sha256=(
+            failure.receipt.verifier_source_runtime_receipt_sha256
+        ),
+        verifier_public_key=verifier_public_key,
+    )
+    terminal = prefix.pre_start_terminal
+    statement = e.D7ExternalAbortWitnessStatement(
+        replay_target_sha256=prefix.start.replay_target_sha256,
+        attempt_key_sha256=prefix.start.attempt_key_sha256,
+        execution_start_sha256=prefix.start.canonical_sha256,
+        execution_identity_receipt_sha256=(
+            prefix.start.execution_identity_receipt_sha256
+        ),
+        failure_evidence_payload_sha256=failure.payload.canonical_sha256,
+        failure_evidence_payload_byte_count=len(failure.payload.canonical_bytes),
+        structural_verification_receipt_sha256=failure.receipt.canonical_sha256,
+        structural_verification_receipt_byte_count=len(failure.receipt.canonical_bytes),
+        observer_identity_receipt_sha256=(
+            failure.receipt.observer_identity_receipt_sha256
+        ),
+        verifier_source_runtime_receipt_sha256=(
+            failure.receipt.verifier_source_runtime_receipt_sha256
+        ),
+        observation_kind=failure.payload.detail.observation_kind,
+        observation_payload_sha256=(failure.receipt.observation_payload_sha256),
+        store_identity_sha256=prefix.declaration.store_identity_sha256,
+        terminal_path_identity_sha256=(
+            prefix.declaration.terminal_path_identity_sha256
+        ),
+        store_root_realpath=terminal.store_root_realpath,
+        terminal_parent_realpath=terminal.resolved_parent_realpath,
+        terminal_basename=terminal.subject_basename,
+        terminal_parent_device=terminal.parent_device,
+        terminal_parent_inode=terminal.parent_inode,
+        execution_principal_id=trust_root.execution_principal_id,
+        observer_principal_id=trust_root.observer_principal_id,
+        verifier_principal_id=trust_root.verifier_principal_id,
+        observer_public_key_sha256=trust_root.observer_public_key_sha256,
+        verifier_public_key_sha256=trust_root.verifier_public_key_sha256,
+        runtime_trust_root_sha256=trust_root.canonical_sha256,
+    )
+    unsigned = e.D7SignedExternalAbortWitnessEnvelope(
+        statement=statement,
+        observer_signature="0" * 128,
+        verifier_signature="0" * 128,
+    )
+    observer_signed = replace(
+        unsigned,
+        observer_signature=observer_private_key.sign(
+            unsigned.observer_signed_bytes
+        ).hex(),
+    )
+    envelope = replace(
+        observer_signed,
+        verifier_signature=verifier_private_key.sign(
+            observer_signed.verifier_signed_bytes
+        ).hex(),
+    )
+    finalization = replace(
+        failure.finalization,
+        signed_external_abort_witness_envelope_sha256=envelope.canonical_sha256,
+        signed_external_abort_witness_envelope_byte_count=len(envelope.canonical_bytes),
+    )
+    failed = replace(
+        failure.failed,
+        started_unresolved_finalization_sha256=finalization.canonical_sha256,
+    )
+    failure.finalization = finalization
+    failure.failed = failed
+    return SimpleNamespace(
+        prefix=prefix,
+        failure=failure,
+        trust_root=trust_root,
+        observer_private_key=observer_private_key,
+        verifier_private_key=verifier_private_key,
+        envelope=envelope,
+    )
+
+
+def _verify_signed_external_witness(
+    witness: SimpleNamespace,
+    *,
+    trust_root: w.D7PinnedExternalWitnessTrustRoot | None = None,
+    prefix: SimpleNamespace | None = None,
+    failure: SimpleNamespace | None = None,
+    envelope: e.D7SignedExternalAbortWitnessEnvelope | None = None,
+    expected_envelope_sha256: str | None = None,
+) -> w.VerifiedD7ExternalAbortWitness:
+    prefix = prefix or witness.prefix
+    failure = failure or witness.failure
+    envelope = envelope or witness.envelope
+    return w.verify_d7_signed_external_abort_witness(
+        envelope_source=envelope.canonical_bytes,
+        expected_envelope_sha256=(
+            expected_envelope_sha256 or envelope.canonical_sha256
+        ),
+        trust_root=trust_root or witness.trust_root,
+        declaration=prefix.declaration,
+        start=prefix.start,
+        terminal_path_receipt=prefix.pre_start_terminal,
+        payload=failure.payload,
+        structural_receipt=failure.receipt,
+    )
+
+
+def _resign_external_witness(
+    witness: SimpleNamespace,
+    statement: e.D7ExternalAbortWitnessStatement,
+) -> e.D7SignedExternalAbortWitnessEnvelope:
+    unsigned = e.D7SignedExternalAbortWitnessEnvelope(
+        statement=statement,
+        observer_signature="0" * 128,
+        verifier_signature="0" * 128,
+    )
+    observer_signed = replace(
+        unsigned,
+        observer_signature=witness.observer_private_key.sign(
+            unsigned.observer_signed_bytes
+        ).hex(),
+    )
+    return replace(
+        observer_signed,
+        verifier_signature=witness.verifier_private_key.sign(
+            observer_signed.verifier_signed_bytes
+        ).hex(),
     )
 
 
@@ -666,6 +829,217 @@ def test_external_abort_receipt_rejects_weak_or_disconnected_assertions() -> Non
         )
 
 
+def test_signed_external_witness_is_authenticated_internal_and_one_shot() -> None:
+    witness = _signed_external_witness()
+    ev.validate_d7_signed_external_abort_witness_envelope(
+        declaration=witness.prefix.declaration,
+        start=witness.prefix.start,
+        terminal_path_receipt=witness.prefix.pre_start_terminal,
+        payload=witness.failure.payload,
+        structural_receipt=witness.failure.receipt,
+        envelope=witness.envelope,
+        finalization=witness.failure.finalization,
+    )
+    with pytest.raises(QualificationContractError, match="envelope digest"):
+        ev.validate_d7_signed_external_abort_witness_envelope(
+            declaration=witness.prefix.declaration,
+            start=witness.prefix.start,
+            terminal_path_receipt=witness.prefix.pre_start_terminal,
+            payload=witness.failure.payload,
+            structural_receipt=witness.failure.receipt,
+            envelope=witness.envelope,
+            finalization=replace(
+                witness.failure.finalization,
+                signed_external_abort_witness_envelope_sha256=_h("wrong-envelope"),
+            ),
+        )
+    rebuilt = e.D7SignedExternalAbortWitnessEnvelope.from_canonical_bytes(
+        witness.envelope.canonical_bytes,
+        expected_sha256=witness.envelope.canonical_sha256,
+    )
+    assert rebuilt == witness.envelope
+
+    verified = _verify_signed_external_witness(witness)
+    assert verified.envelope_canonical_bytes == witness.envelope.canonical_bytes
+    assert verified.envelope_sha256 == witness.envelope.canonical_sha256
+    assert (
+        verified.observer_public_key_sha256
+        == witness.trust_root.observer_public_key_sha256
+    )
+    assert (
+        verified.store_identity_sha256
+        == witness.prefix.declaration.store_identity_sha256
+    )
+    assert (
+        verified.terminal_path_identity_sha256
+        == witness.prefix.declaration.terminal_path_identity_sha256
+    )
+    with pytest.raises(TypeError, match="cannot be constructed directly"):
+        w.VerifiedD7ExternalAbortWitness(
+            token=object(),
+            envelope=witness.envelope,
+            trust_root=witness.trust_root,
+        )
+    with pytest.raises(TypeError, match="cannot be copied"):
+        copy.copy(verified)
+    with pytest.raises(TypeError, match="cannot be serialized"):
+        pickle.dumps(verified)
+
+    revalidated: list[str] = []
+
+    def revalidate(value: w.VerifiedD7ExternalAbortWitness) -> None:
+        revalidated.append(value.terminal_basename)
+        assert (
+            value.terminal_parent_inode
+            == witness.prefix.pre_start_terminal.parent_inode
+        )
+
+    verified.consume(revalidate=revalidate)
+    assert revalidated == [witness.prefix.pre_start_terminal.subject_basename]
+    assert verified.is_consumed is True
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        verified.consume(revalidate=revalidate)
+
+    boolean_shortcut = _verify_signed_external_witness(witness)
+    with pytest.raises(TypeError, match="must raise on failure and return None"):
+        boolean_shortcut.consume(revalidate=lambda _: True)  # type: ignore[arg-type]
+    assert boolean_shortcut.is_consumed is True
+
+
+def test_caller_constructed_v01_receipt_is_not_an_authenticated_witness() -> None:
+    witness = _signed_external_witness()
+    failure = witness.failure
+    ev.validate_d7_external_abort_verification_receipt(
+        start=witness.prefix.start,
+        payload=failure.payload,
+        receipt=failure.receipt,
+        evidence=failure.evidence,
+        finalization=failure.finalization,
+        failed_attempt=failure.failed,
+    )
+    forged = replace(
+        witness.envelope,
+        observer_signature="0" * 128,
+        verifier_signature="0" * 128,
+    )
+    forged_finalization = replace(
+        failure.finalization,
+        signed_external_abort_witness_envelope_sha256=forged.canonical_sha256,
+        signed_external_abort_witness_envelope_byte_count=len(forged.canonical_bytes),
+    )
+    ev.validate_d7_signed_external_abort_witness_envelope(
+        declaration=witness.prefix.declaration,
+        start=witness.prefix.start,
+        terminal_path_receipt=witness.prefix.pre_start_terminal,
+        payload=failure.payload,
+        structural_receipt=failure.receipt,
+        envelope=forged,
+        finalization=forged_finalization,
+    )
+    with pytest.raises(QualificationContractError, match="observer signature"):
+        _verify_signed_external_witness(witness, envelope=forged)
+
+
+def test_signed_external_witness_checks_digest_before_crypto(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    witness = _signed_external_witness()
+
+    def crypto_must_not_run(**_: object) -> None:
+        raise AssertionError("signature verification ran before the digest check")
+
+    monkeypatch.setattr(w, "_verify_ed25519_signature", crypto_must_not_run)
+    with pytest.raises(QualificationContractError, match="SHA-256 differs"):
+        _verify_signed_external_witness(
+            witness,
+            expected_envelope_sha256=_h("wrong-envelope"),
+        )
+
+
+def test_signed_external_witness_rejects_invalid_verifier_signature() -> None:
+    witness = _signed_external_witness()
+    signature = witness.envelope.verifier_signature
+    replacement = "0" if signature[0] != "0" else "1"
+    tampered = replace(
+        witness.envelope,
+        verifier_signature=replacement + signature[1:],
+    )
+    with pytest.raises(QualificationContractError, match="verifier signature"):
+        _verify_signed_external_witness(witness, envelope=tampered)
+
+
+def test_signed_external_witness_rejects_wrong_runtime_trust_root() -> None:
+    ed25519 = pytest.importorskip("cryptography.hazmat.primitives.asymmetric.ed25519")
+    serialization = pytest.importorskip("cryptography.hazmat.primitives.serialization")
+    witness = _signed_external_witness()
+    wrong_verifier_key = (
+        ed25519.Ed25519PrivateKey.generate()
+        .public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+    )
+    wrong_root = replace(
+        witness.trust_root,
+        verifier_public_key=wrong_verifier_key,
+    )
+    with pytest.raises(QualificationContractError, match="runtime trust root"):
+        _verify_signed_external_witness(witness, trust_root=wrong_root)
+
+
+def test_signed_external_witness_rejects_cross_attempt_replay() -> None:
+    witness = _signed_external_witness()
+    other_prefix = _prefix("isolated", role_evidence=_isolated_role())
+    other_failure = _external_failure(other_prefix)
+    with pytest.raises(QualificationContractError, match="attempt_key_sha256"):
+        _verify_signed_external_witness(
+            witness,
+            prefix=other_prefix,
+            failure=other_failure,
+        )
+
+
+def test_signed_external_witness_rejects_principal_aliases() -> None:
+    witness = _signed_external_witness()
+    with pytest.raises(QualificationContractError, match="principals must differ"):
+        replace(
+            witness.trust_root,
+            observer_principal_id=witness.trust_root.execution_principal_id,
+        )
+    with pytest.raises(QualificationContractError, match="public keys must differ"):
+        replace(
+            witness.trust_root,
+            verifier_public_key=witness.trust_root.observer_public_key,
+        )
+
+
+def test_signed_external_witness_rejects_resigned_terminal_rebinding() -> None:
+    witness = _signed_external_witness()
+    other = _prefix("other-terminal")
+    other_terminal = other.pre_start_terminal
+    rebound_statement = replace(
+        witness.envelope.statement,
+        terminal_path_identity_sha256=other_terminal.subject_path_identity_sha256,
+        store_root_realpath=other_terminal.store_root_realpath,
+        terminal_parent_realpath=other_terminal.resolved_parent_realpath,
+        terminal_basename=other_terminal.subject_basename,
+        terminal_parent_device=other_terminal.parent_device,
+        terminal_parent_inode=other_terminal.parent_inode,
+    )
+    rebound = _resign_external_witness(witness, rebound_statement)
+    with pytest.raises(QualificationContractError, match="terminal path identity"):
+        _verify_signed_external_witness(witness, envelope=rebound)
+
+
+def test_signed_external_witness_has_no_weak_boolean_shortcut() -> None:
+    witness = _signed_external_witness()
+    document = witness.envelope.statement.to_dict()
+    document["process_absence_alone_sufficient"] = True
+    with pytest.raises(QualificationContractError, match="process_absence"):
+        e.D7ExternalAbortWitnessStatement.from_dict(document)
+
+
 def test_evidence_bytes_reject_wrong_digest_and_noncanonical_json() -> None:
     receipt = _prefix().authorization_output
     with pytest.raises(QualificationContractError, match="SHA-256 differs"):
@@ -684,11 +1058,14 @@ def test_evidence_bytes_reject_wrong_digest_and_noncanonical_json() -> None:
 def test_attempt_evidence_modules_are_deep_internal_only() -> None:
     assert e.__all__ == ()
     assert ev.__all__ == ()
+    assert w.__all__ == ()
     for name in (
         "D7AuthorizationPathAbsenceReceipt",
         "D7PreStartPathAbsenceReceipt",
         "D7FailureEvidencePayload",
         "D7ExternalAbortVerificationReceipt",
+        "D7SignedExternalAbortWitnessEnvelope",
+        "VerifiedD7ExternalAbortWitness",
     ):
         assert name not in spirallens.__all__
         assert name not in qualification.__all__

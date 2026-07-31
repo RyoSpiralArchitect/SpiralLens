@@ -50,8 +50,11 @@ D7_FAILURE_EVIDENCE_PAYLOAD_CONTRACT_ID = (
 D7_EXTERNAL_ABORT_VERIFICATION_RECEIPT_CONTRACT_ID = (
     "spirallens.d7-external-abort-verification-receipt-contract.v0.1"
 )
+D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_CONTRACT_ID = (
+    "spirallens.d7-signed-external-abort-witness-envelope-contract.v0.1"
+)
 D7_STARTED_UNRESOLVED_FINALIZATION_SCHEMA_VERSION = (
-    "spirallens.d7-started-unresolved-finalization.v0.1"
+    "spirallens.d7-started-unresolved-finalization.v0.2"
 )
 D7_FAILED_ATTEMPT_SCHEMA_VERSION = "spirallens.d7-failed-attempt.v0.1"
 D7_TERMINAL_MEMBER_BINDING_SCHEMA_VERSION = "spirallens.d7-terminal-member-binding.v0.1"
@@ -78,6 +81,9 @@ D7_FAILURE_EVIDENCE_FILENAME = "failure-evidence.json"
 D7_FAILURE_EVIDENCE_PAYLOAD_FILENAME = "failure-evidence-payload.json"
 D7_EXTERNAL_ABORT_VERIFICATION_RECEIPT_FILENAME = (
     "external-abort-verification-receipt.json"
+)
+D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_FILENAME = (
+    "signed-external-abort-witness-envelope.json"
 )
 D7_STARTED_UNRESOLVED_FINALIZATION_FILENAME = "started-unresolved-finalization.json"
 
@@ -140,6 +146,7 @@ class D7TerminalMemberKind(str, Enum):
     FAILURE_EVIDENCE = "failure-evidence"
     FAILURE_EVIDENCE_PAYLOAD = "failure-evidence-payload"
     EXTERNAL_ABORT_VERIFICATION_RECEIPT = "external-abort-verification-receipt"
+    SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE = "signed-external-abort-witness-envelope"
     STARTED_UNRESOLVED_FINALIZATION = "started-unresolved-finalization"
 
 
@@ -213,6 +220,10 @@ _FIXED_TERMINAL_MEMBER_CONTRACTS = MappingProxyType(
         D7TerminalMemberKind.EXTERNAL_ABORT_VERIFICATION_RECEIPT: (
             D7_EXTERNAL_ABORT_VERIFICATION_RECEIPT_FILENAME,
             D7_EXTERNAL_ABORT_VERIFICATION_RECEIPT_CONTRACT_ID,
+        ),
+        D7TerminalMemberKind.SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE: (
+            D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_FILENAME,
+            D7_SIGNED_EXTERNAL_ABORT_WITNESS_ENVELOPE_CONTRACT_ID,
         ),
         D7TerminalMemberKind.STARTED_UNRESOLVED_FINALIZATION: (
             D7_STARTED_UNRESOLVED_FINALIZATION_FILENAME,
@@ -1463,15 +1474,23 @@ class D7StartedUnresolvedFinalizationRecord(_CanonicalRecord):
     external_abort_evidence_sha256: str
     external_verification_receipt_sha256: str
     external_verification_receipt_byte_count: int
+    signed_external_abort_witness_envelope_sha256: str
+    signed_external_abort_witness_envelope_byte_count: int
 
     schema_version: ClassVar[str] = D7_STARTED_UNRESOLVED_FINALIZATION_SCHEMA_VERSION
     claim_ceiling: ClassVar[str] = D7_RECORD_CLAIM_CEILING
     _LABEL: ClassVar[str] = "D7 started-unresolved finalization"
     _SHA_FIELDS = (
         *_STARTED_COORDINATE_FIELDS,
-        *_names("external_abort_evidence_sha256 external_verification_receipt_sha256"),
+        *_names(
+            "external_abort_evidence_sha256 external_verification_receipt_sha256 "
+            "signed_external_abort_witness_envelope_sha256"
+        ),
     )
-    _POSITIVE_INT_FIELDS = ("external_verification_receipt_byte_count",)
+    _POSITIVE_INT_FIELDS = (
+        "external_verification_receipt_byte_count",
+        "signed_external_abort_witness_envelope_byte_count",
+    )
 
     def __post_init__(self) -> None:
         _CanonicalRecord.__post_init__(self)
@@ -1483,11 +1502,25 @@ class D7StartedUnresolvedFinalizationRecord(_CanonicalRecord):
                 "external verification receipt exceeds byte cap"
             )
         if (
-            self.external_abort_evidence_sha256
-            == self.external_verification_receipt_sha256
+            self.signed_external_abort_witness_envelope_byte_count
+            > MAX_D7_RESULT_COMPONENT_BYTES
         ):
             raise QualificationContractError(
-                "external evidence and verification receipt must be distinct"
+                "signed external witness envelope exceeds byte cap"
+            )
+        if (
+            len(
+                {
+                    self.external_abort_evidence_sha256,
+                    self.external_verification_receipt_sha256,
+                    self.signed_external_abort_witness_envelope_sha256,
+                }
+            )
+            != 3
+        ):
+            raise QualificationContractError(
+                "external evidence, verification receipt, and signed witness "
+                "envelope must be distinct"
             )
 
     def to_dict(self) -> dict[str, object]:
@@ -1497,6 +1530,9 @@ class D7StartedUnresolvedFinalizationRecord(_CanonicalRecord):
             self._SHA_FIELDS,
             finalization_kind="externally-evidenced-abort",
             external_verification_receipt_byte_count=self.external_verification_receipt_byte_count,
+            signed_external_abort_witness_envelope_byte_count=(
+                self.signed_external_abort_witness_envelope_byte_count
+            ),
             verification_receipt_required_assertions={
                 "execution_start_sha256": self.execution_start_sha256,
                 "execution_identity_receipt_sha256": self.execution_identity_receipt_sha256,
@@ -1524,7 +1560,10 @@ class D7StartedUnresolvedFinalizationRecord(_CanonicalRecord):
                 d8_eligible=False,
             ),
             sha_fields=cls._SHA_FIELDS,
-            positive_int_fields=("external_verification_receipt_byte_count",),
+            positive_int_fields=(
+                "external_verification_receipt_byte_count",
+                "signed_external_abort_witness_envelope_byte_count",
+            ),
             raw_fields=("verification_receipt_required_assertions",),
         )
         assertions = _mapping(

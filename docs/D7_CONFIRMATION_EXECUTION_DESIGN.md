@@ -333,9 +333,9 @@ records bind but may not redefine the concrete target's seed inventory,
 thresholds, graph/cycle inventory, aggregation, result schema, construction
 family, or identity.
 
-The separate seed-supply chronology is also closed before values exist:
-first finish lifecycle/result/terminal/witness/runner mechanics without an
-official execution; then implement one fused verify-and-exclusive-start
+The separate seed-supply chronology is also closed before values exist: the
+lifecycle/result/terminal/witness/runner mechanics are now implemented without
+an official execution; next implement one fused verify-and-exclusive-start
 operation that returns no reusable authorization token; only after that code
 is final issue exact current execution-source/runtime closure, establish
 seed-free readiness, and complete reviewed family admission. The later
@@ -367,6 +367,28 @@ consumption receipt, not from a caller label. Result or failed-attempt,
 manifest, and consumption records are staged and exposed only as one atomic
 no-replace terminal transaction.
 
+That terminal transaction is now implemented as a deep-internal structural
+mechanic. It writes every bounded canonical member into one same-parent private
+directory, fsyncs files and the staging directory, revalidates the persisted
+prefix and complete file identities, and exposes the directory with a native
+descriptor-relative no-replace rename before strict reload. Competing
+attempt-scoped staging entries, destination races, symlink/hardlink/FIFO or
+unknown-member substitution, descriptor/identity drift, and uncertain cleanup
+fail closed. A final parent-directory fsync failure is retained explicitly as
+durability unproved rather than turned into success. None of those structural
+facts authenticate the caller-supplied prefix or prove execution.
+
+The post-start runner mechanic is also implemented behind a private,
+nonserializable ownership handoff, but this change deliberately supplies no
+issuer for that handoff. It is primary-confirmation-only and accepts no seed,
+supplier, or independent start record. A zero-argument producer callback must
+return all six components plus the outer payload; the runner validates the
+complete bundle and requires its replay-target/full-inventory/aggregation/
+result-schema projection to match ownership before preparing a typed terminal.
+The exact official executor and aggregation remain outside this mechanic.
+Ordinary exceptions retain their identity and may carry a typed in-process
+failed-terminal handoff; hard-crash/`BaseException` states remain unresolved.
+
 The target, authorization, start, and scientific payload fields are related by
 an explicit closed table of canonical byte-equality constraints. Independently
 well-formed digests are insufficient. A future verifier-established
@@ -374,6 +396,18 @@ authoritative execution start without a terminal is `started_unresolved`, not
 inferred aborted. It cannot be retried, replayed, or used for D8. It remains
 unresolved until an append-only finalization binds both the start and external
 abort evidence; a hard crash cannot publish an in-process failure record.
+
+The external-abort mechanics now bind that path to a canonical Ed25519
+observer-plus-verifier envelope in the closed failed-terminal inventory. The
+integrated operation verifies the two signatures against explicit runtime
+pins, performs one fixed live revalidation of the exact prefix, terminal path,
+parent identity, and absence state, derives the finalization/outcome/manifest/
+consumption chain internally, consumes the witness value, publishes once, and
+strictly reloads. Reload can independently reauthenticate the exact visible
+terminal to the supplied pins. This is signature authentication relative to
+those pins only: pin provenance, official trust-root authority, wall-clock
+freshness, authoritative-start issuance, execution observation, scientific
+eligibility, retry/replay authority, D7, and D8 remain false.
 
 The future target itself remains exactly Level 0 and carries the closed
 all-false local authority vector. Admission, launch, result, and D8 authority
@@ -413,15 +447,23 @@ to test without claiming that the records came from trusted issuers. This is a
 newly exposed prerequisite, not an amendment to the meaning or historical
 status of C1, C2, D6, or earlier persisted attempts.
 
+Roadmap item 19 is now mechanics-complete. The structural terminal, typed
+primary-only runner handoff, two-signature witness inventory member, and
+integrated pin-relative external-abort publish/reload path exist only as
+deep-internal surfaces. They do not provide the missing ownership issuer,
+authoritative trust-root provenance, wall-clock freshness, official supplier
+or seeds, fused start, official executor/aggregation, observed execution,
+scientific eligibility, D7, or D8.
+
 The reviewed successor order is:
 
 1. retain PR #23 as a schema/loader candidate only; it must not mint
    authorization;
-2. implement the atomic result/failed-attempt terminal transaction,
-   authenticated external-witness path, and eventual runner mechanics without
-   invoking the official supplier or performing an official execution;
-3. implement one fused verify-and-exclusive-start operation that reopens the
-   authoritative target, launch intent, exact source/runtime closure,
+2. retain the implemented terminal, authenticated-witness-relative-to-pins,
+   and typed runner mechanics without invoking the official supplier or
+   performing an official execution;
+3. next implement one fused verify-and-exclusive-start operation that reopens
+   the authoritative target, launch intent, exact source/runtime closure,
    execution identity, physical store/lane, and absence state and transitions
    directly into the start claim. It must not serialize, return, cache, or
    accept a reusable authorization token;
@@ -434,10 +476,10 @@ The reviewed successor order is:
 
 Evidence envelopes cannot be promoted in place. Official seeds, concrete
 replay target, attempt instances, admission, full-design freeze, no-overwrite
-publication, launch, exclusive attempt, execution start, terminal publication,
-and isolated replay remain separate obligations. None may be represented by a
-placeholder result, inferred from C2 source closure, or authorized by
-caller-constructible records.
+publication, launch, exclusive attempt, execution start, official terminal
+publication, and isolated replay remain separate obligations. None may be
+represented by a placeholder result, inferred from C2 source closure, or
+authorized by caller-constructible records.
 
 Until those are complete, the canonical state remains:
 
@@ -459,5 +501,7 @@ historical_git_source_set_closure_verified
 runtime_and_transitive_closure_unattested
 current_source_compatibility_not_verified
 current_execution_source_runtime_closure_absent
-lifecycle_result_terminal_and_runner_not_implemented
+terminal_witness_runner_mechanics_implemented_non_authorizing
+fused_verify_and_exclusive_start_absent
+official_executor_and_aggregation_absent
 ```

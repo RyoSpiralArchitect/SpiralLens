@@ -44,8 +44,12 @@ models = [
 ann = [
   "faiss-cpu==1.14.3",
 ]
+witness = [
+  "cryptography>=42",
+]
 dev = [
   "build>=1.2.2",
+  "cryptography>=42",
   "pytest>=8",
   "ruff>=0.9",
 ]

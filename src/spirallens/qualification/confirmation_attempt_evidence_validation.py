@@ -591,3 +591,232 @@ def validate_d7_external_abort_verification_receipt(
         evidence=evidence,
         finalization=finalization,
     )
+
+
+def validate_d7_signed_external_abort_witness_envelope(
+    *,
+    declaration: r.D7AttemptDeclarationRecord,
+    start: r.D7ExecutionStartRecord,
+    terminal_path_receipt: e.D7PreStartPathAbsenceReceipt,
+    payload: e.D7FailureEvidencePayload,
+    structural_receipt: e.D7ExternalAbortVerificationReceipt,
+    envelope: e.D7SignedExternalAbortWitnessEnvelope,
+    finalization: r.D7StartedUnresolvedFinalizationRecord | None = None,
+) -> None:
+    """Join signed witness bytes without verifying either Ed25519 signature.
+
+    If ``finalization`` is supplied, its durable envelope binding is joined to
+    the exact envelope bytes too.  This remains structural validation and does
+    not authenticate the keys, signatures, trust-root provenance, or caller.
+    """
+
+    _exact(declaration, r.D7AttemptDeclarationRecord, "declaration")
+    _exact(start, r.D7ExecutionStartRecord, "start")
+    _exact(
+        terminal_path_receipt,
+        e.D7PreStartPathAbsenceReceipt,
+        "terminal_path_receipt",
+    )
+    _exact(payload, e.D7FailureEvidencePayload, "payload")
+    _exact(
+        structural_receipt,
+        e.D7ExternalAbortVerificationReceipt,
+        "structural_receipt",
+    )
+    _exact(
+        envelope,
+        e.D7SignedExternalAbortWitnessEnvelope,
+        "envelope",
+    )
+    if finalization is not None:
+        _exact(
+            finalization,
+            r.D7StartedUnresolvedFinalizationRecord,
+            "finalization",
+        )
+    statement = envelope.statement
+    _exact(
+        statement,
+        e.D7ExternalAbortWitnessStatement,
+        "envelope statement",
+    )
+    if type(payload.detail) is not e.D7ExternalAbortObservationDetail:
+        raise QualificationContractError(
+            "signed witness requires external observation detail"
+        )
+    if (
+        payload.failure_stage is not r.D7FailureStage.EVIDENCED_ABORT
+        or payload.origin is not r.D7FailureEvidenceOrigin.EXTERNAL
+    ):
+        raise QualificationContractError(
+            "signed witness requires evidenced external abort"
+        )
+    if terminal_path_receipt.subject_kind is not e.D7AbsentPathSubject.TERMINAL_PATH:
+        raise QualificationContractError(
+            "signed witness requires the terminal pre-start receipt"
+        )
+    for field in (
+        "replay_target_sha256",
+        "attempt_key_sha256",
+        "execution_identity_receipt_sha256",
+    ):
+        expected = getattr(declaration, field)
+        _same(expected, getattr(start, field), f"witness start {field}")
+        _same(expected, getattr(payload, field), f"witness payload {field}")
+        _same(
+            expected,
+            getattr(structural_receipt, field),
+            f"witness structural receipt {field}",
+        )
+        _same(expected, getattr(statement, field), f"witness statement {field}")
+        if finalization is not None:
+            _same(
+                expected,
+                getattr(finalization, field),
+                f"witness finalization {field}",
+            )
+    _same(
+        start.canonical_sha256,
+        payload.execution_start_sha256,
+        "witness payload execution_start_sha256",
+    )
+    _same(
+        start.canonical_sha256,
+        structural_receipt.execution_start_sha256,
+        "witness structural receipt execution_start_sha256",
+    )
+    _same(
+        start.canonical_sha256,
+        statement.execution_start_sha256,
+        "witness statement execution_start_sha256",
+    )
+    if finalization is not None:
+        _same(
+            start.canonical_sha256,
+            finalization.execution_start_sha256,
+            "witness finalization execution_start_sha256",
+        )
+    _same(
+        declaration.store_identity_sha256,
+        terminal_path_receipt.store_identity_sha256,
+        "witness terminal store identity",
+    )
+    _same(
+        declaration.store_identity_sha256,
+        statement.store_identity_sha256,
+        "witness statement store identity",
+    )
+    _same(
+        declaration.terminal_path_identity_sha256,
+        start.terminal_path_identity_sha256,
+        "witness start terminal path identity",
+    )
+    _same(
+        declaration.terminal_path_identity_sha256,
+        terminal_path_receipt.subject_path_identity_sha256,
+        "witness terminal receipt path identity",
+    )
+    _same(
+        declaration.terminal_path_identity_sha256,
+        statement.terminal_path_identity_sha256,
+        "witness statement terminal path identity",
+    )
+    _same(
+        terminal_path_receipt.canonical_sha256,
+        start.pre_start_terminal_path_absence_receipt_sha256,
+        "witness terminal pre-start receipt digest",
+    )
+    for statement_field, receipt_field in (
+        ("store_root_realpath", "store_root_realpath"),
+        ("terminal_parent_realpath", "resolved_parent_realpath"),
+        ("terminal_basename", "subject_basename"),
+        ("terminal_parent_device", "parent_device"),
+        ("terminal_parent_inode", "parent_inode"),
+    ):
+        _same(
+            getattr(terminal_path_receipt, receipt_field),
+            getattr(statement, statement_field),
+            f"witness terminal coordinate {statement_field}",
+        )
+    for digest, byte_count, expected_digest, expected_size, label in (
+        (
+            statement.failure_evidence_payload_sha256,
+            statement.failure_evidence_payload_byte_count,
+            payload.canonical_sha256,
+            len(payload.canonical_bytes),
+            "failure evidence payload",
+        ),
+        (
+            statement.structural_verification_receipt_sha256,
+            statement.structural_verification_receipt_byte_count,
+            structural_receipt.canonical_sha256,
+            len(structural_receipt.canonical_bytes),
+            "structural verification receipt",
+        ),
+    ):
+        _same(expected_digest, digest, f"witness {label} digest")
+        _same(expected_size, byte_count, f"witness {label} byte count")
+    _same(
+        payload.canonical_sha256,
+        structural_receipt.failure_evidence_payload_sha256,
+        "witness structural receipt payload digest",
+    )
+    _same(
+        len(payload.canonical_bytes),
+        structural_receipt.failure_evidence_payload_byte_count,
+        "witness structural receipt payload byte count",
+    )
+    if finalization is not None:
+        _same(
+            structural_receipt.canonical_sha256,
+            finalization.external_verification_receipt_sha256,
+            "witness finalization structural receipt digest",
+        )
+        _same(
+            len(structural_receipt.canonical_bytes),
+            finalization.external_verification_receipt_byte_count,
+            "witness finalization structural receipt byte count",
+        )
+        _same(
+            envelope.canonical_sha256,
+            finalization.signed_external_abort_witness_envelope_sha256,
+            "witness finalization envelope digest",
+        )
+        _same(
+            len(envelope.canonical_bytes),
+            finalization.signed_external_abort_witness_envelope_byte_count,
+            "witness finalization envelope byte count",
+        )
+    for expected, observed, label in (
+        (
+            payload.detail.observer_identity_receipt_sha256,
+            structural_receipt.observer_identity_receipt_sha256,
+            "structural observer identity receipt",
+        ),
+        (
+            payload.detail.observer_identity_receipt_sha256,
+            statement.observer_identity_receipt_sha256,
+            "statement observer identity receipt",
+        ),
+        (
+            structural_receipt.verifier_source_runtime_receipt_sha256,
+            statement.verifier_source_runtime_receipt_sha256,
+            "statement verifier source/runtime receipt",
+        ),
+        (
+            payload.detail.observation_kind,
+            statement.observation_kind,
+            "statement observation kind",
+        ),
+        (
+            payload.detail.observation_payload_sha256,
+            structural_receipt.observation_payload_sha256,
+            "structural observation payload",
+        ),
+        (
+            payload.detail.observation_payload_sha256,
+            statement.observation_payload_sha256,
+            "statement observation payload",
+        ),
+    ):
+        _same(expected, observed, f"witness {label}")
