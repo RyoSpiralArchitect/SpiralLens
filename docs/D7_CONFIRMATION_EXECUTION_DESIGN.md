@@ -6,7 +6,14 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `c2_declared_historical_git_source_set_closed`,
 `replay_target_contract_spec_defined`,
 `attempt_envelope_contract_spec_defined`,
-`launch_authority_input_schema_candidate_defined`, `instances_absent`,
+`launch_authority_input_schema_candidate_defined`,
+`fused_launch_descriptor_schema_defined`,
+`authoritative_start_transaction_schema_defined`,
+`strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised`,
+`fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked`,
+`canonical_d7_launch_descriptor_absent`, `d7_runtime_lock_absent`,
+`current_execution_source_runtime_closure_absent`,
+`official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `not_frozen`, `not_admitted`, `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
@@ -334,11 +341,18 @@ thresholds, graph/cycle inventory, aggregation, result schema, construction
 family, or identity.
 
 The separate seed-supply chronology is also closed before values exist: the
-lifecycle/result/terminal/witness/runner mechanics are now implemented without
-an official execution; next implement one fused verify-and-exclusive-start
-operation that returns no reusable authorization token; only after that code
-is final issue exact current execution-source/runtime closure, establish
-seed-free readiness, and complete reviewed family admission. The later
+lifecycle/result/terminal/witness/runner and fused verify-and-exclusive-start
+mechanics are now implemented without an official execution. The fused path
+accepts only a raw current-HEAD descriptor and zero-argument producer, derives
+live canonical-origin facts and matches the declared source/runtime,
+callable/process, physical, and absence observation surfaces inside the call,
+publishes a no-replace structural start, requires the start-parent fsync to be
+proved, repeats those observations, and consumes private ownership before
+callback without emitting a reusable token. Now that this surface is final,
+item 21 must add and freeze
+`requirements-d7-runtime-lock.txt`, name the official producer and exact
+aggregation, issue exact-current source/runtime artifacts, establish seed-free
+readiness, and complete reviewed family admission. The later
 seed-bearing sequence is an exclusive seed-supply claim, one supplier
 invocation, atomic no-replace publication of the seed-bearing full design and
 target, a committed full-design freeze receipt, then launch intent. Only then
@@ -351,16 +365,19 @@ the current implementation. PR #23's typed claim and invocation records encode
 the required causal joins as caller-claimed structural input only; their
 verification flags do not establish that either event occurred.
 
-Authoritative execution start must bind the exact target, authorization, and claim; match
-the observed source/runtime identity to the target's frozen receipt; and
-recheck that both output namespace and terminal path remain absent. A
-local persistence-only implementation now performs that path-coordinate
-reobservation before exposing a caller-supplied start record as evidence, but
-it does not verify the target, execution identity, source/runtime authority,
-or execution. Its terminal-absence observation is
+The evidence-only local persistence writer performs path-coordinate
+reobservation before exposing a caller-supplied start record, but it does not
+verify the target, execution identity, source/runtime authority, or execution.
+Its terminal-absence observation is
 `caller_supplied_start_record_present_terminal_absent`, not
-`started_unresolved`. A
-scientific result payload is attempt-independent but still binds the exact
+`started_unresolved`. The separate item-20 fused mechanic now reopens a closed
+descriptor, rejoins exact target/authorization/claim inputs, matches the
+declared live observation surfaces, and publishes a dedicated structural start
+before its second-pass checks and possible producer entry. Its strict loader
+still reports `authority_authenticated=false`, `authority_granted=false`, and
+`started_unresolved_established=false`; a visible start directory is not a
+reusable authority capability. A scientific result payload is
+attempt-independent but still binds the exact
 target, full inventory, aggregation, and result schema. The isolated-replay
 role is derived from an already persisted passed-primary terminal and
 consumption receipt, not from a caller label. Result or failed-attempt,
@@ -379,45 +396,65 @@ durability unproved rather than turned into success. None of those structural
 facts authenticate the caller-supplied prefix or prove execution.
 
 The post-start runner mechanic is also implemented behind a private,
-nonserializable ownership handoff, but this change deliberately supplies no
-issuer for that handoff. It is primary-confirmation-only and accepts no seed,
+nonserializable ownership handoff. The runner itself supplies no issuer; the
+fused operation is the sole deep-internal issuer and constructs and consumes
+ownership only after durable start publication, strict reload, and unchanged
+second-pass observations. It is primary-confirmation-only and accepts no seed,
 supplier, or independent start record. A zero-argument producer callback must
 return all six components plus the outer payload; the runner validates the
 complete bundle and requires its replay-target/full-inventory/aggregation/
 result-schema projection to match ownership before preparing a typed terminal.
 The exact official executor and aggregation remain outside this mechanic.
-Ordinary exceptions retain their identity and may carry a typed in-process
-failed-terminal handoff; hard-crash/`BaseException` states remain unresolved.
+Every exit after ownership construction atomically invalidates callback-entry
+and terminal-publication authority, including failure before runner dispatch.
+Ordinary exceptions retain their identity and may trigger a failed-terminal
+publication attempt before being re-raised. A visible failed terminal whose
+final parent fsync is unproved causes a best-effort attempt to attach its
+terminal identity and durability warning to that original exception; hard
+crash or `BaseException` is not reclassified as an abort.
 
 The target, authorization, start, and scientific payload fields are related by
 an explicit closed table of canonical byte-equality constraints. Independently
-well-formed digests are insufficient. A future verifier-established
-authoritative execution start without a terminal is `started_unresolved`, not
-inferred aborted. It cannot be retried, replayed, or used for D8. It remains
-unresolved until an append-only finalization binds both the start and external
-abort evidence; a hard crash cannot publish an in-process failure record.
+well-formed digests are insufficient. A visible structural start without a
+terminal blocks retry, replay, and D8, but the bytes alone do not establish
+the named `started_unresolved` state. Only a future official reauthentication
+of the exact authority evidence and durable start could assign that lifecycle
+interpretation. A hard crash cannot publish an in-process failure record.
 
 The external-abort mechanics now bind that path to a canonical Ed25519
 observer-plus-verifier envelope in the closed failed-terminal inventory. The
 integrated operation verifies the two signatures against explicit runtime
-pins, performs one fixed live revalidation of the exact prefix, terminal path,
-parent identity, and absence state, derives the finalization/outcome/manifest/
-consumption chain internally, consumes the witness value, publishes once, and
-strictly reloads. Reload can independently reauthenticate the exact visible
+pins after atomically consuming both callback entry and prepared-terminal
+publication. It performs one fixed live revalidation of the exact prefix,
+terminal path, parent identity, and absence state, derives the
+finalization/outcome/manifest/consumption chain internally, consumes the
+witness value, publishes once, and strictly reloads. Reload can independently
+reauthenticate the exact visible
 terminal to the supplied pins. This is signature authentication relative to
 those pins only: pin provenance, official trust-root authority, wall-clock
 freshness, authoritative-start issuance, execution observation, scientific
 eligibility, retry/replay authority, D7, and D8 remain false.
+The finalizer is typed to `D7LoadedEvidenceOnlyPrefix` and explicitly rejects
+the item-20 `D7LoadedAuthoritativeStartTransaction`; it therefore cannot close
+the new structural-start lane. Strict verification-evidence parsing and
+descriptor/start semantic rejoin are implemented, but have no official
+descriptor instance to exercise. A real temporary-Git/runtime end-to-end
+qualification and authoritative-start-compatible external-abort integration
+remain required before the first official invocation.
+Structural reload preserves, but does not recompute or independently
+reauthenticate, the repository-HEAD, canonical-origin, source-tree,
+dependency-set, callable, and process observation digests. Terminal lineage
+binds the exact evidence bytes only.
 
 The future target itself remains exactly Level 0 and carries the closed
 all-false local authority vector. Admission, launch, result, and D8 authority
 are established only by later exact typed joins; they cannot be nested into or
 inferred from the target record.
 
-Only after the lifecycle and its result, failed-attempt, terminal, and runner
-code are final may a later receipt close the exact current execution source
-and runtime. C2 cannot do that: it closes only the historical C1 Git source
-set and covers none of these later surfaces. A later seed-bearing target must
+Now that the lifecycle, result, failed-attempt, terminal, runner, and fused
+mechanics are final, item 21 must close the exact-current execution source and
+runtime with newly reviewed artifacts. C2 cannot do that: it closes only the
+historical C1 Git source set and covers none of these later surfaces. A later seed-bearing target must
 bind that new receipt, exactly two unique, sorted, nonnegative signed-int64
 seeds, rejection of every development and parent selection seed, the
 `confirmation-seed-slot-00` and `confirmation-seed-slot-01` mapping, the
@@ -447,13 +484,32 @@ to test without claiming that the records came from trusted issuers. This is a
 newly exposed prerequisite, not an amendment to the meaning or historical
 status of C1, C2, D6, or earlier persisted attempts.
 
-Roadmap item 19 is now mechanics-complete. The structural terminal, typed
+Roadmap items 19 and 20 are now mechanics-complete. The structural terminal, typed
 primary-only runner handoff, two-signature witness inventory member, and
 integrated pin-relative external-abort publish/reload path exist only as
-deep-internal surfaces. They do not provide the missing ownership issuer,
-authoritative trust-root provenance, wall-clock freshness, official supplier
-or seeds, fused start, official executor/aggregation, observed execution,
-scientific eligibility, D7, or D8.
+deep-internal surfaces. The fused path is the ownership issuer only within one
+exact same-call transition rooted in a live canonical `origin/main`
+observation. It adds a closed Git inventory, declared source/runtime plus
+callable/process observation matching, a repository-disjoint physical store
+proven from descriptor-relative device/inode ancestry rather than path
+spelling, two-pass absence checks, a closed structurally named
+authoritative-start transaction, and at most one callback. Here
+“source/runtime” is only the declared surface:
+tracked `src/spirallens/**`, `pyproject.toml`, the required runtime lock,
+installed distribution names/versions, interpreter executable bytes, producer
+source/code identity, and selected process-envelope fields. Installed package
+files, loaded native libraries, mutable module globals, callable defaults or
+closures, unrecorded environment state, model state, and data state are not
+closed. The structural start loader alone grants no
+authority and does not establish `started_unresolved`; hard exit, unproved
+start-parent durability, post-start drift, or success/failure terminal
+publication error may leave those start bytes visible without a terminal. The
+fused path makes at most one terminal-publication attempt, not a terminal
+durability guarantee. It does not provide signed trust-root provenance,
+wall-clock freshness, an
+official descriptor or invocation, official supplier or seeds, official
+executor/aggregation, an execution-observation receipt, scientific
+eligibility, D7, or D8.
 
 The reviewed successor order is:
 
@@ -462,17 +518,22 @@ The reviewed successor order is:
 2. retain the implemented terminal, authenticated-witness-relative-to-pins,
    and typed runner mechanics without invoking the official supplier or
    performing an official execution;
-3. next implement one fused verify-and-exclusive-start operation that reopens
-   the authoritative target, launch intent, exact source/runtime closure,
-   execution identity, physical store/lane, and absence state and transitions
-   directly into the start claim. It must not serialize, return, cache, or
-   accept a reusable authorization token;
-4. after those exact code surfaces are final, issue the current
-   execution-source/runtime closure and reviewed family admission;
+3. retain the implemented fused verify-and-exclusive-start mechanics without
+   creating an official descriptor or officially invoking them; they serialize,
+   return, cache, and accept no reusable authorization token;
+4. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
+   official producer and exact aggregation, issue the exact-current source and
+   runtime artifacts, and complete reviewed family admission plus seed-free
+   readiness;
 5. acquire the seed-supply claim, invoke the supplier once, atomically publish
    the seed-bearing full design and target, commit the freeze, and only then
-   persist launch intent; and
-6. invoke the fused start operation.
+   persist launch intent; execute item 23's separate descriptive result without
+   changing any D7 design byte; and
+6. before item 24, create and commit the closed nine-member fused descriptor
+   and pass strict verification-evidence replay/rejoin, temporary Git/runtime
+   end-to-end validation, and authoritative-start-compatible external-abort
+   integration. Item 24 is the first official fused invocation and must yield
+   the exact terminal outcome before isolated byte replay can qualify.
 
 Evidence envelopes cannot be promoted in place. Official seeds, concrete
 replay target, attempt instances, admission, full-design freeze, no-overwrite
@@ -502,6 +563,13 @@ runtime_and_transitive_closure_unattested
 current_source_compatibility_not_verified
 current_execution_source_runtime_closure_absent
 terminal_witness_runner_mechanics_implemented_non_authorizing
-fused_verify_and_exclusive_start_absent
+fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
+canonical_d7_launch_descriptor_absent
+d7_runtime_lock_absent
+official_authoritative_start_instance_absent
+official_d7_run_absent
+strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised
+temporary_git_runtime_end_to_end_validation_pending
+authoritative_start_external_abort_integration_pending
 official_executor_and_aggregation_absent
 ```

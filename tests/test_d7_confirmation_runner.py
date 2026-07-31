@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import pickle
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -38,6 +39,11 @@ def _ownership(
         full_inventory_sha256=full_inventory_sha256,
         aggregation_sha256=aggregation_sha256,
         result_schema_sha256=result_schema_sha256,
+        authoritative_start_manifest_sha256=_h("authoritative-start-manifest"),
+        authoritative_start_directory_identity_sha256=_h(
+            "authoritative-start-directory"
+        ),
+        requires_authoritative_start=False,
         _factory_token=runner._POST_START_OWNERSHIP_FACTORY_TOKEN,
     )
 
@@ -62,6 +68,49 @@ def _attached_failure(error: BaseException) -> runner.D7PreparedFailedTerminal:
     value = getattr(error, runner.D7_PREPARED_FAILED_TERMINAL_ATTRIBUTE)
     assert type(value) is runner.D7PreparedFailedTerminal
     return value
+
+
+def test_post_start_ownership_is_consumed_before_sequential_reuse(
+    valid_bundle: component_fixtures._Bundle,
+) -> None:
+    ownership = _ownership()
+    calls = 0
+
+    def producer() -> runner.D7ScientificProducerOutput:
+        nonlocal calls
+        calls += 1
+        return _producer_output(valid_bundle)
+
+    runner.prepare_d7_post_start_terminal(ownership, producer)
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        runner.prepare_d7_post_start_terminal(ownership, producer)
+    assert calls == 1
+
+
+def test_post_start_ownership_allows_one_concurrent_callback_entry(
+    valid_bundle: component_fixtures._Bundle,
+) -> None:
+    ownership = _ownership()
+    calls = 0
+
+    def producer() -> runner.D7ScientificProducerOutput:
+        nonlocal calls
+        calls += 1
+        return _producer_output(valid_bundle)
+
+    def invoke() -> str:
+        try:
+            runner.prepare_d7_post_start_terminal(ownership, producer)
+        except QualificationContractError as error:
+            assert "already consumed" in str(error)
+            return "rejected"
+        return "entered"
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        outcomes = tuple(pool.map(lambda _index: invoke(), range(8)))
+    assert outcomes.count("entered") == 1
+    assert outcomes.count("rejected") == 7
+    assert calls == 1
 
 
 def test_zero_argument_producer_prepares_validated_scientific_terminal(
@@ -315,6 +364,11 @@ def test_private_ownership_is_prefix_validated_and_nonserializable() -> None:
             full_inventory_sha256=component_fixtures._INVENTORY,
             aggregation_sha256=component_fixtures._AGGREGATION,
             result_schema_sha256=(r.D7_SCIENTIFIC_RESULT_IMPLEMENTATION_SCHEMA_SHA256),
+            authoritative_start_manifest_sha256=_h("authoritative-start-manifest"),
+            authoritative_start_directory_identity_sha256=_h(
+                "authoritative-start-directory"
+            ),
+            requires_authoritative_start=False,
             _factory_token=object(),
         )
 
@@ -331,6 +385,11 @@ def test_private_ownership_is_prefix_validated_and_nonserializable() -> None:
             full_inventory_sha256=component_fixtures._INVENTORY,
             aggregation_sha256=component_fixtures._AGGREGATION,
             result_schema_sha256=(r.D7_SCIENTIFIC_RESULT_IMPLEMENTATION_SCHEMA_SHA256),
+            authoritative_start_manifest_sha256=_h("authoritative-start-manifest"),
+            authoritative_start_directory_identity_sha256=_h(
+                "authoritative-start-directory"
+            ),
+            requires_authoritative_start=False,
             _factory_token=runner._POST_START_OWNERSHIP_FACTORY_TOKEN,
         )
 

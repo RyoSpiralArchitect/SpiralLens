@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, and typed post-start runner mechanics complete roadmap item 19 without an official instance or run; runtime-pin provenance, authoritative target/start issuance, admission, freeze, official seeds, fused exclusive start, official exact execution/aggregation, replay, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until the operational surfaces are final |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; exact-current source/runtime closure, reviewed admission/readiness, runtime-lock artifact, authoritative target/freeze/intent instances, official seeds, official exact execution/aggregation, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -732,7 +732,7 @@ explicitly stated otherwise.
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
 | Instrument refinement indefinitely postpones a claim-bearing run | Freeze a finite M1 revision/resource budget and transition rule; advance when all gates pass, stop `insufficient` when qualification does not, and treat an M2 zero-candidate run as a qualified null only inside the calibrated sensitivity region |
-| A caller record or serialized token masquerades as launch authority | Treat canonical bytes as inputs only; derive authority inside one fused verify-and-exclusive-start operation, emit no reusable capability, and reobserve exact runtime, physical identity, and absence at the transition |
+| A caller record or serialized token masquerades as launch authority | Treat canonical bytes as inputs only; derive the same-call transition inside one fused verify-and-exclusive-start operation, emit no reusable capability, and reobserve the declared source/runtime surface, physical identity, and absence at the transition |
 
 ## 11. Immediate next plan
 
@@ -874,11 +874,13 @@ below:
     The hash dependency is acyclic: the manifest binds the typed outcome, and
     consumption binds the manifest. Scientific `pass`, `fail`, and
     `insufficient` remain results; infrastructure failure is separate and
-    cannot be used to reclassify a scientific outcome. The future
-    authoritative start binds an external execution identity, and an
-    authoritative start without terminal remains `started_unresolved` unless a
-    later verifier establishes a witness for that exact start and identity.
-    The current caller-supplied start record plus terminal absence is only
+    cannot be used to reclassify a scientific outcome. The contract reserves
+    an external execution identity for later start authority, but neither the
+    evidence-only prefix nor the item-20 structural-start bytes establish
+    `started_unresolved`. A visible structural start without a terminal blocks
+    retry; only future official reauthentication of its exact authority
+    evidence and durable start could establish that named lifecycle state.
+    The caller-supplied start record plus terminal absence is only
     `caller_supplied_start_record_present_terminal_absent`; every terminal
     entry is `terminal_path_present_unverified`. It establishes neither
     execution nor `started_unresolved`, and isolated replay is rejected before
@@ -930,7 +932,8 @@ below:
     descriptor-drift checks fail closed. The primary-only typed runner rejoins
     the target projection and accepts only one zero-argument scientific
     producer callback. The external path persists a two-signature Ed25519
-    observer/verifier envelope in the failed-terminal inventory and performs
+    observer/verifier envelope in the failed-terminal inventory, atomically
+    consumes callback entry plus prepared-terminal publication, and performs
     verify → fixed live revalidation → record derivation → no-replace publish
     → strict reload. Authentication is relative only to explicitly supplied
     runtime pins: trust-root provenance, official authority, wall-clock
@@ -938,16 +941,47 @@ below:
     eligibility, retry/replay, D7, and D8 are not established. The official
     supplier was not invoked, no seed was issued, and no official exact
     executor/aggregation or execution was introduced;
-20. implement one fused verify-and-exclusive-start operation. It must reopen
-    and authenticate the exact target, launch intent, source/runtime closure,
-    admission, execution identity, and physical store/lane; live-reobserve
-    identity and output/terminal absence; and transition directly into the
-    exclusive start. It must not serialize, return, cache, or accept a reusable
-    authorization capability or caller token;
-21. only after those execution surfaces are final, issue an exact current
-    execution-source/runtime receipt, complete reviewed family admission, and
-    establish seed-free readiness. C2 cannot satisfy this item, and no seed is
-    supplied here;
+20. implement one fused verify-and-exclusive-start operation —
+    **implemented as deep-internal mechanics without an official invocation**.
+    The only operation accepts a raw current-HEAD descriptor path and one
+    zero-argument producer. It derives the Git root and current HEAD, reopens a
+    closed nine-member inventory, rejoins its separately persisted records to
+    the launch bundle, requires a clean canonical `origin/main`, verifies
+    strict source → freeze → authorization → HEAD ancestry, matches the closed
+    declared source tree and declared runtime/callable/process observation
+    surfaces,
+    reobserves a physical store whose bidirectional tree disjointness from the
+    repository is proved by descriptor-relative device/inode ancestry, plus
+    output/terminal absence,
+    and atomically publishes a dedicated, structurally named
+    authoritative-start transaction before entering the producer. Its strict
+    structural loader alone grants no authority and does not establish
+    `started_unresolved`. The fused call then repeats the descriptor, remote,
+    runtime, physical, absence, and start-directory checks; any drift leaves
+    the visible start consumed without callback entry. The private ownership
+    handoff is one-shot and consumed before callback invocation; every exit
+    after its construction invalidates both callback entry and terminal
+    publication, including failure before runner dispatch. The operation
+    accepts and returns no authorization token, ownership object, seed,
+    supplier, expected digest, preverified record, or caller-selected trust
+    root. This is an honest-local-process protocol rooted in live Git transport
+    equality; it is not resistance to a hostile local operator, trust-root
+    signature proof, an official start instance, or a scientific result. The
+    declared surface covers tracked `src/spirallens/**`, `pyproject.toml`, the
+    required runtime lock, installed distribution names/versions, interpreter
+    executable bytes, producer source/code identity, and selected process
+    fields; it does not close installed package files, loaded native libraries,
+    mutable module globals, callable defaults or closures, unrecorded
+    environment state, model state, or data state. The operation makes at most
+    one terminal-publication attempt. Hard exit or `BaseException`, post-start
+    drift, unproved start-parent fsync, or success/failure publication error can
+    leave a visible structural start with no terminal. Item-19 external-abort
+    finalization remains evidence-only and cannot accept this start type;
+21. only after those execution surfaces are final, add and freeze
+    `requirements-d7-runtime-lock.txt`, finalize the exact official producer
+    and aggregation, issue the exact-current source/runtime artifacts, complete
+    reviewed family admission, and establish seed-free readiness. C2 cannot
+    satisfy this item, and no seed is supplied here;
 22. acquire the exclusive seed-supply claim, invoke the supplier once,
     atomically publish the exact seed-bearing full design and replay target,
     then commit their freeze receipt before launch intent. A claim without
@@ -956,11 +990,18 @@ below:
 23. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-24. invoke the fused verify-and-exclusive-start operation, run the admitted
-    family without overrides or post-selection exclusions, publish exactly one
-    terminal outcome, and require complete isolated byte-identical replay
-    before setting any scope-specific D7/D8 status. Same-family new seeds
-    remain replication and cannot satisfy this item;
+24. before the first official fused invocation, create and commit the closed
+    nine-member descriptor and pass strict verification-evidence replay/rejoin,
+    recognizing that structural replay preserves but does not recompute or
+    independently reauthenticate its live-observation digests and that terminal
+    lineage binds the evidence bytes only; pass temporary Git/runtime end-to-end
+    validation and authoritative-start-compatible external-abort integration.
+    Then invoke the fused
+    verify-and-exclusive-start operation, run the admitted family without
+    overrides or post-selection exclusions, require one exact terminal outcome,
+    and require complete isolated byte-identical replay before setting any
+    scope-specific D7/D8 status. Same-family new seeds remain replication and
+    cannot satisfy this item;
 25. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
@@ -1039,9 +1080,9 @@ This library slice adds, without changing that generic behavior:
   reconstructed only after the pinned C2 history is reverified. They define a
   future content-addressed, attempt-independent target and a separate
   append-only attempt lineage without persisting either instance, exposing a
-  seed supplier, or granting authority. Because C2 is historical-only, a later
-  exact current execution-source/runtime closure must follow the completed
-  lifecycle, result, terminal, and runner code.
+  seed supplier, or granting authority. Because C2 is historical-only, item
+  21's exact-current execution-source/runtime artifacts remain absent and must
+  follow the completed lifecycle, result, terminal, runner, and fused mechanics.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1114,18 +1155,43 @@ deep-internal terminal/witness/runner mechanics: a closed atomic structural
 terminal with descriptor-relative no-replace publication and strict reload; a
 primary-only typed post-start handoff with target-projection validation; and a
 persisted two-signature Ed25519 observer/verifier witness whose integrated
-external-abort path verifies, live-revalidates fixed coordinates, derives the
-terminal chain, publishes once, and strictly reloads. Signature
-authentication is only relative to explicit runtime pins. There is no
-trust-root provenance, wall-clock freshness, private-ownership issuer,
-authoritative target/store loader, fused start, replay comparator, official
-seed, official executor/aggregator, execution observation, scientific
-eligibility, or official record instance. Item 20, one fused
-verify-and-exclusive-start operation, is therefore next. After that surface is
-final, a new exact current execution-source/runtime closure and reviewed
-admission are required; C2 cannot supply them. Only afterward may
+external-abort path atomically consumes callback/publication entry, verifies,
+live-revalidates fixed coordinates, derives the terminal chain, publishes
+once, and strictly reloads. Signature
+authentication is only relative to explicit runtime pins. Roadmap item 20 now
+adds a separate deep-internal same-call path: a raw current-HEAD descriptor is
+reopened as a closed inventory, bound to live canonical `origin/main`, declared
+source/runtime and callable/process observation surfaces, a tree-disjoint physical
+store, two absence passes, a durable no-replace structurally named
+authoritative-start transaction, and one-use callback ownership. The declared
+surface covers tracked source and lock bytes, installed distribution
+names/versions, interpreter executable bytes, producer source/code identity,
+and selected process fields; package files, loaded native libraries, mutable
+module globals, callable defaults/closures, unrecorded environment, model
+state, and data state remain unclosed. Success or an ordinary handled failure
+causes at most one terminal-publication attempt; publication failure, hard exit
+or `BaseException`, unproved start-parent fsync, or post-start drift can leave
+the start visible with no terminal. The start bytes and their strict structural loader
+alone grant no authority and do not establish `started_unresolved`; only a
+future official same-call invocation plus its verified transition could
+justify that lifecycle interpretation. The path emits no reusable
+authorization capability and a post-start mismatch enters no callback. This
+gives the private ownership type an issuer only inside that
+exact call; structural loaders still grant no authority. There is no official
+descriptor, runtime lock, exact-current closure, reviewed admission/readiness,
+target/freeze/intent instance, replay comparator, official seed, official
+executor/aggregator, execution-observation receipt, scientific eligibility,
+or official record instance. The item-19 evidence-only finalizer cannot accept
+the item-20 structural-start type. Item 21 is therefore next: add and freeze
+the runtime lock, name the official producer and exact aggregation, issue new
+exact-current source/runtime artifacts, and complete readiness plus reviewed
+admission; C2 cannot supply them. Only afterward may
 the supplier be invoked once, target/full design be published and frozen,
-launch intent be persisted, and the fused start be invoked. Lifecycle and
+launch intent be persisted, and the nine-member descriptor be created and
+committed. Strict verification-evidence replay/rejoin, temporary Git/runtime
+end-to-end validation, and authoritative-start-compatible external-abort
+integration must pass before item 24 becomes the first official fused
+invocation. Lifecycle and
 terminal work keep the replay target separate from the attempt envelope and
 create no placeholder result. The current
 four-case generator, C1 design, rebinding record, contract specifications,

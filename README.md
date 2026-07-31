@@ -470,12 +470,14 @@ then-current execution source and runtime remains mandatory after the
 lifecycle, result, terminal, and runner code are final; the historical C2
 receipt does not close any of those later surfaces.
 
-An authoritative future execution-start operation must rejoin the observed runtime to the
-target's frozen source/runtime receipt, bind an external execution identity,
-and recheck namespace absence. The persistence writer reobserves the declared
-parent device/inode and absent output/terminal leaf, but it can only join the
-already supplied source/runtime and execution-identity digests; it cannot
-establish their authority. Every scientific payload must bind the exact target and
+The evidence-only persistence writer reobserves the declared parent
+device/inode and absent output/terminal leaf, but it can only join the already
+supplied source/runtime and execution-identity digests; it cannot establish
+their authority. The separate deep-internal item-20 operation now implements
+the same-call mechanics that reopen the descriptor, match the declared live
+observation surfaces, publish a structural start, revalidate, and enter at
+most one producer callback. Those mechanics have not been officially invoked.
+Every scientific payload must bind the exact target and
 full inventory. Isolated replay derives its role from an already consumed,
 passed primary terminal; a caller label is insufficient. A complete isolated
 attempt, whether scientific or failed, is accepted only by a combined
@@ -485,14 +487,17 @@ chains must bind the same store identity. Across primary and replay, the five
 execution/intent/key/namespace/path identifiers and four absence-receipt
 digests must form disjoint sets. The schema-only
 outcome-to-manifest-to-consumption joins are an explicit closed table of
-canonical byte equalities, not independently named digests. In the future
-authoritative lifecycle, a verifier-established visible start without terminal
-is `started_unresolved`, never inferred aborted from elapsed time, process
-absence, or a caller assertion. It remains unresolved, with retry, replay, and
-D8 blocked, unless a later finalizer verifies an external witness bound to that
-exact start and execution identity. Pin-relative observer/verifier signature
-and terminal-finalization mechanics now exist, but no authoritative-start
-issuer or official trust-root provenance connects them to an official attempt.
+canonical byte equalities, not independently named digests. Structural start
+bytes alone do not establish the named `started_unresolved` lifecycle state:
+the strict authoritative-start loader explicitly reports
+`started_unresolved_established=false`. A visible structural start with no
+terminal blocks retry, but only a future official reauthentication of the
+exact authority evidence and durable start could establish that named state.
+The item-19 pin-relative external finalizer accepts only the evidence-only
+prefix type and explicitly does not accept the item-20 authoritative-start
+transaction, so it cannot finalize this new start lane. Pin-relative
+observer/verifier signature and terminal-finalization mechanics therefore
+remain evidence-only and provide no official trust-root provenance.
 Likewise, the six result-component payloads,
 authorization/pre-start absence receipts, failure evidence payload, and
 external-abort verification receipt now have deep-internal canonical byte
@@ -528,9 +533,10 @@ field remains false, and no supplier is invoked.
 
 The physical input fixes the `primary-confirmation` role and derives the exact
 attempt key from the canonical replay-target digest with the existing attempt
-record function. It binds normalized store, evidence-lane, output, and terminal
-paths; requires positive store/lane/parent device/inode coordinates; binds the
-lane parent to the store while requiring the lane identity to differ; and
+record function. Its `v0.2` physical record binds normalized store,
+authoritative-start-lane, output, and terminal paths; requires positive
+store/lane/parent device/inode coordinates; binds the lane parent to the store
+while requiring the lane identity to differ; and
 rejects both lexical and declared-physical-key aliases to the
 persistence-reserved lane, evidence, attempt-envelope, and chronology paths.
 These are still declared coordinates, not observations.
@@ -544,6 +550,59 @@ error, and rejoins only the supplied records. The loaded
 candidate's authority, admission, closure, live-filesystem, absence, freeze,
 and execution claims remain false.
 
+Roadmap item 20 now connects those inputs only inside one deep-internal,
+same-call transition. A raw descriptor path supplies no expected digest or
+trust token: the loader derives the Git root and current HEAD, reopens a closed
+nine-member inventory, checks every descriptor/member against its clean HEAD
+blob, rejoins the separately persisted records to the bundle, and requires the
+local `main` HEAD to equal a live observation of canonical `origin/main`.
+The operation matches a declared source/runtime observation surface: tracked
+`src/spirallens/**`, `pyproject.toml`, and the required runtime-lock blob and
+digest; installed distribution names and versions; the interpreter executable
+bytes; producer source/code identity; and selected process-envelope fields. It
+requires the attempt store and repository trees to be disjoint by
+descriptor-relative device/inode ancestry rather than path spelling,
+reobserves the store/lane and output/terminal absence twice, then publishes one
+closed `d7-authoritative-start-v0/` transaction with native no-replace rename
+and parent fsync before producer entry. After publication it repeats every
+declared live observation and strictly reloads the exact start directory.
+That reload strictly reparses the descriptor and verification evidence and
+rejoins the descriptor inventory plus attempt, target, intent,
+execution-identity, runtime-specification, and freeze bindings. No official
+descriptor exists to exercise that replay path yet. Repository-HEAD,
+canonical-origin, source-tree, dependency-set, callable, and process
+observation digests are preserved in the evidence bytes but are not recomputed
+or independently reauthenticated by this structural reload. Terminal lineage
+binds those exact evidence bytes, not the truth of their live observations.
+Drift or unproved durability leaves the visible start consumed and enters no
+producer. A private ownership handoff is consumed before the sole callback and
+is never accepted, serialized, cached, or returned. Every exit after ownership
+construction atomically invalidates both callback entry and terminal
+publication, including a failure before runner dispatch.
+
+This is not hermetic runtime closure. It does not close installed package
+files, loaded native libraries, mutable module globals, callable defaults or
+closures, environment state outside the recorded process fields, model state,
+or data state. The fused mechanics make at most one terminal-publication
+attempt, not a guarantee that a terminal becomes visible. A handled ordinary
+exception may attempt a failed terminal and is re-raised; if that terminal is
+visible but its final parent fsync is unproved, the fused path makes a
+best-effort attempt to attach its identity and durability warning to the
+original exception as a note. Scientific-success
+publication, failed-terminal publication, a hard exit or `BaseException`,
+post-start drift, unproved start-parent fsync, or publication failure can leave
+a visible structural start with no terminal.
+
+That positive boundary is deliberately narrow: it binds one transition
+to canonical repository state under the live Git-transport and honest-local-
+process assumptions. It is not a signed trust-root proof, hostile-local-
+mutation defense, public API, reusable capability, official descriptor,
+official start, execution observation receipt, or scientific claim. No
+`requirements-d7-runtime-lock.txt`, exact-current closure, reviewed admission,
+seed-free readiness, official target/freeze/intent instance, seed, or run is
+present yet. The source/runtime lock is intentionally required by the code so
+an invocation fails closed until roadmap item 21 creates the reviewed inputs.
+
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
 matching digest, serialized “capability,” or token cannot become authority by
@@ -554,7 +613,7 @@ supplier chronology or seed secrecy. No reusable authorization object is
 issued.
 
 Family admission, full-design freeze, official seeds, authoritative
-target-bound lifecycle instances, launch/execution capability,
+target-bound lifecycle instances, an official fused invocation,
 official result/failure publication, authoritative terminal publication,
 official abort finalization, an official runner, and replay comparison remain
 absent. The local prefix store is a
@@ -574,7 +633,7 @@ an independent confirmation or replay has occurred. Global
 label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those operational surfaces remain deferred until a
 concrete target, final-code source/runtime closure, authoritative ownership and
-trust-root provenance, fused start, official terminal lineage, and
+trust-root provenance, an official fused invocation, official terminal lineage, and
 isolated-replay receipts exist.
 
 The recorded negative-access facts, including the absence of admitted
@@ -586,11 +645,13 @@ store must make that history append-only. In the historical D0-D5 selection
 lifecycle, a consumed or failed selection is not retried under the same
 protocol and seed family, and its older process-kill recovery remains
 selection-specific. D7 deliberately does not inherit a manual
-`terminal-aborted` inference: a valid D7 claim and start without a complete
-terminal remains `started_unresolved`. Preserve it for forensic inspection;
-the implemented pin-relative external-witness mechanics cannot be used as an
-official finalizer until authoritative ownership and trust-root provenance
-exist, and a development runner must not be invoked again.
+`terminal-aborted` inference. A visible structural start without a complete
+terminal forbids another runner invocation, but the current loader does not
+establish `started_unresolved`. Preserve it for forensic inspection until a
+future official reauthentication can interpret it. The implemented
+pin-relative external-witness finalizer is typed only for the evidence-only
+prefix and cannot consume the item-20 authoritative-start transaction;
+authoritative-start-compatible external-abort integration remains open.
 
 Both the original and successor-aware source receipts remain Level-0,
 source-only checks. They do not attest in-process callable identity,
@@ -1057,7 +1118,8 @@ to become a general library.
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
 - **Implemented deep-internal contract, prefix-persistence,
-  authority-prerequisite, and item-19 terminal/witness/runner mechanics; step
+  authority-prerequisite, and item-19/item-20 terminal, witness, runner, and
+  fused-start mechanics; step
   18 authority remains partial — replay target and attempt envelope:** two
   canonical, unpersisted
   internal specifications keep the future immutable seed-bearing replay target
@@ -1068,10 +1130,11 @@ to become a general library.
   identity flow is acyclic: outcome → manifest → consumption. Scientific
   `pass`, `fail`, and `insufficient` remain results; infrastructure failure
   remains a separate non-scientific terminal variant, and no placeholder
-  result may stand in for either. A future verifier-established authoritative
-  start binds an external execution identity and remains
-  `started_unresolved` without a terminal unless a future verified external
-  witness supports finalization. After final-code
+  result may stand in for either. The item-20 structural start binds an
+  external execution identity, but its bytes and strict loader grant no
+  authority and explicitly do not establish `started_unresolved`. The item-19
+  external finalizer remains evidence-only and cannot consume that transaction.
+  After final-code
   source/runtime closure and reviewed family admission, a future seed-supply
   lifecycle must acquire its exclusive claim before the single supplier
   invocation. It then atomically publishes the seed-bearing full design and
@@ -1080,17 +1143,17 @@ to become a general library.
   supply is aborted and cannot be retried; target absence alone is not evidence
   that the supplier was never invoked. The future target remains exactly Level
   0 and its local authority vector remains all-false. No concrete target,
-  official or authoritative attempt instance, official seed, execution
-  capability, official runner/terminal/finalizer, or replay comparator is
-  created here. The separate local writer now persists and strictly reloads
+  official or authoritative attempt instance, official seed, reusable
+  execution capability, official runner/terminal/finalizer, or replay
+  comparator is created here. The separate local writer now persists and strictly reloads
   the four-stage caller-supplied Level-0 primary prefix as chained,
   false-authority envelopes in a dedicated evidence-only lane without
   replacement. It reobserves authorization/pre-start absence coordinates, but
   grants no authority; a start record plus terminal absence is only
   `caller_supplied_start_record_present_terminal_absent`, while any terminal
   entry is unverified presence. It cannot establish execution,
-  `started_unresolved`, or isolated-replay provenance. Exact closure of the final current execution source and
-  runtime follows only after those operational code surfaces are complete.
+  `started_unresolved`, or isolated-replay provenance. Exact-current execution
+  source/runtime artifacts must now follow the completed operational mechanics.
   Deep-internal canonical component, absence-receipt, evidence-payload, and
   verification-receipt byte schemas now reject arbitrary or noncanonical
   caller bytes and perform pure structural joins. They do not load the frozen
@@ -1132,21 +1195,40 @@ to become a general library.
   runtime pins, performs its fixed live prefix/terminal-coordinate
   revalidation, derives the finalization/failed-attempt/manifest/consumption
   records, publishes with no replacement, and strictly reloads the exact
-  visible terminal. A second path strictly reloads and reauthenticates an
+  visible terminal. It atomically consumes both callback entry and
+  prepared-terminal publication before verification. A second path strictly
+  reloads and reauthenticates an
   existing terminal to the same explicit pins. This proves signature
   authentication only relative to caller-supplied runtime pins. It proves no
   trust-root provenance, official authority, wall-clock freshness,
-  authoritative start, or observed execution. The private post-start
-  ownership type has deliberately no issuer in this change. Full-design
-  closure, admission, freeze, official seeds, the supplier, official exact
-  execution/aggregation, scientific eligibility, D7, and D8 all remain
-  incomplete or `not_run`. The operational order is now explicit: treat the
-  terminal/witness/runner mechanics as implemented without an official run;
-  next implement a fused verify-and-exclusive-start operation with no reusable
-  authorization token; close the exact final source/runtime and family
-  admission; invoke the seed
-  supplier once and atomically publish target/full design before committing
-  freeze and launch intent; then invoke the fused start. Execute without
+  authoritative start, or observed execution. Roadmap item 20 now gives the
+  private post-start ownership type exactly one issuer inside a same-call
+  current-HEAD/canonical-origin/declared-runtime/physical revalidation path. It
+  publishes a no-replace authoritative-start directory, requires the
+  start-parent fsync to be proved, repeats all observations, consumes ownership
+  before callback, and never exposes a
+  reusable token. Its structural return still grants no authority or
+  scientific eligibility. The fused runtime check covers only the declared
+  tracked source and lock, installed distribution name/version set,
+  interpreter executable, callable identity, and recorded process envelope;
+  package files, loaded native libraries, module globals, defaults/closures,
+  unrecorded environment, model state, and data state remain outside closure.
+  It makes at most one terminal-publication attempt; hard exit, post-start
+  drift, unproved start-parent fsync, or success/failure publication error can
+  leave a visible start without a terminal. Exact-current artifacts,
+  admission, readiness, the runtime lock, target/freeze/intent instances,
+  official seeds, the supplier, official exact execution/aggregation, D7, and
+  D8 all remain incomplete or `not_run`. The operational order is now
+  explicit: retain item-19 and item-20 mechanics without an official run; in
+  item 21 add and freeze `requirements-d7-runtime-lock.txt`, name the official
+  producer and exact aggregation, issue exact-current source/runtime artifacts,
+  and complete seed-free readiness plus reviewed family admission. Then invoke
+  the seed supplier once and atomically publish target/full design before
+  committing freeze and launch intent. Before item 24, create and commit the
+  closed nine-member fused descriptor and pass strict verification-evidence
+  replay/rejoin, temporary-Git/runtime end-to-end, and authoritative-start-
+  compatible external-abort integration checks. Item 24 is the first official
+  fused invocation. Execute without
   overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for

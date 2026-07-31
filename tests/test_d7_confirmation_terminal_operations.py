@@ -9,6 +9,7 @@ import pytest
 import spirallens
 import test_d7_confirmation_attempt_evidence as evidence_fixtures
 import test_d7_confirmation_attempt_persistence as prefix_fixtures
+import test_d7_confirmation_authoritative_start_persistence as start_fixtures
 import test_d7_confirmation_result_components as component_fixtures
 from spirallens import qualification
 from spirallens.qualification import confirmation_attempt_records as r
@@ -23,7 +24,11 @@ def component_bundle() -> component_fixtures._Bundle:
     return component_fixtures.bundle.__wrapped__()
 
 
-def _ownership(prefix: object) -> runner._D7PostStartOwnership:
+def _ownership(
+    prefix: object,
+    *,
+    requires_authoritative_start: bool = False,
+) -> runner._D7PostStartOwnership:
     return runner._D7PostStartOwnership(
         prefix.declaration,  # type: ignore[attr-defined]
         prefix.authorization,  # type: ignore[attr-defined]
@@ -32,6 +37,9 @@ def _ownership(prefix: object) -> runner._D7PostStartOwnership:
         full_inventory_sha256=component_fixtures._INVENTORY,
         aggregation_sha256=component_fixtures._AGGREGATION,
         result_schema_sha256=(r.D7_SCIENTIFIC_RESULT_IMPLEMENTATION_SCHEMA_SHA256),
+        authoritative_start_manifest_sha256=("8" * 64),
+        authoritative_start_directory_identity_sha256=("9" * 64),
+        requires_authoritative_start=requires_authoritative_start,
         _factory_token=runner._POST_START_OWNERSHIP_FACTORY_TOKEN,
     )
 
@@ -76,15 +84,18 @@ def test_runner_scientific_handoff_publishes_one_typed_terminal(
     assert loaded.manifest.terminal_artifact_kind is (
         r.D7TerminalArtifactKind.SCIENTIFIC_RESULT
     )
+    assert loaded.manifest.authoritative_start_manifest_sha256 is None
+    assert loaded.manifest.authoritative_start_directory_identity_sha256 is None
+    assert loaded.manifest.authority_verification_evidence_sha256 is None
     assert loaded.authority_granted is False
-    with pytest.raises(QualificationContractError, match="replace existing"):
+    with pytest.raises(QualificationContractError, match="already consumed"):
         operations.persist_d7_prepared_terminal_no_replace(
             loaded_prefix,
             prepared,
         )
 
 
-def test_runner_failure_handoff_cannot_be_rebound_to_another_prefix(
+def test_wrong_same_kind_prefix_consumes_terminal_publication_ownership(
     tmp_path: Path,
 ) -> None:
     first_dir = tmp_path / "first"
@@ -113,12 +124,118 @@ def test_runner_failure_handoff_cannot_be_rebound_to_another_prefix(
             prepared,
         )
     assert not (second_dir / "primary-terminal").exists()
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        operations.persist_d7_prepared_terminal_no_replace(
+            first_loaded,
+            prepared,
+        )
+    assert not (first_dir / "primary-terminal").exists()
 
-    identity = operations.persist_d7_prepared_terminal_no_replace(
-        first_loaded,
-        prepared,
+
+def test_filesystem_reload_failure_cannot_be_retried(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    component_bundle: component_fixtures._Bundle,
+) -> None:
+    prefix = prefix_fixtures._prefix(tmp_path)
+    loaded_prefix = prefix_fixtures._persist(prefix)
+    prepared = runner.prepare_d7_post_start_terminal(
+        _ownership(prefix),
+        lambda: _producer_output(component_bundle),
     )
-    assert identity.terminal_artifact_kind is r.D7TerminalArtifactKind.FAILED_ATTEMPT
+    reload_calls = 0
+    original_reload = tp._strictly_reload_prefix
+
+    def fail_first_reload(loaded: object) -> object:
+        nonlocal reload_calls
+        reload_calls += 1
+        if reload_calls == 1:
+            raise QualificationContractError(
+                "simulated pre-publication filesystem reload failure"
+            )
+        return original_reload(loaded)
+
+    monkeypatch.setattr(tp, "_strictly_reload_prefix", fail_first_reload)
+
+    with pytest.raises(QualificationContractError, match="filesystem reload failure"):
+        operations.persist_d7_prepared_terminal_no_replace(
+            loaded_prefix,
+            prepared,
+        )
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        operations.persist_d7_prepared_terminal_no_replace(
+            loaded_prefix,
+            prepared,
+        )
+
+    assert reload_calls == 1
+    assert not (tmp_path / "primary-terminal").exists()
+
+
+def test_cross_lane_rejection_occurs_before_terminal_publication_consumption(
+    tmp_path: Path,
+    component_bundle: component_fixtures._Bundle,
+) -> None:
+    prefix = prefix_fixtures._prefix(tmp_path)
+    loaded_prefix = prefix_fixtures._persist(prefix)
+    ownership = _ownership(prefix, requires_authoritative_start=True)
+    prepared = runner.prepare_d7_post_start_terminal(
+        ownership,
+        lambda: _producer_output(component_bundle),
+    )
+
+    with pytest.raises(TypeError, match="kind differs"):
+        operations.persist_d7_prepared_terminal_no_replace(
+            loaded_prefix,
+            prepared,
+        )
+
+    ownership._consume_for_terminal_publication()
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        ownership._consume_for_terminal_publication()
+    assert not (tmp_path / "primary-terminal").exists()
+
+
+def test_authoritative_start_identity_mismatch_consumes_and_rejects_publication(
+    tmp_path: Path,
+    component_bundle: component_fixtures._Bundle,
+) -> None:
+    transaction = start_fixtures._transaction(tmp_path)
+    loaded_start = start_fixtures._persist(transaction)
+    ownership = runner._D7PostStartOwnership(
+        loaded_start.declaration,
+        loaded_start.authorization,
+        loaded_start.claim,
+        loaded_start.start,
+        full_inventory_sha256=component_fixtures._INVENTORY,
+        aggregation_sha256=component_fixtures._AGGREGATION,
+        result_schema_sha256=(r.D7_SCIENTIFIC_RESULT_IMPLEMENTATION_SCHEMA_SHA256),
+        authoritative_start_manifest_sha256=("0" * 64),
+        authoritative_start_directory_identity_sha256=(
+            loaded_start.directory_identity_sha256
+        ),
+        requires_authoritative_start=True,
+        _factory_token=runner._POST_START_OWNERSHIP_FACTORY_TOKEN,
+    )
+    prepared = runner.prepare_d7_post_start_terminal(
+        ownership,
+        lambda: _producer_output(component_bundle),
+    )
+
+    with pytest.raises(
+        QualificationContractError,
+        match="authoritative-start transaction",
+    ):
+        operations.persist_d7_prepared_terminal_no_replace(
+            loaded_start,
+            prepared,
+        )
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        operations.persist_d7_prepared_terminal_no_replace(
+            loaded_start,
+            prepared,
+        )
+    assert not Path(loaded_start.pre_start_terminal_receipt.subject_path).exists()
 
 
 def test_signed_external_abort_is_verified_derived_and_persisted_as_one_path(
@@ -152,6 +269,21 @@ def test_signed_external_abort_is_verified_derived_and_persisted_as_one_path(
     assert (
         authenticated.signed_witness_envelope_sha256 == signed.envelope.canonical_sha256
     )
+    callbacks = 0
+
+    def callback_after_external_terminal() -> object:
+        nonlocal callbacks
+        callbacks += 1
+        return object()
+
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        runner.prepare_d7_post_start_terminal(
+            ownership,
+            callback_after_external_terminal,  # type: ignore[arg-type]
+        )
+    with pytest.raises(QualificationContractError, match="already consumed"):
+        ownership._consume_for_terminal_publication()
+    assert callbacks == 0
     with pytest.raises(TypeError, match="requires its verifier"):
         replace(authenticated, _factory_token=object())
 

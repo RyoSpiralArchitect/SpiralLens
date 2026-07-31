@@ -131,7 +131,7 @@ class D7LoadedStructuralTerminalTransaction:
     """Strictly loaded structural terminal bytes with no authority semantics."""
 
     path: Path
-    prefix: p.D7LoadedEvidenceOnlyPrefix
+    prefix: object
     manifest: r.D7TerminalManifestRecord
     consumption: r.D7TerminalConsumptionRecord
     terminal_artifact: r.D7ScientificResultRecord | r.D7FailedAttemptRecord
@@ -154,8 +154,10 @@ class D7LoadedStructuralTerminalTransaction:
     def __post_init__(self) -> None:
         if not isinstance(self.path, Path) or not self.path.is_absolute():
             raise TypeError("path must be an absolute Path")
-        if type(self.prefix) is not p.D7LoadedEvidenceOnlyPrefix:
-            raise TypeError("prefix must be an exact D7LoadedEvidenceOnlyPrefix")
+        if not _is_supported_prefix(self.prefix):
+            raise TypeError(
+                "prefix must be an exact evidence-only or authoritative-start prefix"
+            )
         if type(self.manifest) is not r.D7TerminalManifestRecord:
             raise TypeError("manifest must be an exact D7TerminalManifestRecord")
         if type(self.consumption) is not r.D7TerminalConsumptionRecord:
@@ -200,60 +202,112 @@ class D7LoadedStructuralTerminalTransaction:
             p._nonnegative_int(getattr(self, name), name)
 
 
-def _strictly_reload_prefix(
-    loaded: p.D7LoadedEvidenceOnlyPrefix,
-) -> p.D7LoadedEvidenceOnlyPrefix:
-    if type(loaded) is not p.D7LoadedEvidenceOnlyPrefix:
-        raise TypeError("loaded_prefix must be an exact D7LoadedEvidenceOnlyPrefix")
-    reloaded = p.load_d7_evidence_only_prefix(
-        loaded.store_root,
-        attempt_key_sha256=loaded.declaration.attempt_key_sha256,
-        expected_store_identity_sha256=(
-            loaded.store_scope.declared_store_identity_sha256
-        ),
-        expected_declaration_sha256=loaded.declaration.canonical_sha256,
-        expected_authorization_sha256=loaded.authorization.canonical_sha256,
-        expected_claim_sha256=loaded.claim.canonical_sha256,
-        expected_start_sha256=loaded.start.canonical_sha256,
-        expected_declaration_envelope_sha256=(
-            loaded.declaration_envelope.canonical_sha256
-        ),
-        expected_authorization_envelope_sha256=(
-            loaded.authorization_envelope.canonical_sha256
-        ),
-        expected_claim_envelope_sha256=loaded.claim_envelope.canonical_sha256,
-        expected_start_envelope_sha256=loaded.start_envelope.canonical_sha256,
-    )
-    original_values = (
-        loaded.declaration,
-        loaded.authorization,
-        loaded.claim,
-        loaded.start,
-        loaded.authorization_output_receipt,
-        loaded.authorization_terminal_receipt,
-        loaded.pre_start_output_receipt,
-        loaded.pre_start_terminal_receipt,
-        loaded.store_scope.canonical_sha256,
-        loaded.declaration_envelope.canonical_sha256,
-        loaded.authorization_envelope.canonical_sha256,
-        loaded.claim_envelope.canonical_sha256,
-        loaded.start_envelope.canonical_sha256,
-    )
-    reloaded_values = (
-        reloaded.declaration,
-        reloaded.authorization,
-        reloaded.claim,
-        reloaded.start,
-        reloaded.authorization_output_receipt,
-        reloaded.authorization_terminal_receipt,
-        reloaded.pre_start_output_receipt,
-        reloaded.pre_start_terminal_receipt,
-        reloaded.store_scope.canonical_sha256,
-        reloaded.declaration_envelope.canonical_sha256,
-        reloaded.authorization_envelope.canonical_sha256,
-        reloaded.claim_envelope.canonical_sha256,
-        reloaded.start_envelope.canonical_sha256,
-    )
+def _authoritative_start_type() -> type[object]:
+    from . import confirmation_authoritative_start_persistence as authoritative
+
+    return authoritative.D7LoadedAuthoritativeStartTransaction
+
+
+def _is_supported_prefix(value: object) -> bool:
+    return type(value) in {
+        p.D7LoadedEvidenceOnlyPrefix,
+        _authoritative_start_type(),
+    }
+
+
+def _strictly_reload_prefix(loaded: object) -> object:
+    if type(loaded) is p.D7LoadedEvidenceOnlyPrefix:
+        reloaded = p.load_d7_evidence_only_prefix(
+            loaded.store_root,
+            attempt_key_sha256=loaded.declaration.attempt_key_sha256,
+            expected_store_identity_sha256=(
+                loaded.store_scope.declared_store_identity_sha256
+            ),
+            expected_declaration_sha256=loaded.declaration.canonical_sha256,
+            expected_authorization_sha256=loaded.authorization.canonical_sha256,
+            expected_claim_sha256=loaded.claim.canonical_sha256,
+            expected_start_sha256=loaded.start.canonical_sha256,
+            expected_declaration_envelope_sha256=(
+                loaded.declaration_envelope.canonical_sha256
+            ),
+            expected_authorization_envelope_sha256=(
+                loaded.authorization_envelope.canonical_sha256
+            ),
+            expected_claim_envelope_sha256=loaded.claim_envelope.canonical_sha256,
+            expected_start_envelope_sha256=loaded.start_envelope.canonical_sha256,
+        )
+        original_values = (
+            loaded.declaration,
+            loaded.authorization,
+            loaded.claim,
+            loaded.start,
+            loaded.authorization_output_receipt,
+            loaded.authorization_terminal_receipt,
+            loaded.pre_start_output_receipt,
+            loaded.pre_start_terminal_receipt,
+            loaded.store_scope.canonical_sha256,
+            loaded.declaration_envelope.canonical_sha256,
+            loaded.authorization_envelope.canonical_sha256,
+            loaded.claim_envelope.canonical_sha256,
+            loaded.start_envelope.canonical_sha256,
+        )
+        reloaded_values = (
+            reloaded.declaration,
+            reloaded.authorization,
+            reloaded.claim,
+            reloaded.start,
+            reloaded.authorization_output_receipt,
+            reloaded.authorization_terminal_receipt,
+            reloaded.pre_start_output_receipt,
+            reloaded.pre_start_terminal_receipt,
+            reloaded.store_scope.canonical_sha256,
+            reloaded.declaration_envelope.canonical_sha256,
+            reloaded.authorization_envelope.canonical_sha256,
+            reloaded.claim_envelope.canonical_sha256,
+            reloaded.start_envelope.canonical_sha256,
+        )
+    elif type(loaded) is _authoritative_start_type():
+        from . import confirmation_authoritative_start_persistence as authoritative
+
+        reloaded = authoritative.load_d7_authoritative_start_transaction(
+            loaded.store_root,
+            attempt_key_sha256=loaded.start.attempt_key_sha256,
+            expected_manifest_sha256=loaded.manifest.canonical_sha256,
+        )
+        original_values = (
+            loaded.declaration,
+            loaded.authorization,
+            loaded.claim,
+            loaded.start,
+            loaded.authorization_output_receipt,
+            loaded.authorization_terminal_receipt,
+            loaded.pre_start_output_receipt,
+            loaded.pre_start_terminal_receipt,
+            loaded.manifest.canonical_sha256,
+            loaded.directory_identity_sha256,
+            loaded.launch_authority_source_envelope_binding,
+            loaded.verification_evidence_binding,
+            dict(loaded.immutable_member_sources),
+        )
+        reloaded_values = (
+            reloaded.declaration,
+            reloaded.authorization,
+            reloaded.claim,
+            reloaded.start,
+            reloaded.authorization_output_receipt,
+            reloaded.authorization_terminal_receipt,
+            reloaded.pre_start_output_receipt,
+            reloaded.pre_start_terminal_receipt,
+            reloaded.manifest.canonical_sha256,
+            reloaded.directory_identity_sha256,
+            reloaded.launch_authority_source_envelope_binding,
+            reloaded.verification_evidence_binding,
+            dict(reloaded.immutable_member_sources),
+        )
+    else:
+        raise TypeError(
+            "loaded_prefix must be an exact evidence-only or authoritative-start prefix"
+        )
     if original_values != reloaded_values:
         raise QualificationContractError(
             "D7 persisted prefix changed before terminal transaction"
@@ -261,9 +315,7 @@ def _strictly_reload_prefix(
     return reloaded
 
 
-def _open_terminal_parent(
-    loaded: p.D7LoadedEvidenceOnlyPrefix,
-) -> tuple[p._DirectoryAnchor, str]:
+def _open_terminal_parent(loaded: object) -> tuple[p._DirectoryAnchor, str]:
     receipt = loaded.pre_start_terminal_receipt
     parent = p._open_real_directory(
         receipt.resolved_parent_realpath,
@@ -378,7 +430,7 @@ def _parse_record(
 
 
 def _validate_scientific_sources(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: object,
     sources: dict[str, bytes],
     manifest: r.D7TerminalManifestRecord,
     consumption: r.D7TerminalConsumptionRecord,
@@ -454,7 +506,7 @@ def _validate_scientific_sources(
 
 
 def _validate_failed_sources(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: object,
     sources: dict[str, bytes],
     manifest: r.D7TerminalManifestRecord,
     consumption: r.D7TerminalConsumptionRecord,
@@ -573,7 +625,7 @@ def _validate_failed_sources(
 
 
 def _validate_transaction_sources(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: object,
     immutable_member_sources: Mapping[str, bytes],
     manifest: r.D7TerminalManifestRecord,
     consumption: r.D7TerminalConsumptionRecord,
@@ -585,6 +637,23 @@ def _validate_transaction_sources(
         raise TypeError("manifest must be an exact D7TerminalManifestRecord")
     if type(consumption) is not r.D7TerminalConsumptionRecord:
         raise TypeError("consumption must be an exact D7TerminalConsumptionRecord")
+    observed_start_lineage = (
+        manifest.authoritative_start_manifest_sha256,
+        manifest.authoritative_start_directory_identity_sha256,
+        manifest.authority_verification_evidence_sha256,
+    )
+    if type(prefix) is _authoritative_start_type():
+        expected_start_lineage = (
+            prefix.manifest.canonical_sha256,
+            prefix.directory_identity_sha256,
+            prefix.verification_evidence_binding.canonical_sha256,
+        )
+    else:
+        expected_start_lineage = (None, None, None)
+    if observed_start_lineage != expected_start_lineage:
+        raise QualificationContractError(
+            "terminal authoritative-start lineage differs from its persisted prefix"
+        )
     sources = _exact_member_sources(immutable_member_sources, manifest)
     if manifest.terminal_artifact_kind is r.D7TerminalArtifactKind.SCIENTIFIC_RESULT:
         artifact: r.D7ScientificResultRecord | r.D7FailedAttemptRecord = (
@@ -832,7 +901,7 @@ def _revalidate_file_set(
 
 
 def load_d7_structural_terminal_transaction(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+    loaded_prefix: object,
     *,
     expected_manifest_sha256: str,
     expected_consumption_sha256: str,
@@ -988,7 +1057,7 @@ def load_d7_structural_terminal_transaction(
 
 
 def persist_d7_structural_terminal_transaction_no_replace(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+    loaded_prefix: object,
     *,
     immutable_member_sources: Mapping[str, bytes],
     manifest: r.D7TerminalManifestRecord,

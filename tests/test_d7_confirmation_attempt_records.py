@@ -307,7 +307,7 @@ def test_every_record_has_strict_canonical_roundtrip_and_golden_vector() -> None
     examples = _examples()
     expected = (
         "d79427636fc6cad4bb95579dd8cc0347dd0d0f4270cf1f65ec1c930d5557acdc",
-        "f39ade299e2b2f3b13d2c0fadfc13fcdccb2d19068c59613051aa1944d7116dd",
+        "79962de2d3ac5e49a7622826fef6cf5dfc6ff06a0de0afe8cf33d5641255a2ec",
         "f115b05febc47fd12be7faaca7ce2461b4808a59ae0c20e4b51717541e0e4323",
         "a921802d1555dc2db1974efd89f3e8d1e308829f8dc9ceaa9ce91f4003179998",
         "8d403a67a565fccb4f9283070a59201054dc50ac2b5488bbdc5347334a7939d6",
@@ -320,8 +320,8 @@ def test_every_record_has_strict_canonical_roundtrip_and_golden_vector() -> None
         "59ba52b4d743e20ef697fc4bf7d540d7352762ed63a726dd832b22185e9312d5",
         "06efe4ed6d7b2492552fc05f3aa83e41a68e92be3be13f93b7c025a198437faa",
         "c214d63a15da4075809f4aa74f80e3adc46a6b548c8e8877ace14b010b626cfd",
-        "0098c21867e82149c418a903f05d04797b9710143ccb9716bac47e6b8f74f84e",
-        "7ebb576e0d5fab363947b21a4eabac83984a7315f869d9be8169821bc16ddbf9",
+        "d91b4faa28573f18b7a68930ef0c653cbd898f91aac4298d56e5ad6867eaff67",
+        "b87fb291ec7b3167de9f1006da3053ef41ed7a6d9b38be404bdb87e6bd24c3fa",
     )
     assert tuple(item.canonical_sha256 for item in examples) == expected
     for item in examples:
@@ -360,6 +360,34 @@ def test_nested_json_constants_are_type_strict() -> None:
     assertions["aggregate_outcome_observed"] = 0
     with pytest.raises(QualificationContractError, match="assertions"):
         r.D7StartedUnresolvedFinalizationRecord.from_dict(finalization)
+
+
+def test_terminal_manifest_authoritative_start_lineage_is_all_or_none() -> None:
+    manifest = _scientific().manifest
+    with pytest.raises(
+        QualificationContractError,
+        match="authoritative-start terminal lineage must be all present or all absent",
+    ):
+        replace(
+            manifest,
+            authoritative_start_manifest_sha256=_h("authoritative-start-manifest"),
+        )
+
+    authoritative = replace(
+        manifest,
+        authoritative_start_manifest_sha256=_h("authoritative-start-manifest"),
+        authoritative_start_directory_identity_sha256=_h(
+            "authoritative-start-directory"
+        ),
+        authority_verification_evidence_sha256=_h("authority-verification-evidence"),
+    )
+    assert (
+        r.D7TerminalManifestRecord.from_canonical_bytes(
+            authoritative.canonical_bytes,
+            expected_sha256=authoritative.canonical_sha256,
+        )
+        == authoritative
+    )
 
 
 def test_prefix_requires_exact_types_and_every_frozen_join() -> None:

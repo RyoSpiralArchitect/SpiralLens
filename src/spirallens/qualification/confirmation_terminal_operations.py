@@ -30,6 +30,7 @@ from . import confirmation_attempt_persistence as p
 from . import confirmation_attempt_records as r
 from . import confirmation_attempt_terminal_persistence as tp
 from . import confirmation_attempt_validation as v
+from . import confirmation_authoritative_start_persistence as authoritative_start
 from . import confirmation_external_witness as w
 from . import confirmation_runner as runner
 from .common import QualificationContractError
@@ -96,14 +97,27 @@ class D7ExternalAbortAuthenticationRelativeToPins:
             raise TypeError("parent_directory_fsync_proved must be bool or None")
 
 
-def _require_owned_prefix(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+def _preflight_owned_prefix_kind(
+    loaded_prefix: object,
     ownership: runner._D7PostStartOwnership,
-) -> p.D7LoadedEvidenceOnlyPrefix:
-    if type(loaded_prefix) is not p.D7LoadedEvidenceOnlyPrefix:
-        raise TypeError("loaded_prefix must be an exact D7LoadedEvidenceOnlyPrefix")
+) -> None:
     if type(ownership) is not runner._D7PostStartOwnership:
         raise TypeError("ownership must be an exact private D7 post-start handoff")
+    is_evidence = type(loaded_prefix) is p.D7LoadedEvidenceOnlyPrefix
+    is_authoritative = (
+        type(loaded_prefix) is authoritative_start.D7LoadedAuthoritativeStartTransaction
+    )
+    expected_kind_matches = (
+        is_authoritative if ownership.requires_authoritative_start else is_evidence
+    )
+    if not expected_kind_matches:
+        raise TypeError("loaded_prefix kind differs from the private ownership binding")
+
+
+def _reload_owned_prefix(
+    loaded_prefix: object,
+    ownership: runner._D7PostStartOwnership,
+) -> object:
     reloaded = tp._strictly_reload_prefix(loaded_prefix)
     if (
         reloaded.declaration,
@@ -123,11 +137,46 @@ def _require_owned_prefix(
         raise QualificationContractError(
             "terminal operations currently require a primary confirmation"
         )
+    if ownership.requires_authoritative_start and (
+        ownership.authoritative_start_manifest_sha256
+        != reloaded.manifest.canonical_sha256
+        or ownership.authoritative_start_directory_identity_sha256
+        != reloaded.directory_identity_sha256
+    ):
+        raise QualificationContractError(
+            "post-start ownership differs from the authoritative-start transaction"
+        )
     return reloaded
 
 
+def _require_owned_prefix(
+    loaded_prefix: object,
+    ownership: runner._D7PostStartOwnership,
+) -> object:
+    _preflight_owned_prefix_kind(loaded_prefix, ownership)
+    return _reload_owned_prefix(loaded_prefix, ownership)
+
+
+def _authoritative_start_lineage(prefix: object) -> dict[str, str | None]:
+    if type(prefix) is authoritative_start.D7LoadedAuthoritativeStartTransaction:
+        return {
+            "authoritative_start_manifest_sha256": (prefix.manifest.canonical_sha256),
+            "authoritative_start_directory_identity_sha256": (
+                prefix.directory_identity_sha256
+            ),
+            "authority_verification_evidence_sha256": (
+                prefix.verification_evidence_binding.canonical_sha256
+            ),
+        }
+    return {
+        "authoritative_start_manifest_sha256": None,
+        "authoritative_start_directory_identity_sha256": None,
+        "authority_verification_evidence_sha256": None,
+    }
+
+
 def _scientific_transaction(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: object,
     prepared: runner.D7PreparedScientificTerminal,
 ) -> tuple[
     dict[str, bytes],
@@ -171,6 +220,7 @@ def _scientific_transaction(
         terminal_artifact_kind=r.D7TerminalArtifactKind.SCIENTIFIC_RESULT,
         terminal_artifact_sha256=result.canonical_sha256,
         immutable_members=v._scientific_members(output.result_payload, result),
+        **_authoritative_start_lineage(prefix),
     )
     consumption = r.D7TerminalConsumptionRecord(
         replay_target_sha256=prefix.start.replay_target_sha256,
@@ -189,7 +239,7 @@ def _scientific_transaction(
 
 
 def _ordinary_failure_transaction(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: object,
     prepared: runner.D7PreparedFailedTerminal,
 ) -> tuple[
     dict[str, bytes],
@@ -216,6 +266,7 @@ def _ordinary_failure_transaction(
         terminal_artifact_kind=r.D7TerminalArtifactKind.FAILED_ATTEMPT,
         terminal_artifact_sha256=failed.canonical_sha256,
         immutable_members=v._failure_members(evidence, failed, None),
+        **_authoritative_start_lineage(prefix),
     )
     consumption = r.D7TerminalConsumptionRecord(
         replay_target_sha256=prefix.start.replay_target_sha256,
@@ -242,7 +293,7 @@ def _ordinary_failure_transaction(
 
 
 def persist_d7_prepared_terminal_no_replace(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+    loaded_prefix: object,
     prepared: runner.D7PreparedScientificTerminal | runner.D7PreparedFailedTerminal,
     /,
 ) -> tp.D7PersistedStructuralTerminalIdentity:
@@ -253,7 +304,10 @@ def persist_d7_prepared_terminal_no_replace(
         runner.D7PreparedFailedTerminal,
     ):
         raise TypeError("prepared must be an exact D7 runner terminal handoff")
-    prefix = _require_owned_prefix(loaded_prefix, prepared.ownership)
+    ownership = prepared.ownership
+    _preflight_owned_prefix_kind(loaded_prefix, ownership)
+    ownership._consume_for_terminal_publication()
+    prefix = _reload_owned_prefix(loaded_prefix, ownership)
     if type(prepared) is runner.D7PreparedScientificTerminal:
         sources, manifest, consumption = _scientific_transaction(prefix, prepared)
     else:
@@ -417,6 +471,7 @@ def _external_records(
         terminal_artifact_kind=r.D7TerminalArtifactKind.FAILED_ATTEMPT,
         terminal_artifact_sha256=failed.canonical_sha256,
         immutable_members=v._failure_members(evidence, failed, finalization),
+        **_authoritative_start_lineage(prefix),
     )
     consumption = r.D7TerminalConsumptionRecord(
         replay_target_sha256=prefix.start.replay_target_sha256,
@@ -485,7 +540,9 @@ def finalize_d7_external_abort_relative_to_pins_no_replace(
     record.
     """
 
-    prefix = _require_owned_prefix(loaded_prefix, ownership)
+    _preflight_owned_prefix_kind(loaded_prefix, ownership)
+    ownership._consume_for_external_finalization()
+    prefix = _reload_owned_prefix(loaded_prefix, ownership)
     verified = w.verify_d7_signed_external_abort_witness(
         envelope_source=envelope_source,
         expected_envelope_sha256=expected_envelope_sha256,
