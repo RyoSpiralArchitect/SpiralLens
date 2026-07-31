@@ -508,6 +508,49 @@ hostile-process TOCTOU resistance nor post-publication inode disjointness. A
 schema-valid external receipt likewise does not authenticate its observer or
 verifier and cannot authorize finalization.
 
+PR #23 exposes the next missing boundary without pretending to complete it.
+The deep-internal `confirmation_attempt_authority` module defines one
+canonical, non-authorizing structural candidate for a concrete subset of
+later launch-authority prerequisites. Its replay-target input uses dedicated
+caller-claimed admission, exact-full-design, and exact-source/runtime
+candidate leaves instead of generic opaque bindings. Each leaf records
+`identity_authenticated=false`; its positive semantic field is explicitly a
+caller claim, not a verified fact. The admission leaf preserves the complete
+construction-review and admission-spec binding identities, not digest-only
+projections. Typed exclusive-supply-claim and
+single-supplier-invocation records causally join the supplier, development and
+parent registries, readiness, caller-alleged admission and source/runtime
+receipts, official inventory, and atomic target/full-design publication. Every
+claim, invocation, chronology, inventory-output, and publication verification
+field remains false, and no supplier is invoked.
+
+The physical input fixes the `primary-confirmation` role and derives the exact
+attempt key from the canonical replay-target digest with the existing attempt
+record function. It binds normalized store, evidence-lane, output, and terminal
+paths; requires positive store/lane/parent device/inode coordinates; binds the
+lane parent to the store while requiring the lane identity to differ; and
+rejects both lexical and declared-physical-key aliases to the
+persistence-reserved lane, evidence, attempt-envelope, and chronology paths.
+These are still declared coordinates, not observations.
+Double-slash aliases, embedded NUL, and overlong declared paths are rejected
+before they can diverge from the persistence realpath boundary.
+The generic artifact binding intentionally has no raw `from_bytes` factory.
+Strict loading enforces the byte-size cap before hashing, checks the expected
+SHA-256 before parsing, translates malformed, excessively nested, and
+oversized-numeric canonical-JSON parser failures into the module's input
+error, and rejoins only the supplied records. The loaded
+candidate's authority, admission, closure, live-filesystem, absence, freeze,
+and execution claims remain false.
+
+This is a positive description of missing inputs, not a retroactive change to
+C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
+matching digest, serialized “capability,” or token cannot become authority by
+being canonical. Declared device/inode and path coordinates are not a live
+reobservation or reservation. Registry completeness is only relative to the
+explicitly bound sources and counts in this candidate; it does not prove
+supplier chronology or seed secrecy. No reusable authorization object is
+issued.
+
 Family admission, full-design freeze, official seeds, authoritative
 target-bound lifecycle instances, launch/execution capability,
 result/failure publication, terminal publication, abort finalization, runner,
@@ -1008,8 +1051,9 @@ to become a general library.
   historical code or attest Python/native runtime, transitive dependencies,
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
-- **Implemented deep-internal contract and prefix-persistence slice; step 18
-  remains partial — replay target and attempt envelope:** two canonical, unpersisted
+- **Implemented deep-internal contract, prefix-persistence, and authority-input
+  prerequisite slices; step 18 remains partial — replay target and attempt
+  envelope:** two canonical, unpersisted
   internal specifications keep the future immutable seed-bearing replay target
   separate from the append-only attempt chronology. Separate deep-internal
   record and validation modules now define the concrete canonical schemas and
@@ -1046,11 +1090,30 @@ to become a general library.
   caller bytes and perform pure structural joins. They do not load the frozen
   target or authenticate an external witness. The persistence slice observes
   only the declared local path coordinates and cannot authorize a finalizer.
-  Target-bound exact inventory and gate
-  semantics therefore remain deferred. Full-design closure, admission,
-  freeze, seeds, execution, terminal publication, D7, and D8 all remain
-  incomplete now.
-  Execute without overrides and require complete isolated byte replay. Only a
+  A further non-authorizing bundle now gives canonical structure to a concrete
+  subset of the later prerequisites. Dedicated target-admission,
+  target-full-design, and target-source/runtime leaves carry only explicit
+  caller claims and `identity_authenticated=false`. Typed exclusive-claim and
+  single-invocation inputs causally join the supplier, both seed-exclusion
+  registries, readiness, caller-alleged receipt bindings, official inventory,
+  and atomic inventory/full-design/target publication. The physical input
+  carries the target-and-primary-role-derived attempt key plus positive
+  store/lane/parent coordinates, requires distinct store and lane identities,
+  and excludes every persistence-reserved lane, evidence, attempt-envelope,
+  and chronology path lexically and by known physical alias. The
+  artifact-binding surface has no raw `from_bytes`
+  factory; the loader applies its size cap, then verifies the digest before
+  parsing, and translates canonical parse errors. It authenticates none of
+  these inputs and emits no reusable token. Authoritative target-bound exact
+  inventory and gate semantics therefore remain deferred. Full-design closure,
+  admission, freeze, seeds, execution, terminal publication, D7, and D8 all
+  remain incomplete now. The operational order is now explicit: finish
+  terminal/witness/runner mechanics without an official run; implement a fused
+  verify-and-exclusive-start operation with no reusable authorization token;
+  close the exact final source/runtime and family admission; invoke the seed
+  supplier once and atomically publish target/full design before committing
+  freeze and launch intent; then invoke the fused start. Execute without
+  overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
   `d6_d8_advanced` and `synthetic_qualified`.
