@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and installed-inventory exact-equality validation; none is a public export or an official descriptor, target, start/run instance, trusted pin root, admission, seed, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, installed-inventory exact-equality validation, and the corrected receipt-only item-21 chain through scoped reviewed successor-family admission; none is a public export or an official item-22 descriptor, seed-bearing target, start/run instance, trusted pin root, seed, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -346,6 +346,37 @@ source set and does not cover these modules or later persistence, terminal,
 or runner code. A later exact closure of the then-current execution source and
 runtime is required after those surfaces are final.
 
+The corrected item-21 source anchor defines that closure as three tracked positive
+artifacts rather than an upgrade of any existing caller record: exact
+source/runtime receipt, then seed-free readiness, then scoped reviewed
+successor-family admission. It issues none of them and freezes all item-21 docs.
+Each artifact is the sole addition in a strict direct child of its predecessor,
+beginning with that source commit. Merges, intervening changes, combined
+artifact or documentation commits, and predeclared future-child identities fail
+this receipt-only chronology. Item 21 is partial at the source commit; the
+three artifact-only children strictly reload/rejoin the chain and complete the
+item at the final corrected tip.
+
+Strict reload uses full HEAD-reachable path history rather than Git's simplified
+default path log. It derives one direct-child, one-file introduction, requires
+all later path events to be descendants with the identical `100644` blob, and
+rejects merged-away mutation, deletion/re-addition, or a parallel introduction.
+Historical reconstruction applies the issuer's per-member and aggregate source
+caps. Current readiness also checks the anchor and HEAD plus every bounded
+source-path event on their descendant ancestry, so an exact revert or merge
+resolution cannot launder a later execution-source change.
+
+With the versioned v0.1 loader retained, historical reload is tied to the
+source-commit Git tree, lock bytes, and fixed v0.1 pins, not to whatever builder
+functions happen to be current later. The current-readiness verifier is
+stricter: it rejects any live execution-source or exact-runtime drift. Because
+item-22 implementation is not added here, a later source-changing PR must
+publish and review a versioned exact-current re-anchor bound to the item-21
+chain at the separate fixed pre-claim path
+`item22-current-source-runtime-reanchor.json`, outside
+`item22-seed-supply/`, before acquiring the item-22 claim or invoking a seed
+supplier.
+
 Target, authorization, start, and result fields are joined by a closed table
 of canonical byte equalities. Neither the evidence-only prefix lane nor the
 new structural-start lane establishes `started_unresolved` from bytes alone.
@@ -354,11 +385,15 @@ durable start before assigning that lifecycle interpretation. The current
 evidence-only external finalizer cannot perform that rejoin for the item-20
 start type.
 
-Family admission, full-design freeze, official seeds, authoritative lifecycle,
-execution, official result/failure publication, scientific eligibility, D7,
-and D8 remain absent or `not_run`. Structural terminal publication is now a
-deep-internal mechanics surface only. The next sequence is deliberately
-operational rather than token-based:
+The source-commit stage has none of the three item-21 artifacts; the final corrected
+chain adds, strictly reloads, and rejoins all three. Even at that final tip, the
+item-22 exclusive supplier claim and invocation, official seeds, atomic
+seed-bearing target/full-design publication, and committed freeze remain
+absent. Launch intent, the canonical nine-member descriptor, authoritative
+lifecycle/start/run/terminal/result, scientific eligibility, D7, and D8 also
+remain absent or `not_run`. Structural terminal publication is now a
+deep-internal mechanics surface only. The sequence is deliberately operational
+rather than token-based:
 
 1. retain the completed terminal-transaction, external-witness, and typed
    runner mechanics as non-authorizing and non-scientific;
@@ -372,11 +407,16 @@ operational rather than token-based:
 3. retain item 21's exact `requirements-d7-runtime-lock.txt`, fixed
    zero-argument official producer, exact full-inventory, aggregation, and
    full-design builders, and installed-inventory equality check as code-side
-   ingredients only; issue the positive exact-current source and runtime
-   artifacts and complete reviewed family admission plus seed-free readiness;
-4. for items 22-23, claim and invoke seed supply once, publish the exact target
-   and full design, commit the freeze, persist launch intent, and execute the
-   already separated descriptive result without changing D7 design bytes;
+   ingredients only; once all item-21 source is final, commit only the exact
+   source/runtime receipt in its direct child, only seed-free readiness in the
+   next direct child, and only scoped reviewed successor-family admission in
+   the next direct child; strictly reload and rejoin all three before marking
+   item 21 complete;
+4. for items 22-23, if the execution-source surface changes, first publish and
+   review the fixed-path exact-current re-anchor bound to item 21; only then
+   claim and invoke seed supply once, publish the exact target and full design,
+   commit the freeze, persist launch intent, and execute the already separated
+   descriptive result without changing D7 design bytes;
 5. before item 24, create and commit the closed nine-member descriptor and
    pass strict verification-evidence replay/rejoin, temporary Git/runtime
    end-to-end validation, and authoritative-start-compatible external-abort
@@ -385,13 +425,15 @@ operational rather than token-based:
    terminal outcome and complete isolated byte replay.
 
 The directly constructible records remain insufficient throughout this
-sequence. Evidence envelopes cannot be promoted in place.
+sequence. Their authority and verification fields stay false, and neither the
+three item-21 issuers/loaders nor canonical bytes promote them in place. Evidence
+envelopes cannot be promoted in place.
 The fused module is also deep internal and has an empty `__all__`. The exact
 runtime lock, fixed producer, and exact full-inventory, aggregation, and
-full-design builders do not grant authority. No official
-descriptor, positive exact-current source/runtime receipt,
-admission/readiness, target/freeze/intent instance, start, terminal, or run has
-been created.
+full-design builders do not grant authority. The final corrected item-21 artifacts
+do not create an item-22 supplier claim/invocation, seed,
+target/full-design publication, or freeze; launch intent; official descriptor;
+start; terminal; or run.
 Canonical-origin equality is a scoped live Git-transport trust rule, not
 signed trust-root provenance or hostile-local-operator resistance.
 Committed C2 closes only the declared historical Git source set; it does not
