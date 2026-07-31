@@ -930,6 +930,22 @@ caller-supplied primary declaration-through-start record prefix as chained
 false-authority envelopes in a dedicated evidence-only lane without
 replacement. It grants neither execution nor scientific authority, cannot be
 promoted in place, and rejects isolated replay before writing any stage.
+PR #23 separately adds a canonical, non-authorizing structural candidate for
+a concrete subset of later launch-authority prerequisites. Its target-shaped
+record uses dedicated caller-claimed admission, exact-full-design, and
+exact-source/runtime candidate leaves, all with
+`identity_authenticated=false`. Typed exclusive-supply-claim and
+single-supplier-invocation inputs causally join the supplier, development and
+parent registries, readiness, caller-alleged admission and source/runtime
+receipts, official inventory, and atomic inventory/full-design/target
+publication; all verification fields remain false. The physical input carries
+the exact attempt key, positive store/lane/parent device/inode coordinates,
+and persistence-reserved path exclusions. The artifact binding has no raw
+`from_bytes` factory. The bundle loader applies its size cap, verifies the
+digest before parsing, translates canonical parse failures, and proves only
+canonical bytes and structural joins. It does not authenticate any issuer,
+establish registry provenance, observe path absence, reverify a runtime,
+reserve a namespace, invoke a supplier, or authorize a start.
 C1 records a declared static-bounded construction review, stable design, D7
 registry/aggregation application, successor review contract, and complete
 declared Python source set; C2 changes only the historical Git source-set
@@ -947,11 +963,34 @@ The recorded ordering is:
    does not execute historical code or attest Python/native runtime,
    transitive dependencies, in-process identity, hostile-local-mutation
    resistance, or current compatibility; and
-3. the replay target and attempt envelope are now typed separately, and the
-   local evidence lane preserves only
-   `caller_supplied_start_record_present_terminal_absent`; next add a distinct
-   verifier-minted authoritative lane before the atomic terminal transaction
-   and authenticated witness-verifier boundary, official seeds, or execution.
+3. the replay target and attempt envelope are now typed separately; the local
+   evidence lane preserves only
+   `caller_supplied_start_record_present_terminal_absent`; and PR #23 exposes
+   the typed, caller-claimed authority-prerequisite input boundary as a
+   non-authorizing structural bundle rather than a capability.
+
+This addition does not revise any earlier artifact or decision. Canonical
+caller records, their digests, and serialized “capability” labels remain
+caller-controlled data. They cannot be upgraded into authority in place.
+Registry completeness is evaluated only against the explicitly bound registry
+sources and counts; it is not evidence that a trusted supplier or historical
+parent was consulted.
+
+The next execution-preparation order is:
+
+1. finish the terminal transaction, external-witness verification, and runner
+   mechanics without an official execution and without invoking the seed
+   supplier;
+2. implement a fused verify-and-exclusive-start operation that reopens and
+   revalidates trusted inputs, performs live physical and absence checks, and
+   transitions directly into the exclusive start without returning or
+   accepting a reusable authorization token;
+3. only after those code surfaces are final, close the exact current
+   execution source/runtime and reviewed family admission;
+4. acquire the exclusive seed-supply claim, invoke the supplier once, publish
+   the exact seed-bearing target and full design atomically, commit their
+   freeze, and persist launch intent after that freeze; and
+5. invoke the fused start operation.
 
 The later terminal schema must keep the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

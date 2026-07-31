@@ -5,8 +5,9 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `successor_rebinding_review_contract_encoded`,
 `c2_declared_historical_git_source_set_closed`,
 `replay_target_contract_spec_defined`,
-`attempt_envelope_contract_spec_defined`, `instances_absent`, `not_frozen`,
-`not_admitted`, `not_run`.
+`attempt_envelope_contract_spec_defined`,
+`launch_authority_input_schema_candidate_defined`, `instances_absent`,
+`not_frozen`, `not_admitted`, `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
 execution topology added after the PR #12 construction foundation. It records
@@ -74,6 +75,47 @@ and every authority field remains false. Both specifications record
 An interrupted pre-rename staging file blocks reload/retry and is never a
 lifecycle stage. Writers must first quiesce; only a confirmed orphan may enter
 separate offline recovery.
+
+PR #23 adds a third, deliberately non-authorizing layer:
+`confirmation_attempt_authority` gives canonical shape to a concrete subset of
+inputs that a later operational launch boundary must obtain and verify. The
+bundle's replay-target record uses dedicated caller-claimed admission,
+exact-full-design, and exact-source/runtime candidate leaf types. Each positive
+leaf field is explicitly a caller claim and every leaf and nested artifact
+binding records `identity_authenticated=false`. The admission candidate keeps
+the complete construction-review and admission-spec binding identities rather
+than digest-only projections. Typed exclusive-supply-claim
+and single-supplier-invocation records causally join the supplier, development
+and parent registries, readiness, caller-alleged admission and source/runtime
+receipt bindings, official inventory, and atomic
+inventory/full-design/target publication. The corresponding claim,
+invocation, chronology, inventory-output, and atomic-publication verification
+fields all remain false; no supplier invocation is performed.
+
+The physical input fixes the exact attempt key, normalized
+store/lane/output/terminal paths, positive store/lane/parent device/inode
+coordinates, and the lane-parent-to-store relationship. It excludes the
+persistence-reserved lane, evidence directory, attempt-envelope leaves, and
+chronology leaf. The artifact-binding surface intentionally has no raw
+`from_bytes` factory. Double-slash aliases, embedded NUL, and overlong declared
+paths are rejected before the persistence boundary. The strict loader applies
+the input-size cap before hashing, verifies the expected bundle digest before
+parsing, translates malformed, deeply nested, and oversized-numeric JSON
+parser failures into `D7AuthorityInputError`, and checks only
+canonical shape and declared joins. It neither authenticates the issuers nor
+observes the filesystem, process, runtime, Git state, seed supplier, or
+chronology.
+
+Canonical serialization does not confer authority. A caller can construct the
+records and their digests, so neither the bundle nor any serialized
+“capability” or token may be accepted as permission to start. The loaded
+candidate permanently leaves source/runtime verification, admission,
+claim/invocation/publication verification, freeze verification, path absence,
+physical reobservation, exclusive start, execution, and scientific authority
+false. “Complete registry” below means
+complete with respect to its explicitly bound registry source and declared
+cardinality; it is not an independent proof that no historical or development
+seed was omitted.
 
 ## 2. Exact repeated-measures inventory
 
@@ -289,16 +331,22 @@ thresholds, graph/cycle inventory, aggregation, result schema, construction
 family, or identity.
 
 The separate seed-supply chronology is also closed before values exist:
-final lifecycle/result/terminal/runner review, exact current execution-source
-and runtime closure, seed-free readiness, reviewed family admission, exclusive
-seed-supply claim, one supplier invocation, atomic no-replace publication of
-the seed-bearing full design and target, a committed full-design freeze
-receipt, then launch intent.
+first finish lifecycle/result/terminal/witness/runner mechanics without an
+official execution; then implement one fused verify-and-exclusive-start
+operation that returns no reusable authorization token; only after that code
+is final issue exact current execution-source/runtime closure, establish
+seed-free readiness, and complete reviewed family admission. The later
+seed-bearing sequence is an exclusive seed-supply claim, one supplier
+invocation, atomic no-replace publication of the seed-bearing full design and
+target, a committed full-design freeze receipt, then launch intent. Only then
+may the fused operation be invoked.
 The supplier may be invoked only after the claim and at most once. If the
 claim exists but target publication does not complete, the seed supply is
 aborted and retry remains unauthorized; absence of the target does not prove
 that the supplier was never invoked. No official seed supplier is invoked by
-the current implementation.
+the current implementation. PR #23's typed claim and invocation records encode
+the required causal joins as caller-claimed structural input only; their
+verification flags do not establish that either event occurred.
 
 Authoritative execution start must bind the exact target, authorization, and claim; match
 the observed source/runtime identity to the target's frozen receipt; and
@@ -343,28 +391,49 @@ Terminal design must not manufacture a placeholder result merely to reserve
 an output shape. The two contract specifications now type the separation, but
 the actual immutable replay target and attempt envelope still do not exist.
 
-## 9. Next blocking PR
+## 9. Current boundary and next PR sequence
 
 Committed C2 closes the declared historical Git source set, the two canonical
 contract specifications fix target/envelope separation, and the
-caller-supplied prefix evidence lane now carries a byte-level false-authority
-boundary. The next PR must add a separate verifier-minted authoritative
-capability/lane that reloads trusted target, launch-intent, source/runtime, and
-execution-identity authorities. It must not promote evidence envelopes in
-place. Only after that boundary is reviewed may a later PR add the atomic
-result/failed-attempt terminal transaction and authenticated external-witness
-finalization, without invoking the official seed supplier or issuing seed
-values.
+caller-supplied prefix evidence lane carries a byte-level false-authority
+boundary. PR #23 now records the next prerequisite as a non-authorizing
+structural bundle. Dedicated caller-claimed target admission, full-design, and
+source/runtime leaves remain unauthenticated. The typed exclusive claim and
+single invocation causally connect supplier, registries, readiness,
+caller-alleged receipts, official inventory, and atomic publication, while the
+physical input binds the exact attempt key and positive store/lane identities
+and excludes persistence-reserved paths. The loader has no raw artifact
+`from_bytes` path; it applies a size cap, verifies the digest before parsing,
+and translates canonical parse errors. These requirements are concrete enough
+to test without claiming that the records came from trusted issuers. This is a
+newly exposed prerequisite, not an amendment to the meaning or historical
+status of C1, C2, D6, or earlier persisted attempts.
 
-After that code and the eventual runner are final, a separate exact current
-execution-source/runtime closure and reviewed family admission remain required
-before the exclusive seed-supply claim. Only the subsequent single supplier
-invocation may feed atomic full-design/target publication and its committed
-freeze receipt. Official seeds, concrete replay target, attempt instances,
-admission, full-design freeze, no-overwrite publication, launch, exclusive
-attempt, execution start, terminal publication, and isolated replay remain
-separate obligations. None may be represented by a placeholder result or
-inferred from C2 source closure.
+The reviewed successor order is:
+
+1. retain PR #23 as a schema/loader candidate only; it must not mint
+   authorization;
+2. implement the atomic result/failed-attempt terminal transaction,
+   authenticated external-witness path, and eventual runner mechanics without
+   invoking the official supplier or performing an official execution;
+3. implement one fused verify-and-exclusive-start operation that reopens the
+   authoritative target, launch intent, exact source/runtime closure,
+   execution identity, physical store/lane, and absence state and transitions
+   directly into the start claim. It must not serialize, return, cache, or
+   accept a reusable authorization token;
+4. after those exact code surfaces are final, issue the current
+   execution-source/runtime closure and reviewed family admission;
+5. acquire the seed-supply claim, invoke the supplier once, atomically publish
+   the seed-bearing full design and target, commit the freeze, and only then
+   persist launch intent; and
+6. invoke the fused start operation.
+
+Evidence envelopes cannot be promoted in place. Official seeds, concrete
+replay target, attempt instances, admission, full-design freeze, no-overwrite
+publication, launch, exclusive attempt, execution start, terminal publication,
+and isolated replay remain separate obligations. None may be represented by a
+placeholder result, inferred from C2 source closure, or authorized by
+caller-constructible records.
 
 Until those are complete, the canonical state remains:
 
@@ -375,6 +444,7 @@ successor_rebinding_review_contract_encoded
 c2_declared_historical_git_source_set_closed
 replay_target_contract_spec_defined
 attempt_envelope_contract_spec_defined
+launch_authority_input_schema_candidate_defined
 replay_target_instance_absent
 attempt_envelope_instance_absent
 not_frozen

@@ -4,6 +4,82 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-07-31 — D7 non-authorizing launch-authority prerequisite inputs
+
+### Added
+
+- The deep-internal `confirmation_attempt_authority` module defines canonical
+  records for a concrete subset of inputs that a future operational
+  verify-and-exclusive-start boundary must obtain. The outer bundle and its
+  loaded structural candidate are not an authorization, capability, attempt,
+  target publication, or execution record.
+- The replay-target-shaped input uses the required field surface of the
+  already frozen `D7ReplayTargetContractSpec` rather than inventing a parallel
+  target schema. Target admission, exact full design, and exact source/runtime
+  are dedicated candidate leaf types, not generic opaque bindings. Their
+  positive semantics are named caller claims and every leaf and nested
+  artifact binding records `identity_authenticated=false`; the artifact
+  binding also records `authoritative_source_loaded=false`. The admission
+  candidate preserves the full construction-review and admission-spec
+  bindings, including role, contract, digest, and byte count.
+- Seed handling is explicit: the candidate separates the development-seed and
+  parent-selection-seed exclusion registries from the proposed official-seed
+  inventory and binds their declared sources and cardinalities. A typed
+  exclusive-supply-claim input causally joins the exact supplier, both
+  registries, readiness, and the actual admission and
+  execution-source/runtime receipt-binding fields, which remain
+  caller-alleged. A typed single-invocation input
+  rejoins that exact claim and supplier to the official inventory; chronology
+  then rejoins the invocation output to atomic publication of the exact
+  inventory, full design, and target. Completeness is structural relative to
+  the bound sources, and the claim, invocation, inventory-output, supplier
+  chronology, and atomic-publication verification fields remain false.
+- Separate records describe those admission, source/runtime, supplier,
+  invocation, execution-identity, physical-identity, full-design-freeze, and
+  launch-intent inputs. The chronology keeps the full-design freeze distinct
+  from and prior to launch intent, but does not establish that any alleged
+  event occurred.
+- Physical identity binds the exact attempt key and normalized absolute paths.
+  It requires positive device/inode coordinates for the store, evidence lane,
+  lane parent, output parent, and terminal parent; binds the lane's parent
+  identity to the store; and rejects output/terminal overlap with each other
+  and with the persistence-reserved lane, evidence directory, attempt-specific
+  declaration/authorization/claim/start envelopes, and chronology leaf. No
+  live filesystem observation, absence check, reservation, or hostile-process
+  protection follows from the record. Double-slash aliases, embedded NUL, and
+  overlong declared paths are rejected before persistence.
+- The generic artifact binding intentionally has no raw `from_bytes` factory.
+  The strict bundle loader applies its byte-size cap before hashing, requires
+  the expected outer SHA-256 to match before parsing, translates canonical
+  JSON parser failures, including deep nesting and oversized integer literals,
+  into `D7AuthorityInputError`, canonicalizes every nested record, rejects
+  unknown or malformed fields, and rejoins the declared bindings. It performs
+  no callback, filesystem access, process inspection, seed supply,
+  persistence, or execution.
+
+### Compatibility and non-claims
+
+- The module is deep internal, declares an empty `__all__`, and is not
+  re-exported. It adds no stable or provisional public Python API and writes no
+  persisted artifact.
+- The loaded candidate permanently reports authority, target authority,
+  source/runtime verification, admission, readiness, supplier claim,
+  invocation, chronology, inventory-output, atomic publication, freeze,
+  launch-intent verification, live physical reobservation, path absence,
+  exclusive start, lifecycle eligibility, execution, terminal/finalization,
+  isolated replay, D7/D8, and scientific claims as false. A
+  caller-constructible record, matching digest, serialized “capability,” or
+  token cannot be promoted into authority.
+- This change exposes a prerequisite that earlier work left abstract. It does
+  not reinterpret or rewrite C1, C2, D6, the replay/attempt contract
+  specifications, caller-evidence envelopes, or any prior result.
+- The successor order is terminal/witness/runner mechanics with no official
+  execution; one fused verify-and-exclusive-start operation with no reusable
+  token; exact final source/runtime closure plus reviewed admission; one seed
+  supplier invocation followed by atomic target/full-design publication,
+  freeze, and launch intent; then invocation of the fused start. All remain
+  future work.
+
 ## 2026-07-30 — D7 caller-supplied prefix evidence persistence
 
 ### Added

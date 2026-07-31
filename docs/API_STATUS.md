@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, D7 attempt/evidence/result schemas and joins, and a no-replace caller-supplied primary-prefix evidence lane whose persisted scope/envelopes explicitly deny authority, execution, finalization, and in-place promotion, without public export, target authority, admission, seed, execution capability, terminal publication, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now include a persisted Level-0 C1 seed-free source-set candidate, its committed receipt-only C2 historical-Git-source-set closure, canonical unpersisted replay-target/attempt-envelope contract specifications, D7 attempt/evidence/result schemas and joins, a no-replace caller-supplied primary-prefix evidence lane, and a non-authorizing structural candidate for a concrete subset of later launch-authority prerequisites; none is a public export, authoritative target, admission, seed, execution capability, terminal publication, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -186,6 +186,46 @@ Its terminal inspection can report only
 `terminal_path_present_unverified`; it explicitly records
 `execution_observed=false` and `started_unresolved_established=false`.
 
+The deep-internal `confirmation_attempt_authority` module adds a separate
+non-authorizing structural input candidate. It gives canonical shapes to a
+concrete subset of prerequisites that a later operational boundary must
+verify. Its replay-target record uses dedicated caller-claimed admission,
+exact-full-design, and exact-source/runtime candidate leaf types. Each leaf
+and its nested artifact bindings record `identity_authenticated=false`;
+positive leaf fields describe claims, not authenticated facts. The admission
+leaf preserves the complete construction-review and admission-spec binding
+identities. Typed
+exclusive-supply-claim and single-supplier-invocation inputs causally join the
+supplier, development and parent registries, readiness, caller-alleged
+admission and source/runtime receipts, official inventory, and atomic
+inventory/full-design/target publication. All claim, invocation, chronology,
+inventory-output, and publication verification fields remain false.
+
+The physical input binds the exact attempt key, normalized store/lane/output/
+terminal paths, positive store/lane/parent device/inode coordinates, and the
+lane-parent-to-store relationship. It excludes persistence-reserved evidence,
+attempt-envelope, and chronology paths, and rejects double-slash aliases,
+embedded NUL, and overlong declared paths. The artifact-binding API has no raw
+`from_bytes` factory. The strict bundle loader applies its byte-size cap first,
+checks the expected SHA-256 before parsing, translates malformed, deeply
+nested, and oversized-numeric JSON parser failures into
+`D7AuthorityInputError`, and then rejoins the decoded records
+structurally. The loaded object permanently reports all authorization,
+source/runtime verification, admission, freeze verification, path-absence
+observation, physical reobservation, and execution claims as false.
+
+This module does not make caller records trustworthy. A canonical record,
+matching digest, serialized “capability,” or caller-chosen token is still
+caller-constructible data and cannot establish authority. The physical
+identity record describes normalized paths, the exact attempt key, and
+declared device/inode coordinates; it is not a live filesystem observation,
+reservation, or exclusive claim. “Complete” seed registries mean complete
+relative to the explicitly bound registry sources and counts in this
+candidate, not proof that an authoritative supplier, parent history, or
+unopened-seed boundary has been verified. The typed invocation is likewise a
+caller-claimed structural input, not evidence that a supplier ran. No
+reusable capability is emitted.
+
 The replay contracts and attempt records are specifications and types, not
 official replay-target or authoritative attempt-envelope instances. The local
 prefix writer embeds those supplied primary types beneath a distinct
@@ -212,14 +252,23 @@ cannot establish that state.
 
 Family admission, full-design freeze, official seeds, authoritative lifecycle,
 execution, result/failure publication, terminal publication, D7, and D8 remain
-absent or `not_run`. The next internal change must add a distinct
-verifier-minted authoritative capability/lane with authoritative target,
-launch-intent, source/runtime, and execution-identity joins; it may consume but
-never promote the evidence envelopes in place. Only after that boundary is
-reviewed may a later change add the atomic terminal transaction and an
-operational witness verifier that alone can mint external-abort finalization
-capability. The directly constructible receipt remains insufficient. No such
-change may invoke the official seed supplier or issue seed values.
+absent or `not_run`. The next sequence is deliberately operational rather
+than token-based:
+
+1. finish terminal-transaction, external-witness, and runner mechanics without
+   invoking the supplier or performing an official run;
+2. implement one fused verify-and-exclusive-start operation that reopens and
+   verifies the authoritative inputs, reobserves physical identity and
+   absence, and transitions directly into the exclusive start; it must emit no
+   reusable serialized or caller-returnable authorization token;
+3. only after those final code surfaces exist, issue exact current
+   execution-source/runtime closure and reviewed family admission;
+4. claim seed supply, invoke the supplier once, publish the exact target and
+   full design, commit the freeze, and only then persist launch intent; and
+5. invoke the fused start operation.
+
+The directly constructible records remain insufficient throughout this
+sequence. Evidence envelopes cannot be promoted in place.
 Committed C2 closes only the declared historical Git source set; it does not
 execute historical code or attest Python/native runtime, transitive
 dependencies, in-process identity, hostile-local-mutation resistance, or

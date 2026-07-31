@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications now define later contracts without creating official instances; deep-internal record, result-component, absence-receipt, failure-payload, external-receipt schemas and pure structural joins plus a no-replace caller-supplied primary-prefix evidence lane with persisted false-authority scope/envelopes partially complete step 18, while target authority, witness verification, official instances, freeze, authorization, admission, seeds, execution capability, terminal publication, finalization, runner, replay comparison, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until those operational surfaces are final |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, and structural-join layers, a no-replace caller-supplied prefix evidence lane, and a non-authorizing authority-prerequisite input candidate partially complete step 18, while live verification, target authority, witness verification, official instances, freeze, admission, seeds, fused exclusive start, terminal publication, runner, replay, and D7/D8 authority remain absent; exact current execution-source/runtime closure is deferred until the operational surfaces are final |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -732,6 +732,7 @@ explicitly stated otherwise.
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
 | Instrument refinement indefinitely postpones a claim-bearing run | Freeze a finite M1 revision/resource budget and transition rule; advance when all gates pass, stop `insufficient` when qualification does not, and treat an M2 zero-candidate run as a qualified null only inside the calibrated sensitivity region |
+| A caller record or serialized token masquerades as launch authority | Treat canonical bytes as inputs only; derive authority inside one fused verify-and-exclusive-start operation, emit no reusable capability, and reobserve exact runtime, physical identity, and absence at the transition |
 
 ## 11. Immediate next plan
 
@@ -854,12 +855,10 @@ below:
     rather than one mutable nullable object. The future target is exactly
     Level 0 with an all-false local authority vector. Do not create a
     placeholder result to stand in for any of these objects;
-18. implement the concrete append-only lifecycle, scientific-result or
-    infrastructure-failure union, atomic terminal transaction, isolated-replay
-    joins, evidenced `started_unresolved` finalization, and eventual runner in
-    a separately reviewed sequence without invoking the supplier or issuing
-    seeds — **partially complete through the deep-internal append-only prefix
-    evidence store**.
+18. expose the concrete inputs needed by the later operational boundary
+    without constructing authority — **partially complete through the
+    deep-internal append-only prefix evidence store and PR #23
+    non-authorizing structural candidate**.
     Closed canonical declaration, authorization, claim, start, outcome,
     manifest, and consumption schemas plus pure structural joins are
     implemented without creating an official instance. A separate
@@ -900,39 +899,70 @@ below:
     TOCTOU/post-publication inode safety. The local prefix writer's path
     reobservation grants no scientific or execution authority. Those
     operational producers and authorities must be added before any
-    structurally valid caller bytes are treated as verified evidence;
-19. only after those execution surfaces are final, issue an exact current
+    structurally valid caller bytes are treated as verified evidence.
+    PR #23 additionally gives canonical structure to a concrete subset of
+    later prerequisites. Its replay-target record uses dedicated
+    caller-claimed admission, exact-full-design, and exact-source/runtime
+    candidate leaves, all with `identity_authenticated=false`. A typed
+    exclusive-supply claim causally joins the supplier, development and parent
+    registries, readiness, and caller-alleged admission and source/runtime
+    receipts; a typed single invocation rejoins that claim and supplier to the
+    official inventory and atomic inventory/full-design/target publication.
+    Claim, invocation, chronology, inventory-output, and publication
+    verification remain false. The physical input carries the exact attempt
+    key, normalized paths, positive store/lane/parent device/inode identities,
+    and persistence-reserved path exclusions. The artifact binding has no raw
+    `from_bytes` factory. The strict loader applies the byte-size cap, checks
+    the expected digest before parsing, translates canonical parse errors, and
+    checks structural joins only. It authenticates no source, seed registry,
+    runtime, filesystem observation, admission, freeze, invocation, or
+    execution, and emits no reusable capability. A caller-created record,
+    digest, serialized “capability,” or token remains data rather than
+    authority;
+19. implement the atomic result/failed-attempt terminal transaction,
+    authenticated external-witness verification/finalization path, and
+    eventual runner mechanics in a separately reviewed sequence. Do not invoke
+    the official supplier, issue a seed, or perform an official execution in
+    this item;
+20. implement one fused verify-and-exclusive-start operation. It must reopen
+    and authenticate the exact target, launch intent, source/runtime closure,
+    admission, execution identity, and physical store/lane; live-reobserve
+    identity and output/terminal absence; and transition directly into the
+    exclusive start. It must not serialize, return, cache, or accept a reusable
+    authorization capability or caller token;
+21. only after those execution surfaces are final, issue an exact current
     execution-source/runtime receipt, complete reviewed family admission, and
     establish seed-free readiness. C2 cannot satisfy this item, and no seed is
     supplied here;
-20. acquire the exclusive seed-supply claim, invoke the supplier once,
+22. acquire the exclusive seed-supply claim, invoke the supplier once,
     atomically publish the exact seed-bearing full design and replay target,
     then commit their freeze receipt before launch intent. A claim without
     target publication is `seed_supply_aborted` and non-retryable; target
     absence never proves that the supplier was not invoked;
-21. after that committed D7 design-freeze receipt exists, execute the separate
+23. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-22. run the admitted family without overrides or post-selection exclusions,
-    and require complete isolated byte-identical replay before setting any
-    scope-specific D7/D8 status; same-family new seeds remain replication and
-    cannot satisfy this item;
-23. only then begin the separate representation-native F0-F4 selection lane;
+24. invoke the fused verify-and-exclusive-start operation, run the admitted
+    family without overrides or post-selection exclusions, publish exactly one
+    terminal outcome, and require complete isolated byte-identical replay
+    before setting any scope-specific D7/D8 status. Same-family new seeds
+    remain replication and cannot satisfy this item;
+25. only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-24. establish the same-substrate field/core/loop join, persist the frozen
+26. establish the same-substrate field/core/loop join, persist the frozen
     same-field core-degeneracy scalar and nested-radius profile, and retain the
     architecture-accounted sampled-winding estimate distribution with its
     unrounded cycle totals and residuals; only when the convention permits it
     may calibration-side integer/topology eligibility be assessed;
-25. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+27. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
     detection-limit surface over injection amplitude, declared
     perturbation/noise, and sampling density, including density-stratified
     exact-recall and graph-family matched-class gates;
-26. apply the preregistered M1 transition/stop rule. Pythia-70M remains
+28. apply the preregistered M1 transition/stop rule. Pythia-70M remains
     plumbing-only; an exhausted qualification budget ends `insufficient`
     rather than extending instrumentation indefinitely; and
-27. only after those separately reviewed M1 gates prepare and externally
+29. only after those separately reviewed M1 gates prepare and externally
     witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
@@ -1024,7 +1054,7 @@ claim-ineligible ContextBank, exact offline model bytes, bounded rows,
 CPU/float32 capture, and an atlas-integrity-only allowlist. Its receipt records
 real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
-remain `not_run`. This lane cannot select any choice in steps 5-24 above and
+remain `not_run`. This lane cannot select any choice in steps 5-29 above and
 cannot be cited as subject preparation or evidence.
 
 The successor-only fulfillment rule for the D6 v0.1 identity-bearing
@@ -1052,13 +1082,28 @@ primaries, strata, four-state gates, and the outer payload, but target exact
 sets and gate evidence still require an authoritative target loader. The start
 schema binds an external execution identity. The prefix writer reobserves only
 the declared local path coordinates; no source/runtime authority or witness
-verifier exists. No terminal publisher, authoritative target/store loader,
+verifier exists. PR #23 now adds an eighth deep-internal module whose strict
+loader returns only a non-authorizing structural candidate. Dedicated
+caller-claimed target admission, exact-full-design, and exact-source/runtime
+leaves record `identity_authenticated=false`. Typed exclusive-claim and
+single-invocation inputs causally join supplier, registries, readiness,
+caller-alleged receipt bindings, official inventory, and atomic publication.
+The physical input binds the exact attempt key, positive store/lane identities,
+and persistence-reserved path exclusions. The artifact binding has no raw
+`from_bytes` factory; the loader applies its size cap, verifies the digest
+before parsing, and translates canonical parse errors. It authenticates no
+caller, receipt, registry, claim, invocation, or publication, performs no live
+observation, and emits no reusable capability. No terminal
+publisher, authoritative target/store loader,
 execution capability, runner, finalizer, replay comparator, official seed, or
 official record instance is introduced. After those
-operational surfaces and the runner are final, a new exact current
-execution-source/runtime closure is required; C2 cannot supply it. Lifecycle
-and terminal work keep the replay target separate from the attempt envelope
-and create no placeholder result. The current
+operational surfaces, a fused verify-and-exclusive-start operation, and the
+runner are final, a new exact current execution-source/runtime closure and
+reviewed admission are required; C2 cannot supply them. Only afterward may
+the supplier be invoked once, target/full design be published and frozen,
+launch intent be persisted, and the fused start be invoked. Lifecycle and
+terminal work keep the replay target separate from the attempt envelope and
+create no placeholder result. The current
 four-case generator, C1 design, rebinding record, contract specifications,
 record schemas, and development prediction inventory are not a D7 full-design
 freeze, admission, or run. Historical D6 bytes remain unchanged and exact D6
