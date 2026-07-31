@@ -15,10 +15,13 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `fixed_official_zero_argument_producer_implemented_deep_internal`,
 `exact_full_inventory_aggregation_and_full_design_builders_implemented_deep_internal`,
 `installed_inventory_exact_equality_enforced`,
+`item21_three_artifact_chain_fixed_in_source_commit`,
+`item21_source_commit_artifacts_absent`,
+`item21_final_corrected_tip_artifacts_tracked_and_strictly_reloaded`,
+`item21_complete_at_final_corrected_tip`,
 `canonical_d7_launch_descriptor_absent`,
-`current_execution_source_runtime_closure_absent`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
-`not_frozen`, `not_admitted`, `not_run`.
+`not_frozen`, `seed_bearing_target_not_admitted`, `not_run`.
 
 This document is the single detailed anchor for the spectral-moment D7
 execution topology added after the PR #12 construction foundation. It records
@@ -366,9 +369,40 @@ portion of item 21: it tracks the exact `requirements-d7-runtime-lock.txt`,
 fixes the deep-internal zero-argument official producer and exact
 full-inventory, aggregation, and full-design builders, and enforces exact
 equality of the complete installed distribution name/version inventory. It does
-not issue a positive exact-current source/runtime receipt, establish seed-free
-readiness, or complete reviewed family admission. The later
-seed-bearing sequence is an exclusive seed-supply claim, one supplier
+not itself issue positive authority. The corrected item-21 source anchor defines three
+separate tracked item-21 artifacts in fixed order: exact source/runtime receipt,
+seed-free readiness, then scoped reviewed successor-family admission. It issues
+none of them and freezes all item-21 documentation. The source/runtime receipt is
+the only addition in its direct-child commit; readiness is the only addition in
+the next direct child; and admission is the only addition in the next direct
+child. A merge, intervening change, combined artifact or documentation commit,
+or embedded future-child identity fails this receipt-only chronology. Item 21
+is partial at the source commit. The three artifact-only children strictly
+reload/rejoin the chain and complete item 21 at the final corrected tip. The later
+historical loader reconstructs source and lock bytes from that source commit,
+while the live verifier rejects any later execution-source or runtime change.
+
+That chronology check is graph-sensitive, not endpoint-only. The loader scans
+full HEAD-reachable path history, derives exactly one direct-child introduction,
+and permits later path events only on its descendant lineage with the identical
+`100644` blob. A merged-away mutation, deletion/re-addition, or parallel
+introduction fails, while a preserving merge with an artifact-absent unrelated
+parent remains valid. Historical reconstruction enforces the issuer's
+per-member and aggregate source caps. Live source verification checks every
+bounded source-path event on the anchor-to-HEAD descendant ancestry, together
+with both endpoints, so an edit followed by a revert or merge resolution still
+requires a reviewed re-anchor.
+If item-22 implementation changes the source surface, its versioned
+exact-current source/runtime re-anchor must use the separate fixed pre-claim
+path `item22-current-source-runtime-reanchor.json`, outside the reserved
+`item22-seed-supply/` namespace, bind the item-21 chain, and be reviewed before
+the exclusive claim; a stale item-21 handoff is not authority.
+The current verifier's returned object is point-in-time evidence, not a
+freshness-bearing capability. The future item-22 transition must perform the
+applicable live verification internally immediately before its no-replace
+claim and accept no cached snapshot from its caller.
+
+The later item-22 seed-bearing sequence is an exclusive seed-supply claim, one supplier
 invocation, atomic no-replace publication of the seed-bearing full design and
 target, a committed full-design freeze receipt, then launch intent. Only then
 may the fused operation be invoked.
@@ -476,10 +510,17 @@ are established only by later exact typed joins; they cannot be nested into or
 inferred from the target record.
 
 Now that the lifecycle, result, failed-attempt, terminal, runner, and fused
-mechanics are final, the still-open portion of item 21 must close the
-exact-current execution source and runtime with newly reviewed positive
-artifacts. C2 cannot do that: it closes only the
-historical C1 Git source set and covers none of these later surfaces. A later seed-bearing target must
+mechanics are final, the corrected source anchor fixes the formerly open
+item-21 boundary as the strict
+three-artifact chain above. Its source commit is only the anchor and has none of
+the artifacts. The three tracked, receipt-only direct-child commits add and
+strictly reload/rejoin exact source/runtime receipt, seed-free readiness, and
+scoped reviewed successor-family admission in that order, completing item 21
+at the final corrected tip. C2 cannot do that: it closes only the historical C1 Git
+source set and covers none of these later surfaces.
+Existing caller-constructible admission, readiness, and source/runtime records
+keep their false verification state and are not promoted into any of the three
+artifacts. A later seed-bearing target must
 bind that new receipt, exactly two unique, sorted, nonnegative signed-int64
 seeds, rejection of every development and parent selection seed, the
 `confirmation-seed-slot-00` and `confirmation-seed-slot-01` mapping, the
@@ -534,9 +575,14 @@ fused path makes at most one terminal-publication attempt, not a terminal
 durability guarantee. PR26 provides the fixed producer and exact full-inventory,
 aggregation, and full-design builders as code-side ingredients only. It does
 not provide signed trust-root provenance, wall-clock freshness, an official
-descriptor or invocation, official supplier or seeds, a positive exact-current
-source/runtime receipt, an
-execution-observation receipt, scientific eligibility, D7, or D8.
+descriptor or invocation, official supplier or seeds, any of item 21's three
+tracked positive artifacts, an execution-observation receipt, scientific
+eligibility, D7, or D8. The final corrected chain supplies and strictly reloads the
+three item-21 artifacts, but it supplies none of those later execution items.
+The item-21 implementation also does not widen the declared honest-local
+source/runtime surface
+described above or turn canonical-origin equality into a signed trust root or
+hostile-local-operator defense.
 
 The reviewed successor order is:
 
@@ -550,27 +596,34 @@ The reviewed successor order is:
    return, cache, and accept no reusable authorization token;
 4. retain item 21's exact runtime lock, fixed zero-argument official producer,
    exact full-inventory, aggregation, and full-design builders, and
-   installed-inventory equality check as code-side ingredients only; issue the
-   positive exact-current source and runtime artifacts and complete reviewed
-   family admission plus seed-free readiness;
-5. acquire the seed-supply claim, invoke the supplier once, atomically publish
-   the seed-bearing full design and target, commit the freeze, and only then
-   persist launch intent; execute item 23's separate descriptive result without
-   changing any D7 design byte; and
+   installed-inventory equality check as code-side ingredients only; after all
+   item-21 source is final, add only the exact source/runtime receipt in its
+   direct-child commit, only seed-free readiness in the next direct child, and
+   only scoped reviewed successor-family admission in the next direct child;
+   strictly reload and rejoin all three before item 21 is complete;
+5. if the execution-source surface changes, first publish and review the
+   fixed-path exact-current re-anchor bound to item 21; only then acquire the
+   seed-supply claim, invoke the supplier once, atomically publish the
+   seed-bearing full design and target, commit the freeze, and persist launch
+   intent; execute item 23's separate descriptive result without changing any
+   D7 design byte; and
 6. before item 24, create and commit the closed nine-member fused descriptor
    and pass strict verification-evidence replay/rejoin, temporary Git/runtime
    end-to-end validation, and authoritative-start-compatible external-abort
    integration. Item 24 is the first official fused invocation and must yield
    the exact terminal outcome before isolated byte replay can qualify.
 
-Evidence envelopes cannot be promoted in place. Official seeds, concrete
-replay target, attempt instances, admission, full-design freeze, no-overwrite
-publication, launch, exclusive attempt, execution start, official terminal
-publication, and isolated replay remain separate obligations. None may be
-represented by a placeholder result, inferred from C2 source closure, or
-authorized by caller-constructible records.
+Evidence envelopes and existing caller-constructible authority records cannot
+be promoted in place; their verification fields remain false. The item-22
+supplier claim and invocation, official seeds, atomic seed-bearing
+target/full-design publication, committed freeze, launch intent, canonical
+nine-member descriptor, official invocation/start/run/terminal/result, D7, and
+D8 remain absent or `not_run`. None may be represented by a placeholder
+result, inferred from C2 source closure, or authorized by caller-constructible
+records.
 
-Until those are complete, the canonical state remains:
+At the final corrected item-21 tip, while the later item-22 and execution obligations remain
+open, the canonical state is:
 
 ```text
 c1_seed_free_source_set_candidate_recorded
@@ -583,13 +636,17 @@ launch_authority_input_schema_candidate_defined
 replay_target_instance_absent
 attempt_envelope_instance_absent
 not_frozen
-not_admitted
+seed_bearing_target_not_admitted
 not_run
 d6_v0_1_exact_admission_unsatisfied
 historical_git_source_set_closure_verified
-runtime_and_transitive_closure_unattested
-current_source_compatibility_not_verified
-current_execution_source_runtime_closure_absent
+c2_runtime_and_transitive_closure_unattested
+c2_current_source_compatibility_not_verified
+item21_exact_source_runtime_receipt_tracked_strictly_reloaded
+item21_exact_installed_inventory_and_runtime_observed_honest_local
+item21_seed_free_readiness_tracked_strictly_reloaded
+item21_scoped_successor_family_admission_tracked_strictly_reloaded
+item21_complete
 terminal_witness_runner_mechanics_implemented_non_authorizing
 fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
 canonical_d7_launch_descriptor_absent

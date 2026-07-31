@@ -929,11 +929,43 @@ whole-document equality with the design recorded in C1. It is not a general
 alternate construction path or a historical reinterpretation of D6 or C1, and
 it accepts no caller-authored design.
 
-That is implementation conformance, not D7 evidence. Committed C2 now verifies
-the declared historical Git source set, but concrete confirmation seeds,
-repository-review attestation, family admission, freeze, lifecycle,
-authoritative target binding, official terminal publication, and isolated
-replay remain absent. The deep-internal persistence-only slice can now record
+The corrected item-21 source anchor defines the remaining positive-authority
+boundary as three separate tracked artifacts in fixed order: exact
+source/runtime receipt, seed-free readiness, then scoped reviewed
+successor-family admission. It issues none of the artifacts and freezes all
+item-21 documentation. The receipt is the only addition in its direct-child
+commit, readiness the only addition in the next direct child, and admission the
+only addition in the next direct child. No merge, intervening change, combined
+artifact or documentation commit, or embedded future-child identity satisfies
+this receipt-only chronology. Item 21 is partial at the source commit. The
+three artifact-only children add and strictly reload/rejoin the chain,
+completing item 21 at the final corrected tip.
+
+Historical reload remains tied to the corrected source-anchor tree and runtime-lock
+blob. The current-readiness check separately rejects later live source or
+runtime drift. Full HEAD-reachable artifact history must contain one exact
+direct-child introduction; every later path event must remain on its descendant
+lineage with the identical `100644` blob. Historical source reconstruction
+uses the issuer's per-member and aggregate caps, and live readiness requires
+the anchor and HEAD plus every bounded source-path event on their descendant
+ancestry to retain the exact source tree. Merged-away artifact or source
+mutations and exact source reverts therefore fail rather than being laundered
+by endpoint equality.
+
+Since item-22 orchestration is not introduced here, any
+source-changing implementation PR must first create a reviewed, versioned
+exact-current source/runtime re-anchor at the separate fixed pre-claim path
+`item22-current-source-runtime-reanchor.json`, outside the reserved
+`item22-seed-supply/` namespace, and bind it to the item-21 chain. That
+re-anchor precedes the exclusive item-22 claim and every supplier call.
+
+That is implementation conformance, not D7 execution evidence. Committed C2
+verifies only the declared historical Git source set; the final corrected chain
+separately adds exact source/runtime receipt, seed-free readiness, and scoped
+reviewed successor-family admission. Concrete confirmation seeds, seed-bearing
+target admission, freeze, lifecycle, authoritative target binding, official
+terminal publication, and isolated replay remain absent. The deep-internal
+persistence-only slice can now record
 and reload a caller-supplied primary declaration-through-start record prefix as chained
 false-authority envelopes in a dedicated evidence-only lane without
 replacement. It grants neither execution nor scientific authority, cannot be
@@ -981,6 +1013,9 @@ The recorded ordering is:
 This addition does not revise any earlier artifact or decision. Canonical
 caller records, their digests, and serialized “capability” labels remain
 caller-controlled data. They cannot be upgraded into authority in place.
+Their authority and verification fields remain false; the item-21
+issuers/loaders do not promote them or accept them as substitutes for the three
+tracked positive artifacts.
 Registry completeness is evaluated only against the explicitly bound registry
 sources and counts; it is not evidence that a trusted supplier or historical
 parent was consulted.
@@ -1052,12 +1087,17 @@ The next execution-preparation order is:
 3. retain item 21's exact `requirements-d7-runtime-lock.txt`, fixed
    zero-argument official producer, exact full-inventory, aggregation, and
    full-design builders, and installed-inventory equality check as code-side
-   ingredients only; issue the positive exact-current source and runtime
-   artifacts and complete reviewed family admission plus seed-free readiness;
-4. acquire the exclusive seed-supply claim, invoke the supplier once, publish
-   the exact seed-bearing target and full design atomically, commit their
-   freeze, persist launch intent after that freeze, and execute item 23's
-   already separated descriptive result without changing D7 design bytes;
+   ingredients only; after all item-21 source is final, add only the exact
+   source/runtime receipt in its direct-child commit, only seed-free readiness
+   in the next direct child, and only scoped reviewed successor-family
+   admission in the next direct child; strictly reload and rejoin all three
+   before item 21 is complete;
+4. if the execution-source surface changes, first publish and review the
+   fixed-path exact-current re-anchor bound to item 21; only then acquire the
+   exclusive seed-supply claim, invoke the supplier once, publish the exact
+   seed-bearing target and full design atomically, commit their freeze, persist
+   launch intent after that freeze, and execute item 23's already separated
+   descriptive result without changing D7 design bytes;
 5. before item 24, create and commit the closed nine-member fused descriptor
    and pass strict verification-evidence replay/rejoin, recognizing that
    structural replay preserves but does not recompute or independently
@@ -1066,6 +1106,13 @@ The next execution-preparation order is:
    and authoritative-start-compatible external-abort integration; and
 6. make item 24 the first official fused invocation, requiring an exact
    terminal outcome and complete isolated byte replay.
+
+Nothing in the corrected source anchor or its three artifact-only children performs
+item 22. Even at the final corrected tip, no exclusive supplier claim or invocation,
+official seed inventory, atomic seed-bearing target/full-design publication,
+or committed freeze exists. Launch intent, the canonical
+nine-member descriptor, an official invocation/start/run/terminal/result, D7,
+and D8 also remain absent or `not_run`.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

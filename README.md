@@ -617,12 +617,54 @@ tracks the exact `requirements-d7-runtime-lock.txt`, fixes a deep-internal
 zero-argument official producer plus exact full-inventory, aggregation, and
 full-design builders and requires exact equality of the complete installed
 distribution name/version inventory. Those are code-side item-21 ingredients
-only. No
-positive exact-current source/runtime receipt, reviewed admission, seed-free
-readiness, canonical launch descriptor, official seed, seed-bearing target or
-full-design publication, freeze, launch intent, or run exists; D7 and D8 remain
-`not_run`. The fused path therefore remains uninvoked and fails closed pending
-those positive artifacts and decisions.
+only. The corrected item-21 source anchor defines the remaining publication boundary
+as three separate tracked artifacts, in this fixed order: an exact
+source/runtime receipt, seed-free readiness, and scoped reviewed
+successor-family admission. At that source-commit stage it creates none of
+them, and all item-21 documentation is already frozen. The receipt is the sole
+addition in its direct-child commit; readiness is the sole addition in the
+next direct child; and admission is the sole addition in the next direct
+child. No merge, intervening change, combined artifact or documentation commit,
+or embedded future-child identity satisfies that receipt-only chronology.
+
+The loader derives the unique introduction from full HEAD-reachable Git
+history. Every later path event must descend from that introduction and retain
+the identical `100644` blob; a merged-away mutation, delete/re-add, or parallel
+introduction fails. A preserving merge remains valid because the artifact-side
+merge tree retains the same blob while the unrelated pre-introduction parent
+has no artifact path. Historical source reconstruction enforces the same
+per-member and aggregate byte caps as issuance. Live readiness additionally
+checks the anchor and current HEAD plus every bounded source-path event on their
+descendant ancestry against the exact anchored execution-source tree, so
+edit/revert and merged-away source drift require a versioned re-anchor.
+
+Item 21 is partial at the source commit and complete only at the final corrected item-21 tip,
+where all three artifacts have been tracked in those commits, strictly
+reloaded, and passed their exact source/runtime and chronology rejoin checks.
+Existing caller-constructible authority-prerequisite records remain
+false-authority structural data and are not promoted by the new issuers or
+loaders. With the versioned v0.1 loader retained, historical reload reconstructs
+the item-21 source and runtime lock from the source commit rather than current
+builder functions; current readiness separately requires the live
+execution-source tree and exact runtime still to equal that anchor. Any later
+execution-source change therefore invalidates live readiness without erasing
+the historical receipt. Before item 22 may acquire its claim, that later
+version must first publish and review a new exact-current source/runtime
+re-anchor at the separate fixed pre-claim path
+`item22-current-source-runtime-reanchor.json`, outside the reserved
+`item22-seed-supply/` namespace, and bind this item-21 chain; the seed supplier
+cannot be used to bridge that gap.
+The current verifier returns point-in-time evidence only. A future item-22
+transition must perform the applicable live verification internally immediately
+before its no-replace claim; it must not accept, cache, or treat this returned
+snapshot as freshness or authorization.
+
+The final corrected item-21 tip still has no item-22 exclusive supplier claim or
+invocation, official seed, atomic seed-bearing target/full-design publication,
+or committed freeze. Launch intent, the canonical nine-member descriptor, an
+official start/run/terminal/result, D7, and D8 also remain absent or `not_run`.
+The fused path therefore remains uninvoked and fails closed pending those later
+decisions.
 
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
@@ -633,8 +675,10 @@ explicitly bound sources and counts in this candidate; it does not prove
 supplier chronology or seed secrecy. No reusable authorization object is
 issued.
 
-Family admission, full-design freeze, official seeds, authoritative
-target-bound lifecycle instances, an official fused invocation,
+The scoped reviewed successor-family admission exists only in the final corrected
+item-21 chain. Seed-bearing target admission, full-design freeze, official
+seeds, authoritative target-bound lifecycle instances, an official fused
+invocation,
 official result/failure publication, authoritative terminal publication,
 official abort finalization, an official runner, and replay comparison remain
 absent. The local prefix store is a
@@ -653,7 +697,7 @@ an independent confirmation or replay has occurred. Global
 `d6_d8_advanced=false` and `synthetic_qualified=false` remain invariant. No
 label-only D7 admission validator or caller-supplied byte-comparison D8
 validator is exposed; those operational surfaces remain deferred until a
-concrete target, final-code source/runtime closure, authoritative ownership and
+concrete target, authoritative ownership and
 trust-root provenance, an official fused invocation, official terminal lineage, and
 isolated-replay receipts exist.
 
@@ -708,8 +752,9 @@ pytest
 ```
 
 Recorded-lineage tests fail closed and require the C1/C2 ancestry they verify
-to be present locally. A shallow clone that omits any required lineage commit
-must deepen or fetch that ancestry before running the full suite.
+to be present locally. Item-21 verification rejects every shallow repository
+rather than inferring that its visible ancestry is complete; deepen or
+unshallow the clone before running the full suite.
 
 ## First end-to-end run
 
@@ -1117,9 +1162,12 @@ to become a general library.
   reader reconstructs the unchanged historical proposal. C1 now encodes the
   exact successor review contract but embeds no repository-review attestation.
   The committed C2 now verifies declared historical Git source-set closure
-  only. The rule remains ineffective until repository review and typed
-  admission; C2 does not attest runtime or transitive dependencies. It does
-  not satisfy the historical exact hashes; D6 v0.1 bytes remain unchanged.
+  only. At that C1/C2 stage the rule remains ineffective until repository
+  review and typed admission. The final corrected item-21 chain later supplies the
+  scoped reviewed successor-family admission without altering C1, C2, or the
+  historical D6 decision; C2 does not attest runtime or transitive
+  dependencies. The successor rule still does not satisfy the historical exact
+  hashes, and D6 v0.1 bytes remain unchanged.
 - **Frozen — post-D6 analysis separation:** the canonical
   post-selection descriptive plan may read only the already-opened PR #9
   terminal and cannot inform D7 design. A separate value-blind D7 gap matrix
@@ -1155,9 +1203,10 @@ to become a general library.
   external execution identity, but its bytes and strict loader grant no
   authority and explicitly do not establish `started_unresolved`. The item-19
   external finalizer remains evidence-only and cannot consume that transaction.
-  After final-code
-  source/runtime closure and reviewed family admission, a future seed-supply
-  lifecycle must acquire its exclusive claim before the single supplier
+  With final-code source/runtime receipt, seed-free readiness, and scoped
+  reviewed successor-family admission complete in the final corrected item-21 chain, the
+  future item-22 seed-supply lifecycle must acquire its exclusive claim before
+  the single supplier
   invocation. It then atomically publishes the seed-bearing full design and
   target, commits their freeze receipt, and only then creates launch intent. If
   the claim exists but atomic target publication does not complete, the seed
@@ -1174,7 +1223,9 @@ to become a general library.
   `caller_supplied_start_record_present_terminal_absent`, while any terminal
   entry is unverified presence. It cannot establish execution,
   `started_unresolved`, or isolated-replay provenance. Exact-current execution
-  source/runtime artifacts must now follow the completed operational mechanics.
+  source/runtime receipt, seed-free readiness, and scoped reviewed
+  successor-family admission now follow the completed operational mechanics in
+  the final corrected item-21 receipt-only chain.
   Deep-internal canonical component, absence-receipt, evidence-payload, and
   verification-receipt byte schemas now reject arbitrary or noncanonical
   caller bytes and perform pure structural joins. They do not load the frozen
@@ -1243,20 +1294,25 @@ to become a general library.
   unrecorded environment, model state, and data state remain outside closure.
   It makes at most one terminal-publication attempt; hard exit, post-start
   drift, unproved start-parent fsync, or success/failure publication error can
-  leave a visible start without a terminal. PR26 completes the code-side
-  portion of item 21: the exact runtime lock, fixed official producer, exact
-  full-inventory, aggregation, and full-design builders, and
-  installed-inventory equality check now exist. No positive exact-current
-  source/runtime receipt, reviewed admission, seed-free readiness, canonical
-  descriptor, official seed, seed-bearing target or full-design publication,
-  freeze, launch intent, or run exists; D7 and D8
-  remain `not_run`. The operational order is now explicit: retain item-19 and
-  item-20 mechanics without an official run; finish item 21 by issuing the
-  positive exact-current source/runtime artifacts and completing seed-free
-  readiness plus reviewed family admission. Then invoke
-  the seed supplier once and atomically publish target/full design before
-  committing freeze and launch intent. Before item 24, create and commit the
-  closed nine-member fused descriptor and pass strict verification-evidence
+  leave a visible start without a terminal. PR26 completes the earlier
+  code-side portion of item 21: the exact runtime lock, fixed official
+  producer, exact full-inventory, aggregation, and full-design builders, and
+  installed-inventory equality check now exist. The corrected item-21 source anchor fixes a
+  three-artifact successor chain: exact source/runtime receipt, then seed-free
+  readiness, then scoped reviewed successor-family admission. It issues none;
+  all item-21 docs are frozen there, and each artifact is the only addition in a
+  strict direct-child commit after its predecessor. The final corrected tip strictly
+  reloads/rejoins all three and completes item 21; existing
+  caller-constructible authority records remain false and are not promoted.
+  Even at that final tip, no item-22 supplier claim/invocation, official seed,
+  atomic seed-bearing target/full-design publication, or freeze exists. Launch
+  intent, the canonical nine-member descriptor, an official run, D7, and D8
+  remain absent or `not_run`. The operational order is now explicit: retain item-19 and
+  item-20 mechanics without an official run; finish item 21 through that exact
+  receipt-only chain. Then claim exclusive supply, invoke the seed supplier
+  once, and atomically publish target/full design before committing the freeze
+  and, separately afterward, launch intent. Before item 24, create and commit
+  the closed nine-member fused descriptor and pass strict verification-evidence
   replay/rejoin, temporary-Git/runtime end-to-end, and authoritative-start-
   compatible external-abort integration checks. Item 24 is the first official
   fused invocation. Execute without
@@ -1331,8 +1387,9 @@ immediate next plan live in the single
   candidate, the choice-free C2 issuer/loader, and its committed
   declared-Git-source-set receipt, plus canonical unpersisted replay-target and
   append-only attempt-envelope contract specifications. They are not exported
-  from `spirallens.qualification` or the package root. No admission, seed,
-  execution, result, or promotion surface is published.
+  from `spirallens.qualification` or the package root. No public admission,
+  seed, execution, result, or promotion surface is published; the scoped item-21
+  successor-family admission is an internal tracked artifact, not an API.
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

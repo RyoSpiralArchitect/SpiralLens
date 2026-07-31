@@ -149,7 +149,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; positive exact-current source/runtime receipts, reviewed admission/readiness, a canonical descriptor, authoritative target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected item-21 source anchor freezes the strict receipt-only chain from exact source/runtime receipt through seed-free readiness to scoped reviewed successor-family admission, and three artifact-only direct children add, strictly reload, and rejoin them to complete item 21; a canonical descriptor, authoritative item-22 target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -993,10 +993,36 @@ below:
     C1 are mandatory. It is not a general alternate construction path or a
     historical reinterpretation of D6 or C1, and it accepts no caller-authored
     design.
-    Positive exact-current source/runtime receipts, reviewed family
-    admission, and seed-free readiness remain absent. C2 cannot satisfy those
-    remaining obligations, and no seed is supplied here;
-22. acquire the exclusive seed-supply claim, invoke the supplier once,
+    The corrected item-21 source anchor defines but does not issue the remaining three
+    positive item-21 artifacts. Their fixed order is (a) exact source/runtime
+    receipt, (b) seed-free readiness, and (c) scoped reviewed successor-family
+    admission. All item-21 source code and documentation are final in that source
+    commit. The receipt is the only addition in its direct child; readiness is
+    the only addition in the next direct child; and admission is the only
+    addition in the next direct child. A merge, intervening change, combined
+    artifact or documentation commit, or embedded future-child identity does
+    not satisfy this strict receipt-only chronology. Item 21 is partial at the
+    source commit and complete at the final corrected tip only after all three
+    artifacts are tracked in that chain, strictly reloaded, and pass their
+    exact source/runtime and chronology rejoin checks. C2 cannot satisfy these
+    obligations, and the existing caller-constructible authority records
+    retain false verification fields and are not promoted. No item-22 seed is
+    supplied here. Full HEAD-reachable artifact history must retain one exact
+    direct-child introduction and identical descendant blobs; merged-away
+    mutation, delete/re-add, and parallel introduction fail. Historical
+    reconstruction enforces issuer-equivalent source caps; the anchor, HEAD,
+    and every bounded source-path event on their descendant ancestry must
+    retain the exact anchored tree;
+22. if implementing this item changes the item-21 execution-source surface, first
+    publish and review a versioned exact-current source/runtime re-anchor bound
+    to the historical item-21 chain at the separate fixed pre-claim path
+    `item22-current-source-runtime-reanchor.json`, outside the reserved
+    `item22-seed-supply/` namespace. Historical reload of item 21 uses its
+    source-commit tree and lock bytes; the live readiness check rejects drift,
+    so a stale item-21 handoff cannot authorize the transition. The item-22
+    operation must perform the applicable live check internally immediately
+    before its no-replace claim and accept no cached readiness snapshot. Only then
+    acquire the exclusive seed-supply claim, invoke the supplier once,
     atomically publish the exact seed-bearing full design and replay target,
     then commit their freeze receipt before launch intent. A claim without
     target publication is `seed_supply_aborted` and non-retryable; target
@@ -1095,9 +1121,12 @@ This library slice adds, without changing that generic behavior:
   future content-addressed, attempt-independent target and a separate
   append-only attempt lineage without persisting either instance, exposing a
   seed supplier, or granting authority. Because C2 is historical-only, item
-  21's positive exact-current execution-source/runtime artifacts remain absent
-  and must follow the completed lifecycle, result, terminal, runner, and fused
-  mechanics.
+  21 cannot derive positive exact-current authority from it; and
+- the final corrected item-21 receipt-only chain, whose source commit freezes all code and
+  docs and whose three direct children separately add and strictly reload the
+  exact source/runtime receipt, seed-free readiness, and scoped reviewed
+  successor-family admission. This completes item 21 after the lifecycle,
+  result, terminal, runner, and fused mechanics without invoking item 22.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1196,18 +1225,26 @@ gives the private ownership type an issuer only inside that
 exact call; structural loaders still grant no authority. PR26 now provides the
 exact runtime lock, fixed deep-internal zero-argument official producer, exact
 full-inventory, aggregation, and full-design builders, and installed-inventory
-equality check as code-side item-21 ingredients only. There is no official
-descriptor, positive exact-current source/runtime receipt, reviewed
-admission/readiness,
+equality check as code-side item-21 ingredients only. At the PR26 tip there is
+no positive exact-current source/runtime receipt or reviewed
+admission/readiness. There is also no official descriptor,
 target/freeze/intent instance, replay comparator, official seed,
 execution-observation receipt, scientific eligibility, invocation/run, or
 official record instance. The item-19 evidence-only finalizer cannot accept
 the item-20 structural-start type. The positive-authority remainder of item
-21 is therefore next: issue the exact-current source/runtime artifacts and
-complete readiness plus reviewed admission; C2 cannot supply them. Only
-afterward may the supplier be invoked once, target/full design be published and
-frozen, launch intent be persisted, and the nine-member descriptor be created and
-committed. Strict verification-evidence replay/rejoin, temporary Git/runtime
+21 was the next staged closure. The corrected item-21 source anchor freezes the fixed tracked
+chain—exact source/runtime receipt, seed-free readiness, then scoped reviewed
+successor-family admission—but issues none of those artifacts. Three
+successive receipt-only direct children then add exactly one artifact each in
+that order, strictly reload/rejoin all three, and complete item 21 at the final
+corrected tip. C2 and the existing caller-constructible false-authority records
+cannot supply or replace them. Only afterward may item 22 acquire its exclusive
+supplier claim, invoke the supplier once, atomically publish the seed-bearing
+target/full design, and commit the freeze. Those actions, their official seeds,
+launch intent, and the nine-member descriptor are absent at the final corrected tip.
+No official fused invocation,
+start, terminal/result, D7 result, or D8 replay exists; D7 and D8 remain
+`not_run`. Strict verification-evidence replay/rejoin, temporary Git/runtime
 end-to-end validation, and authoritative-start-compatible external-abort
 integration must pass before item 24 becomes the first official fused
 invocation. Lifecycle and
