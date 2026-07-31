@@ -1,0 +1,8 @@
+cffi==2.0.0
+cryptography==46.0.7
+numpy==2.4.4
+pip==26.1.1
+pycparser==3.0
+pyyaml==6.0.3
+scipy==1.17.1
+spirallens==0.1.0

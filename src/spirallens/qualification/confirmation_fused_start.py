@@ -19,7 +19,6 @@ execution, result, scientific claim, replay permission, or D8 state.
 
 from __future__ import annotations
 
-import importlib.metadata
 import inspect
 import marshal
 import os
@@ -49,6 +48,7 @@ from . import confirmation_attempt_terminal_persistence as terminal_persistence
 from . import confirmation_authoritative_start_persistence as start_persistence
 from . import confirmation_fused_authority as fused_authority
 from . import confirmation_runner as runner
+from . import confirmation_runtime_observation as runtime_observation
 from . import confirmation_terminal_operations as terminal_operations
 from .common import QualificationContractError
 
@@ -61,7 +61,7 @@ D7_FUSED_START_SOURCE_TREE_SCHEME = (
     "spirallens.d7-fused-start-source-tree-observation.v0.1"
 )
 D7_FUSED_START_DEPENDENCY_SET_SCHEME = (
-    "spirallens.d7-fused-start-installed-dependency-set.v0.1"
+    runtime_observation.D7_RUNTIME_DEPENDENCY_SET_SCHEME
 )
 D7_FUSED_START_CALLABLE_IDENTITY_SCHEME = (
     "spirallens.d7-fused-start-callable-identity.v0.1"
@@ -341,36 +341,6 @@ def _source_tree_sha256(root: Path, source_commit: str) -> str:
     )
 
 
-def _installed_dependency_set_sha256() -> str:
-    observed: dict[str, str] = {}
-    for distribution in importlib.metadata.distributions():
-        name = distribution.metadata.get("Name")
-        version = distribution.version
-        if not name or not version:
-            raise QualificationContractError(
-                "installed distribution lacks a canonical name or version"
-            )
-        normalized = re.sub(r"[-_.]+", "-", name).lower()
-        previous = observed.setdefault(normalized, version)
-        if previous != version:
-            raise QualificationContractError(
-                "installed dependency set contains conflicting versions"
-            )
-    return sha256_bytes(
-        canonical_json_bytes(
-            {
-                "schema_version": D7_FUSED_START_DEPENDENCY_SET_SCHEME,
-                "python_implementation": sys.implementation.name,
-                "python_version": platform.python_version(),
-                "distributions": [
-                    {"name": name, "version": observed[name]}
-                    for name in sorted(observed)
-                ],
-            }
-        )
-    )
-
-
 @dataclass(frozen=True, slots=True)
 class _RuntimeObservation:
     source_tree_sha256: str
@@ -395,14 +365,20 @@ def _observe_runtime(
     runtime = snapshot.runtime_specification
     closure = snapshot.source_runtime_closure
     executable = Path(os.path.realpath(sys.executable))
+    dependency_lock_source = _read_regular_file(
+        root / D7_RUNTIME_LOCK_REPOSITORY_PATH,
+        label="D7 runtime dependency lock",
+        maximum_bytes=runtime_observation.MAX_D7_RUNTIME_LOCK_BYTES,
+    )
+    dependencies = runtime_observation._verify_exact_dependency_lock(
+        dependency_lock_source
+    )
     observation = _RuntimeObservation(
         source_tree_sha256=_source_tree_sha256(root, closure.source_commit),
-        dependency_lock_sha256=_hash_regular_file(
-            root / D7_RUNTIME_LOCK_REPOSITORY_PATH,
-            label="D7 runtime dependency lock",
-            maximum_bytes=16 * 1024 * 1024,
+        dependency_lock_sha256=dependencies.dependency_lock_sha256,
+        transitive_dependency_set_sha256=(
+            dependencies.transitive_dependency_set_sha256
         ),
-        transitive_dependency_set_sha256=_installed_dependency_set_sha256(),
         native_runtime_sha256=_hash_regular_file(
             executable,
             label="Python native runtime executable",
@@ -551,6 +527,27 @@ def _observe_execution(
             "live executable, callable, or process identity differs"
         )
     return observation
+
+
+def _require_descriptor_bound_official_producer(
+    snapshot: fused_authority._LoadedD7FusedAuthoritySnapshot,
+    scientific_producer: object,
+) -> None:
+    """Bind the canonical official descriptor path to its sole producer."""
+
+    repository_root = getattr(snapshot, "repository_root", None)
+    descriptor_path = getattr(snapshot, "descriptor_path", None)
+    if not isinstance(repository_root, Path) or not isinstance(descriptor_path, Path):
+        # Existing isolated generic-runner tests use structural doubles that
+        # deliberately omit filesystem coordinates.
+        return
+    from . import confirmation_official_execution as official
+
+    official_path = (
+        repository_root / official.D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
+    )
+    if descriptor_path == official_path:
+        official._require_official_producer_identity(scientific_producer)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1397,6 +1394,7 @@ def run_d7_fused_verify_start_and_terminal_no_replace(
     if not callable(scientific_producer):
         raise TypeError("scientific_producer must be callable")
     snapshot = fused_authority.load_d7_fused_authority_snapshot(descriptor_path)
+    _require_descriptor_bound_official_producer(snapshot, scientific_producer)
     verified = _verify_and_derive_start_inputs(snapshot, scientific_producer)
     source_envelope = verified.snapshot.descriptor.canonical_bytes
     verification_source = verified.verification.canonical_bytes

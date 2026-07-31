@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 
 import pytest
 
+from spirallens.core.canonical import canonical_json_sha256
 from spirallens.qualification import confirmation_attempt_records as ar
 from spirallens.qualification import confirmation_result_component_validation as v
 from spirallens.qualification import confirmation_result_components as c
@@ -35,7 +36,7 @@ def _h(label: str) -> str:
 _TARGET = _h("target")
 _INVENTORY = _h("inventory")
 _AGGREGATION = _h("aggregation")
-_GATE_MANIFEST = _h("gate-manifest")
+_GATE_MANIFEST = canonical_json_sha256(v._d7_exact_gate_manifest())
 _COMMON = {
     "replay_target_sha256": _TARGET,
     "full_inventory_sha256": _INVENTORY,
@@ -79,9 +80,12 @@ class _Bundle:
 def _stress(index: int) -> tuple[StressAssignment, ...]:
     block = index // 4
     return (
-        StressAssignment("axis-a", "high" if block & 1 else "low"),
-        StressAssignment("axis-b", "high" if block & 2 else "low"),
-        StressAssignment("axis-c", "high" if block & 4 else "low"),
+        StressAssignment("boundary", "wide" if block & 1 else "central"),
+        StressAssignment("state-geometry-warp", "stressed" if block & 2 else "nominal"),
+        StressAssignment(
+            "structured-observation-perturbation",
+            "stressed" if block & 4 else "nominal",
+        ),
     )
 
 
@@ -262,8 +266,13 @@ def _strata(
     primary: tuple[c.D7JoinedPrimaryUnitOutcome, ...],
 ) -> tuple[StratumSummary, ...]:
     result: list[StratumSummary] = []
-    for axis_index, axis in enumerate(("axis-a", "axis-b", "axis-c")):
-        for level in ("high", "low"):
+    axes = (
+        ("boundary", ("central", "wide")),
+        ("state-geometry-warp", ("nominal", "stressed")),
+        ("structured-observation-perturbation", ("nominal", "stressed")),
+    )
+    for axis_index, (axis, levels) in enumerate(axes):
+        for level in levels:
             members = tuple(
                 row.primary_unit_id
                 for row in primary
@@ -334,16 +343,22 @@ def _result(
         gate_states=states,
         gate_results_component_sha256=gate_component.canonical_sha256,
     )
+    reasons = tuple(
+        sorted(
+            {
+                reason
+                for row in gate_component.records
+                if row.state is not ar.D7GateState.PASS
+                for reason in row.reason_codes
+            }
+        )
+    )
     return ar.D7ScientificResultPayload(
         replay_target_sha256=_TARGET,
         full_inventory_sha256=_INVENTORY,
         aggregation_sha256=_AGGREGATION,
         state=summary.aggregate_state,
-        reason_codes=(
-            ()
-            if summary.aggregate_state is ar.D7ScientificResultState.PASS
-            else ("gate-nonpass",)
-        ),
+        reason_codes=reasons,
         gate_summary=summary,
         component_bindings=tuple(_binding(component) for component in components),
     )
@@ -381,19 +396,13 @@ def bundle() -> _Bundle:
     )
     event = c.D7ExecutionEventLedgerPayload(records=lanes, **_COMMON)
     primary = c.D7PrimaryUnitOutcomesPayload(records=primary_rows, **_COMMON)
-    strata = c.D7RequiredStratumOutcomesPayload(
-        records=_strata(primary_rows), **_COMMON
-    )
+    strata_rows = _strata(primary_rows)
+    strata = c.D7RequiredStratumOutcomesPayload(records=strata_rows, **_COMMON)
     gates = c.D7AggregateGateOutcomesPayload(
         gate_manifest_sha256=_GATE_MANIFEST,
-        records=(
-            c.D7AggregateGateOutcome(
-                gate_id="d7-confirmation",
-                gate_definition_sha256=_h("gate-definition"),
-                state=ar.D7GateState.NOT_RUN,
-                reason_codes=("not-run",),
-                evidence_sha256=_h("gate-evidence"),
-            ),
+        records=v._derive_exact_d7_gate_outcomes(
+            primary_units=primary_rows,
+            strata=strata_rows,
         ),
         **_COMMON,
     )
@@ -923,6 +932,33 @@ def test_strata_must_cover_every_primary_exactly_three_times(bundle: _Bundle) ->
         _validate(changed)
 
 
+def test_cyclic_six_stratum_membership_swap_is_rejected(bundle: _Bundle) -> None:
+    records = bundle.strata.records
+    cyclic = replace(
+        bundle.strata,
+        records=tuple(
+            replace(
+                row,
+                primary_unit_ids=records[(index + 1) % len(records)].primary_unit_ids,
+            )
+            for index, row in enumerate(records)
+        ),
+    )
+    changed = _replace_components(bundle, strata=cyclic)
+
+    assert all(len(row.primary_unit_ids) == 32 for row in cyclic.records)
+    membership_counts = {
+        primary_id: sum(primary_id in row.primary_unit_ids for row in cyclic.records)
+        for primary_id in (item.primary_unit_id for item in bundle.primary.records)
+    }
+    assert set(membership_counts.values()) == {3}
+    with pytest.raises(
+        QualificationContractError,
+        match="differ from joined-primary stress assignments",
+    ):
+        _validate(changed)
+
+
 def test_gate_summary_is_derived_from_actual_four_state_rows(bundle: _Bundle) -> None:
     components: tuple[c.D7ResultComponentPayload, ...] = (
         bundle.event,
@@ -932,7 +968,13 @@ def test_gate_summary_is_derived_from_actual_four_state_rows(bundle: _Bundle) ->
         bundle.strata,
         bundle.gates,
     )
-    wrong_result = _result(components, gate_states=(ar.D7GateState.FAIL,))
+    wrong_result = _result(
+        components,
+        gate_states=(
+            ar.D7GateState.FAIL,
+            *(row.state for row in bundle.gates.records[1:]),
+        ),
+    )
     changed = replace(bundle, result=wrong_result)
     with pytest.raises(QualificationContractError, match="gate summary"):
         _validate(changed)
@@ -948,8 +990,101 @@ def test_gate_summary_is_derived_from_actual_four_state_rows(bundle: _Bundle) ->
     )
     pass_gates = replace(bundle.gates, records=(pass_gate,))
     pass_result = _replace_components(bundle, gates=pass_gates)
-    with pytest.raises(QualificationContractError, match="incomplete structural"):
+    with pytest.raises(QualificationContractError, match="gate rows differ"):
         _validate(pass_result)
+
+
+def test_arbitrary_one_gate_bundle_is_rejected(bundle: _Bundle) -> None:
+    arbitrary = c.D7AggregateGateOutcomesPayload(
+        gate_manifest_sha256=_h("arbitrary-gate-manifest"),
+        records=(
+            c.D7AggregateGateOutcome(
+                gate_id="d7-confirmation",
+                gate_definition_sha256=_h("arbitrary-gate-definition"),
+                state=ar.D7GateState.NOT_RUN,
+                reason_codes=("not-run",),
+                evidence_sha256=_h("arbitrary-gate-evidence"),
+            ),
+        ),
+        **_COMMON,
+    )
+    changed = _replace_components(bundle, gates=arbitrary)
+
+    with pytest.raises(QualificationContractError, match="target-bound D7 manifest"):
+        _validate(changed)
+
+
+def test_self_consistent_renamed_and_rehashed_gate_is_rejected(bundle: _Bundle) -> None:
+    definitions = list(v._d7_exact_gate_definitions())
+    definitions[0] = {**definitions[0], "gate_id": "renamed-primary-gate"}
+    forged_manifest = {
+        **v._d7_exact_gate_manifest(),
+        "gate_order": [item["gate_id"] for item in definitions],
+        "definitions": definitions,
+    }
+    original = bundle.gates.records[0]
+    forged_definition_sha256 = canonical_json_sha256(definitions[0])
+    renamed = replace(
+        original,
+        gate_id="renamed-primary-gate",
+        gate_definition_sha256=forged_definition_sha256,
+        evidence_sha256=canonical_json_sha256(
+            {
+                "schema_version": "spirallens.d7-gate-evidence.v0.1",
+                "gate_id": "renamed-primary-gate",
+                "gate_definition_sha256": forged_definition_sha256,
+                "records": [item.to_dict() for item in bundle.primary.records],
+            }
+        ),
+    )
+    forged = replace(
+        bundle.gates,
+        gate_manifest_sha256=canonical_json_sha256(forged_manifest),
+        records=tuple(
+            sorted((renamed, *bundle.gates.records[1:]), key=lambda row: row.gate_id)
+        ),
+    )
+    changed = _replace_components(bundle, gates=forged)
+
+    with pytest.raises(QualificationContractError, match="target-bound D7 manifest"):
+        _validate(changed)
+
+
+def test_exact_gate_row_fields_are_mechanically_rederived(bundle: _Bundle) -> None:
+    original = bundle.gates.records[0]
+    substitutions = (
+        replace(original, gate_id="renamed-primary-gate"),
+        replace(original, gate_definition_sha256=_h("forged-definition")),
+        replace(
+            original,
+            state=ar.D7GateState.FAIL,
+            reason_codes=("forged-state-reason",),
+        ),
+        replace(original, reason_codes=("forged-row-reason",)),
+        replace(original, evidence_sha256=_h("forged-evidence")),
+    )
+    for substituted in substitutions:
+        forged = replace(
+            bundle.gates,
+            records=tuple(
+                sorted(
+                    (substituted, *bundle.gates.records[1:]),
+                    key=lambda row: row.gate_id,
+                )
+            ),
+        )
+        changed = _replace_components(bundle, gates=forged)
+
+        with pytest.raises(QualificationContractError, match="gate rows differ"):
+            _validate(changed)
+
+
+def test_result_reasons_must_equal_nonpass_gate_reason_union(bundle: _Bundle) -> None:
+    wrong_result = replace(bundle.result, reason_codes=("unrelated-result-reason",))
+    changed = replace(bundle, result=wrong_result)
+
+    with pytest.raises(QualificationContractError, match="result reasons differ"):
+        _validate(changed)
 
 
 def test_core_failure_cannot_project_to_joined_pass(bundle: _Bundle) -> None:

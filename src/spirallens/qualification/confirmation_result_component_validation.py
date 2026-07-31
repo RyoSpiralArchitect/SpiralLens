@@ -31,13 +31,15 @@ from .common import (
     QualificationContractError,
     QualificationState,
 )
+from .confirmation_execution_design import D7ExpectedStratumTemplate
 from .contracts import (
     CoreCellSummary,
     CorePrimaryUnitSummary,
     CrossedCellSummary,
     PrimaryUnitSummary,
+    StratumSummary,
 )
-from .protocol import LoopRole
+from .protocol import LoopRole, required_stress_stratum_id
 
 __all__: tuple[str, ...] = ()
 
@@ -58,6 +60,62 @@ _CASE_SEMANTICS = frozenset(
     }
 )
 _EVENT_STAGE_PAYLOAD_SCHEME = "spirallens.d7-event-stage-payload.v0.1"
+D7_EXACT_GATE_MANIFEST_SCHEMA_VERSION = "spirallens.d7-official-gate-manifest.v0.1"
+_D7_CANONICAL_STRESS_AXES = (
+    ("boundary", ("central", "wide")),
+    ("state-geometry-warp", ("nominal", "stressed")),
+    ("structured-observation-perturbation", ("nominal", "stressed")),
+)
+_D7_CANONICAL_STRATUM_IDS = tuple(
+    sorted(
+        required_stress_stratum_id(axis_id, level)
+        for axis_id, levels in _D7_CANONICAL_STRESS_AXES
+        for level in levels
+    )
+)
+
+
+def _d7_exact_gate_definitions() -> tuple[dict[str, object], ...]:
+    """Return the one exact four-gate D7 definition inventory."""
+
+    return (
+        {
+            "gate_id": "all-primary-units-pass",
+            "source_component": "primary-unit-outcomes",
+            "predicate": "all-64-joined-primary-states-pass",
+            "required_record_count": 64,
+        },
+        {
+            "gate_id": "full-coverage",
+            "source_component": "required-stratum-outcomes",
+            "predicate": "all-six-required-stratum-coverages-equal-one",
+            "required_record_count": 6,
+        },
+        {
+            "gate_id": "worst-case-required-strata-pass",
+            "source_component": "required-stratum-outcomes",
+            "predicate": "all-six-required-worst-case-stratum-states-pass",
+            "required_record_count": 6,
+        },
+        {
+            "gate_id": "zero-abstention",
+            "source_component": "required-stratum-outcomes",
+            "predicate": ("all-six-required-stratum-abstention-fractions-equal-zero"),
+            "required_record_count": 6,
+        },
+    )
+
+
+def _d7_exact_gate_manifest() -> dict[str, object]:
+    """Return the target-bound manifest consumed by production and validation."""
+
+    definitions = _d7_exact_gate_definitions()
+    return {
+        "schema_version": D7_EXACT_GATE_MANIFEST_SCHEMA_VERSION,
+        "manifest_id": "d7-spectral-moment-official-gates-v0-1",
+        "gate_order": [item["gate_id"] for item in definitions],
+        "definitions": list(definitions),
+    }
 
 
 def _fail(message: str) -> None:
@@ -636,11 +694,9 @@ def _joined_qualification_state(state: ar.D7GateState) -> QualificationState:
 
 
 def _derive_stratum(
-    actual: object,
+    actual: D7ExpectedStratumTemplate,
     units: tuple[c.D7JoinedPrimaryUnitOutcome, ...],
-) -> object:
-    from .contracts import StratumSummary
-
+) -> StratumSummary:
     stratum = actual
     statuses = tuple(unit.attempt_status for unit in units)
     states = tuple(_joined_qualification_state(unit.state) for unit in units)
@@ -765,32 +821,230 @@ def _derive_stratum(
     )
 
 
+def _derive_exact_d7_required_strata(
+    expected_strata: tuple[D7ExpectedStratumTemplate, ...],
+    joined_units: tuple[c.D7JoinedPrimaryUnitOutcome, ...],
+) -> tuple[StratumSummary, ...]:
+    """Mechanically project frozen D7 strata from joined core-plus-loop units."""
+
+    if type(expected_strata) is not tuple or any(
+        type(item) is not D7ExpectedStratumTemplate for item in expected_strata
+    ):
+        raise TypeError("expected_strata must be an exact D7 template tuple")
+    if type(joined_units) is not tuple or any(
+        type(item) is not c.D7JoinedPrimaryUnitOutcome for item in joined_units
+    ):
+        raise TypeError("joined_units must be an exact D7 joined-primary tuple")
+    if len(expected_strata) != 6:
+        _fail("D7 requires exactly six frozen stress strata")
+    primary_by_id = {item.primary_unit_id: item for item in joined_units}
+    if len(primary_by_id) != 64 or len(primary_by_id) != len(joined_units):
+        _fail("D7 strata require exactly 64 unique joined primary units")
+    memberships: dict[str, set[str]] = {}
+    membership_counts: Counter[str] = Counter()
+    for unit in joined_units:
+        assignments = unit.core_summary.stress_assignments
+        if assignments != unit.loop_summary.stress_assignments:
+            _fail("joined primary core and loop stress assignments differ")
+        if tuple(assignment.axis_id for assignment in assignments) != tuple(
+            axis_id for axis_id, _levels in _D7_CANONICAL_STRESS_AXES
+        ) or any(
+            assignment.level not in levels
+            for assignment, (_axis_id, levels) in zip(
+                assignments, _D7_CANONICAL_STRESS_AXES, strict=True
+            )
+        ):
+            _fail("joined primary stress assignments differ from closed D7 axes")
+        stratum_ids = tuple(
+            required_stress_stratum_id(assignment.axis_id, assignment.level)
+            for assignment in assignments
+        )
+        if len(stratum_ids) != 3 or len(set(stratum_ids)) != 3:
+            _fail("each D7 primary must derive exactly three stress strata")
+        membership_counts.update((unit.primary_unit_id,) * len(stratum_ids))
+        for stratum_id in stratum_ids:
+            memberships.setdefault(stratum_id, set()).add(unit.primary_unit_id)
+    canonical_templates = tuple(
+        D7ExpectedStratumTemplate(
+            stratum_id=stratum_id,
+            primary_unit_ids=tuple(sorted(primary_ids)),
+        )
+        for stratum_id, primary_ids in sorted(memberships.items())
+    )
+    if (
+        len(canonical_templates) != 6
+        or tuple(item.stratum_id for item in canonical_templates)
+        != _D7_CANONICAL_STRATUM_IDS
+        or set(membership_counts) != set(primary_by_id)
+        or set(membership_counts.values()) != {3}
+        or tuple(item.to_dict() for item in expected_strata)
+        != tuple(item.to_dict() for item in canonical_templates)
+    ):
+        _fail("submitted D7 strata differ from joined-primary stress assignments")
+    derived: list[StratumSummary] = []
+    for template in canonical_templates:
+        units = tuple(primary_by_id[key] for key in template.primary_unit_ids)
+        derived.append(_derive_stratum(template, units))
+    return tuple(derived)
+
+
 def _validate_strata(
     primary_component: c.D7PrimaryUnitOutcomesPayload,
     stratum_component: c.D7RequiredStratumOutcomesPayload,
 ) -> None:
-    primary_by_id = {row.primary_unit_id: row for row in primary_component.records}
-    membership_counts: Counter[str] = Counter()
-    for stratum in stratum_component.records:
-        if (
-            stratum.required is not True
-            or stratum.evaluation_unit is not EvaluationUnit.PHANTOM_INSTANCE
-            or len(stratum.primary_unit_ids) != 32
-            or not set(stratum.primary_unit_ids) <= set(primary_by_id)
-            or stratum.fail_graph_dependence_count != 0
-        ):
-            _fail("D7 stratum differs from a required 32-primary projection")
-        membership_counts.update(stratum.primary_unit_ids)
-        units = tuple(primary_by_id[key] for key in stratum.primary_unit_ids)
-        expected = _derive_stratum(stratum, units)
-        if stratum.to_dict() != expected.to_dict():
-            _fail("D7 stratum differs from joined-primary mechanical derivation")
-    if (
-        len(stratum_component.records) != 6
-        or set(membership_counts) != set(primary_by_id)
-        or set(membership_counts.values()) != {3}
+    templates = tuple(
+        D7ExpectedStratumTemplate(
+            stratum_id=row.stratum_id,
+            primary_unit_ids=row.primary_unit_ids,
+        )
+        for row in stratum_component.records
+    )
+    expected = _derive_exact_d7_required_strata(
+        templates,
+        primary_component.records,
+    )
+    if tuple(row.to_dict() for row in stratum_component.records) != tuple(
+        row.to_dict() for row in expected
     ):
-        _fail("six required strata must cover every primary exactly three times")
+        _fail("D7 strata differ from joined-primary mechanical derivation")
+
+
+def _fold_exact_gate_states(
+    states: tuple[ar.D7GateState, ...],
+) -> ar.D7GateState:
+    if not states or any(type(state) is not ar.D7GateState for state in states):
+        _fail("exact D7 gate cannot fold an empty or untyped evidence set")
+    if ar.D7GateState.FAIL in states:
+        return ar.D7GateState.FAIL
+    if ar.D7GateState.INSUFFICIENT in states:
+        return ar.D7GateState.INSUFFICIENT
+    if ar.D7GateState.NOT_RUN in states:
+        return ar.D7GateState.NOT_RUN
+    return ar.D7GateState.PASS
+
+
+def _qualification_gate_state(state: QualificationState) -> ar.D7GateState:
+    if type(state) is not QualificationState:
+        raise TypeError("stratum state must be an exact QualificationState")
+    return {
+        QualificationState.PASS: ar.D7GateState.PASS,
+        QualificationState.FAIL: ar.D7GateState.FAIL,
+        QualificationState.FAIL_GRAPH_DEPENDENCE: ar.D7GateState.FAIL,
+        QualificationState.INSUFFICIENT: ar.D7GateState.INSUFFICIENT,
+        QualificationState.NOT_RUN: ar.D7GateState.NOT_RUN,
+    }[state]
+
+
+def _derive_exact_d7_gate_outcomes(
+    *,
+    primary_units: tuple[c.D7JoinedPrimaryUnitOutcome, ...],
+    strata: tuple[StratumSummary, ...],
+) -> tuple[c.D7AggregateGateOutcome, ...]:
+    """Derive the exact four target-bound gates from their source records."""
+
+    if type(primary_units) is not tuple or any(
+        type(item) is not c.D7JoinedPrimaryUnitOutcome for item in primary_units
+    ):
+        raise TypeError("primary_units must be an exact joined-primary tuple")
+    if type(strata) is not tuple or any(
+        type(item) is not StratumSummary for item in strata
+    ):
+        raise TypeError("strata must be an exact stratum-summary tuple")
+    primary_ids = tuple(item.primary_unit_id for item in primary_units)
+    stratum_ids = tuple(item.stratum_id for item in strata)
+    if len(primary_units) != 64 or primary_ids != tuple(sorted(set(primary_ids))):
+        _fail("exact D7 gates require 64 canonical unique primary units")
+    if len(strata) != 6 or stratum_ids != _D7_CANONICAL_STRATUM_IDS:
+        _fail("exact D7 gates require the six canonical stress strata")
+
+    primary_state = _fold_exact_gate_states(tuple(item.state for item in primary_units))
+    stratum_state = _fold_exact_gate_states(
+        tuple(_qualification_gate_state(item.state) for item in strata)
+    )
+    full_coverage_state = (
+        ar.D7GateState.PASS
+        if all(item.coverage == 1.0 for item in strata)
+        else ar.D7GateState.NOT_RUN
+        if all(item.state is QualificationState.NOT_RUN for item in strata)
+        else ar.D7GateState.INSUFFICIENT
+    )
+    zero_abstention_state = (
+        ar.D7GateState.PASS
+        if all(item.abstention_fraction == 0.0 for item in strata)
+        else ar.D7GateState.NOT_RUN
+        if all(item.state is QualificationState.NOT_RUN for item in strata)
+        else ar.D7GateState.INSUFFICIENT
+    )
+    states = {
+        "all-primary-units-pass": primary_state,
+        "full-coverage": full_coverage_state,
+        "worst-case-required-strata-pass": stratum_state,
+        "zero-abstention": zero_abstention_state,
+    }
+    evidence = {
+        "all-primary-units-pass": [item.to_dict() for item in primary_units],
+        "full-coverage": [
+            {"stratum_id": item.stratum_id, "coverage": item.coverage}
+            for item in strata
+        ],
+        "worst-case-required-strata-pass": [item.to_dict() for item in strata],
+        "zero-abstention": [
+            {
+                "stratum_id": item.stratum_id,
+                "abstention_fraction": item.abstention_fraction,
+            }
+            for item in strata
+        ],
+    }
+    source_reasons = {
+        "all-primary-units-pass": {
+            reason
+            for item in primary_units
+            if item.state is not ar.D7GateState.PASS
+            for reason in item.reason_codes
+        },
+        "worst-case-required-strata-pass": {
+            reason
+            for item in strata
+            if item.state is not QualificationState.PASS
+            for reason in item.reason_codes
+        },
+        "full-coverage": {
+            REASON_COVERAGE_BELOW_MINIMUM for item in strata if item.coverage < 1.0
+        },
+        "zero-abstention": {
+            REASON_ABSTENTION_ABOVE_MAXIMUM
+            for item in strata
+            if item.abstention_fraction > 0.0
+        },
+    }
+    rows: list[c.D7AggregateGateOutcome] = []
+    for definition in _d7_exact_gate_definitions():
+        gate_id = str(definition["gate_id"])
+        state = states[gate_id]
+        reasons = source_reasons[gate_id]
+        if state is not ar.D7GateState.PASS and not reasons:
+            reasons = {f"{gate_id}-not-pass"}
+        definition_sha256 = canonical_json_sha256(definition)
+        rows.append(
+            c.D7AggregateGateOutcome(
+                gate_id=gate_id,
+                gate_definition_sha256=definition_sha256,
+                state=state,
+                reason_codes=(
+                    () if state is ar.D7GateState.PASS else tuple(sorted(reasons))
+                ),
+                evidence_sha256=canonical_json_sha256(
+                    {
+                        "schema_version": "spirallens.d7-gate-evidence.v0.1",
+                        "gate_id": gate_id,
+                        "gate_definition_sha256": definition_sha256,
+                        "records": evidence[gate_id],
+                    }
+                ),
+            )
+        )
+    return tuple(sorted(rows, key=lambda item: item.gate_id))
 
 
 def _validate_gate_summary(
@@ -799,6 +1053,17 @@ def _validate_gate_summary(
     stratum_component: c.D7RequiredStratumOutcomesPayload,
     result_payload: ar.D7ScientificResultPayload,
 ) -> None:
+    expected_manifest_sha256 = canonical_json_sha256(_d7_exact_gate_manifest())
+    if gate_component.gate_manifest_sha256 != expected_manifest_sha256:
+        _fail("gate component differs from the exact target-bound D7 manifest")
+    expected_rows = _derive_exact_d7_gate_outcomes(
+        primary_units=primary_component.records,
+        strata=stratum_component.records,
+    )
+    if tuple(row.to_dict() for row in gate_component.records) != tuple(
+        row.to_dict() for row in expected_rows
+    ):
+        _fail("gate rows differ from exact primary-and-stratum derivation")
     observed = result_payload.gate_summary
     expected = ar.D7GateOutcomeSummary.from_gate_states(
         gate_manifest_sha256=gate_component.gate_manifest_sha256,
@@ -807,6 +1072,18 @@ def _validate_gate_summary(
     )
     if observed.to_dict() != expected.to_dict():
         _fail("gate summary differs from actual four-state gate component")
+    expected_result_reasons = tuple(
+        sorted(
+            {
+                reason
+                for row in expected_rows
+                if row.state is not ar.D7GateState.PASS
+                for reason in row.reason_codes
+            }
+        )
+    )
+    if result_payload.reason_codes != expected_result_reasons:
+        _fail("scientific result reasons differ from exact non-pass gate reasons")
     structural_states = (
         *(row.state for row in primary_component.records),
         *(

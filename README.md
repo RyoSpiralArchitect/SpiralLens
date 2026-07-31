@@ -117,8 +117,9 @@ model contains the referent.
 A typed generator-family identity now distinguishes a mathematical
 construction from a seed, source digest, or implementation label. The
 spectral-moment quadrature family declares a separate mathematical
-construction from the existing representation phantom. Its current draft
-confirmation foundation supplies the exact four development cases
+construction from the existing representation phantom. For ordinary or novel
+construction, its current draft confirmation foundation supplies the exact four
+development cases
 (nonzero-with-core, null-with-core, null-without-core, and
 prerequisite-failure) and a closed typed draft reconstructed only from the
 authoritative committed-D6 loader receipt. Identifier difference and
@@ -130,9 +131,9 @@ D0-D8. The parent binding and foundation are now `v0.2`. They remain
 unpersisted as standalone/public artifacts, while C1 preserves their exact
 canonical historical bodies inside its Level-0 wrapper. They omit the
 validation-time current-loader HEAD and source-binding digest from canonical
-identity while still requiring and validating the authoritative typed loader
-receipt. Unchanged historical inputs therefore produce commit-stable draft
-bytes; no standalone `v0.1` artifact is migrated.
+identity while ordinary or novel construction still requires and validates the
+authoritative typed loader receipt. Unchanged historical inputs therefore
+produce commit-stable draft bytes; no standalone `v0.1` artifact is migrated.
 
 The internal `v0.2` seed-free D7 execution draft remains unpersisted as a
 standalone/public artifact; C1 preserves its exact canonical historical body
@@ -360,12 +361,19 @@ the archival checks; it does not claim compatibility with the historical
 decision source. Current-source compatibility, historical reexecution, and
 historical D1 recomputation therefore remain false.
 
-Downstream D7 `v0.2` draft identity does not serialize that ephemeral
-validation HEAD or digest. It still accepts only the typed authoritative
-receipt and validates it before deriving the stable historical parent
-projection. Thus the loader check remains mandatory while the unchanged draft
-identity no longer changes merely because validation occurs at a later clean
-descendant commit.
+Ordinary or novel downstream D7 `v0.2` draft construction does not serialize
+that ephemeral validation HEAD or digest. It accepts only the typed
+authoritative receipt and validates it before deriving the stable historical
+parent projection. Thus the loader check remains mandatory while the unchanged
+draft identity no longer changes merely because validation occurs at a later
+clean descendant commit.
+
+PR26 adds one private, recorded-C1-only archival reconstruction route for the
+fixed producer. That route first verifies pinned C1/C2, loads the exact parent
+protocol, reconstructs the typed design from the C1-embedded binding, and
+requires whole-document equality with the design recorded in C1. It is not a
+general alternate construction path or a historical reinterpretation of D6 or
+C1, and it accepts no caller-authored design.
 
 The recorded bundle is also lineage-bound: its source commit must remain an
 ancestor of the loading HEAD. This PR must therefore be integrated with a
@@ -507,7 +515,13 @@ attempt/result envelopes. The result-component join closes 1,344 event lanes
 (192 core and 1,152 loop), 64 cell-derived joined primaries, six required
 strata, four-state gates, and the outer result bindings. It cannot establish
 target-inventory or gate-definition authority without a concrete loaded
-target. The directly constructible path receipts remain point-in-time
+target. On the fixed PR26 producer/validator path, however, the exact six
+stratum memberships are mechanically rederived from canonical joined-primary
+stress assignments, and the exact four-gate manifest, definitions, states,
+reasons, evidence digests, and outer-result reasons are reconstructed rather
+than trusted as caller declarations. That is code-side structural consistency,
+not authority, invocation, execution evidence, publication, or a D7 run. The
+directly constructible path receipts remain point-in-time
 assertions when used outside the persistence writer. Inside that writer,
 their filesystem coordinates are reobserved before the enclosing stage becomes
 visible. The observation acquires no reservation and proves neither
@@ -558,8 +572,9 @@ blob, rejoins the separately persisted records to the bundle, and requires the
 local `main` HEAD to equal a live observation of canonical `origin/main`.
 The operation matches a declared source/runtime observation surface: tracked
 `src/spirallens/**`, `pyproject.toml`, and the required runtime-lock blob and
-digest; installed distribution names and versions; the interpreter executable
-bytes; producer source/code identity; and selected process-envelope fields. It
+digest; exact equality of the complete installed distribution name/version
+inventory; the interpreter executable bytes; producer source/code identity;
+and selected process-envelope fields. It
 requires the attempt store and repository trees to be disjoint by
 descriptor-relative device/inode ancestry rather than path spelling,
 reobserves the store/lane and output/terminal absence twice, then publishes one
@@ -597,11 +612,17 @@ That positive boundary is deliberately narrow: it binds one transition
 to canonical repository state under the live Git-transport and honest-local-
 process assumptions. It is not a signed trust-root proof, hostile-local-
 mutation defense, public API, reusable capability, official descriptor,
-official start, execution observation receipt, or scientific claim. No
-`requirements-d7-runtime-lock.txt`, exact-current closure, reviewed admission,
-seed-free readiness, official target/freeze/intent instance, seed, or run is
-present yet. The source/runtime lock is intentionally required by the code so
-an invocation fails closed until roadmap item 21 creates the reviewed inputs.
+official start, execution observation receipt, or scientific claim. PR26 now
+tracks the exact `requirements-d7-runtime-lock.txt`, fixes a deep-internal
+zero-argument official producer plus exact full-inventory, aggregation, and
+full-design builders and requires exact equality of the complete installed
+distribution name/version inventory. Those are code-side item-21 ingredients
+only. No
+positive exact-current source/runtime receipt, reviewed admission, seed-free
+readiness, canonical launch descriptor, official seed, seed-bearing target or
+full-design publication, freeze, launch intent, or run exists; D7 and D8 remain
+`not_run`. The fused path therefore remains uninvoked and fails closed pending
+those positive artifacts and decisions.
 
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
@@ -1174,8 +1195,12 @@ to become a general library.
   artifact-binding surface has no raw `from_bytes`
   factory; the loader applies its size cap, then verifies the digest before
   parsing, and translates canonical parse errors. It authenticates none of
-  these inputs and emits no reusable token. Authoritative target-bound exact
-  inventory and gate semantics therefore remain deferred. Separate
+  these inputs and emits no reusable token. The fixed PR26 producer/validator
+  path mechanically rederives the exact six stratum memberships and
+  reconstructs the exact four-gate manifest, definitions, states, reasons,
+  evidence digests, and outer-result reasons. That closes only code-side
+  structural consistency; authoritative target-bound inventory and gate
+  authority remain deferred. Separate
   deep-internal mechanics now atomically publish one closed structural
   result/failed-attempt terminal by descriptor-relative native no-replace
   directory rename and strictly reload it. The writer rejects competing
@@ -1186,8 +1211,10 @@ to become a general library.
   primary-only post-start runner handoff projects replay target, full
   inventory, aggregation, and result-schema identities into the complete
   six-component output. Its only scientific boundary is a zero-argument
-  producer callback; the exact official executor and aggregation remain
-  outside that callback and are not implemented here.
+  producer callback. A separate PR26 deep-internal surface now fixes that
+  zero-argument official producer and the exact full-inventory, aggregation,
+  and full-design builders behind the callback boundary. Their implementation
+  creates no official descriptor, invocation, or scientific artifact.
 
   External abort mechanics now persist a two-signature Ed25519 observer plus
   verifier envelope as a required member of the closed failed-terminal
@@ -1209,20 +1236,24 @@ to become a general library.
   before callback, and never exposes a
   reusable token. Its structural return still grants no authority or
   scientific eligibility. The fused runtime check covers only the declared
-  tracked source and lock, installed distribution name/version set,
-  interpreter executable, callable identity, and recorded process envelope;
+  tracked source and lock, exact equality of the complete installed
+  distribution name/version inventory, interpreter executable, callable
+  identity, and recorded process envelope;
   package files, loaded native libraries, module globals, defaults/closures,
   unrecorded environment, model state, and data state remain outside closure.
   It makes at most one terminal-publication attempt; hard exit, post-start
   drift, unproved start-parent fsync, or success/failure publication error can
-  leave a visible start without a terminal. Exact-current artifacts,
-  admission, readiness, the runtime lock, target/freeze/intent instances,
-  official seeds, the supplier, official exact execution/aggregation, D7, and
-  D8 all remain incomplete or `not_run`. The operational order is now
-  explicit: retain item-19 and item-20 mechanics without an official run; in
-  item 21 add and freeze `requirements-d7-runtime-lock.txt`, name the official
-  producer and exact aggregation, issue exact-current source/runtime artifacts,
-  and complete seed-free readiness plus reviewed family admission. Then invoke
+  leave a visible start without a terminal. PR26 completes the code-side
+  portion of item 21: the exact runtime lock, fixed official producer, exact
+  full-inventory, aggregation, and full-design builders, and
+  installed-inventory equality check now exist. No positive exact-current
+  source/runtime receipt, reviewed admission, seed-free readiness, canonical
+  descriptor, official seed, seed-bearing target or full-design publication,
+  freeze, launch intent, or run exists; D7 and D8
+  remain `not_run`. The operational order is now explicit: retain item-19 and
+  item-20 mechanics without an official run; finish item 21 by issuing the
+  positive exact-current source/runtime artifacts and completing seed-free
+  readiness plus reviewed family admission. Then invoke
   the seed supplier once and atomically publish target/full design before
   committing freeze and launch intent. Before item 24, create and commit the
   closed nine-member fused descriptor and pass strict verification-evidence

@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, and same-call fused verify/start/callback/terminal-attempt mechanics; none is a public export or an official descriptor, target, start/run instance, trusted pin root, admission, seed, exact executor, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and installed-inventory exact-equality validation; none is a public export or an official descriptor, target, start/run instance, trusted pin root, admission, seed, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -46,16 +46,23 @@ remain extraction candidates until a second independent consumer exists.
 
 The spectral-moment four-case generator and
 `spirallens.qualification.confirmation_protocol` foundation are internal
-development surfaces. Its builder and strict reader accept only an
-authoritative committed-D6 loader receipt, but it deliberately exposes no
-full-design freeze, source-closure, admission, lifecycle, execution, result, or
-promotion surface. `D7ParentD6Binding` and the foundation are now internal
+development surfaces. Its ordinary or novel builder and strict reader accept
+only an authoritative committed-D6 loader receipt, but it deliberately exposes
+no full-design freeze, source-closure, admission, lifecycle, execution, result,
+or promotion surface. `D7ParentD6Binding` and the foundation are now internal
 `v0.2` drafts. They remain unpersisted as standalone/public artifacts, while
 C1 preserves their exact canonical historical bodies inside its Level-0
 wrapper. Their canonical identity excludes the ephemeral current-loader HEAD
-and source-binding digest, while construction still requires and validates the
-typed authoritative loader receipt. The prior internal `v0.1` drafts have no
-standalone artifacts or migration surface.
+and source-binding digest, while ordinary or novel construction still requires
+and validates the typed authoritative loader receipt. The prior internal `v0.1`
+drafts have no standalone artifacts or migration surface.
+
+PR26 adds one private, recorded-C1-only archival reconstruction route for the
+fixed producer. It first verifies pinned C1/C2, loads the exact parent protocol,
+reconstructs the typed design from the C1-embedded binding, and requires
+whole-document equality with the design recorded in C1. It is not a general
+alternate construction path or a historical reinterpretation of D6 or C1, and
+it accepts no caller-authored design.
 
 `spirallens.qualification.confirmation_execution_design`,
 `spirallens.qualification.confirmation_execution_kernel`, and
@@ -140,10 +147,15 @@ enforce digest-before-parse, canonical row reconstruction, exact Cartesian
 cell structure, seed-slot case pairing, graph-fingerprint functionality, and
 a structural floor that prevents incomplete evidence from becoming an
 aggregate pass. They do not load the authoritative target; exact target
-inventory and seed values, case/stratum membership, graph nonvacuity,
-aggregation thresholds, gate definitions, and gate-evidence semantics
-therefore remain unverified. Event-stage hashes bind declared structure; they
-do not prove that execution occurred or establish producer chronology.
+inventory and seed values, case membership, and graph nonvacuity therefore
+remain unverified. On the fixed PR26 producer/validator path, the exact six
+stratum memberships are mechanically rederived from canonical joined-primary
+stress assignments, and the exact four-gate manifest, definitions, states,
+reasons, evidence digests, and outer-result reasons are reconstructed. This is
+code-side structural consistency only; it does not authenticate a target,
+authorize an invocation, prove execution, publish an artifact, or establish a
+D7 run. Event-stage hashes bind declared structure; they do not prove that
+execution occurred or establish producer chronology.
 
 The deep-internal `confirmation_attempt_evidence` and
 `confirmation_attempt_evidence_validation` modules define canonical bytes and
@@ -256,9 +268,11 @@ durable structural-start publication, strict reload, and unchanged second-pass
 observations, it constructs and consumes the handoff within the same call.
 Ownership is never accepted, serialized, cached, or returned, and every exit
 after its construction atomically invalidates both callback entry and terminal
-publication, including a failure before runner dispatch. The official
-producer and exact aggregation remain separately auditable behind the callback
-and are not implemented by this runner slice. If a handled ordinary exception
+publication, including a failure before runner dispatch. The runner slice
+itself remains generic. A separate PR26 deep-internal surface now fixes the
+zero-argument official producer and exact full-inventory, aggregation, and
+full-design builders behind the callback boundary; none is officially invoked
+or published as an authority artifact. If a handled ordinary exception
 leaves a failed terminal visible while its final parent fsync is unproved, the
 fused path makes a best-effort attempt to attach the terminal identity and
 explicit durability warning to that same exception.
@@ -287,8 +301,9 @@ The deep-internal `confirmation_fused_authority`,
 They reopen a committed closed nine-member descriptor at clean current HEAD,
 match live canonical `origin/main`, and verify the declared observation
 surface: tracked `src/spirallens/**`, `pyproject.toml`, and the required runtime
-lock; installed distribution names/versions; interpreter executable bytes;
-producer source/code identity; selected process-envelope fields; physical
+lock; exact equality of the complete installed distribution name/version
+inventory; interpreter executable bytes; producer source/code identity;
+selected process-envelope fields; physical
 store/lane identity whose repository/store disjointness is proved from
 descriptor-relative device/inode ancestry rather than path spelling; and
 output/terminal absence. This is not hermetic closure
@@ -354,10 +369,11 @@ operational rather than token-based:
    start, require its parent fsync to be proved, repeat those observations, and
    consume private ownership before callback; they emit no reusable
    authorization token;
-3. for item 21, add and freeze `requirements-d7-runtime-lock.txt`, name the
-   exact official producer and aggregation, issue the exact-current source and
-   runtime artifacts, and complete reviewed family admission plus seed-free
-   readiness;
+3. retain item 21's exact `requirements-d7-runtime-lock.txt`, fixed
+   zero-argument official producer, exact full-inventory, aggregation, and
+   full-design builders, and installed-inventory equality check as code-side
+   ingredients only; issue the positive exact-current source and runtime
+   artifacts and complete reviewed family admission plus seed-free readiness;
 4. for items 22-23, claim and invoke seed supply once, publish the exact target
    and full design, commit the freeze, persist launch intent, and execute the
    already separated descriptive result without changing D7 design bytes;
@@ -370,9 +386,12 @@ operational rather than token-based:
 
 The directly constructible records remain insufficient throughout this
 sequence. Evidence envelopes cannot be promoted in place.
-The fused module is also deep internal and has an empty `__all__`. No official
-descriptor, fixed runtime lock, exact-current closure, admission/readiness,
-target/freeze/intent instance, start, terminal, or run has been created.
+The fused module is also deep internal and has an empty `__all__`. The exact
+runtime lock, fixed producer, and exact full-inventory, aggregation, and
+full-design builders do not grant authority. No official
+descriptor, positive exact-current source/runtime receipt,
+admission/readiness, target/freeze/intent instance, start, terminal, or run has
+been created.
 Canonical-origin equality is a scoped live Git-transport trust rule, not
 signed trust-root provenance or hostile-local-operator resistance.
 Committed C2 closes only the declared historical Git source set; it does not
