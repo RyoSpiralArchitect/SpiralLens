@@ -32,7 +32,7 @@ stable software contract cannot promote a scientific claim.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, installed-inventory exact-equality validation, and the corrected receipt-only item-21 chain through scoped reviewed successor-family admission; none is a public export or an official item-22 descriptor, seed-bearing target, start/run instance, trusted pin root, seed, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, installed-inventory exact-equality validation, the corrected receipt-only item-21 chain through scoped reviewed successor-family admission, and an unpersisted item-22 seed-supply transaction contract specification with fixed future layout/state semantics; none is a public export, claim API, seed/supplier surface, or official item-22 descriptor, seed-bearing target, start/run instance, trusted pin root, seed, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
@@ -338,13 +338,78 @@ persistence because passed-primary consumption cannot yet be established. The se
 final-code source/runtime closure and reviewed family admission before a
 future exclusive seed-supply claim and single supplier invocation. It then
 requires atomic full-design/target publication and a committed freeze receipt
-before launch intent. A claim left without an atomically published target is
-terminally aborted and non-retryable; absence of the target does not prove the
-supplier was invoked. The target-local claim ceiling stays exactly Level 0
+before launch intent. Once its originating operation ends, a claim left without
+an atomically published target is a semantic, non-retryable abort, but its
+durable state remains claim-present unless a separate valid abort receipt is
+published; target absence does not prove the supplier was invoked. The
+target-local claim ceiling stays exactly Level 0
 and its authority vector stays all-false. C2 closes only the historical C1
 source set and does not cover these modules or later persistence, terminal,
 or runner code. A later exact closure of the then-current execution source and
 runtime is required after those surfaces are final.
+
+The deep-internal
+`spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
+(`D7Item22SeedSupplyTransactionContractSpec`) now fixes those future transaction
+coordinates without implementing them. The choice-free
+`load_d7_item22_seed_supply_contract_foundation(*, repository_root)` loader
+returns an in-memory `LoadedD7Item22SeedSupplyContractFoundation`; it has no
+writer or claim API and accepts or accesses no supplier, seed, claim-key value,
+target, or caller-defined layout. The fixed `item22-seed-supply/` root defines
+future names only: `exclusive-seed-supply-claim.json`,
+`seed-supply-abort.json`, atomic `published-target/` with exact members
+`official-seed-inventory.json`, `full-inventory.json`, `full-design.json`,
+`replay-target.json`, `single-supplier-invocation.json`, and
+`transaction-manifest.json`, followed later by `full-design-freeze.json`.
+`item22-current-source-runtime-reanchor.json` and `launch.json` remain external
+to that root. All six atomic members are canonical regular unaliased files; the
+manifest binds the other five, while unknown members, partial visibility,
+replacement, and publication retry are forbidden. Exact digest edges rejoin
+the full inventory to the seed inventory, the full design to both inventories,
+the replay target to those same member bytes, and the invocation receipt to the
+same seed inventory; chronology-subject bindings must equal their corresponding
+published members.
+
+Its closed state vocabulary is `preclaim`,
+`claim-present-publication-absent-nonretryable`,
+`seed-supply-aborted-established`, `publication-complete-unfrozen`,
+`full-design-frozen`, and `launch-intent-present`. The live pre-call claim
+interval is pending for its originating operation but immediately non-retryable
+and permits no restarted supplier entry. It becomes a semantic abort only when
+that operation ends without publication or the claim is observed on restart.
+The distinct durable `seed-supply-aborted-established` state
+requires an evidence receipt at `seed-supply-abort.json`; target absence alone
+does not establish it. This later item-22 specification explicitly refines the
+historical replay-target field
+`seed_supply_chronology_contract.claim_without_target_is_seed_supply_aborted`
+without mutating its historical bytes; that older blanket flag grants no future
+behavior, and operational code must use the active/ended-origin and
+semantic/durable-evidence split above. Supplier identity and the concrete
+claim-key value remain
+absent and mandatory before an exclusive claim. The future
+`spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` scheme fixes an
+exact top-level canonical-JSON/SHA-256 object binding the fixed claim path,
+historical item-21 triple, reviewed re-anchor, supplier identity, and both
+exclusion registries. Dynamic bindings use an exact five-field identity
+projection; alternate shapes, extensions, and caller-supplied key values are
+rejected, and the specification derives no key. Only the originating claim
+operation may later complete publication or establish abort. Restarted supplier
+entry is forbidden, abort is
+terminal, and post-publication failure remains unfrozen without supplier retry.
+These are future repository-local/same-filesystem exclusivity requirements, not
+cross-host, distributed-filesystem, or supplier-global proof. Future code must
+durably create the seed-supply namespace by fsyncing its owning experiment
+directory before the claim; fsync the claim before supplier entry; fsync staged
+member files and directories before/after the no-replace directory rename; and
+fsync abort evidence before its established state. Crash recovery uses one
+mutually exclusive presence table in `(claim, target, abort, freeze, launch)`
+order: `00000` is preclaim, `10000` claim-present/nonretryable, `10100`
+abort-established, `11000` publication-complete/unfrozen, `11010`
+full-design-frozen, and `11011` launch-intent-present. Every present artifact
+must pass canonical strict reload. Any unlisted combination, target-plus-abort,
+missing upstream claim, or invalid/partial artifact fails closed with no
+precedence or supplier retry. The specification does not prove power-loss
+survival or authenticate filesystem fsync semantics.
 
 The corrected item-21 source anchor defines that closure as three tracked positive
 artifacts rather than an upgrade of any existing caller record: exact
@@ -369,13 +434,15 @@ resolution cannot launder a later execution-source change.
 With the versioned v0.1 loader retained, historical reload is tied to the
 source-commit Git tree, lock bytes, and fixed v0.1 pins, not to whatever builder
 functions happen to be current later. The current-readiness verifier is
-stricter: it rejects any live execution-source or exact-runtime drift. Because
-item-22 implementation is not added here, a later source-changing PR must
-publish and review a versioned exact-current re-anchor bound to the item-21
-chain at the separate fixed pre-claim path
+stricter: it rejects any live execution-source or exact-runtime drift. The
+item-22 contract-spec foundation does not invalidate historical item-21
+artifacts, but its later source surface blocks exact-current live readiness.
+After all item-22 execution source is final, a separate PR must publish and
+review a versioned exact-current re-anchor bound to the item-21 chain at the
+fixed pre-claim path
 `item22-current-source-runtime-reanchor.json`, outside
 `item22-seed-supply/`, before acquiring the item-22 claim or invoking a seed
-supplier.
+supplier. The contract-spec loader does not create that re-anchor.
 
 Target, authorization, start, and result fields are joined by a closed table
 of canonical byte equalities. Neither the evidence-only prefix lane nor the
@@ -412,26 +479,30 @@ rather than token-based:
    next direct child, and only scoped reviewed successor-family admission in
    the next direct child; strictly reload and rejoin all three before marking
    item 21 complete;
-4. for items 22-23, if the execution-source surface changes, first publish and
+4. retain the item-22 transaction contract specification as an in-memory
+   layout/state contract only; it creates no instance, claim, supplier entry,
+   seed access, re-anchor, publication, freeze, or launch intent;
+5. for items 22-23, after final execution-source changes, first publish and
    review the fixed-path exact-current re-anchor bound to item 21; only then
    claim and invoke seed supply once, publish the exact target and full design,
    commit the freeze, persist launch intent, and execute the already separated
    descriptive result without changing D7 design bytes;
-5. before item 24, create and commit the closed nine-member descriptor and
+6. before item 24, create and commit the closed nine-member descriptor and
    pass strict verification-evidence replay/rejoin, temporary Git/runtime
    end-to-end validation, and authoritative-start-compatible external-abort
    integration; and
-6. make item 24 the first official fused invocation, requiring an exact
+7. make item 24 the first official fused invocation, requiring an exact
    terminal outcome and complete isolated byte replay.
 
-The directly constructible records remain insufficient throughout this
-sequence. Their authority and verification fields stay false, and neither the
-three item-21 issuers/loaders nor canonical bytes promote them in place. Evidence
-envelopes cannot be promoted in place.
+The directly constructible records and the item-22 contract specification
+remain insufficient throughout this sequence. Their authority and verification
+fields stay false, and neither the three item-21 issuers/loaders nor canonical
+bytes promote them in place. Evidence envelopes cannot be promoted in place.
 The fused module is also deep internal and has an empty `__all__`. The exact
 runtime lock, fixed producer, and exact full-inventory, aggregation, and
-full-design builders do not grant authority. The final corrected item-21 artifacts
-do not create an item-22 supplier claim/invocation, seed,
+full-design builders do not grant authority. The final corrected item-21
+artifacts and the in-memory item-22 contract foundation do not create an item-22
+supplier claim/invocation, seed,
 target/full-design publication, or freeze; launch intent; official descriptor;
 start; terminal; or run.
 Canonical-origin equality is a scoped live Git-transport trust rule, not

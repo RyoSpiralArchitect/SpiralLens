@@ -1013,20 +1013,90 @@ below:
     reconstruction enforces issuer-equivalent source caps; the anchor, HEAD,
     and every bounded source-path event on their descendant ancestry must
     retain the exact anchored tree;
-22. if implementing this item changes the item-21 execution-source surface, first
-    publish and review a versioned exact-current source/runtime re-anchor bound
-    to the historical item-21 chain at the separate fixed pre-claim path
-    `item22-current-source-runtime-reanchor.json`, outside the reserved
-    `item22-seed-supply/` namespace. Historical reload of item 21 uses its
-    source-commit tree and lock bytes; the live readiness check rejects drift,
-    so a stale item-21 handoff cannot authorize the transition. The item-22
-    operation must perform the applicable live check internally immediately
-    before its no-replace claim and accept no cached readiness snapshot. Only then
-    acquire the exclusive seed-supply claim, invoke the supplier once,
-    atomically publish the exact seed-bearing full design and replay target,
-    then commit their freeze receipt before launch intent. A claim without
-    target publication is `seed_supply_aborted` and non-retryable; target
-    absence never proves that the supplier was not invoked;
+22. define the item-22 transaction before operating it — **contract-spec
+    foundation complete; persisted transaction and operation absent**. The
+    deep-internal
+    `spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
+    (`D7Item22SeedSupplyTransactionContractSpec`) and choice-free
+    `load_d7_item22_seed_supply_contract_foundation(*, repository_root)` loader
+    reconstruct only an in-memory
+    `LoadedD7Item22SeedSupplyContractFoundation`. They expose no claim API,
+    supplier invocation, seed access, filesystem creation, persisted
+    reservation, writer, or caller-authored layout. The fixed future
+    `item22-seed-supply/` root has
+    `exclusive-seed-supply-claim.json`, `seed-supply-abort.json`, atomic
+    `published-target/` members `official-seed-inventory.json`,
+    `full-inventory.json`, `full-design.json`, `replay-target.json`,
+    `single-supplier-invocation.json`, and `transaction-manifest.json`, then the
+    later `full-design-freeze.json` leaf. The re-anchor remains outside that
+    root at `item22-current-source-runtime-reanchor.json`; launch intent remains
+    the external `launch.json`. All six atomic members are canonical regular
+    unaliased files; the manifest binds the other five, and unknown members,
+    partial visibility, replacement, and publication retry are forbidden.
+    Exact digest edges must rejoin full inventory to seed inventory, full
+    design to both inventories, replay target to those same member bytes,
+    invocation receipt to the same inventory, and chronology subjects to their
+    published members. The
+    closed future states are `preclaim`,
+    `claim-present-publication-absent-nonretryable`,
+    `seed-supply-aborted-established`, `publication-complete-unfrozen`,
+    `full-design-frozen`, and `launch-intent-present`. The live pre-call claim
+    interval is pending for its originating operation but immediately
+    non-retryable and permits no restarted supplier entry. It becomes a semantic
+    abort only when that operation ends without publication or the claim is
+    observed on restart. The distinct durable
+    `seed-supply-aborted-established` state requires an evidence receipt at
+    `seed-supply-abort.json`; target absence alone does not establish it. This
+    later item-22 specification explicitly refines the historical replay-target
+    field
+    `seed_supply_chronology_contract.claim_without_target_is_seed_supply_aborted`
+    without mutating historical bytes. That older blanket flag grants no future
+    behavior; operational code must use the active/ended-origin and
+    semantic/durable-evidence split above.
+    Supplier identity and the concrete claim-key value remain absent and
+    mandatory before the exclusive claim. The frozen future
+    `spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` scheme uses
+    SHA-256 over canonical JSON with domain separator
+    `spirallens:d7:item22:exclusive-seed-supply-claim:v0.1`; its ordered inputs
+    form one exact-key top-level object binding the fixed claim path, historical
+    item-21 triple, reviewed re-anchor, supplier identity, and development and
+    parent exclusions. Dynamic bindings use an exact five-field identity
+    projection; alternate encodings, extra fields, and caller values are
+    rejected. The specification derives no key. Its closed future state machine
+    requires verified supplier identity, a derived key, internally live-verified
+    re-anchor, and durable claim before supplier entry. Only that originating
+    operation may proceed from claim to complete publication or evidence-backed
+    abort; a restart entrant cannot
+    invoke the supplier. Abort-established is terminal, failure to persist its
+    evidence remains claim-present/non-retryable, and post-publication failure
+    remains `publication-complete-unfrozen`, not abort, with no supplier retry.
+    The future exclusivity requirement is repository-local and cross-process on
+    the same filesystem; it proves no cross-host, distributed-filesystem, or
+    supplier-global idempotency. The durable claim-before-call interval is
+    required but not restart-resumable. Future code must fsync the owning
+    experiment directory after creating the initially absent transaction
+    namespace, then fsync claim, staged member/directory, publication-parent,
+    and abort-evidence boundaries. Restart recovery uses one mutually exclusive
+    presence table in `(claim, target, abort, freeze, launch)` order: `00000`
+    is preclaim, `10000` claim-present/nonretryable, `10100`
+    abort-established, `11000` publication-complete/unfrozen, `11010`
+    full-design-frozen, and `11011` launch-intent-present. Present artifacts
+    must pass canonical strict reload. Any other combination—including target
+    plus abort, downstream evidence without claim, or invalid/partial
+    evidence—fails closed with no precedence or retry. These requirements prove
+    neither power-loss survival nor filesystem semantics. Historical
+    item-21 reload remains valid, but this later source
+    surface fails exact-current live readiness. After all item-22 execution
+    source is final, first publish and review a versioned exact-current
+    source/runtime re-anchor bound to the historical item-21 chain at the fixed
+    pre-claim path. The contract specification is not that re-anchor. The final
+    item-22 operation must perform the applicable live check internally
+    immediately before its no-replace claim and accept no cached readiness
+    snapshot. Only then acquire the exclusive seed-supply claim, invoke the
+    supplier once, atomically publish the exact seed-bearing full design and
+    replay target, then commit their freeze receipt before launch intent. A
+    claim without target publication remains non-retryable; target absence
+    never proves that the supplier was not invoked;
 23. after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
@@ -1126,7 +1196,13 @@ This library slice adds, without changing that generic behavior:
   docs and whose three direct children separately add and strictly reload the
   exact source/runtime receipt, seed-free readiness, and scoped reviewed
   successor-family admission. This completes item 21 after the lifecycle,
-  result, terminal, runner, and fused mechanics without invoking item 22.
+  result, terminal, runner, and fused mechanics without invoking item 22; and
+- the deep-internal
+  `spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`, which fixes
+  the future item-22 layout and state vocabulary in memory without persisting an
+  instance or exposing a claim, supplier, seed, re-anchor, publication, freeze,
+  or launch operation. Historical item-21 reload remains valid; exact-current
+  readiness is blocked until final source receives its reviewed re-anchor.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1238,8 +1314,11 @@ successor-family admission—but issues none of those artifacts. Three
 successive receipt-only direct children then add exactly one artifact each in
 that order, strictly reload/rejoin all three, and complete item 21 at the final
 corrected tip. C2 and the existing caller-constructible false-authority records
-cannot supply or replace them. Only afterward may item 22 acquire its exclusive
-supplier claim, invoke the supplier once, atomically publish the seed-bearing
+cannot supply or replace them. The item-22 transaction contract specification
+now fixes only its future layout and states; it creates no instance and the
+later source drift blocks exact-current readiness pending the final reviewed
+re-anchor. Only afterward may item 22 acquire its exclusive supplier claim,
+invoke the supplier once, atomically publish the seed-bearing
 target/full design, and commit the freeze. Those actions, their official seeds,
 launch intent, and the nine-member descriptor are absent at the final corrected tip.
 No official fused invocation,

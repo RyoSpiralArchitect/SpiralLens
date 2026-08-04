@@ -4,6 +4,119 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-05 — D7 item-22 seed-supply transaction contract specification
+
+### Added
+
+- The deep-internal canonical
+  `spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
+  (`D7Item22SeedSupplyTransactionContractSpec`) fixes the shape of the future
+  item-22 transaction without creating one. The in-memory
+  `LoadedD7Item22SeedSupplyContractFoundation` is reconstructed by the
+  choice-free
+  `load_d7_item22_seed_supply_contract_foundation(*, repository_root)` entry
+  point only after strict reload of the complete, non-shallow historical
+  item-21 chain. It accepts no caller snapshot, seed, supplier, claim key,
+  callback, target document, or caller-authored layout and records
+  `status=contract-defined-operational-instance-absent`.
+- The specification keeps the reviewed re-anchor at the existing external path
+  `item22-current-source-runtime-reanchor.json` and fixes
+  `item22-seed-supply/` as the future transaction root. Its root leaves are
+  `exclusive-seed-supply-claim.json` and `seed-supply-abort.json`; its atomic
+  publication directory is `published-target/`, whose exact members are
+  `official-seed-inventory.json`, `full-inventory.json`, `full-design.json`,
+  `replay-target.json`, `single-supplier-invocation.json`, and
+  `transaction-manifest.json`. The later freeze leaf is
+  `full-design-freeze.json`. Launch intent remains the existing external
+  `launch.json`, not a member of the seed-supply transaction root.
+- All six `published-target/` members must be canonical regular unaliased files; no
+  unknown member, partial visibility, replacement, or publication retry is
+  allowed. `transaction-manifest.json` binds the other five members and never
+  itself. The durable six-member set is deliberately distinct from the three
+  chronology publication subjects: official seed inventory, full design, and
+  replay target. Exact digest edges rejoin full inventory to seed inventory,
+  full design to both inventories, replay target to those same member bytes,
+  invocation receipt to the same inventory, and chronology subjects to their
+  published members. A manifest around mutually inconsistent canonical files
+  is invalid.
+- The closed future state vocabulary is `preclaim`,
+  `claim-present-publication-absent-nonretryable`,
+  `seed-supply-aborted-established`, `publication-complete-unfrozen`,
+  `full-design-frozen`, and `launch-intent-present`. The live pre-call claim
+  interval is pending for its originating operation but immediately
+  non-retryable and permits no restarted supplier entry. It becomes a semantic
+  abort only when that operation ends without publication or the claim is
+  observed on restart. The distinct durable
+  `seed-supply-aborted-established` state requires an evidence receipt at
+  `seed-supply-abort.json`; target absence alone does not establish it.
+- This later item-22 specification explicitly refines the historical
+  `spirallens.d7-replay-target-contract-spec.v0.1` field
+  `seed_supply_chronology_contract.claim_without_target_is_seed_supply_aborted`
+  without mutating its canonical bytes (SHA-256
+  `d8387e29601a85df54513669919c591964b8fc99f3c8ec1126d527a854763ffa`, 6,550
+  bytes). The older blanket flag grants no future behavior; operational code
+  must use the active/ended-origin and semantic/durable-evidence split above.
+- Supplier identity and the concrete exclusive claim-key value remain absent
+  and mandatory before the exclusive claim. The frozen future
+  `spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` scheme uses SHA-256
+  over canonical JSON with domain separator
+  `spirallens:d7:item22:exclusive-seed-supply-claim:v0.1`. Its ordered roles bind
+  one exact-key top-level object containing the fixed claim path, three
+  historical item-21 artifacts, reviewed re-anchor, supplier identity, and
+  development and parent exclusion registries. Dynamic artifacts use the exact
+  five-field `spirallens.d7-item22-claim-key-binding-projection.v0.1` identity
+  projection; alternate shapes, extra fields, and authority/provenance fields
+  are excluded. No concrete re-anchor/supplier/key is present, the specification
+  derives no key, and a caller-supplied value is rejected.
+- The closed future transition graph requires verified supplier identity, the
+  derived key, internally live-verified re-anchor, and durable claim before the
+  supplier call. Only the same originating operation may move the claim-present
+  state to complete publication or evidence-backed abort; restarted supplier
+  entry is forbidden. Abort-established is terminal. Abort-evidence persistence
+  failure remains claim-present/non-retryable; post-publication failure remains
+  `publication-complete-unfrozen`, is not abort, and permits no supplier retry.
+- Future exclusivity is scoped to repository-local no-replace and cross-process
+  operation on the same filesystem. The specification proves no cross-host or
+  distributed-filesystem exclusivity and no supplier-global idempotency;
+  external coordination remains required before an operational boundary.
+- The durable claim-before-call interval is required but is not a
+  restart-resumable waiting state. Future operational code must fsync the
+  owning experiment directory after creating the initially absent transaction
+  namespace; claim data/metadata and its parent before supplier entry; each
+  staged member and the staging directory before no-replace publication; the
+  publication parent before success; and abort evidence and its parent before
+  abort establishment. Restart recovery uses one mutually exclusive presence
+  table in `(claim, target, abort, freeze, launch)` order: `00000` is preclaim,
+  `10000` claim-present/nonretryable, `10100` abort-established, `11000`
+  publication-complete/unfrozen, `11010` full-design-frozen, and `11011`
+  launch-intent-present. Present artifacts must pass canonical strict reload.
+  Any other combination—including target plus abort, downstream evidence
+  without claim, or invalid/partial evidence—fails closed with no precedence or
+  supplier retry. These requirements do not prove power-loss survival or
+  authenticate filesystem fsync semantics.
+
+### Compatibility and non-claims
+
+- This addition is a contract-spec and in-memory loader foundation only. It
+  writes no artifact, creates no filesystem object or persisted reservation,
+  exposes no claim API, invokes no supplier, reads no seed, and publishes no
+  target, abort, freeze, or launch record. It adds no stable or provisional
+  public API.
+- The committed item-21 receipt, readiness, and reviewed-admission artifacts
+  remain historically valid and strictly reloadable. This later source change
+  nevertheless fails their exact-current live-readiness comparison. Item 22
+  therefore remains blocked until all item-22 execution source is final and a
+  separately reviewed, versioned exact-current re-anchor is published at
+  `item22-current-source-runtime-reanchor.json` and rebound to the historical
+  item-21 chain. This contract specification is not that re-anchor.
+- Historical reviewed-family-admission evidence may be retained on the loaded
+  foundation, but it remains separate from the closed all-false authority map
+  and is not promoted into current readiness or item-22 authority.
+- No exclusive claim, supplier invocation, official seed inventory, atomic
+  target publication, abort establishment, full-design freeze, launch intent,
+  execution, D7 result, or D8 replay is created. All scientific and execution
+  authority remains absent, false, or `not_run`.
+
 ## 2026-07-31 — Corrected D7 item-21 positive-authority artifact chain
 
 An earlier unmerged Draft PR #27 candidate was rejected during final
@@ -559,9 +672,11 @@ continuity as protocol requirements rather than later additions.
 - The seed-supply contract orders final-code source/runtime closure and
   reviewed family admission before its exclusive claim and one supplier
   invocation, then atomic no-replace full-design/target publication and a
-  committed freeze receipt before launch intent. A claim without a published
-  target is an aborted, non-retryable seed supply; target absence does not
-  prove that the supplier was invoked.
+  committed freeze receipt before launch intent. After its originating
+  operation ends, a claim without a published target is a semantic,
+  non-retryable abort, but remains in the durable claim-present state unless a
+  separate valid abort receipt exists; target absence does not prove that the
+  supplier was invoked.
 - The future target's claim ceiling is exactly Level 0 and its local authority
   truth vector is closed and all-false; nested authority extensions are
   forbidden.
