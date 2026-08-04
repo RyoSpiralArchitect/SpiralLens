@@ -67,5 +67,6 @@ Roadmap = "https://github.com/RyoSpiralArchitect/SpiralLens/blob/main/docs/ROADM
 where = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra --import-mode=prepend"
 testpaths = ["tests"]
+pythonpath = ["src"]

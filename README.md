@@ -802,23 +802,38 @@ plumbing evidence only.
 
 ## Development install
 
+Create one virtual environment inside each worktree. Do not reuse an editable
+install created for another checkout:
+
 ```bash
-python -m pip install -e '.[ann,models,dev]'
+python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[ann,models,dev]'
 ```
 
 The analytic calibration requires only the core dependencies:
 
 ```bash
-python -m pip install -e .
-spirallens calibrate
+.venv/bin/python -m pip install -e .
+.venv/bin/spirallens calibrate
 ```
 
 The full test suite includes the offline Pythia adapter and Faiss backend:
 
 ```bash
-python -m pip install -e '.[ann,models,dev]'
-pytest
+.venv/bin/python -m pip install -e '.[ann,models,dev]'
+.venv/bin/python -m pytest
 ```
+
+Pytest pins `src/` from the current worktree before collection, exports that
+single source root during the test session so ordinary inheriting Python
+subprocesses launched from this repository root resolve the same package, and
+fails closed if `spirallens` or any already-loaded submodule in the pytest
+process resolves elsewhere. This guards the identity of the code under test
+even when another editable checkout is on the ambient Python path. A
+worktree-local `.venv` additionally isolates the dependency set; the origin
+guard does not claim dependency or runtime closure. Child cwd shadowing,
+path-altering interpreter flags or site customization, and a child that
+replaces or ignores its inherited environment remain outside this guarantee.
 
 Recorded-lineage tests fail closed and require the C1/C2 ancestry they verify
 to be present locally. Item-21 verification rejects every shallow repository
