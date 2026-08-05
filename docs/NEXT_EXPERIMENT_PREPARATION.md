@@ -952,70 +952,9 @@ ancestry to retain the exact source tree. Merged-away artifact or source
 mutations and exact source reverts therefore fail rather than being laundered
 by endpoint equality.
 
-The deep-internal
-`spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
-(`D7Item22SeedSupplyTransactionContractSpec`) now fixes the future item-22
-transaction layout and states without adding orchestration. The choice-free
-`load_d7_item22_seed_supply_contract_foundation(*, repository_root)` loader
-returns only an in-memory `LoadedD7Item22SeedSupplyContractFoundation`; it has
-no writer or claim API and accepts or accesses no supplier, seed, claim-key
-value, target, or caller-defined layout.
+Item 22 now has a deep-internal one-shot operation: exact-current recheck, durable claim, one fixed supplier-function invocation, frozen seed exclusions, then atomic target publication. Restart never re-enters the supplier. This is honest-local same-filesystem coordination only. Details remain normative in [D7 Confirmation Execution Design](D7_CONFIRMATION_EXECUTION_DESIGN.md) and [`D7-OPS-22`](ROADMAP.md#d7-ops-22).
 
-The fixed future `item22-seed-supply/` root contains
-`exclusive-seed-supply-claim.json`, `seed-supply-abort.json`, atomic
-`published-target/` members `official-seed-inventory.json`,
-`full-inventory.json`, `full-design.json`, `replay-target.json`,
-`single-supplier-invocation.json`, and `transaction-manifest.json`, followed
-later by `full-design-freeze.json`. The reviewed re-anchor remains external at
-`item22-current-source-runtime-reanchor.json`, and launch intent remains the
-external `launch.json`. The frozen states are `preclaim`,
-`claim-present-publication-absent-nonretryable`,
-`seed-supply-aborted-established`, `publication-complete-unfrozen`,
-`full-design-frozen`, and `launch-intent-present`. The live pre-call claim
-interval is pending for its originating operation but immediately non-retryable
-and permits no restarted supplier entry. It becomes a semantic abort only when
-that operation ends without publication or the claim is observed on restart.
-The distinct durable `seed-supply-aborted-established` state
-requires an evidence receipt at `seed-supply-abort.json`; target absence alone
-does not establish it. This later item-22 specification explicitly refines the
-historical replay-target field
-`seed_supply_chronology_contract.claim_without_target_is_seed_supply_aborted`
-without mutating its historical bytes. The older blanket flag grants no future
-behavior; future operational code must use the active/ended-origin and
-semantic/durable-evidence split above. Supplier identity and the concrete
-claim-key value remain
-absent and mandatory before an exclusive claim. The future
-`spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` scheme fixes their
-one exact top-level canonical-JSON/SHA-256 preimage over the fixed claim path,
-historical item-21 triple, reviewed re-anchor, supplier identity, and both
-exclusion registries. Dynamic artifacts use one exact five-field identity
-projection; alternate shapes, extra fields, and caller values are rejected,
-and this specification derives no key. The six target members must reconstruct
-and digest-rejoin the exact seed inventory, full inventory, full design, replay
-target, and invocation relationships; a self-consistent manifest around
-mutually inconsistent members fails. Only the originating claim operation may
-later complete publication or record abort. Restarted supplier entry is forbidden; abort is
-terminal, while post-publication failure stays unfrozen and does not restore
-supplier retry. The durable pre-call interval is observable but never
-restart-resumable. Future code must fsync the owning experiment directory after
-creating the initially absent seed-supply namespace; then fsync the claim before
-supplier entry, staged members and directories around no-replace publication,
-and abort evidence before establishment. Restart recovery uses one mutually
-exclusive presence table in `(claim, target, abort, freeze, launch)` order:
-`00000` is preclaim, `10000` claim-present/nonretryable, `10100`
-abort-established, `11000` publication-complete/unfrozen, `11010`
-full-design-frozen, and `11011` launch-intent-present. Present artifacts must
-pass canonical strict reload. Every other combination—including target plus
-abort, downstream evidence without claim, or invalid/partial evidence—fails
-closed with no precedence and no retry. These requirements do not prove
-power-loss survival.
-
-The item-21 chain remains historically valid, but the later contract-spec
-source fails its exact-current live-readiness comparison. After all item-22
-execution source is final, a reviewed, versioned exact-current source/runtime
-re-anchor must be created at the fixed external pre-claim path and bound to the
-historical item-21 chain. The contract specification creates no such re-anchor;
-the reviewed re-anchor precedes the exclusive claim and every supplier call.
+Current readiness is deliberately false until all pre-claim source is final and the reviewed artifact-only re-anchor exists; historical item-21 reload remains valid.
 
 That is implementation conformance, not D7 execution evidence. Committed C2
 verifies only the declared historical Git source set; the final corrected chain
@@ -1127,56 +1066,11 @@ pins only. It establishes no pin/trust-root provenance, official authority,
 wall-clock freshness, authoritative start, observed execution, scientific
 eligibility, retry/replay authority, D7, or D8. No supplier or official seed
 was used, and no official execution occurred.
-The item-19 finalizer accepts only the evidence-only loaded prefix; it cannot
-accept or reauthenticate the item-20 authoritative-start transaction.
-Authoritative-start-compatible external-abort integration therefore remains a
-pre-item-24 blocker.
+That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The next execution-preparation order is:
+The remaining order is source-final item-23 implementation → reviewed exact-current re-anchor → one-shot item-22 target → freeze and launch intent → item-23 descriptive artifact → closed descriptor → one item-24 invocation/terminal → byte-identical replay.
 
-1. retain the completed terminal transaction, external-witness verification
-   relative to explicit pins, and typed runner mechanics as non-authorizing
-   and non-scientific;
-2. retain the completed fused verify-and-exclusive-start mechanics without
-   creating an official descriptor or officially invoking them; their canonical
-   `origin/main`, declared source/runtime and callable/process, disjoint-store,
-   two-pass absence, no-replace start plus parent-fsync proof, and one-callback
-   checks emit no reusable authorization token;
-3. retain item 21's exact `requirements-d7-runtime-lock.txt`, fixed
-   zero-argument official producer, exact full-inventory, aggregation, and
-   full-design builders, and installed-inventory equality check as code-side
-   ingredients only; after all item-21 source is final, add only the exact
-   source/runtime receipt in its direct-child commit, only seed-free readiness
-   in the next direct child, and only scoped reviewed successor-family
-   admission in the next direct child; strictly reload and rejoin all three
-   before item 21 is complete;
-4. retain the item-22 transaction contract specification as an in-memory
-   layout/state foundation only, with no persisted instance, claim API,
-   supplier or seed access, re-anchor, publication, freeze, or launch intent;
-5. after final item-22 execution-source changes, first publish and review the
-   fixed-path exact-current re-anchor bound to item 21; only then acquire the
-   exclusive seed-supply claim, invoke the supplier once, publish the exact
-   seed-bearing target and full design atomically, commit their freeze, persist
-   launch intent after that freeze, and execute item 23's already separated
-   descriptive result without changing D7 design bytes;
-6. before item 24, create and commit the closed nine-member fused descriptor
-   and pass strict verification-evidence replay/rejoin, recognizing that
-   structural replay preserves but does not recompute or independently
-   reauthenticate its live-observation digests and that terminal lineage binds
-   the evidence bytes only; pass temporary Git/runtime end-to-end validation
-   and authoritative-start-compatible external-abort integration; and
-7. make item 24 the first official fused invocation, requiring an exact
-   terminal outcome and complete isolated byte replay.
-
-Nothing in the corrected source anchor, its three artifact-only children, or
-the later item-22 contract-spec foundation performs the item-22 transaction.
-The item-21 chain remains historically valid while exact-current readiness is
-blocked pending the final reviewed re-anchor. No exclusive supplier claim or
-invocation,
-official seed inventory, atomic seed-bearing target/full-design publication,
-or committed freeze exists. Launch intent, the canonical
-nine-member descriptor, an official invocation/start/run/terminal/result, D7,
-and D8 also remain absent or `not_run`.
+This branch performs none of those artifact steps; all official outcomes remain absent or `not_run`.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

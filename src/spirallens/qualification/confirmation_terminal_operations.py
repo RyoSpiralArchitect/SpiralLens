@@ -9,6 +9,9 @@ This deep-internal module closes two mechanics-only joins:
   pins, rechecked against the live prefix/terminal coordinates, included in
   the closed terminal inventory, and published once.
 
+The abort path may strictly reload an authoritative-start transaction without
+reconstructing the fused operation's ephemeral private ownership.
+
 Neither operation issues the private post-start ownership object.  Runtime
 pins are caller-supplied configuration here, not SpiralLens trust-root
 authority.  The returned receipts therefore prove only structural publication
@@ -20,6 +23,7 @@ scientific eligibility, retry/replay permission, D7, or D8.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import InitVar, dataclass
 from pathlib import Path
 from typing import ClassVar
@@ -38,6 +42,10 @@ from .common import QualificationContractError
 __all__: tuple[str, ...] = ()
 
 _AUTHENTICATION_RECEIPT_FACTORY_TOKEN = object()
+_LoadedPrefix = (
+    p.D7LoadedEvidenceOnlyPrefix
+    | authoritative_start.D7LoadedAuthoritativeStartTransaction
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -326,7 +334,7 @@ def persist_d7_prepared_terminal_no_replace(
 def _require_live_witness_coordinates(
     value: w.VerifiedD7ExternalAbortWitness,
     *,
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: _LoadedPrefix,
 ) -> None:
     expected = (
         ("replay_target_sha256", prefix.start.replay_target_sha256),
@@ -368,13 +376,11 @@ def _require_live_witness_coordinates(
             raise QualificationContractError(f"verified witness live {name} differs")
 
 
-def _revalidate_prefix_and_terminal_absence(
+def _require_terminal_absence(
     value: w.VerifiedD7ExternalAbortWitness,
     *,
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
-    ownership: runner._D7PostStartOwnership,
+    prefix: _LoadedPrefix,
 ) -> None:
-    prefix = _require_owned_prefix(loaded_prefix, ownership)
     _require_live_witness_coordinates(value, prefix=prefix)
     parent, terminal_leaf = tp._open_terminal_parent(prefix)
     try:
@@ -389,8 +395,27 @@ def _revalidate_prefix_and_terminal_absence(
         os.close(parent.descriptor)
 
 
+def _strictly_reload_authoritative_start(
+    loaded_start: object,
+) -> authoritative_start.D7LoadedAuthoritativeStartTransaction:
+    if (
+        type(loaded_start)
+        is not authoritative_start.D7LoadedAuthoritativeStartTransaction
+    ):
+        raise TypeError(
+            "loaded_start must be an exact D7LoadedAuthoritativeStartTransaction"
+        )
+    prefix = tp._strictly_reload_prefix(loaded_start)
+    assert type(prefix) is authoritative_start.D7LoadedAuthoritativeStartTransaction
+    if prefix.declaration.attempt_role is not r.D7AttemptRole.PRIMARY_CONFIRMATION:
+        raise QualificationContractError(
+            "terminal operations currently require a primary confirmation"
+        )
+    return prefix
+
+
 def _external_records(
-    prefix: p.D7LoadedEvidenceOnlyPrefix,
+    prefix: _LoadedPrefix,
     *,
     payload: e.D7FailureEvidencePayload,
     receipt: e.D7ExternalAbortVerificationReceipt,
@@ -523,26 +548,16 @@ def _authentication_receipt(
     )
 
 
-def finalize_d7_external_abort_relative_to_pins_no_replace(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
-    ownership: runner._D7PostStartOwnership,
+def _finalize_external_abort_relative_to_pins_no_replace(
+    prefix: _LoadedPrefix,
     *,
     envelope_source: bytes,
     expected_envelope_sha256: str,
     trust_root: w.D7PinnedExternalWitnessTrustRoot,
     payload: e.D7FailureEvidencePayload,
     structural_receipt: e.D7ExternalAbortVerificationReceipt,
+    strict_reload: Callable[[], _LoadedPrefix],
 ) -> D7ExternalAbortAuthenticationRelativeToPins:
-    """Verify, fixed-revalidate, derive, and publish one external abort.
-
-    The operation intentionally accepts no preverified witness object and no
-    caller-supplied manifest, finalization, failed-attempt, or consumption
-    record.
-    """
-
-    _preflight_owned_prefix_kind(loaded_prefix, ownership)
-    ownership._consume_for_external_finalization()
-    prefix = _reload_owned_prefix(loaded_prefix, ownership)
     verified = w.verify_d7_signed_external_abort_witness(
         envelope_source=envelope_source,
         expected_envelope_sha256=expected_envelope_sha256,
@@ -564,10 +579,9 @@ def finalize_d7_external_abort_relative_to_pins_no_replace(
         envelope=envelope,
     )
     verified.consume(
-        revalidate=lambda value: _revalidate_prefix_and_terminal_absence(
+        revalidate=lambda value: _require_terminal_absence(
             value,
-            loaded_prefix=prefix,
-            ownership=ownership,
+            prefix=strict_reload(),
         )
     )
     publication = tp.persist_d7_structural_terminal_transaction_no_replace(
@@ -585,12 +599,71 @@ def finalize_d7_external_abort_relative_to_pins_no_replace(
         loaded=loaded,
         witness=verified,
         created_by_call=True,
-        parent_directory_fsync_proved=(publication.parent_directory_fsync_proved),
+        parent_directory_fsync_proved=publication.parent_directory_fsync_proved,
+    )
+
+
+def finalize_d7_external_abort_relative_to_pins_no_replace(
+    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+    ownership: runner._D7PostStartOwnership,
+    *,
+    envelope_source: bytes,
+    expected_envelope_sha256: str,
+    trust_root: w.D7PinnedExternalWitnessTrustRoot,
+    payload: e.D7FailureEvidencePayload,
+    structural_receipt: e.D7ExternalAbortVerificationReceipt,
+) -> D7ExternalAbortAuthenticationRelativeToPins:
+    """Verify, fixed-revalidate, derive, and publish one external abort.
+
+    The operation intentionally accepts no preverified witness object and no
+    caller-supplied manifest, finalization, failed-attempt, or consumption
+    record.
+    """
+
+    _preflight_owned_prefix_kind(loaded_prefix, ownership)
+    ownership._consume_for_external_finalization()
+    prefix = _reload_owned_prefix(loaded_prefix, ownership)
+    return _finalize_external_abort_relative_to_pins_no_replace(
+        prefix,
+        envelope_source=envelope_source,
+        expected_envelope_sha256=expected_envelope_sha256,
+        trust_root=trust_root,
+        payload=payload,
+        structural_receipt=structural_receipt,
+        strict_reload=lambda: _require_owned_prefix(prefix, ownership),
+    )
+
+
+def finalize_d7_reloaded_authoritative_start_external_abort_relative_to_pins_no_replace(
+    loaded_start: authoritative_start.D7LoadedAuthoritativeStartTransaction,
+    *,
+    envelope_source: bytes,
+    expected_envelope_sha256: str,
+    trust_root: w.D7PinnedExternalWitnessTrustRoot,
+    payload: e.D7FailureEvidencePayload,
+    structural_receipt: e.D7ExternalAbortVerificationReceipt,
+) -> D7ExternalAbortAuthenticationRelativeToPins:
+    """Close a strictly reloaded authoritative start with a signed abort.
+
+    Persisted start bytes replace no same-call ownership.  They only provide
+    exact descriptor, attempt, start, and terminal lineage for this one
+    signature-authenticated, no-replace structural publication.
+    """
+
+    prefix = _strictly_reload_authoritative_start(loaded_start)
+    return _finalize_external_abort_relative_to_pins_no_replace(
+        prefix,
+        envelope_source=envelope_source,
+        expected_envelope_sha256=expected_envelope_sha256,
+        trust_root=trust_root,
+        payload=payload,
+        structural_receipt=structural_receipt,
+        strict_reload=lambda: _strictly_reload_authoritative_start(prefix),
     )
 
 
 def load_d7_external_abort_relative_to_pins(
-    loaded_prefix: p.D7LoadedEvidenceOnlyPrefix,
+    loaded_prefix: _LoadedPrefix,
     *,
     expected_manifest_sha256: str,
     expected_consumption_sha256: str,

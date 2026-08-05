@@ -19,9 +19,7 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `item21_source_commit_artifacts_absent`,
 `item21_final_corrected_tip_artifacts_tracked_and_strictly_reloaded`,
 `item21_complete_at_final_corrected_tip`,
-`item22_seed_supply_transaction_contract_spec_defined`,
 `item22_seed_supply_transaction_instance_absent`,
-`item22_claim_api_absent`,
 `item22_live_readiness_blocked_pending_reviewed_reanchor`,
 `canonical_d7_launch_descriptor_absent`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
@@ -396,21 +394,12 @@ per-member and aggregate source caps. Live source verification checks every
 bounded source-path event on the anchor-to-HEAD descendant ancestry, together
 with both endpoints, so an edit followed by a revert or merge resolution still
 requires a reviewed re-anchor.
-The new deep-internal
-`spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
-(`D7Item22SeedSupplyTransactionContractSpec`) closes only the future item-22
-layout and state vocabulary. The choice-free
-`load_d7_item22_seed_supply_contract_foundation(*, repository_root)` entry point
-strictly reloads the complete, non-shallow historical item-21 chain and returns
-a `LoadedD7Item22SeedSupplyContractFoundation` in memory. Its transaction
-contract records `status=contract-defined-operational-instance-absent`. It creates no
-transaction instance, writes no file, exposes no claim API, and accepts or
-accesses no seed, supplier, claim-key value, callback, target, or caller-authored
-layout.
+The deep-internal item-22 operation is repository-root-only and accepts no caller supplier, seed, claim key, layout, or authority object. It strictly reloads the historical item-21 chain and reviewed exact-current re-anchor, then rechecks live state, durably claims, calls the fixed honest-local OS-CSPRNG supplier once, excludes both frozen seed registries, and atomically publishes two unique sorted nonnegative signed-int64 seeds with the closed target.
+Import, loading, and tests create no official transaction artifact.
 
-The fixed future layout retains
+The fixed layout retains
 `item22-current-source-runtime-reanchor.json` outside the
-`item22-seed-supply/` transaction root. That root contains the future
+`item22-seed-supply/` transaction root. That root contains
 `exclusive-seed-supply-claim.json` and `seed-supply-abort.json` leaves, the
 atomic `published-target/` directory, and, only after complete publication, the
 later `full-design-freeze.json` leaf. The exact `published-target/` members are
@@ -429,13 +418,12 @@ receipt to the same seed inventory. Each chronology-subject binding must equal
 its published member; merely hashing six mutually inconsistent canonical files
 into the manifest does not satisfy the contract.
 
-The frozen state names are `preclaim`,
+The state names are `preclaim`,
 `claim-present-publication-absent-nonretryable`,
 `seed-supply-aborted-established`, `publication-complete-unfrozen`,
 `full-design-frozen`, and `launch-intent-present`. The live pre-call claim
-interval is pending for its originating operation but immediately non-retryable
-and permits no restarted supplier entry. It becomes a semantic abort only when
-that operation ends without publication or the claim is observed on restart.
+interval is immediately non-retryable and permits no restarted supplier entry.
+It becomes a semantic abort only when that operation ends without publication.
 The distinct durable `seed-supply-aborted-established` state
 requires an evidence receipt at `seed-supply-abort.json`; target absence alone
 does not establish it or prove that the supplier was never invoked. This later
@@ -445,35 +433,33 @@ without mutating its canonical bytes (SHA-256
 `d8387e29601a85df54513669919c591964b8fc99f3c8ec1126d527a854763ffa`, 6,550
 bytes). The older blanket flag grants no future behavior; operational code must
 use this specification's active/ended-origin and semantic/durable-evidence
-split. Supplier
-identity and a concrete exclusive claim-key value remain absent and mandatory
-before the exclusive claim. The frozen future
+split. The fixed supplier identity is
+`d7-item22-honest-local-os-csprng-v0-1`; its declared entropy API is
+`secrets.randbits(63)` and it makes no cryptographic unseen-value proof. The
 `spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` scheme uses SHA-256
 over canonical JSON with domain separator
 `spirallens:d7:item22:exclusive-seed-supply-claim:v0.1`. Its ordered inputs bind
 the fixed claim path, historical item-21 receipt/readiness/admission triple,
 reviewed re-anchor, supplier identity, and development and parent exclusion
 registries. The preimage is one exact-key top-level object; every dynamic
-artifact uses the exact five-field
-`spirallens.d7-item22-claim-key-binding-projection.v0.1` identity projection.
+artifact uses the exact five-field authority-artifact identity projection.
 Alternate arrays, role-keyed objects, extra fields, authority/provenance flags,
-and caller-supplied key values are excluded. The specification contains no
-concrete re-anchor or supplier binding and derives no key.
+and caller-supplied key values are excluded.
 
-The closed future transition graph requires verified supplier identity, the
-derived key, internally live-verified re-anchor, and durable claim before the
-supplier call. From the claim-present state, only the same originating operation
+The closed transition graph requires the fixed supplier identity, derived key,
+internally live-verified re-anchor, and durable claim before supplier entry.
+From the claim-present state, only the same originating operation
 may atomically publish the target or durably record abort; a restarted entrant
 cannot invoke the supplier. Abort-established is terminal. Failure to persist
 abort evidence leaves the claim-present/non-retryable state, while failure after
 publication leaves `publication-complete-unfrozen`, is not seed-supply abort,
-and authorizes no supplier retry. The future exclusive reservation is scoped to
+and authorizes no supplier retry. The exclusive reservation is scoped to
 repository-local, cross-process operation on the same filesystem. It proves no
 cross-host or distributed-filesystem exclusivity and no supplier-global
 idempotency; external coordination remains a future requirement.
 The durable pre-call claim is necessarily observable before supplier entry, but
 that interval is not a restart-resumable waiting state and persisted claim bytes
-alone authorize no continuation. Future operational code must fsync the claim
+alone authorize no continuation. The operation fsyncs the claim
 file and parent before the supplier call. Because the seed-supply namespace is
 initially absent, its owning experiment directory must also be fsynced after
 namespace creation and before the claim. Every staged target member and the
@@ -489,24 +475,8 @@ reload. Every unlisted combination—including target plus abort, downstream
 evidence without claim, or any invalid/partial artifact—is a fail-closed
 contract error. Recovery applies no precedence and permits no supplier retry.
 
-The item-21 artifact chain remains historically valid and strictly reloadable,
-but the later item-22 contract-spec source is outside its exact-current source
-receipt. Live readiness is therefore blocked by source drift until all item-22
-execution source is final and a reviewed, versioned exact-current re-anchor is
-published at the separate pre-claim path, bound to the historical item-21
-chain. The contract-spec foundation is not that re-anchor. The final item-22
-operation must also perform the applicable live verification internally
-immediately before its no-replace claim and accept no cached readiness snapshot.
-
-The later operational sequence remains an exclusive seed-supply claim, one
-supplier invocation, atomic no-replace publication of the seed-bearing full
-design and target, a committed full-design freeze receipt, then launch intent.
-Only then may the fused operation be invoked. The supplier may be invoked only
-after the claim and at most once. If the claim exists but target publication
-does not complete, retry remains unauthorized. No official seed supplier is
-invoked by this contract-spec foundation. PR #23's typed claim and invocation
-records still encode caller-claimed structural joins only; their verification
-flags establish no event.
+The item-21 artifact chain remains historically valid, but live readiness is blocked until all pre-claim source is final and the separate reviewed re-anchor is committed. The operation re-verifies immediately before its no-replace claim and accepts no cached readiness snapshot.
+This branch contains no official claim, supplier invocation, seed, target, freeze, launch descriptor, or execution. Freeze and the closed descriptor remain distinct later steps; item 24 remains the first official fused invocation.
 
 The evidence-only local persistence writer performs path-coordinate
 reobservation before exposing a caller-supplied start record, but it does not
@@ -586,13 +556,6 @@ terminal to the supplied pins. This is signature authentication relative to
 those pins only: pin provenance, official trust-root authority, wall-clock
 freshness, authoritative-start issuance, execution observation, scientific
 eligibility, retry/replay authority, D7, and D8 remain false.
-The finalizer is typed to `D7LoadedEvidenceOnlyPrefix` and explicitly rejects
-the item-20 `D7LoadedAuthoritativeStartTransaction`; it therefore cannot close
-the new structural-start lane. Strict verification-evidence parsing and
-descriptor/start semantic rejoin are implemented, but have no official
-descriptor instance to exercise. A real temporary-Git/runtime end-to-end
-qualification and authoritative-start-compatible external-abort integration
-remain required before the first official invocation.
 Structural reload preserves, but does not recompute or independently
 reauthenticate, the repository-HEAD, canonical-origin, source-tree,
 dependency-set, callable, and process observation digests. Terminal lineage
@@ -644,13 +607,10 @@ to test without claiming that the records came from trusted issuers. This is a
 newly exposed prerequisite, not an amendment to the meaning or historical
 status of C1, C2, D6, or earlier persisted attempts.
 
-The item-22 transaction contract-spec foundation now fixes the later
-seed-supply paths and six-state vocabulary without adding a persisted instance
-or operation. Its repository-root-only loader reconstructs an in-memory
-`LoadedD7Item22SeedSupplyContractFoundation`; it has no claim, supplier, seed,
-publication, abort, freeze, or launch side effect. The historical item-21 chain
-still reloads, while exact-current live readiness is blocked by the later source
-surface until the final reviewed re-anchor is published separately.
+The item-22 module now implements the closed six-state observer and the one-shot
+transaction through abort or `publication-complete-unfrozen`, without creating an official instance on this branch. The historical item-21 chain
+still reloads, while exact-current live readiness remains blocked until the
+final reviewed re-anchor is published separately.
 
 Roadmap items 19 and 20 are now mechanics-complete. The structural terminal, typed
 primary-only runner handoff, two-signature witness inventory member, and
@@ -703,11 +663,9 @@ The reviewed successor order is:
    direct-child commit, only seed-free readiness in the next direct child, and
    only scoped reviewed successor-family admission in the next direct child;
    strictly reload and rejoin all three before item 21 is complete;
-5. retain the item-22 transaction contract specification as layout/state
-   structure only, with no persisted instance, claim API, supplier invocation,
-   seed access, filesystem creation, persisted reservation, publication, or
+5. retain the item-22 one-shot operation without invoking it or publishing its
    re-anchor;
-6. because that later source changes the exact-current surface, first publish
+6. because this source changes the exact-current surface, first publish
    and review the fixed-path exact-current re-anchor bound to item 21; only then
    acquire the
    seed-supply claim, invoke the supplier once, atomically publish the
@@ -730,7 +688,7 @@ D8 remain absent or `not_run`. None may be represented by a placeholder
 result, inferred from C2 source closure, or authorized by caller-constructible
 records.
 
-After the item-22 contract-spec foundation, while its operational and execution
+After the item-22 source implementation, while its artifact and execution
 obligations remain open, the canonical state is:
 
 ```text
@@ -755,10 +713,7 @@ item21_exact_installed_inventory_and_runtime_observed_honest_local
 item21_seed_free_readiness_tracked_strictly_reloaded
 item21_scoped_successor_family_admission_tracked_strictly_reloaded
 item21_complete
-item22_seed_supply_transaction_contract_spec_defined
 item22_seed_supply_transaction_instance_absent
-item22_claim_api_absent
-item22_supplier_and_seed_access_absent
 item22_historical_item21_chain_valid
 item22_exact_current_live_readiness_blocked_pending_reviewed_reanchor
 terminal_witness_runner_mechanics_implemented_non_authorizing
