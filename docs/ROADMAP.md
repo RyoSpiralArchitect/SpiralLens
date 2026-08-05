@@ -776,6 +776,28 @@ Tests and documentation are excluded from this counter but remain required for
 each migration. Deleting validation, domain-specific error translation, or
 typed reconstruction checks does not qualify as debt repayment.
 
+The first repository-context foothold is likewise internal and
+non-authorizing. `build_current_qualification_engine_binding()` and
+`run_public_example_plumbing()` retain their existing provisional public names
+but now require a caller-supplied `repository_root`; the public-example CLI
+requires the corresponding flag. A private `RepositoryContext` marker carries
+only the normalized absolute path; construction performs no I/O or Git
+discovery. Its narrow same-file comparison rebinds each migrated consumer's
+actually imported source to the declared checkout, preventing execution from
+one worktree from being attributed to another. It is not serialized and proves
+no Git-root identity, cleanliness, ancestry, claim, chronology, or authority
+fact. The D7 fixed zero-argument official producer is excluded from this
+migration because its signature and imported-source identity are versioned
+chronology inputs; changing it requires a separate protocol decision.
+Advancement, runner, Faiss, and phantom context migrations remain open, so this
+foothold does not satisfy the `LIB-L0` repository-boundary exit.
+
+Against baseline commit `aee47f9cefb1c5fd445ad586471edd4712cb5178`, this
+foothold adds `+109` physical production lines and `+0` public exports. Later
+repository-context migrations must reuse this single private marker and report
+the running production balance; they must not introduce a parallel context or
+import-origin plumbing family.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 

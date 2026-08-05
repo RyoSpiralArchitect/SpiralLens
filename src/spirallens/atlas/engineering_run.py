@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 from pathlib import Path
 import shutil
@@ -10,6 +11,7 @@ import stat
 import subprocess
 from typing import Any
 
+from spirallens._repository_context import RepositoryContext
 from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION, PythiaAdapter
 from spirallens.contexts import ContextRole, load_context_bank
 
@@ -33,6 +35,25 @@ class PublicExamplePlumbingRunError(RuntimeError):
 
 _PYTHIA70_PARAMETER_COUNT = 70_426_624
 _DISK_RESERVE_BYTES = 64 * 1024 * 1024
+_RUNNER_REPOSITORY_PATH = "src/spirallens/atlas/engineering_run.py"
+
+
+def _require_imported_source_origin(
+    *,
+    context: RepositoryContext,
+    imported_file: str | Path | None,
+    repository_path: str,
+    label: str,
+) -> None:
+    """Fail closed when executing code is not from the declared checkout."""
+
+    if not context.matches_imported_file(
+        imported_file=imported_file,
+        repository_path=repository_path,
+    ):
+        raise PublicExamplePlumbingRunError(
+            f"{label} import origin differs from repository_root"
+        )
 
 
 def _require_offline_environment() -> None:
@@ -365,17 +386,23 @@ def run_public_example_plumbing(
     receipt_path: str | Path,
     expected_protocol_source_sha256: str,
     expected_protocol_canonical_sha256: str,
-    repository_root: str | Path | None = None,
+    repository_root: str | Path,
 ) -> dict[str, object]:
     """Execute and receipt one frozen, atlas-integrity-only Pythia capture."""
 
+    context = RepositoryContext(
+        root=Path(repository_root).resolve(strict=True),
+    )
+    _require_imported_source_origin(
+        context=context,
+        imported_file=__file__,
+        repository_path=_RUNNER_REPOSITORY_PATH,
+        label="public-example runner",
+    )
+
     import torch
 
-    root = (
-        Path(repository_root).resolve(strict=True)
-        if repository_root is not None
-        else Path(__file__).resolve().parents[3]
-    )
+    root = context.root
     _require_offline_environment()
     loaded = load_public_example_plumbing_protocol(
         protocol_path,
@@ -383,6 +410,12 @@ def run_public_example_plumbing(
         expected_canonical_sha256=expected_protocol_canonical_sha256,
     )
     protocol = loaded.protocol
+    _require_imported_source_origin(
+        context=context,
+        imported_file=inspect.getsourcefile(PythiaAdapter),
+        repository_path=protocol.source.implementation_repository_path,
+        label="Pythia adapter",
+    )
     verify_implementation_source(loaded, root)
     execution_commit = _verify_protocol_git_anchor(
         root=root,

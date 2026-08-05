@@ -723,6 +723,7 @@ def _run_public_example_plumbing(args: argparse.Namespace) -> int:
     )
 
     summary = run_public_example_plumbing(
+        repository_root=args.repository_root,
         protocol_path=args.protocol,
         output_dir=args.output,
         receipt_path=args.receipt,
@@ -1863,6 +1864,12 @@ def _add_public_example_plumbing_parser(subparsers: Any) -> None:
     run = commands.add_parser(
         "run",
         help="capture, checksum, reload, and receipt the bounded atlas",
+    )
+    run.add_argument(
+        "--repository-root",
+        type=Path,
+        required=True,
+        help="explicit SpiralLens checkout containing the frozen protocol sources",
     )
     run.add_argument("--protocol", type=Path, required=True)
     run.add_argument("--output", type=Path, required=True)

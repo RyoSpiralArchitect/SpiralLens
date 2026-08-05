@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from spirallens.cli import main
 
 
@@ -30,11 +32,14 @@ def test_public_example_plumbing_cli_forwards_closed_run_contract(
     protocol = tmp_path / "protocol.yaml"
     output = tmp_path / "atlas"
     receipt = tmp_path / "receipt.json"
+    repository_root = tmp_path / "repository"
 
     exit_code = main(
         [
             "public-example-plumbing",
             "run",
+            "--repository-root",
+            str(repository_root),
             "--protocol",
             str(protocol),
             "--output",
@@ -50,6 +55,7 @@ def test_public_example_plumbing_cli_forwards_closed_run_contract(
 
     assert exit_code == 0
     assert captured == {
+        "repository_root": repository_root,
         "protocol_path": protocol,
         "output_dir": output,
         "receipt_path": receipt,
@@ -59,3 +65,23 @@ def test_public_example_plumbing_cli_forwards_closed_run_contract(
     summary = json.loads(capsys.readouterr().out)
     assert summary["status"] == "complete"
     assert summary["claim_boundary"]["scientific_claim_eligible"] is False
+
+
+def test_public_example_plumbing_cli_requires_repository_root(tmp_path) -> None:
+    with pytest.raises(SystemExit, match="2"):
+        main(
+            [
+                "public-example-plumbing",
+                "run",
+                "--protocol",
+                str(tmp_path / "protocol.yaml"),
+                "--output",
+                str(tmp_path / "atlas"),
+                "--receipt",
+                str(tmp_path / "receipt.json"),
+                "--expected-protocol-source-sha256",
+                "a" * 64,
+                "--expected-protocol-canonical-sha256",
+                "b" * 64,
+            ]
+        )

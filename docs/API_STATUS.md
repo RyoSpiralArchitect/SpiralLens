@@ -32,6 +32,7 @@ and cannot change experiment status or authority.
 | Namespace or symbol | Status | Compatibility boundary |
 | --- | --- | --- |
 | `spirallens.__version__` | supported root surface | single package version |
+| `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
 | `spirallens.core.canonical` | stable candidate | canonical bytes and legacy `instrument_contracts.canonical` compatibility |
 | `spirallens.core._canonical_source` | internal | authority-free canonical-JSON source binding with no public compatibility commitment, file I/O, typed reconstruction, claim, chronology, publication, or repository semantics |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
@@ -41,8 +42,18 @@ and cannot change experiment status or authority.
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
 | `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, a fixed zero-argument official producer, exact full-inventory, aggregation, and full-design builders, installed-inventory exact-equality validation, the corrected receipt-only `D7-OPS-21` chain through scoped reviewed successor-family admission, and an unpersisted `D7-OPS-22` seed-supply transaction contract specification with fixed future layout/state semantics; none is a public export, claim API, seed/supplier surface, or official `D7-OPS-22` descriptor, seed-bearing target, start/run instance, trusted pin root, seed, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
-| `spirallens.adapters`, capture-side `atlas`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
-| CLI handlers, workers, frozen one-experiment runners | internal | CLI is a thin adapter, never the Python API |
+| `spirallens.atlas` | provisional/model extra | import and artifact readers remain installable; the repository-bound public-example runner requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files |
+| `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
+| CLI handlers, workers, frozen one-experiment runners, private context markers | internal | CLI is a thin adapter, never the Python API |
+
+Repository-bound provisional migration note: callers of
+`build_current_qualification_engine_binding()` and
+`run_public_example_plumbing()` must now provide `repository_root` explicitly;
+the latter's CLI adapter requires `--repository-root`. This is an intentional
+pre-1.0 fail-closed change. Neither parameter nor the private context marker
+attests Git-root identity or grants experimental authority. The physical
+import-origin comparison prevents executing one checkout while attributing its
+source binding to another; it is not a Git or scientific-authority proof.
 
 The PR #11 post-D6 descriptive plan and value-blind D7 gap matrix are canonical
 research artifacts, not Python APIs. They intentionally add no analysis
