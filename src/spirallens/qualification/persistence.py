@@ -9,7 +9,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from spirallens.core.canonical import CanonicalJsonError, parse_canonical_json
+from spirallens.core._canonical_source import (
+    SourceDigestMismatchError,
+    bind_canonical_json_source,
+)
+from spirallens.core.canonical import CanonicalJsonError
 
 from .common import QualificationContractError
 from .contracts import (
@@ -182,38 +186,44 @@ def _read_bounded(path: Path, *, maximum_bytes: int, label: str) -> bytes:
     return source
 
 
-def _verify_expected_digests(
+def _inspect_qualification_source(
     source: bytes,
-    canonical_sha256: str,
     *,
     expected_source_sha256: str,
-    expected_canonical_sha256: str,
+    maximum_bytes: int,
     label: str,
-) -> str:
+) -> tuple[Mapping[str, object], str]:
     _sha256(expected_source_sha256, label="expected_source_sha256")
-    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
-    source_sha256 = hashlib.sha256(source).hexdigest()
-    if source_sha256 != expected_source_sha256:
+    try:
+        document, source_sha256 = bind_canonical_json_source(
+            source,
+            label=label,
+            maximum_bytes=maximum_bytes,
+            expected_source_sha256=expected_source_sha256,
+        )
+    except SourceDigestMismatchError as error:
         raise QualificationContractError(
             f"{label} source SHA-256 does not match the expected digest"
-        )
-    if canonical_sha256 != expected_canonical_sha256:
-        raise QualificationContractError(
-            f"{label} canonical SHA-256 does not match the expected digest"
-        )
-    return source_sha256
-
-
-def _canonical_document(source: bytes, *, label: str) -> Mapping[str, object]:
-    try:
-        document = parse_canonical_json(source, label=label)
+        ) from error
     except CanonicalJsonError as error:
         raise QualificationContractError(str(error)) from error
     if not isinstance(document, Mapping) or any(
         not isinstance(key, str) for key in document
     ):
         raise QualificationContractError(f"{label} must be a canonical JSON object")
-    return document
+    return document, source_sha256
+
+
+def _verify_expected_canonical_digest(
+    canonical_sha256: str,
+    *,
+    expected_canonical_sha256: str,
+    label: str,
+) -> None:
+    if canonical_sha256 != expected_canonical_sha256:
+        raise QualificationContractError(
+            f"{label} canonical SHA-256 does not match the expected digest"
+        )
 
 
 def load_qualification_protocol(
@@ -230,12 +240,16 @@ def load_qualification_protocol(
         maximum_bytes=MAX_QUALIFICATION_PROTOCOL_BYTES,
         label="qualification protocol",
     )
-    document = _canonical_document(source, label="qualification protocol")
-    protocol = QualificationProtocol.from_dict(document)
-    source_sha256 = _verify_expected_digests(
+    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
+    document, source_sha256 = _inspect_qualification_source(
         source,
-        protocol.canonical_sha256,
         expected_source_sha256=expected_source_sha256,
+        maximum_bytes=MAX_QUALIFICATION_PROTOCOL_BYTES,
+        label="qualification protocol",
+    )
+    protocol = QualificationProtocol.from_dict(document)
+    _verify_expected_canonical_digest(
+        protocol.canonical_sha256,
         expected_canonical_sha256=expected_canonical_sha256,
         label="qualification protocol",
     )
@@ -276,7 +290,13 @@ def load_qualification_result(
         maximum_bytes=MAX_QUALIFICATION_RESULT_BYTES,
         label="qualification result",
     )
-    document = _canonical_document(source, label="qualification result")
+    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
+    document, source_sha256 = _inspect_qualification_source(
+        source,
+        expected_source_sha256=expected_source_sha256,
+        maximum_bytes=MAX_QUALIFICATION_RESULT_BYTES,
+        label="qualification result",
+    )
     result = QualificationResult.from_dict(document)
     result.validate_against_protocol(
         protocol.protocol,
@@ -286,10 +306,8 @@ def load_qualification_result(
         selection_attempt_claim=selection_attempt_claim,
         selection_launch_authorization_sha256=(selection_launch_authorization_sha256),
     )
-    source_sha256 = _verify_expected_digests(
-        source,
+    _verify_expected_canonical_digest(
         result.canonical_sha256,
-        expected_source_sha256=expected_source_sha256,
         expected_canonical_sha256=expected_canonical_sha256,
         label="qualification result",
     )

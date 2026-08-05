@@ -966,6 +966,17 @@ def test_loader_rejects_source_and_canonical_hash_mismatches(tmp_path) -> None:
         )
 
 
+def test_loader_checks_source_digest_before_malformed_json(tmp_path) -> None:
+    path = tmp_path / "malformed.json"
+    path.write_bytes(b"not-json")
+
+    with pytest.raises(
+        InstrumentArtifactIntegrityError,
+        match="source SHA-256 differs",
+    ):
+        load_instrument_artifact(path, expected_source_sha256="0" * 64)
+
+
 def test_exact_schema_and_support_core_separation() -> None:
     artifacts = _artifact_set()
     support = artifacts["support"].to_dict()
