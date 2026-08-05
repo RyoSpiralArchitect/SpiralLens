@@ -281,15 +281,17 @@ def _load_target(
         expected_names = {name for _role, name in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT}
         if set(os.listdir(target.descriptor)) != expected_names:
             raise QualificationContractError("item-22 target member set differs")
-        sources = {
+        members = {
             role: durable._read_bounded_file(
                 target,
                 filename,
                 maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
                 label=f"item-22 {role}",
-            )[0]
+            )
             for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT
         }
+        sources = {role: member[0] for role, member in members.items()}
+        member_identities = {role: durable._stable_file_identity(member[1]) for role, member in members.items()}
     finally:
         os.close(target.descriptor)
     inventory = _parse_record(sources["official-seed-inventory"], authority.D7OfficialSeedInventoryRecord, label="official seed inventory")
@@ -340,8 +342,9 @@ def _load_target(
         if (rejoined.device, rejoined.inode) != target_identity or set(os.listdir(rejoined.descriptor)) != expected_names:
             raise QualificationContractError("item-22 target directory identity changed")
         for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT:
-            if durable._read_bounded_file(rejoined, filename, maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label=f"item-22 rejoined {role}")[0] != sources[role]:
-                raise QualificationContractError("item-22 target changed before rejoin")
+            rejoined_member = durable._read_bounded_file(rejoined, filename, maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label=f"item-22 rejoined {role}")
+            if rejoined_member[0] != sources[role] or durable._stable_file_identity(rejoined_member[1]) != member_identities[role]:
+                raise QualificationContractError("item-22 target member identity or bytes changed before rejoin")
         durable._verify_anchor(rejoined, label="item-22 published target rejoin")
         durable._verify_anchor(transaction, label="item-22 transaction root")
     finally:
@@ -441,6 +444,7 @@ def _verify_freeze(
     ):
         raise QualificationContractError("item-22 freeze differs from target")
     source_commit = context["closure"].source_commit  # type: ignore[union-attr]
+    reanchor_commit = str(context["reanchor_introduction_commit"])
     for earlier, later, label in (
         (source_commit, freeze.freeze_commit, "source-to-target-freeze"),
         (freeze.freeze_commit, freeze.authorization_commit, "target-freeze-to-authorization"),
@@ -456,7 +460,7 @@ def _verify_freeze(
     )
     frozen_sources = ((D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH, claim.canonical_bytes), *((f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/{filename}", sources[role]) for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT))
     for repository_path, expected_source in frozen_sources:
-        introduction = _immutable_introduction(root, repository_path=repository_path, expected_source=expected_source, after_commit=source_commit)
+        introduction = _immutable_introduction(root, repository_path=repository_path, expected_source=expected_source, after_commit=reanchor_commit)
         item21._require_ancestor(root, introduction, freeze.freeze_commit, label="frozen-member-to-target-freeze")
         if item21._blob(root, freeze.freeze_commit, repository_path) != expected_source:
             raise QualificationContractError("freeze commit member bytes differ")
@@ -690,7 +694,7 @@ def _foundation(root: Path, reanchor: item21._LoadedArtifact) -> dict[str, objec
         raise QualificationContractError("item-22 claim-key field order differs")
     claim_key = canonical_json_sha256({"schema_version": D7_ITEM22_CLAIM_KEY_SCHEMA_VERSION, "domain_separator": D7_ITEM22_CLAIM_KEY_DOMAIN, **claim_fields})
     claim = authority.D7ExclusiveSeedSupplyClaimInputRecord(claim_id=f"d7-item22-claim-{claim_key}", supplier_identity_binding=supplier, development_exclusion_registry_binding=authority.D7AuthorityArtifactBinding.from_dict(claim_fields["development_seed_exclusion_registry_binding"]), parent_selection_exclusion_registry_binding=authority.D7AuthorityArtifactBinding.from_dict(claim_fields["parent_selection_seed_exclusion_registry_binding"]), seed_free_readiness_binding=readiness_binding, admission_receipt_binding=admission_binding, source_runtime_receipt_binding=reanchor_binding)
-    return {"runtime": runtime, "closure": closure, "family": family, "development": development, "parent": parent, "supplier": supplier, "claim": claim, "chronology": (final_code, closure_step, readiness_step, admission_step), "design": _recorded_design(root, _mapping(document["source_observation"], label="source observation"))}
+    return {"runtime": runtime, "closure": closure, "reanchor_introduction_commit": reanchor.introduction_commit, "family": family, "development": development, "parent": parent, "supplier": supplier, "claim": claim, "chronology": (final_code, closure_step, readiness_step, admission_step), "design": _recorded_design(root, _mapping(document["source_observation"], label="source observation"))}
 
 
 def _target_sources(context: dict[str, object], seed_values: tuple[int, int]) -> dict[str, bytes]:
@@ -822,8 +826,9 @@ def run_d7_item22_seed_supply_transaction_no_replace(repository_root: str | Path
         )
         durable._require_durable(claim_identity, label="D7 item-22 exclusive seed-supply claim")
         durable._verify_anchor(transaction, label="item-22 transaction root after claim")
-        if _anchored_canonical(transaction, "exclusive-seed-supply-claim.json", label="item-22 claim rejoin") != claim.canonical_bytes:  # type: ignore[union-attr]
-            raise QualificationContractError("item-22 durable claim differs before supplier entry")
+        claim_rejoin = durable._read_bounded_file(transaction, "exclusive-seed-supply-claim.json", maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label="item-22 claim rejoin")
+        if claim_rejoin[0] != claim.canonical_bytes or durable._identity(claim_rejoin[1]) != (claim_identity.device, claim_identity.inode):  # type: ignore[union-attr]
+            raise QualificationContractError("item-22 durable claim identity or bytes differ before supplier entry")
         phase = "supplier-entry"
         supplier_entry_possible = True
         try:

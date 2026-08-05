@@ -450,6 +450,35 @@ def test_observer_rejects_a_target_directory_swap_during_reload(
         item22.observe_d7_item22_seed_supply_state(ready_repository)
 
 
+def test_observer_rejects_a_same_byte_target_member_inode_replacement(
+    fast_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ready_repository = fast_repository
+    _run_with_values(ready_repository, monkeypatch, (8_006_201, 8_006_202))
+    target = ready_repository / item22.D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH
+    member = target / "full-design.json"
+    target_identity = target.stat().st_dev, target.stat().st_ino
+    original_identity = member.stat().st_dev, member.stat().st_ino
+    original_parse = item22._parse_record
+    replaced = False
+
+    def replace_once(*args: object, **kwargs: object):
+        nonlocal replaced
+        if not replaced and kwargs.get("label") == "official seed inventory":
+            replacement = target / ".same-byte-full-design"
+            replacement.write_bytes(member.read_bytes())
+            os.replace(replacement, member)
+            replaced = True
+            assert (target.stat().st_dev, target.stat().st_ino) == target_identity
+            assert (member.stat().st_dev, member.stat().st_ino) != original_identity
+        return original_parse(*args, **kwargs)
+
+    monkeypatch.setattr(item22, "_parse_record", replace_once)
+    with pytest.raises(QualificationContractError, match="target member identity or bytes changed"):
+        item22.observe_d7_item22_seed_supply_state(ready_repository)
+
+
 def test_freeze_and_descriptor_must_rejoin_the_published_target(
     fast_repository: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -579,6 +608,52 @@ def test_freeze_and_descriptor_must_rejoin_the_published_target(
         item22.observe_d7_item22_seed_supply_state(ready_repository)
 
 
+def test_freeze_rejects_claim_and_target_introduced_on_a_pre_reanchor_sibling(
+    ready_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reanchor_commit = _git(ready_repository, "rev-parse", "HEAD")
+    source_commit = _git(ready_repository, "rev-parse", f"{reanchor_commit}^")
+    _git(ready_repository, "switch", "-c", "test-valid-target")
+    _run_with_values(ready_repository, monkeypatch, (8_007_201, 8_007_202))
+    target_commit = _commit(
+        ready_repository,
+        "test: produce valid post-reanchor target",
+        item22.D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH,
+    )
+    _git(ready_repository, "switch", "-c", "test-target-first", source_commit)
+    _git(ready_repository, "cherry-pick", target_commit)
+    _git(ready_repository, "switch", "-c", "test-reviewed-lineage", reanchor_commit)
+    _git(ready_repository, "merge", "--no-ff", "--no-edit", "test-target-first")
+    freeze_commit = _git(ready_repository, "rev-parse", "HEAD")
+    authorization_marker = (
+        ready_repository
+        / item22.D7_ITEM22_DIRECTORY_REPOSITORY_PATH
+        / "test-launch-authorization.json"
+    )
+    authorization_marker.write_bytes(canonical_json_bytes({"authorized": True}))
+    authorization_commit = _commit(
+        ready_repository,
+        "test: authorize sibling-history freeze",
+        authorization_marker.relative_to(ready_repository).as_posix(),
+    )
+    freeze = _matching_freeze(
+        ready_repository,
+        freeze_commit=freeze_commit,
+        authorization_commit=authorization_commit,
+    )
+    freeze_path = ready_repository / item22.D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH
+    freeze_path.write_bytes(freeze.canonical_bytes)
+    _commit(
+        ready_repository,
+        "test: commit sibling-history freeze receipt",
+        item22.D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH,
+    )
+
+    with pytest.raises(QualificationContractError, match="ancestry"):
+        item22.observe_d7_item22_seed_supply_state(ready_repository)
+
+
 @pytest.mark.parametrize("commit_drift", [False, True])
 def test_reanchor_drift_is_rejected_before_claim_or_supplier_entry(
     ready_repository: Path,
@@ -672,3 +747,42 @@ def test_claim_rejoin_rejects_an_ancestor_swap_before_supplier_entry(
 
     assert (external / "item22-seed-supply/exclusive-seed-supply-claim.json").is_file()
     assert (original / "item22-seed-supply/exclusive-seed-supply-claim.json").is_file()
+
+
+def test_claim_rejoin_rejects_a_same_byte_leaf_inode_replacement(
+    fast_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ready_repository = fast_repository
+    original_write = item22.durable._write_canonical_file_no_replace
+    replaced = False
+
+    def write_then_replace(
+        anchor: item22.durable._DirectoryAnchor,
+        leaf: str,
+        source: bytes,
+        **kwargs: object,
+    ):
+        nonlocal replaced
+        identity = original_write(anchor, leaf, source, **kwargs)
+        if leaf == "exclusive-seed-supply-claim.json" and not replaced:
+            replacement = anchor.path / ".same-byte-claim"
+            replacement.write_bytes(source)
+            os.replace(replacement, anchor.path / leaf)
+            replaced = True
+            assert (anchor.path / leaf).read_bytes() == source
+            assert ((anchor.path / leaf).stat().st_dev, (anchor.path / leaf).stat().st_ino) != (
+                identity.device,
+                identity.inode,
+            )
+        return identity
+
+    monkeypatch.setattr(item22.durable, "_write_canonical_file_no_replace", write_then_replace)
+    monkeypatch.setattr(
+        item22.secrets,
+        "randbits",
+        lambda _bits: pytest.fail("same-byte claim replacement entered supplier"),
+    )
+    with pytest.raises(QualificationContractError, match="claim identity or bytes differ"):
+        item22.run_d7_item22_seed_supply_transaction_no_replace(ready_repository)
+    assert item22.observe_d7_item22_seed_supply_state(ready_repository) == "claim-present-publication-absent-nonretryable"
