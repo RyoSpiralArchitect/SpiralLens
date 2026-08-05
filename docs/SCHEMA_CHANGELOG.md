@@ -4,6 +4,10 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-05 — D7 item-22 one-shot transaction operation
+
+- Added deep-internal re-anchor, transaction-manifest, abort-evidence, fixed OS-CSPRNG supplier-identity, and exclusive-claim-key v0.1 records plus a six-member atomic target; this operation supersedes and removes the immediately following contract-spec-only loader, while persisted instances remain absent, provisional, repository-local, non-authorizing, and non-scientific until the later artifact chronology executes them.
+
 ## 2026-08-05 — D7 item-22 seed-supply transaction contract specification
 
 ### Added

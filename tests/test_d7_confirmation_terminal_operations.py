@@ -300,6 +300,101 @@ def test_signed_external_abort_is_verified_derived_and_persisted_as_one_path(
     )
 
 
+def test_reloaded_authoritative_start_closes_one_signed_abort_without_ownership(
+    tmp_path: Path,
+) -> None:
+    transaction = start_fixtures._transaction(tmp_path)
+    created_start = start_fixtures._persist(transaction)
+    reloaded_start = start_fixtures._load(transaction, created_start)
+    signed = evidence_fixtures._signed_external_witness(transaction.values)
+    operation = operations.finalize_d7_reloaded_authoritative_start_external_abort_relative_to_pins_no_replace
+
+    assert reloaded_start.created_by_call is False
+    assert "ownership" not in inspect.signature(operation).parameters
+    assert not hasattr(qualification, operation.__name__)
+    authenticated = operation(
+        reloaded_start,
+        envelope_source=signed.envelope.canonical_bytes,
+        expected_envelope_sha256=signed.envelope.canonical_sha256,
+        trust_root=signed.trust_root,
+        payload=signed.failure.payload,
+        structural_receipt=signed.failure.receipt,
+    )
+    loaded = tp.load_d7_structural_terminal_transaction(
+        reloaded_start,
+        expected_manifest_sha256=authenticated.terminal_manifest_sha256,
+        expected_consumption_sha256=authenticated.terminal_consumption_sha256,
+    )
+
+    assert loaded.prefix.manifest == reloaded_start.manifest
+    assert loaded.prefix.launch_authority_source_envelope_binding == (
+        reloaded_start.launch_authority_source_envelope_binding
+    )
+    assert dict(loaded.prefix.immutable_member_sources) == dict(
+        reloaded_start.immutable_member_sources
+    )
+    assert loaded.manifest.authoritative_start_manifest_sha256 == (
+        reloaded_start.manifest.canonical_sha256
+    )
+    assert loaded.manifest.authoritative_start_directory_identity_sha256 == (
+        reloaded_start.directory_identity_sha256
+    )
+    assert loaded.manifest.authority_verification_evidence_sha256 == (
+        reloaded_start.verification_evidence_binding.canonical_sha256
+    )
+    assert (
+        loaded.manifest.replay_target_sha256,
+        loaded.manifest.attempt_key_sha256,
+        loaded.manifest.attempt_claim_sha256,
+        loaded.manifest.execution_start_sha256,
+        loaded.manifest.execution_identity_receipt_sha256,
+    ) == (
+        reloaded_start.start.replay_target_sha256,
+        reloaded_start.start.attempt_key_sha256,
+        reloaded_start.claim.canonical_sha256,
+        reloaded_start.start.canonical_sha256,
+        reloaded_start.start.execution_identity_receipt_sha256,
+    )
+    assert loaded.manifest.terminal_artifact_kind is (
+        r.D7TerminalArtifactKind.FAILED_ATTEMPT
+    )
+    for value in (authenticated, loaded):
+        for flag in (
+            "authority_granted",
+            "execution_observed",
+            "scientific_claim_eligible",
+            "retry_authorized",
+            "replay_authorized",
+            "d8_eligible",
+        ):
+            assert getattr(value, flag) is False
+    assert authenticated.authoritative_start_proved is False
+    assert loaded.started_unresolved_established is False
+    assert loaded.external_abort_authenticated is False
+    assert loaded.external_abort_finalized is False
+
+    reauthenticated = operations.load_d7_external_abort_relative_to_pins(
+        reloaded_start,
+        expected_manifest_sha256=authenticated.terminal_manifest_sha256,
+        expected_consumption_sha256=authenticated.terminal_consumption_sha256,
+        trust_root=signed.trust_root,
+    )
+    assert reauthenticated.created_by_call is False
+    assert reauthenticated.failed_attempt_sha256 == (
+        authenticated.failed_attempt_sha256
+    )
+
+    with pytest.raises(QualificationContractError):
+        operation(
+            reloaded_start,
+            envelope_source=signed.envelope.canonical_bytes,
+            expected_envelope_sha256=signed.envelope.canonical_sha256,
+            trust_root=signed.trust_root,
+            payload=signed.failure.payload,
+            structural_receipt=signed.failure.receipt,
+        )
+
+
 def test_wrong_runtime_pins_never_publish_and_cannot_authenticate(
     tmp_path: Path,
 ) -> None:

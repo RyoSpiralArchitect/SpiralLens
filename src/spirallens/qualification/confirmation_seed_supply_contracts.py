@@ -1,72 +1,59 @@
-"""Choice-free, non-authorizing contracts for the future D7 item-22 transaction.
+"""One-shot, honest-local D7 item-22 seed-supply transaction.
 
-This deep-internal module freezes one canonical contract specification for the
-future seed-supply transaction.  It is deliberately not operational: it accepts
-no seed, supplier callback, claim input, readiness snapshot, target instance, or
-filesystem destination, and it publishes nothing.  Its sole repository loader
-strictly reloads the complete historical item-21 chain before returning an
-in-memory foundation.
-
-The historical reviewed family-admission artifact may be recorded as evidence
-on that loaded foundation.  It is kept separate from the closed all-false
-authority map and does not authorize a claim, supplier invocation, publication,
-launch, execution, or scientific conclusion.
+The persisted records are the existing D7 authority records.  This module owns
+only the fixed item-22 paths, state table, re-anchor receipt, transaction
+manifest, and abort evidence.  It grants no launch, execution, or scientific
+authority; full-design freeze and the fused descriptor remain later steps.
 """
 
 from __future__ import annotations
 
-import re
-from collections.abc import Mapping
-from dataclasses import dataclass as _dataclass
+import os
+import secrets
+import stat
 from pathlib import Path
-from typing import ClassVar, NoReturn
+from types import FunctionType
 
 from spirallens.core.canonical import (
     CanonicalJsonError,
-    canonical_json_bytes as _canonical_json_bytes,
-    parse_canonical_json as _parse_canonical_json,
-    sha256_bytes as _sha256_bytes,
+    canonical_json_bytes,
+    canonical_json_sha256,
+    parse_canonical_json,
+    sha256_bytes,
 )
 
+from . import confirmation_attempt_authority as authority
+from . import confirmation_attempt_persistence as durable
+from . import confirmation_fused_authority as fused_authority
+from . import confirmation_official_execution as official
 from . import confirmation_preseed_authority as item21
-from .common import QualificationContractError, require_sha256 as _require_sha256
+from .common import QualificationContractError
+from .persistence import (
+    LoadedQualificationProtocol,
+    PersistedQualificationIdentity,
+    _atomic_write_no_overwrite,
+)
+from .protocol import QualificationProtocol
 
 __all__: tuple[str, ...] = ()
+D7_ITEM22_DIRECTORY_REPOSITORY_PATH = "experiments/qualification/d7_spectral_moment_confirmation_v0_1"
+D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH = f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/item22-current-source-runtime-reanchor.json"
+D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH = f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/item22-seed-supply"
+D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH = f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/exclusive-seed-supply-claim.json"
+D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH = f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/published-target"
+D7_ITEM22_SINGLE_SUPPLIER_INVOCATION_REPOSITORY_PATH = f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/single-supplier-invocation.json"
+D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH = f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/full-design-freeze.json"
+D7_ITEM22_SEED_SUPPLY_ABORT_EVIDENCE_REPOSITORY_PATH = f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/seed-supply-abort.json"
+D7_ITEM22_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH = f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/launch.json"
 
-D7_ITEM22_SEED_SUPPLY_TRANSACTION_CONTRACT_SCHEMA_VERSION = (
-    "spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1"
-)
-MAX_D7_ITEM22_SEED_SUPPLY_TRANSACTION_CONTRACT_BYTES = 256 * 1024
-
-D7_ITEM22_DIRECTORY_REPOSITORY_PATH = (
-    "experiments/qualification/d7_spectral_moment_confirmation_v0_1"
-)
-D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH = (
-    f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/item22-current-source-runtime-reanchor.json"
-)
-D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH = (
-    f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/item22-seed-supply"
-)
-D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH = (
-    f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/"
-    "exclusive-seed-supply-claim.json"
-)
-D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH = (
-    f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/published-target"
-)
-D7_ITEM22_SINGLE_SUPPLIER_INVOCATION_REPOSITORY_PATH = (
-    f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/"
-    "single-supplier-invocation.json"
-)
-D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH = (
-    f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/full-design-freeze.json"
-)
-D7_ITEM22_SEED_SUPPLY_ABORT_EVIDENCE_REPOSITORY_PATH = (
-    f"{D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH}/seed-supply-abort.json"
-)
-D7_ITEM22_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH = (
-    f"{D7_ITEM22_DIRECTORY_REPOSITORY_PATH}/launch.json"
-)
+D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_SCHEMA_VERSION = "spirallens.d7-item22-current-source-runtime-reanchor.v0.1"
+D7_ITEM22_TRANSACTION_MANIFEST_SCHEMA_VERSION = "spirallens.d7-item22-seed-supply-transaction-manifest.v0.1"
+D7_ITEM22_ABORT_EVIDENCE_SCHEMA_VERSION = "spirallens.d7-item22-seed-supply-abort-evidence.v0.1"
+D7_ITEM22_SUPPLIER_IDENTITY_SCHEMA_VERSION = "spirallens.d7-item22-honest-local-os-csprng-supplier.v0.1"
+D7_ITEM22_CLAIM_KEY_SCHEMA_VERSION = "spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1"
+D7_ITEM22_CLAIM_KEY_DOMAIN = "spirallens:d7:item22:exclusive-seed-supply-claim:v0.1"
+MAX_D7_ITEM22_ARTIFACT_BYTES = 4 * 1024 * 1024
+_SIGNED_INT64_MAX = (1 << 63) - 1
 
 D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT = (
     ("official-seed-inventory", "official-seed-inventory.json"),
@@ -76,105 +63,15 @@ D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT = (
     ("single-supplier-invocation", "single-supplier-invocation.json"),
     ("transaction-manifest", "transaction-manifest.json"),
 )
-
-_ATOMIC_PUBLICATION_CHRONOLOGY_SUBJECT_ROLES = (
-    "official-seed-inventory",
-    "full-design",
-    "replay-target",
+D7_ITEM22_TARGET_DIGEST_EDGES = (
+    ("full-inventory", "official-seed-inventory"),
+    ("full-design", "official-seed-inventory"),
+    ("full-design", "full-inventory"),
+    ("replay-target", "official-seed-inventory"),
+    ("replay-target", "full-design"),
+    ("single-supplier-invocation", "official-seed-inventory"),
 )
-
-_ITEM21_ARTIFACT_PINS = (
-    (
-        "execution-source-runtime-receipt",
-        (
-            "experiments/qualification/"
-            "d7_spectral_moment_confirmation_v0_1/"
-            "item21-execution-source-runtime-receipt.json"
-        ),
-        "spirallens.d7-exact-current-execution-source-runtime-receipt.v0.1",
-        "b725e911931b7d9f8c3016c025c29d1a44c55374c63aa7879155411b6ee2f07d",
-        33_940,
-        "d558b91bd8f8250052705794ba8eb39b55eb1f45",
-    ),
-    (
-        "seed-free-readiness",
-        (
-            "experiments/qualification/"
-            "d7_spectral_moment_confirmation_v0_1/"
-            "item21-seed-free-readiness.json"
-        ),
-        "spirallens.d7-seed-free-readiness.v0.1",
-        "b96c54e99850af73b1a938354ddc0b247918c75a13d456e11273b79e4c935bb8",
-        6_591,
-        "a3651c38f1085e551c6696635f1f3ccfc023da7d",
-    ),
-    (
-        "family-admission-receipt",
-        (
-            "experiments/qualification/"
-            "d7_spectral_moment_confirmation_v0_1/"
-            "item21-reviewed-family-admission.json"
-        ),
-        "spirallens.d7-reviewed-successor-family-admission.v0.1",
-        "4fa4e7bf70cdf4ef9f14c27b3a036279ce3d83951c376812c1294697301d863c",
-        5_304,
-        "9b5e1f4957bd353a942493564a7b408ff15874b9",
-    ),
-)
-
-_TRANSITION_ORDER = (
-    "final-lifecycle-result-terminal-runner-code-reviewed",
-    "exact-execution-source-runtime-closure",
-    "seed-free-readiness",
-    "reviewed-family-admission",
-    "exclusive-seed-supply-claim",
-    "single-supplier-invocation",
-    "atomic-seed-bearing-full-design-and-target-publication",
-    "committed-full-design-freeze-receipt",
-    "launch-intent",
-)
-
-_STATE_VOCABULARY = (
-    "preclaim",
-    "claim-present-publication-absent-nonretryable",
-    "seed-supply-aborted-established",
-    "publication-complete-unfrozen",
-    "full-design-frozen",
-    "launch-intent-present",
-)
-
-_STATE_OBSERVATION_ROWS = (
-    ("preclaim", False, False, False, False, False),
-    (
-        "claim-present-publication-absent-nonretryable",
-        True,
-        False,
-        False,
-        False,
-        False,
-    ),
-    ("seed-supply-aborted-established", True, False, True, False, False),
-    ("publication-complete-unfrozen", True, True, False, False, False),
-    ("full-design-frozen", True, True, False, True, False),
-    ("launch-intent-present", True, True, False, True, True),
-)
-
-_CLAIM_KEY_DERIVATION_INPUT_ROLES = (
-    "claim-key-domain-separator",
-    "claim-key-schema-version",
-    "exclusive-claim-repository-path",
-    "historical-item21-source-runtime-receipt-binding",
-    "historical-item21-seed-free-readiness-binding",
-    "historical-item21-family-admission-receipt-binding",
-    "reviewed-item22-current-source-runtime-reanchor-binding",
-    "seed-supplier-identity-binding",
-    "development-seed-exclusion-registry-binding",
-    "parent-selection-seed-exclusion-registry-binding",
-)
-
-_CLAIM_KEY_PREIMAGE_EXACT_KEYS = (
-    "schema_version",
-    "domain_separator",
+D7_ITEM22_CLAIM_KEY_FIELDS = (
     "exclusive_claim_repository_path",
     "historical_item21_bindings",
     "reviewed_current_source_runtime_reanchor_binding",
@@ -182,834 +79,773 @@ _CLAIM_KEY_PREIMAGE_EXACT_KEYS = (
     "development_seed_exclusion_registry_binding",
     "parent_selection_seed_exclusion_registry_binding",
 )
-
-_CLAIM_KEY_BINDING_PROJECTION_EXACT_KEYS = (
-    "schema_version",
-    "artifact_role",
-    "artifact_contract_id",
-    "canonical_sha256",
-    "byte_count",
+D7_ITEM22_STATE_ROWS = (
+    ("preclaim", False, False, False, False, False),
+    ("claim-present-publication-absent-nonretryable", True, False, False, False, False),
+    ("seed-supply-aborted-established", True, False, True, False, False),
+    ("publication-complete-unfrozen", True, True, False, False, False),
+    ("full-design-frozen", True, True, False, True, False),
+    ("launch-intent-present", True, True, False, True, True),
 )
-
-_ATOMIC_TARGET_INTERNAL_BINDING_EDGES = (
-    (
-        "full-inventory",
-        "official_seed_inventory_sha256",
-        "official-seed-inventory",
-    ),
-    (
-        "full-design",
-        "official_seed_inventory_sha256",
-        "official-seed-inventory",
-    ),
-    ("full-design", "full_inventory_sha256", "full-inventory"),
-    (
-        "replay-target",
-        "official_seed_inventory_binding",
-        "official-seed-inventory",
-    ),
-    (
-        "replay-target",
-        "full_design_binding.design_binding",
-        "full-design",
-    ),
-    (
-        "replay-target",
-        "full_design_binding.inventory_binding",
-        "full-inventory",
-    ),
-    (
-        "replay-target",
-        "full_design_binding.inventory_sha256",
-        "full-inventory",
-    ),
-    (
-        "replay-target",
-        "full_design_binding.official_seed_inventory_sha256",
-        "official-seed-inventory",
-    ),
-    (
-        "single-supplier-invocation",
-        "official_seed_inventory_binding",
-        "official-seed-inventory",
-    ),
+_CODE_ROLE_PATHS = (
+    ("lifecycle-code", "src/spirallens/qualification/confirmation_attempt_records.py"),
+    ("result-code", "src/spirallens/qualification/confirmation_result_components.py"),
+    ("terminal-code", "src/spirallens/qualification/confirmation_attempt_terminal_persistence.py"),
+    ("witness-code", "src/spirallens/qualification/confirmation_external_witness.py"),
+    ("runner-code", "src/spirallens/qualification/confirmation_runner.py"),
 )
+_TRANSACTION_ROOT_ALLOWED = {"exclusive-seed-supply-claim.json", "published-target", "seed-supply-abort.json", "full-design-freeze.json"}
 
-_AUTHORITY = {
-    key: False
-    for key in (
-        "confirmation_family_admitted",
-        "confirmation_values_accessed",
-        "d7_execution_authorized",
-        "d7_result_produced",
-        "d8_execution_authorized",
-        "exclusive_seed_supply_claim_authorized",
-        "integer_output_authorized",
-        "launch_authorized",
-        "localized_core_loop_join_established",
-        "model_access_authorized",
-        "p0_winner_selected",
-        "pythia_access_authorized",
-        "representation_instrument_advanced",
-        "reusable_authorization_capability_present",
-        "scientific_claim_eligible",
-        "seed_supply_persistence_authorized",
-        "semantic_authority",
-        "subject_access_authorized",
-        "supplier_invocation_authorized",
-        "synthetic_qualified",
-        "target_publication_authorized",
-        "topology_claim_authorized",
-    )
-}
+def _mapping(value: object, *, label: str) -> dict[str, object]:
+    if type(value) is not dict or any(type(key) is not str for key in value):
+        raise QualificationContractError(f"{label} must be a JSON object")
+    return dict(value)
 
-_SPEC_FACTORY_TOKEN = object()
-_FOUNDATION_FACTORY_TOKEN = object()
-_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
-
-
-def _commit(value: object, *, label: str) -> str:
-    if type(value) is not str or _COMMIT_RE.fullmatch(value) is None:
-        raise QualificationContractError(f"{label} must be one full Git commit")
-    return value
-
-
-def _artifact_pin_document(
-    pin: tuple[str, str, str, str, int, str],
-) -> dict[str, object]:
-    role, repository_path, schema_version, digest, byte_count, introduction = pin
-    return {
-        "artifact_role": role,
-        "repository_path": repository_path,
-        "schema_version": schema_version,
-        "canonical_sha256": digest,
-        "byte_count": byte_count,
-        "introduction_commit": introduction,
-    }
-
-
-def _target_member_document(
-    ordinal: int,
-    role: str,
-    filename: str,
-) -> dict[str, object]:
-    return {
-        "ordinal": ordinal,
-        "artifact_role": role,
-        "filename": filename,
-        "repository_path": (
-            f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/{filename}"
-        ),
-    }
-
-
-def _contract_document() -> dict[str, object]:
-    target_members = [
-        _target_member_document(ordinal, role, filename)
-        for ordinal, (role, filename) in enumerate(
-            D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT
-        )
-    ]
-    return {
-        "schema_version": (D7_ITEM22_SEED_SUPPLY_TRANSACTION_CONTRACT_SCHEMA_VERSION),
-        "contract_id": "d7-item22-seed-supply-transaction-contract-v0-1",
-        "status": "contract-defined-operational-instance-absent",
-        "claim_ceiling": "level_0",
-        "historical_item21_foundation": {
-            "strict_loader": (
-                "spirallens.qualification.confirmation_preseed_authority."
-                "load_committed_d7_item21_positive_chain"
-            ),
-            "complete_non_shallow_history_required": True,
-            "artifacts": [_artifact_pin_document(pin) for pin in _ITEM21_ARTIFACT_PINS],
-            "historical_reload_required_for_loaded_foundation": True,
-            "canonical_contract_bytes_alone_prove_historical_reload": False,
-            "historical_family_admission_evidence_may_be_recorded_separately": True,
-            "historical_family_admission_evidence_is_current_authority": False,
-            "current_live_readiness_inherited_from_item21": False,
-            "caller_supplied_item21_snapshot_accepted": False,
-        },
-        "historical_replay_target_contract_refinement": {
-            "earlier_source_repository_path": (
-                "src/spirallens/qualification/confirmation_replay_contracts.py"
-            ),
-            "earlier_schema_version": (
-                "spirallens.d7-replay-target-contract-spec.v0.1"
-            ),
-            "earlier_contract_id": "d7-spectral-moment-replay-target-contract-v0-1",
-            "earlier_canonical_sha256": (
-                "d8387e29601a85df54513669919c591964b8fc99f3c8ec1126d527a854763ffa"
-            ),
-            "earlier_canonical_byte_count": 6_550,
-            "refined_field_path": (
-                "seed_supply_chronology_contract."
-                "claim_without_target_is_seed_supply_aborted"
-            ),
-            "earlier_field_value": True,
-            "earlier_contract_bytes_are_mutated_by_this_specification": False,
-            "this_later_specification_refines_future_item22_operational_semantics": (
-                True
-            ),
-            "refinement_kind": (
-                "active-versus-ended-origin-and-durable-evidence-separation"
-            ),
-            "active_originating_operation_claim_without_target_is_semantic_abort": (
-                False
-            ),
-            "ended_originating_operation_without_target_is_semantic_abort": True,
-            "restart_observation_claim_without_target_is_semantic_abort": True,
-            "semantic_abort_is_durable_abort_evidence": False,
-            "durable_state_without_valid_abort_receipt": (
-                "claim-present-publication-absent-nonretryable"
-            ),
-            "future_item22_operational_code_must_use_refined_semantics": True,
-            "earlier_unqualified_phrase_may_authorize_future_behavior": False,
-        },
-        "fixed_repository_layout": {
-            "preclaim_current_source_runtime_reanchor": (
-                D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
-            ),
-            "seed_supply_namespace": (D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH),
-            "exclusive_claim": (D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH),
-            "single_supplier_invocation": (
-                D7_ITEM22_SINGLE_SUPPLIER_INVOCATION_REPOSITORY_PATH
-            ),
-            "atomic_target_directory": (
-                D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH
-            ),
-            "atomic_target_members": target_members,
-            "full_design_freeze": (D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH),
-            "seed_supply_abort_evidence": (
-                D7_ITEM22_SEED_SUPPLY_ABORT_EVIDENCE_REPOSITORY_PATH
-            ),
-            "future_launch_descriptor": (
-                D7_ITEM22_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH
-            ),
-            "reanchor_is_outside_seed_supply_namespace": True,
-            "launch_descriptor_is_outside_seed_supply_namespace": True,
-            "closed_member_count": len(D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT),
-            "unknown_atomic_target_members_allowed": False,
-            "alternate_repository_paths_allowed": False,
-        },
-        "transaction_boundary": {
-            "foundation_loader_parameters": ["repository_root"],
-            "choice_bearing_parameters_accepted": False,
-            "standalone_claim_api_present": False,
-            "supplier_callback_accepted": False,
-            "seed_values_accepted": False,
-            "readiness_snapshot_accepted": False,
-            "persistence_performed": False,
-            "claim_acquired": False,
-            "supplier_invoked": False,
-            "atomic_target_published": False,
-            "concrete_supplier_identity_present": False,
-            "concrete_supplier_identity_mandatory_before_exclusive_claim": True,
-            "concrete_exclusive_claim_key_value_present": False,
-            "concrete_exclusive_claim_key_value_mandatory_before_exclusive_claim": (
-                True
-            ),
-            "opaque_caller_supplier_binding_sufficient": False,
-            "existing_caller_constructible_claim_input_promotable": False,
-            "existing_caller_constructible_invocation_input_promotable": False,
-        },
-        "future_exclusive_claim_key_derivation": {
-            "scheme_id": ("d7-item22-exclusive-seed-supply-claim-key-derivation-v0-1"),
-            "scheme_schema_version": (
-                "spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1"
-            ),
-            "domain_separator": (
-                "spirallens:d7:item22:exclusive-seed-supply-claim:v0.1"
-            ),
-            "exclusive_claim_repository_path": (
-                D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH
-            ),
-            "digest_algorithm": "sha256",
-            "canonical_json_input_required": True,
-            "input_roles_in_order": list(_CLAIM_KEY_DERIVATION_INPUT_ROLES),
-            "preimage_is_one_exact_top_level_object": True,
-            "preimage_exact_keys": list(_CLAIM_KEY_PREIMAGE_EXACT_KEYS),
-            "unknown_preimage_fields_allowed": False,
-            "alternate_array_or_role_keyed_encoding_allowed": False,
-            "historical_item21_bindings_must_equal_exact_pinned_list": True,
-            "historical_item21_binding_exact_keys": [
-                "artifact_role",
-                "repository_path",
-                "schema_version",
-                "canonical_sha256",
-                "byte_count",
-                "introduction_commit",
-            ],
-            "dynamic_binding_projection_schema_version": (
-                "spirallens.d7-item22-claim-key-binding-projection.v0.1"
-            ),
-            "dynamic_binding_projection_exact_keys": list(
-                _CLAIM_KEY_BINDING_PROJECTION_EXACT_KEYS
-            ),
-            "dynamic_binding_roles_by_preimage_field": {
-                "reviewed_current_source_runtime_reanchor_binding": (
-                    "current-source-runtime-reanchor"
-                ),
-                "supplier_identity_binding": "seed-supplier-identity",
-                "development_seed_exclusion_registry_binding": (
-                    "development-seed-exclusion-registry"
-                ),
-                "parent_selection_seed_exclusion_registry_binding": (
-                    "parent-selection-seed-exclusion-registry"
-                ),
-            },
-            "authority_or_provenance_flags_part_of_key": False,
-            "historical_item21_bindings": [
-                _artifact_pin_document(pin) for pin in _ITEM21_ARTIFACT_PINS
-            ],
-            "reviewed_reanchor_repository_path": (
-                D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
-            ),
-            "supplier_identity_artifact_role": "seed-supplier-identity",
-            "development_exclusion_contract_id": (
-                "spirallens.d7-development-seed-exclusion.v0.1"
-            ),
-            "parent_selection_exclusion_contract_id": (
-                "spirallens.d7-parent-selection-seed-exclusion.v0.1"
-            ),
-            "concrete_reanchor_binding_present": False,
-            "concrete_supplier_identity_present": False,
-            "concrete_claim_key_value_present": False,
-            "claim_key_derived_by_this_specification": False,
-            "caller_supplied_claim_key_accepted": False,
-        },
-        "chronology_contract": {
-            "ordered_transitions": list(_TRANSITION_ORDER),
-            "closed_state_vocabulary": list(_STATE_VOCABULARY),
-            "preclaim_reanchor_is_conditional_gate_not_transition": True,
-            "applicable_live_check_internal_immediately_before_claim": True,
-            "cached_live_check_accepted_from_caller": False,
-            "supplier_invocation_must_follow_claim": True,
-            "supplier_invocation_count_maximum": 1,
-            "durable_pre_call_claim_interval_required": True,
-            "durable_claim_waiting_state_is_restart_resumable": False,
-            "persisted_claim_alone_authorizes_continuation": False,
-            "atomic_target_must_follow_the_single_invocation": True,
-            "full_design_freeze_must_follow_atomic_target": True,
-            "launch_intent_must_follow_committed_freeze": True,
-        },
-        "state_transition_contract": {
-            "transitions": [
-                {
-                    "from": "preclaim",
-                    "to": "claim-present-publication-absent-nonretryable",
-                    "conditions": [
-                        "concrete-supplier-identity-verified",
-                        "concrete-claim-key-derived",
-                        "reviewed-reanchor-live-verified-internally",
-                        "exclusive-claim-durably-published-before-supplier-call",
-                    ],
-                    "originating_operation_only": True,
-                },
-                {
-                    "from": "claim-present-publication-absent-nonretryable",
-                    "to": "publication-complete-unfrozen",
-                    "conditions": [
-                        "same-originating-operation-retains-claim-ownership",
-                        "supplier-called-at-most-once-after-durable-claim",
-                        "post-call-invocation-receipt-binds-claim-supplier-and-inventory",
-                        "six-member-published-target-atomically-visible-no-replace",
-                    ],
-                    "originating_operation_only": True,
-                },
-                {
-                    "from": "claim-present-publication-absent-nonretryable",
-                    "to": "seed-supply-aborted-established",
-                    "conditions": [
-                        "same-originating-operation-did-not-publish-target",
-                        "separate-abort-evidence-durably-published",
-                    ],
-                    "originating_operation_only": True,
-                },
-                {
-                    "from": "publication-complete-unfrozen",
-                    "to": "full-design-frozen",
-                    "conditions": [
-                        "committed-full-design-freeze-receipt-rejoins-target"
-                    ],
-                    "originating_operation_only": False,
-                },
-                {
-                    "from": "full-design-frozen",
-                    "to": "launch-intent-present",
-                    "conditions": ["launch-intent-rejoins-committed-freeze"],
-                    "originating_operation_only": False,
-                },
-            ],
-            "restart_entrant_from_claim_state_allowed": False,
-            "restart_entrant_may_invoke_supplier": False,
-            "claim_state_successor_success_requires_same_originating_operation": True,
-            "abort_established_is_terminal": True,
-            "abort_established_outgoing_transitions": [],
-            "failure_to_persist_abort_restores_retry": False,
-            "abort_persistence_failure_before_established_return_retains_state": (
-                "claim-present-publication-absent-nonretryable"
-            ),
-            "post_publication_failure_state": "publication-complete-unfrozen",
-            "post_publication_failure_is_seed_supply_abort": False,
-            "post_publication_supplier_retry_authorized": False,
-            "state_observation_contract": {
-                "presence_fields_in_order": [
-                    "exclusive_claim_present",
-                    "atomic_target_present",
-                    "abort_evidence_present",
-                    "full_design_freeze_present",
-                    "launch_intent_present",
-                ],
-                "rows": [
-                    {
-                        "state": state,
-                        "exclusive_claim_present": claim,
-                        "atomic_target_present": target,
-                        "abort_evidence_present": abort,
-                        "full_design_freeze_present": freeze,
-                        "launch_intent_present": launch,
-                    }
-                    for state, claim, target, abort, freeze, launch in (
-                        _STATE_OBSERVATION_ROWS
-                    )
-                ],
-                "all_present_artifacts_require_valid_canonical_strict_reload": True,
-                "unlisted_presence_combination_is_contract_error": True,
-                "invalid_or_partial_artifact_is_contract_error": True,
-                "claim_missing_with_downstream_artifact_is_contract_error": True,
-                "atomic_target_and_abort_evidence_are_mutually_exclusive": True,
-                "atomic_target_and_abort_evidence_coexistence_is_contract_error": (
-                    True
-                ),
-                "recovery_precedence_rule_present": False,
-                "recovery_contract_error_authorizes_supplier_retry": False,
-            },
-        },
-        "atomic_target_contract": {
-            "member_count": len(target_members),
-            "member_roles_in_order": [item["artifact_role"] for item in target_members],
-            "chronology_publication_subject_roles": list(
-                _ATOMIC_PUBLICATION_CHRONOLOGY_SUBJECT_ROLES
-            ),
-            "durable_members_and_chronology_subjects_are_distinct_surfaces": True,
-            "all_members_must_be_canonical": True,
-            "all_members_must_be_regular_unaliased_files": True,
-            "manifest_binds_every_other_member": True,
-            "manifest_may_bind_itself": False,
-            "atomic_no_replace_directory_publication_required": True,
-            "partial_target_visibility_allowed": False,
-            "target_member_replacement_allowed": False,
-            "target_publication_retry_allowed": False,
-            "exclusive_claim_is_durable_pre_call_reservation": True,
-            "single_supplier_invocation_member_is_post_call_evidence": True,
-            "single_supplier_invocation_member_binds_claim": True,
-            "single_supplier_invocation_member_binds_supplier_identity": True,
-            "single_supplier_invocation_member_binds_official_inventory": True,
-            "single_supplier_invocation_member_is_inside_atomic_target": True,
-            "required_internal_digest_edges": [
-                {
-                    "subject_role": subject_role,
-                    "binding_field": binding_field,
-                    "object_role": object_role,
-                }
-                for subject_role, binding_field, object_role in (
-                    _ATOMIC_TARGET_INTERNAL_BINDING_EDGES
-                )
-            ],
-            "all_required_internal_edges_must_rejoin_exact_member_bytes": True,
-            "unknown_internal_binding_edges_allowed": False,
-            "member_bytes_must_reconstruct_existing_exact_record_contracts": True,
-            "reconstruction_must_equal_canonical_member_bytes": True,
-            "chronology_subject_bindings_must_equal_member_bytes": True,
-            "existing_caller_constructible_records_supply_authority": False,
-            "manifest_binds_other_member_digest_and_byte_count": True,
-        },
-        "durability_contract": {
-            "requirements_apply_only_to_future_operational_code": True,
-            "seed_supply_namespace_created_before_claim": True,
-            "seed_supply_namespace_parent_fsync_after_creation_before_claim": True,
-            "claim_file_data_and_metadata_fsync_before_supplier_call": True,
-            "claim_parent_directory_fsync_before_supplier_call": True,
-            "target_staging_directory_must_share_publication_parent_filesystem": True,
-            "each_target_member_data_and_metadata_fsync_before_publication": True,
-            "target_staging_directory_fsync_before_publication": True,
-            "no_replace_directory_rename_required": True,
-            "publication_parent_directory_fsync_before_success_return": True,
-            "abort_file_data_and_metadata_fsync_before_established_state": True,
-            "abort_parent_directory_fsync_before_established_state": True,
-            "abort_established_success_not_returned_before_parent_fsync": True,
-            "crash_recovery_uses_exact_state_observation_table": True,
-            "invalid_recovery_state_authorizes_supplier_retry": False,
-            "crash_recovery_authorizes_supplier_retry": False,
-            "power_loss_survival_proved_by_this_specification": False,
-            "filesystem_fsync_semantics_authenticated": False,
-        },
-        "claim_and_abort_contract": {
-            "claim_without_atomic_target_state": (
-                "claim-present-publication-absent-nonretryable"
-            ),
-            "claim_without_atomic_target_retry_authorized": False,
-            "claim_state_may_be_active_same_origin_or_orphaned": True,
-            "active_originating_operation_claim_without_target_is_semantic_abort": (
-                False
-            ),
-            "ended_originating_operation_without_target_is_semantic_abort": True,
-            "restart_observation_claim_without_target_is_semantic_abort": True,
-            "semantic_seed_supply_abort_is_durable_abort_evidence": False,
-            "claim_deletion_authorizes_retry": False,
-            "target_absence_proves_supplier_invoked": False,
-            "target_absence_proves_supplier_not_invoked": False,
-            "claim_without_target_establishes_abort_evidence": False,
-            "abort_evidence_established_state": "seed-supply-aborted-established",
-            "abort_evidence_establishes_supplier_invocation": False,
-            "abort_evidence_establishes_abort_cause_only_as_recorded": True,
-            "abort_evidence_is_a_separate_record": True,
-            "abort_evidence_path": (
-                D7_ITEM22_SEED_SUPPLY_ABORT_EVIDENCE_REPOSITORY_PATH
-            ),
-            "separate_abort_evidence_authorizes_retry": False,
-            "supplier_invocation_status_requires_separate_evidence": True,
-        },
-        "exclusivity_scope": {
-            "repository_local_no_replace_reservation_required": True,
-            "cross_process_same_filesystem_exclusivity_contract_required": True,
-            "cross_host_global_exclusivity_proved": False,
-            "distributed_filesystem_exclusivity_proved": False,
-            "supplier_global_idempotency_proved": False,
-            "future_supplier_idempotency_or_external_coordination_required": True,
-            "local_claim_bytes_alone_are_global_authority": False,
-        },
-        "current_instance_state": {
-            "current_source_runtime_reanchor_present": False,
-            "concrete_supplier_identity_present": False,
-            "concrete_exclusive_claim_key_value_present": False,
-            "exclusive_seed_supply_claim_present": False,
-            "supplier_invocation_present": False,
-            "official_seed_inventory_present": False,
-            "atomic_target_present": False,
-            "seed_supply_abort_evidence_present": False,
-            "full_design_freeze_present": False,
-            "launch_intent_present": False,
-            "execution_observed": False,
-        },
-        "honest_local_scope": {
-            "historical_item21_repository_history_only": True,
-            "canonical_origin_main_verified": False,
-            "current_source_runtime_verified": False,
-            "external_reviewer_identity_authenticated": False,
-            "signed_external_timestamp_present": False,
-            "hostile_local_operator_resistance_proved": False,
-            "installed_package_files_closed": False,
-            "loaded_native_libraries_closed": False,
-            "mutable_module_state_closed": False,
-            "unrecorded_environment_closed": False,
-            "model_or_data_state_closed": False,
-            "supplier_identity_authenticated": False,
-            "supplier_invocation_observed": False,
-            "target_publication_observed": False,
-            "execution_observed": False,
-            "scientific_claim_eligible": False,
-        },
-        "d7_state": "not_run",
-        "d8_state": "not_run",
-        "authority": dict(sorted(_AUTHORITY.items())),
-    }
-
-
-def _checked_document(
-    source: bytes,
-    *,
-    expected_sha256: str,
-) -> Mapping[str, object]:
-    expected = _require_sha256(expected_sha256, label="expected_sha256")
-    if (
-        type(source) is not bytes
-        or not source
-        or len(source) > MAX_D7_ITEM22_SEED_SUPPLY_TRANSACTION_CONTRACT_BYTES
-    ):
-        raise QualificationContractError(
-            "D7 item-22 seed-supply contract must be nonempty bytes within the cap"
-        )
-    if _sha256_bytes(source) != expected:
-        raise QualificationContractError(
-            "D7 item-22 seed-supply contract source SHA-256 differs"
-        )
+def _canonical_document(source: bytes, *, label: str) -> dict[str, object]:
+    if type(source) is not bytes or not source or len(source) > MAX_D7_ITEM22_ARTIFACT_BYTES:
+        raise QualificationContractError(f"{label} exceeds its byte contract")
     try:
-        document = _parse_canonical_json(
-            source,
-            label="D7 item-22 seed-supply transaction contract",
-        )
+        value = parse_canonical_json(source, label=label)
     except CanonicalJsonError as error:
         raise QualificationContractError(str(error)) from error
-    if not isinstance(document, Mapping):
-        raise QualificationContractError(
-            "D7 item-22 seed-supply contract must be a JSON object"
-        )
+    document = _mapping(value, label=label)
+    if canonical_json_bytes(document) != source:
+        raise QualificationContractError(f"{label} is not canonical JSON")
     return document
 
-
-def _owner_path_contract_is_current() -> None:
-    expected = (
-        (
-            D7_ITEM22_DIRECTORY_REPOSITORY_PATH,
-            item21.D7_ITEM21_DIRECTORY,
-            "item-21 directory",
-        ),
-        (
-            D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
-            item21.D7_ITEM22_CURRENT_SOURCE_REANCHOR_REPOSITORY_PATH,
-            "item-22 reanchor path",
-        ),
-        (
-            D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH,
-            item21.D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH,
-            "item-22 seed-supply path",
-        ),
-        (
-            D7_ITEM22_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH,
-            item21.D7_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH,
-            "future launch-descriptor path",
-        ),
+def _binding(role: str, contract_id: str, source: bytes) -> authority.D7AuthorityArtifactBinding:
+    return authority.D7AuthorityArtifactBinding(
+        artifact_role=role,
+        artifact_contract_id=contract_id,
+        canonical_sha256=sha256_bytes(source),
+        byte_count=len(source),
     )
-    for pinned, owned, label in expected:
-        if pinned != owned:
-            raise QualificationContractError(f"{label} differs from its item-21 owner")
-
-
-def _observed_item21_artifact_pins(
-    chain: item21._LoadedD7Item21PositiveChain,
-) -> tuple[tuple[str, str, str, str, int, str], ...]:
-    if type(chain) is not item21._LoadedD7Item21PositiveChain:
-        raise TypeError("chain must be the exact strict historical item-21 type")
-    return (
-        (
-            "execution-source-runtime-receipt",
-            chain.source_runtime_receipt.repository_path,
-            item21.D7_ITEM21_SOURCE_RUNTIME_RECEIPT_SCHEMA_VERSION,
-            chain.source_runtime_receipt.canonical_sha256,
-            chain.source_runtime_receipt.byte_count,
-            chain.source_runtime_receipt.introduction_commit,
-        ),
-        (
-            "seed-free-readiness",
-            chain.seed_free_readiness.repository_path,
-            item21.D7_ITEM21_SEED_FREE_READINESS_SCHEMA_VERSION,
-            chain.seed_free_readiness.canonical_sha256,
-            chain.seed_free_readiness.byte_count,
-            chain.seed_free_readiness.introduction_commit,
-        ),
-        (
-            "family-admission-receipt",
-            chain.reviewed_family_admission.repository_path,
-            item21.D7_ITEM21_REVIEWED_FAMILY_ADMISSION_SCHEMA_VERSION,
-            chain.reviewed_family_admission.canonical_sha256,
-            chain.reviewed_family_admission.byte_count,
-            chain.reviewed_family_admission.introduction_commit,
-        ),
+def _item21_artifacts(
+    root: Path,
+) -> tuple[item21._LoadedArtifact, item21._LoadedArtifact, item21._LoadedArtifact]:
+    receipt = item21._load_source_receipt(root)
+    readiness = item21._load_readiness(root, receipt)
+    admission = item21._load_admission(root, receipt, readiness)
+    item21._require_ancestor(
+        root,
+        admission.introduction_commit,
+        item21._head(root),
+        label="item-21 admission-to-current-HEAD",
     )
+    return receipt, readiness, admission
 
 
-@_dataclass(frozen=True, slots=True, init=False)
-class D7Item22SeedSupplyTransactionContractSpec:
-    """Sealed canonical specification; never an operational transaction."""
-
-    _canonical_bytes: bytes
-
-    schema_version: ClassVar[str] = (
-        D7_ITEM22_SEED_SUPPLY_TRANSACTION_CONTRACT_SCHEMA_VERSION
+def _historical_item21_bindings(
+    artifacts: tuple[
+        item21._LoadedArtifact,
+        item21._LoadedArtifact,
+        item21._LoadedArtifact,
+    ],
+) -> list[dict[str, object]]:
+    specs = (
+        ("execution-source-runtime-receipt", item21.D7_ITEM21_SOURCE_RUNTIME_RECEIPT_SCHEMA_VERSION, artifacts[0]),
+        ("seed-free-readiness", item21.D7_ITEM21_SEED_FREE_READINESS_SCHEMA_VERSION, artifacts[1]),
+        ("family-admission-receipt", item21.D7_ITEM21_REVIEWED_FAMILY_ADMISSION_SCHEMA_VERSION, artifacts[2]),
     )
+    return [
+        {
+            "artifact_role": role,
+            "repository_path": artifact.repository_path,
+            "schema_version": schema,
+            "canonical_sha256": artifact.canonical_sha256,
+            "byte_count": artifact.byte_count,
+            "introduction_commit": artifact.introduction_commit,
+        }
+        for role, schema, artifact in specs
+    ]
 
-    def __init__(
-        self,
-        *,
-        canonical_bytes: bytes,
-        _factory_token: object = None,
-    ) -> None:
-        if _factory_token is not _SPEC_FACTORY_TOKEN:
-            raise QualificationContractError(
-                "D7Item22SeedSupplyTransactionContractSpec requires its closed "
-                "factory or canonical reader"
-            )
-        expected = _contract_document()
-        document = _checked_document(
-            canonical_bytes,
-            expected_sha256=_sha256_bytes(canonical_bytes),
-        )
-        if document != expected or canonical_bytes != _canonical_json_bytes(expected):
-            raise QualificationContractError(
-                "D7 item-22 seed-supply contract differs from the closed specification"
-            )
-        object.__setattr__(self, "_canonical_bytes", canonical_bytes)
-
-    @classmethod
-    def from_canonical_bytes(
-        cls,
-        source: bytes,
-        *,
-        expected_sha256: str,
-    ) -> D7Item22SeedSupplyTransactionContractSpec:
-        _checked_document(source, expected_sha256=expected_sha256)
-        return cls(
-            canonical_bytes=source,
-            _factory_token=_SPEC_FACTORY_TOKEN,
-        )
-
-    @property
-    def canonical_bytes(self) -> bytes:
-        return self._canonical_bytes
-
-    @property
-    def canonical_sha256(self) -> str:
-        return _sha256_bytes(self._canonical_bytes)
-
-    def to_dict(self) -> dict[str, object]:
-        document = _parse_canonical_json(
-            self._canonical_bytes,
-            label="D7 item-22 seed-supply transaction contract",
-        )
-        if type(document) is not dict:
-            raise TypeError("validated item-22 contract must remain a JSON object")
-        return document
-
-    def __copy__(self) -> NoReturn:
-        raise TypeError("D7 item-22 seed-supply contract cannot be copied")
-
-    def __deepcopy__(self, memo: object) -> NoReturn:
-        del memo
-        raise TypeError("D7 item-22 seed-supply contract cannot be copied")
-
-    def __reduce__(self) -> NoReturn:
-        raise TypeError("D7 item-22 seed-supply contract is not pickleable")
-
-    def __reduce_ex__(self, protocol: int) -> NoReturn:
-        del protocol
-        raise TypeError("D7 item-22 seed-supply contract is not pickleable")
-
-
-@_dataclass(frozen=True, slots=True, init=False)
-class LoadedD7Item22SeedSupplyContractFoundation:
-    """Sealed evidence that the strict historical item-21 chain was reloaded."""
-
-    transaction_contract: D7Item22SeedSupplyTransactionContractSpec
-    source_runtime_receipt_commit: str
-    seed_free_readiness_commit: str
-    reviewed_family_admission_commit: str
-    validation_current_head: str
-
-    historical_item21_chain_verified: ClassVar[bool] = True
-    historical_family_admission_evidence_verified: ClassVar[bool] = True
-    historical_family_admission_promoted_to_authority: ClassVar[bool] = False
-    current_source_runtime_verified: ClassVar[bool] = False
-    current_source_runtime_reanchor_present: ClassVar[bool] = False
-    concrete_supplier_identity_present: ClassVar[bool] = False
-    concrete_supplier_identity_verified: ClassVar[bool] = False
-    seed_supply_claim_acquired: ClassVar[bool] = False
-    supplier_invoked: ClassVar[bool] = False
-    official_seed_inventory_present: ClassVar[bool] = False
-    atomic_target_present: ClassVar[bool] = False
-    seed_supply_aborted: ClassVar[bool] = False
-    full_design_freeze_present: ClassVar[bool] = False
-    launch_intent_present: ClassVar[bool] = False
-    reusable_authorization_capability_present: ClassVar[bool] = False
-    execution_observed: ClassVar[bool] = False
-    scientific_claim_eligible: ClassVar[bool] = False
-    d7_execution_authorized: ClassVar[bool] = False
-    d8_execution_authorized: ClassVar[bool] = False
-
-    def __init__(
-        self,
-        *,
-        transaction_contract: D7Item22SeedSupplyTransactionContractSpec,
-        source_runtime_receipt_commit: str,
-        seed_free_readiness_commit: str,
-        reviewed_family_admission_commit: str,
-        validation_current_head: str,
-        _factory_token: object = None,
-    ) -> None:
-        if _factory_token is not _FOUNDATION_FACTORY_TOKEN:
-            raise QualificationContractError(
-                "LoadedD7Item22SeedSupplyContractFoundation requires the strict "
-                "historical item-21 loader"
-            )
-        if type(transaction_contract) is not D7Item22SeedSupplyTransactionContractSpec:
-            raise TypeError("transaction_contract must be the exact sealed spec")
-        receipt_commit = _commit(
-            source_runtime_receipt_commit,
-            label="source_runtime_receipt_commit",
-        )
-        readiness_commit = _commit(
-            seed_free_readiness_commit,
-            label="seed_free_readiness_commit",
-        )
-        admission_commit = _commit(
-            reviewed_family_admission_commit,
-            label="reviewed_family_admission_commit",
-        )
-        current_head = _commit(
-            validation_current_head,
-            label="validation_current_head",
-        )
-        expected_commits = tuple(pin[5] for pin in _ITEM21_ARTIFACT_PINS)
-        if (
-            receipt_commit,
-            readiness_commit,
-            admission_commit,
-        ) != expected_commits:
-            raise QualificationContractError(
-                "loaded item-22 contract foundation differs from item-21 pins"
-            )
-        object.__setattr__(self, "transaction_contract", transaction_contract)
-        object.__setattr__(
-            self,
-            "source_runtime_receipt_commit",
-            receipt_commit,
-        )
-        object.__setattr__(self, "seed_free_readiness_commit", readiness_commit)
-        object.__setattr__(
-            self,
-            "reviewed_family_admission_commit",
-            admission_commit,
-        )
-        object.__setattr__(self, "validation_current_head", current_head)
-
-    def __copy__(self) -> NoReturn:
-        raise TypeError("loaded item-22 contract foundation cannot be copied")
-
-    def __deepcopy__(self, memo: object) -> NoReturn:
-        del memo
-        raise TypeError("loaded item-22 contract foundation cannot be copied")
-
-    def __reduce__(self) -> NoReturn:
-        raise TypeError("loaded item-22 contract foundation is not pickleable")
-
-    def __reduce_ex__(self, protocol: int) -> NoReturn:
-        del protocol
-        raise TypeError("loaded item-22 contract foundation is not pickleable")
-
-
-def load_d7_item22_seed_supply_contract_foundation(
+def _reanchor_document(
+    root: Path,
     *,
-    repository_root: str | Path,
-) -> LoadedD7Item22SeedSupplyContractFoundation:
-    """Strictly reload item 21 and reconstruct one non-authorizing contract."""
+    source_commit: str,
+    recorded_runtime: dict[str, object] | None,
+) -> dict[str, object]:
+    live = recorded_runtime is None
+    document = item21._source_receipt_document(
+        root,
+        source_commit=source_commit,
+        require_current_source_equality=live,
+        require_installed_equality=live,
+        recorded_runtime=recorded_runtime,
+    )
+    artifacts = _item21_artifacts(root)
+    document["schema_version"] = D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_SCHEMA_VERSION
+    document["receipt_id"] = "d7-item22-current-source-runtime-reanchor-v0-1"
+    document["repository_path"] = D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    document["status"] = "reviewed-exact-current-item22-source-runtime-reanchor"
+    lineage = _mapping(document["lineage"], label="reanchor lineage")
+    lineage["historical_item21_chain"] = _historical_item21_bindings(artifacts)
+    document["lineage"] = lineage
+    review = _mapping(document["final_code_review"], label="reanchor review")
+    review["review_id"] = "d7-item22-final-source-review-v0-1"
+    review["review_scope"] = [*review["review_scope"], "item22-one-shot-seed-supply-transaction"]
+    document["final_code_review"] = review
+    document["final_code_review_sha256"] = canonical_json_sha256(review)
+    state = _mapping(document["state"], label="reanchor state")
+    state["seed_free_readiness_present"] = True
+    state["family_admission_present"] = True
+    document["state"] = state
+    return document
 
-    _owner_path_contract_is_current()
-    chain = item21.load_committed_d7_item21_positive_chain(repository_root)
-    observed = _observed_item21_artifact_pins(chain)
-    if observed != _ITEM21_ARTIFACT_PINS:
-        raise QualificationContractError(
-            "strict historical item-21 chain differs from the item-22 contract pins"
+def build_d7_item22_current_source_runtime_reanchor(repository_root: str | Path) -> bytes:
+    root = item21._repository_root(repository_root)
+    item21._require_clean(root)
+    destination = root / D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    if destination.exists() or destination.is_symlink():
+        raise QualificationContractError("item-22 re-anchor path is already present")
+    source_commit = item21._head(root)
+    return canonical_json_bytes(_reanchor_document(root, source_commit=source_commit, recorded_runtime=None))
+
+def issue_d7_item22_current_source_runtime_reanchor(repository_root: str | Path) -> PersistedQualificationIdentity:
+    root = item21._repository_root(repository_root)
+    source = build_d7_item22_current_source_runtime_reanchor(root)
+    return _atomic_write_no_overwrite(
+        root / D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
+        source,
+        maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
+        label="D7 item-22 current source/runtime re-anchor",
+    )
+
+def _load_reanchor(root: Path) -> item21._LoadedArtifact:
+    path = root / D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    source = item21._read_worktree_artifact(root, D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH)
+    document = _canonical_document(source, label="D7 item-22 re-anchor")
+    if (
+        document.get("schema_version")
+        != D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_SCHEMA_VERSION
+        or document.get("repository_path")
+        != D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    ):
+        raise QualificationContractError("item-22 re-anchor identity differs")
+    lineage = _mapping(document.get("lineage"), label="reanchor lineage")
+    source_commit = item21._commit(lineage.get("source_commit"), label="reanchor source commit")
+    runtime = _mapping(document.get("runtime_observation"), label="reanchor runtime")
+    expected = _reanchor_document(root, source_commit=source_commit, recorded_runtime=runtime)
+    if document != expected or source != canonical_json_bytes(expected):
+        raise QualificationContractError("item-22 re-anchor differs from reconstruction")
+    introduction = item21._introduction_commit(
+        root,
+        repository_path=D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
+        expected_parent=source_commit,
+        expected_source=source,
+    )
+    return item21._LoadedArtifact(path.relative_to(root).as_posix(), source, introduction)
+
+def _verify_reanchor_live(root: Path) -> item21._LoadedArtifact:
+    item21._require_clean(root)
+    loaded = _load_reanchor(root)
+    item21._verify_live_runtime(root, loaded)
+    document = loaded.document
+    item21._recorded_components(
+        root,
+        source_observation=_mapping(document["source_observation"], label="source observation"),
+        verify_current_implementation=True,
+    )
+    item21._current_code_side_execution_ingredients()
+    return loaded
+
+def _parse_record(source: bytes, record_type: type[object], *, label: str) -> object:
+    document = _canonical_document(source, label=label)
+    try:
+        record = record_type.from_dict(document)  # type: ignore[attr-defined]
+    except (TypeError, ValueError) as error:
+        raise QualificationContractError(f"{label} is invalid") from error
+    if record.canonical_bytes != source:  # type: ignore[attr-defined]
+        raise QualificationContractError(f"{label} canonical bytes differ")
+    return record
+
+def _load_target(
+    root: Path,
+    transaction: durable._DirectoryAnchor,
+    claim: authority.D7ExclusiveSeedSupplyClaimInputRecord,
+    context: dict[str, object],
+) -> tuple[
+    authority.D7ReplayTargetInputRecord,
+    authority.D7AuthorityArtifactBinding,
+    dict[str, bytes],
+]:
+    del root
+    target = durable._open_child_directory(
+        transaction,
+        leaf="published-target",
+        label="item-22 published target",
+        create=False,
+    )
+    target_identity = target.device, target.inode
+    try:
+        expected_names = {name for _role, name in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT}
+        if set(os.listdir(target.descriptor)) != expected_names:
+            raise QualificationContractError("item-22 target member set differs")
+        members = {
+            role: durable._read_bounded_file(
+                target,
+                filename,
+                maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
+                label=f"item-22 {role}",
+            )
+            for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT
+        }
+        sources = {role: member[0] for role, member in members.items()}
+        member_identities = {role: durable._stable_file_identity(member[1]) for role, member in members.items()}
+    finally:
+        os.close(target.descriptor)
+    inventory = _parse_record(sources["official-seed-inventory"], authority.D7OfficialSeedInventoryRecord, label="official seed inventory")
+    invocation = _parse_record(sources["single-supplier-invocation"], authority.D7SingleSupplierInvocationInputRecord, label="supplier invocation")
+    replay_target = _parse_record(sources["replay-target"], authority.D7ReplayTargetInputRecord, label="replay target")
+    manifest = _canonical_document(sources["transaction-manifest"], label="transaction manifest")
+    manifest_fields = {"schema_version", "transaction_id", "claim_binding", "supplier_identity_binding", "members", "runtime_specification", "source_runtime_closure", "family_admission", "chronology", "claim_ceiling", "authority"}
+    if set(manifest) != manifest_fields or manifest["schema_version"] != D7_ITEM22_TRANSACTION_MANIFEST_SCHEMA_VERSION:
+        raise QualificationContractError("transaction manifest shape differs")
+    member_bindings = [{"artifact_role": role, "filename": filename, "canonical_sha256": sha256_bytes(sources[role]), "byte_count": len(sources[role])} for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT[:-1]]
+    if manifest["members"] != member_bindings:
+        raise QualificationContractError("transaction manifest member bindings differ")
+    claim_binding = _binding("exclusive-seed-supply-claim", claim.schema_version, claim.canonical_bytes)
+    inventory_binding = _binding("official-seed-inventory", inventory.schema_version, inventory.canonical_bytes)  # type: ignore[attr-defined]
+    design_binding = _binding("full-design", official.D7_OFFICIAL_FULL_DESIGN_SCHEMA_VERSION, sources["full-design"])
+    inventory_document = _canonical_document(sources["full-inventory"], label="full inventory")
+    design_document = _canonical_document(sources["full-design"], label="full design")
+    if (
+        manifest["claim_binding"] != claim_binding.to_dict()
+        or invocation.claim_binding != claim_binding  # type: ignore[attr-defined]
+        or invocation.official_seed_inventory_binding != inventory_binding  # type: ignore[attr-defined]
+        or replay_target.official_seed_inventory_binding != inventory_binding  # type: ignore[attr-defined]
+        or replay_target.full_design_binding.design_binding != design_binding  # type: ignore[attr-defined]
+        or replay_target.full_design_binding.inventory_sha256 != sha256_bytes(sources["full-inventory"])  # type: ignore[attr-defined]
+        or design_document.get("official_seed_inventory_sha256") != inventory_binding.canonical_sha256
+        or design_document.get("full_inventory_sha256") != sha256_bytes(sources["full-inventory"])
+        or inventory_document.get("official_seed_inventory_sha256") != inventory_binding.canonical_sha256
+    ):
+        raise QualificationContractError("item-22 target digest graph differs")
+    try:
+        records = tuple(authority.D7ChronologyInputRecord.from_dict(item) for item in manifest["chronology"])  # type: ignore[union-attr]
+    except (KeyError, TypeError, ValueError) as error:
+        raise QualificationContractError("item-22 target chronology is invalid") from error
+    if (
+        tuple(record.transition for record in records)
+        != authority.D7_SEED_SUPPLY_TRANSITION_ORDER[:7]
+        or any(records[index].predecessor_binding != records[index - 1].artifact_binding for index in range(1, 7))
+    ):
+        raise QualificationContractError("item-22 target chronology differs")
+    authority.D7RuntimeSpecificationInputRecord.from_dict(manifest["runtime_specification"])
+    authority.D7SourceRuntimeClosureInputRecord.from_dict(manifest["source_runtime_closure"])
+    authority.D7FamilyAdmissionInputRecord.from_dict(manifest["family_admission"])
+    seed_values = tuple(seed.seed for seed in inventory.seeds)  # type: ignore[attr-defined]
+    if sources != _target_sources(context, seed_values):
+        raise QualificationContractError("item-22 target differs from reconstruction")
+    rejoined = durable._open_child_directory(transaction, leaf="published-target", label="item-22 published target rejoin", create=False)
+    try:
+        if (rejoined.device, rejoined.inode) != target_identity or set(os.listdir(rejoined.descriptor)) != expected_names:
+            raise QualificationContractError("item-22 target directory identity changed")
+        for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT:
+            rejoined_member = durable._read_bounded_file(rejoined, filename, maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label=f"item-22 rejoined {role}")
+            if rejoined_member[0] != sources[role] or durable._stable_file_identity(rejoined_member[1]) != member_identities[role]:
+                raise QualificationContractError("item-22 target member identity or bytes changed before rejoin")
+        durable._verify_anchor(rejoined, label="item-22 published target rejoin")
+        durable._verify_anchor(transaction, label="item-22 transaction root")
+    finally:
+        os.close(rejoined.descriptor)
+    return replay_target, records[-1].artifact_binding, sources  # type: ignore[return-value]
+
+
+def _anchored_canonical(
+    anchor: durable._DirectoryAnchor,
+    leaf: str,
+    *,
+    label: str,
+) -> bytes:
+    source = durable._read_bounded_file(
+        anchor,
+        leaf,
+        maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
+        label=label,
+    )[0]
+    _canonical_document(source, label=label)
+    return source
+
+
+def _immutable_introduction(
+    root: Path,
+    *,
+    repository_path: str,
+    expected_source: bytes,
+    after_commit: str,
+) -> str:
+    history = item21._bounded_path_history(
+        root,
+        revision="HEAD",
+        repository_paths=(repository_path,),
+        ancestry_path=False,
+        label="item-22 freeze full Git history",
+    )
+    candidates: list[str] = []
+    for commit in history:
+        row = item21._git(root, "rev-list", "--parents", "-n", "1", commit).stdout
+        try:
+            commits = row.decode("ascii").strip().split()
+        except UnicodeDecodeError as error:
+            raise QualificationContractError("freeze history is not ASCII") from error
+        if item21._tree_entry(root, commit, repository_path) is not None and all(
+            item21._tree_entry(root, parent, repository_path) is None
+            for parent in commits[1:]
+        ):
+            candidates.append(commit)
+    if len(candidates) != 1:
+        raise QualificationContractError("freeze lacks one immutable introduction")
+    introduction = candidates[0]
+    if introduction == after_commit:
+        raise QualificationContractError("freeze introduction must follow authorization")
+    item21._require_ancestor(
+        root,
+        after_commit,
+        introduction,
+        label="authorization-to-freeze-receipt",
+    )
+    entry = item21._tree_entry(root, introduction, repository_path)
+    if entry is None or entry[:2] != ("100644", "blob"):
+        raise QualificationContractError("freeze introduction is not one 100644 blob")
+    for event in (*history, item21._head(root)):
+        item21._require_ancestor(
+            root,
+            introduction,
+            event,
+            label="freeze immutable descendant history",
         )
-    source = _canonical_json_bytes(_contract_document())
-    contract = D7Item22SeedSupplyTransactionContractSpec(
-        canonical_bytes=source,
-        _factory_token=_SPEC_FACTORY_TOKEN,
+        if item21._tree_entry(root, event, repository_path) != entry:
+            raise QualificationContractError("freeze changed after introduction")
+    if item21._blob(root, introduction, repository_path) != expected_source:
+        raise QualificationContractError("freeze introduction bytes differ")
+    return introduction
+
+
+def _verify_freeze(
+    root: Path,
+    *,
+    claim: authority.D7ExclusiveSeedSupplyClaimInputRecord,
+    freeze: authority.D7FullDesignFreezeInputRecord,
+    freeze_source: bytes,
+    target_records: tuple[
+        authority.D7ReplayTargetInputRecord,
+        authority.D7AuthorityArtifactBinding,
+        dict[str, bytes],
+    ],
+    context: dict[str, object],
+) -> None:
+    replay_target, publication_binding, sources = target_records
+    if (
+        freeze.full_design_binding != replay_target.full_design_binding.design_binding
+        or freeze.replay_target_binding
+        != _binding("replay-target", replay_target.schema_version, replay_target.canonical_bytes)
+        or freeze.atomic_publication_binding != publication_binding
+    ):
+        raise QualificationContractError("item-22 freeze differs from target")
+    source_commit = context["closure"].source_commit  # type: ignore[union-attr]
+    reanchor_commit = str(context["reanchor_introduction_commit"])
+    for earlier, later, label in (
+        (source_commit, freeze.freeze_commit, "source-to-target-freeze"),
+        (freeze.freeze_commit, freeze.authorization_commit, "target-freeze-to-authorization"),
+    ):
+        if earlier == later:
+            raise QualificationContractError(f"{label} must be strict")
+        item21._require_ancestor(root, earlier, later, label=label)
+    _immutable_introduction(
+        root,
+        repository_path=D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH,
+        expected_source=freeze_source,
+        after_commit=freeze.authorization_commit,
     )
-    return LoadedD7Item22SeedSupplyContractFoundation(
-        transaction_contract=contract,
-        source_runtime_receipt_commit=observed[0][5],
-        seed_free_readiness_commit=observed[1][5],
-        reviewed_family_admission_commit=observed[2][5],
-        validation_current_head=item21._head(chain.repository_root),
-        _factory_token=_FOUNDATION_FACTORY_TOKEN,
+    frozen_sources = ((D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH, claim.canonical_bytes), *((f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/{filename}", sources[role]) for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT))
+    for repository_path, expected_source in frozen_sources:
+        introduction = _immutable_introduction(root, repository_path=repository_path, expected_source=expected_source, after_commit=reanchor_commit)
+        item21._require_ancestor(root, introduction, freeze.freeze_commit, label="frozen-member-to-target-freeze")
+        if item21._blob(root, freeze.freeze_commit, repository_path) != expected_source:
+            raise QualificationContractError("freeze commit member bytes differ")
+
+def observe_d7_item22_seed_supply_state(repository_root: str | Path) -> str:
+    root = item21._repository_root(repository_root)
+    experiment = durable._open_real_directory(
+        root / D7_ITEM22_DIRECTORY_REPOSITORY_PATH,
+        label="item-22 experiment directory",
     )
+    transaction = None
+    try:
+        if durable._relative_stat(experiment, "item22-seed-supply") is not None:
+            transaction = durable._open_child_directory(
+                experiment,
+                leaf="item22-seed-supply",
+                label="item-22 transaction root",
+                create=False,
+            )
+            names = set(os.listdir(transaction.descriptor))
+            if not names.issubset(_TRANSACTION_ROOT_ALLOWED):
+                raise QualificationContractError("item-22 transaction root has unknown members")
+        leaves = (
+            "exclusive-seed-supply-claim.json",
+            "published-target",
+            "seed-supply-abort.json",
+            "full-design-freeze.json",
+        )
+        transaction_present = tuple(
+            transaction is not None and durable._relative_stat(transaction, leaf) is not None
+            for leaf in leaves
+        )
+        present = (*transaction_present, durable._relative_stat(experiment, "launch.json") is not None)
+        matches = [row[0] for row in D7_ITEM22_STATE_ROWS if tuple(row[1:]) == present]
+        if len(matches) != 1:
+            raise QualificationContractError("item-22 artifact presence state is invalid")
+        claim = None
+        context = None
+        target_records = None
+        freeze = None
+        if present[0]:
+            claim = _parse_record(
+                _anchored_canonical(transaction, leaves[0], label="item-22 claim"),  # type: ignore[arg-type]
+                authority.D7ExclusiveSeedSupplyClaimInputRecord,
+                label="item-22 claim",
+            )
+            context = _foundation(root, _load_reanchor(root))
+            if claim != context["claim"]:
+                raise QualificationContractError("item-22 claim differs from reconstruction")
+        if present[1]:
+            target_records = _load_target(root, transaction, claim, context)  # type: ignore[arg-type]
+        if present[2]:
+            abort = _canonical_document(
+                _anchored_canonical(transaction, leaves[2], label="item-22 abort"),  # type: ignore[arg-type]
+                label="item-22 abort",
+            )
+            if (
+                set(abort) != {"schema_version", "claim_binding", "failed_phase", "supplier_entry_possible", "target_published", "retry_authorized"}
+                or abort["schema_version"] != D7_ITEM22_ABORT_EVIDENCE_SCHEMA_VERSION
+                or abort["claim_binding"] != _binding("exclusive-seed-supply-claim", claim.schema_version, claim.canonical_bytes).to_dict()  # type: ignore[union-attr]
+                    or abort["failed_phase"] not in ("supplier-entry", "target-construction", "atomic-target-publication")
+                or abort["supplier_entry_possible"] is not True
+                or abort["target_published"] is not False
+                or abort["retry_authorized"] is not False
+            ):
+                raise QualificationContractError("item-22 abort evidence differs")
+        if present[3]:
+            freeze_source = _anchored_canonical(
+                transaction,  # type: ignore[arg-type]
+                leaves[3],
+                label="item-22 freeze",
+            )
+            freeze = _parse_record(
+                freeze_source,
+                authority.D7FullDesignFreezeInputRecord,
+                label="item-22 freeze",
+            )
+            _verify_freeze(
+                root,
+                claim=claim,  # type: ignore[arg-type]
+                freeze=freeze,  # type: ignore[arg-type]
+                freeze_source=freeze_source,
+                target_records=target_records,  # type: ignore[arg-type]
+                context=context,  # type: ignore[arg-type]
+            )
+        if present[4]:
+            snapshot = fused_authority.load_d7_fused_authority_snapshot(
+                experiment.path / "launch.json"
+            )
+            replay_target, _publication_binding, _sources = target_records  # type: ignore[misc]
+            member_paths = {
+                member.artifact_role: member.repository_path
+                for member in snapshot.descriptor.inventory
+            }
+            if (
+                snapshot.replay_target != replay_target
+                or snapshot.full_design_freeze != freeze
+                or member_paths["replay-target"] != f"{D7_ITEM22_ATOMIC_TARGET_DIRECTORY_REPOSITORY_PATH}/replay-target.json"
+                or member_paths["full-design-freeze"] != D7_ITEM22_FULL_DESIGN_FREEZE_REPOSITORY_PATH
+            ):
+                raise QualificationContractError("item-22 launch descriptor differs from target or freeze")
+        durable._verify_anchor(experiment, label="item-22 experiment directory")
+        if transaction is not None:
+            durable._verify_anchor(transaction, label="item-22 transaction root")
+        return matches[0]
+    finally:
+        if transaction is not None:
+            os.close(transaction.descriptor)
+        os.close(experiment.descriptor)
+
+def _supplier_identity() -> authority.D7AuthorityArtifactBinding:
+    candidate = globals().get("_supply_official_seed_values")
+    if (
+        type(candidate) is not FunctionType
+        or candidate is not _FIXED_SUPPLIER
+        or candidate.__module__ != __name__
+        or candidate.__qualname__ != "_supply_official_seed_values"
+        or candidate.__code__.co_argcount != 0
+        or candidate.__closure__ is not None
+    ):
+        raise QualificationContractError("fixed item-22 supplier identity differs")
+    document = {"schema_version": D7_ITEM22_SUPPLIER_IDENTITY_SCHEMA_VERSION, "supplier_id": "d7-item22-honest-local-os-csprng-v0-1", "module": __name__, "qualname": candidate.__qualname__, "entropy_api": "secrets.randbits(63)", "output_contract": "two-unique-sorted-nonnegative-signed-int64-exclusion-clean", "cryptographic_unseen_proof": False}
+    source = canonical_json_bytes(document)
+    return _binding("seed-supplier-identity", D7_ITEM22_SUPPLIER_IDENTITY_SCHEMA_VERSION, source)
+
+def _supply_official_seed_values() -> tuple[int, int]:
+    excluded = {
+        *(entry.seed for entry in authority.D7DevelopmentSeedExclusionRegistryRecord.exact().entries),
+        *(entry.seed for entry in authority.D7ParentSelectionSeedExclusionRegistryRecord.exact().entries),
+    }
+    values: set[int] = set()
+    for _attempt in range(256):
+        value = secrets.randbits(63)
+        if type(value) is int and 0 <= value <= _SIGNED_INT64_MAX and value not in excluded:
+            values.add(value)
+        if len(values) == 2:
+            return tuple(sorted(values))  # type: ignore[return-value]
+    raise QualificationContractError("fixed CSPRNG supplier did not produce two valid seeds")
+
+
+_FIXED_SUPPLIER = _supply_official_seed_values
+
+def _step(transition: authority.D7SeedSupplyTransition, ordinal: int, record_id: str, predecessor: authority.D7AuthorityArtifactBinding | None, subjects: tuple[authority.D7AuthorityArtifactBinding, ...]) -> authority.D7ChronologyInputRecord:
+    return authority.D7ChronologyInputRecord(transition=transition, ordinal=ordinal, record_id=record_id, predecessor_binding=predecessor, subject_bindings=subjects)
+
+
+def _recorded_design(root: Path, source_observation: dict[str, object]) -> object:
+    head = item21._head(root)
+    bindings = item21._recorded_components(
+        root,
+        source_observation=source_observation,
+        verify_current_implementation=False,
+    )
+    c1_source = item21._blob(root, head, official.D7_C1_BUNDLE_REPOSITORY_PATH)
+    c1_document = official.D7C1SeedFreeSourceSet.from_canonical_bytes(
+        c1_source,
+        expected_sha256=authority.D7_RECORDED_C1_CANONICAL_SHA256,
+    ).to_dict()
+    components = _mapping(c1_document.get("components"), label="recorded C1 components")
+    design_component = _mapping(components.get("seed_free_execution_design"), label="recorded C1 design component")
+    design_body = _mapping(design_component.get("body"), label="recorded C1 design body")
+    design_document = _mapping(design_body.get("seed_free_execution_design"), label="recorded C1 design")
+    design_source = canonical_json_bytes(design_document)
+    design_binding = _mapping(bindings.get("seed_free_design"), label="recorded C1 design binding")
+    if (
+        design_binding.get("canonical_sha256") != sha256_bytes(design_source)
+        or design_binding.get("byte_count") != len(design_source)
+    ):
+        raise QualificationContractError("recorded C1 design binding differs")
+    parent_source = item21._blob(
+        root,
+        head,
+        official.D7_OFFICIAL_PARENT_PROTOCOL_REPOSITORY_PATH,
+    )
+    if sha256_bytes(parent_source) != official.D7_OFFICIAL_PARENT_PROTOCOL_SHA256:
+        raise QualificationContractError("recorded parent protocol binding differs")
+    parent = QualificationProtocol.from_dict(
+        _canonical_document(parent_source, label="recorded parent protocol")
+    )
+    loaded_parent = LoadedQualificationProtocol(
+        protocol=parent,
+        source_path=root / official.D7_OFFICIAL_PARENT_PROTOCOL_REPOSITORY_PATH,
+        source_bytes=parent_source,
+        source_sha256=official.D7_OFFICIAL_PARENT_PROTOCOL_SHA256,
+        canonical_sha256=official.D7_OFFICIAL_PARENT_PROTOCOL_SHA256,
+    )
+    design = official._build_recorded_c1_d7_confirmation_execution_design(
+        parent_protocol=loaded_parent,
+        recorded_document=design_document,
+    )
+    if item21._head(root) != head:
+        raise QualificationContractError("Git HEAD changed during recorded design reload")
+    return design
+
+
+def _foundation(root: Path, reanchor: item21._LoadedArtifact) -> dict[str, object]:
+    receipt, readiness, admission = _item21_artifacts(root)
+    document = reanchor.document
+    runtime_document = _mapping(document["runtime_observation"], label="runtime observation")
+    runtime = authority.D7RuntimeSpecificationInputRecord.from_dict(runtime_document["runtime_specification"])
+    members = {
+        str(item["repository_path"]): item
+        for item in document["source_observation"]["members"]  # type: ignore[index]
+    }
+    code_bindings = tuple(authority.D7AuthorityArtifactBinding(artifact_role=role, artifact_contract_id="spirallens.python-source.v0.1", canonical_sha256=str(members[path]["sha256"]), byte_count=int(members[path]["byte_count"])) for role, path in _CODE_ROLE_PATHS)
+    final_code = _step(authority.D7SeedSupplyTransition.FINAL_CODE_REVIEWED, 0, "d7-item22-final-code-reviewed-v0-1", None, code_bindings)
+    reanchor_binding = _binding("execution-source-runtime-receipt", D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_SCHEMA_VERSION, reanchor.source)
+    closure = authority.D7SourceRuntimeClosureInputRecord(closure_id="d7-item22-execution-source-runtime-closure-v0-1", receipt_binding=reanchor_binding, final_code_review_binding=final_code.artifact_binding, runtime_specification_binding=_binding("runtime-specification", runtime.schema_version, runtime.canonical_bytes), source_commit=str(document["lineage"]["source_commit"]), source_tree_sha256=str(document["source_observation"]["source_tree_sha256"]), transitive_dependency_set_sha256=str(runtime_document["installed_dependency_set_sha256"]))  # type: ignore[index]
+    closure_step = _step(authority.D7SeedSupplyTransition.EXACT_SOURCE_RUNTIME_CLOSURE, 1, "d7-item22-source-runtime-closure-v0-1", final_code.artifact_binding, (reanchor_binding,))
+    readiness_binding = _binding("seed-free-readiness", item21.D7_ITEM21_SEED_FREE_READINESS_SCHEMA_VERSION, readiness.source)
+    readiness_step = _step(authority.D7SeedSupplyTransition.SEED_FREE_READINESS, 2, "d7-item22-seed-free-readiness-v0-1", closure_step.artifact_binding, (readiness_binding,))
+    admission_binding = _binding("family-admission-receipt", item21.D7_ITEM21_REVIEWED_FAMILY_ADMISSION_SCHEMA_VERSION, admission.source)
+    admission_document = admission.document
+    admission_spec = _mapping(admission_document["successor_admission_spec"], label="admission spec")
+    review_identity = _mapping(admission_spec["reviewed_successor_bindings"]["construction_diversity_review"], label="construction review")  # type: ignore[index]
+    construction_binding = authority.D7AuthorityArtifactBinding(artifact_role="construction-review", artifact_contract_id=str(review_identity["schema_version"]), canonical_sha256=str(review_identity["canonical_sha256"]), byte_count=int(review_identity["byte_count"]))
+    family = authority.D7FamilyAdmissionInputRecord(admission_id="d7-item22-reviewed-family-admission-v0-1", generator_family_id=authority.D7_CONFIRMATION_GENERATOR_FAMILY_ID, admission_receipt_binding=admission_binding, source_runtime_closure_binding=_binding("execution-source-runtime-closure", closure.schema_version, closure.canonical_bytes), seed_free_readiness_binding=readiness_binding, construction_review_binding=construction_binding, admission_spec_binding=_binding("admission-spec", str(admission_spec["schema_version"]), canonical_json_bytes(admission_spec)))
+    admission_step = _step(authority.D7SeedSupplyTransition.REVIEWED_FAMILY_ADMISSION, 3, "d7-item22-reviewed-family-admission-v0-1", readiness_step.artifact_binding, (admission_binding,))
+    development = authority.D7DevelopmentSeedExclusionRegistryRecord.exact()
+    parent = authority.D7ParentSelectionSeedExclusionRegistryRecord.exact()
+    supplier = _supplier_identity()
+    claim_fields = {
+        "exclusive_claim_repository_path": D7_ITEM22_EXCLUSIVE_SEED_SUPPLY_CLAIM_REPOSITORY_PATH,
+        "historical_item21_bindings": _historical_item21_bindings((receipt, readiness, admission)),
+        "reviewed_current_source_runtime_reanchor_binding": reanchor_binding.to_dict(),
+        "supplier_identity_binding": supplier.to_dict(),
+        "development_seed_exclusion_registry_binding": _binding("development-seed-exclusion-registry", development.schema_version, development.canonical_bytes).to_dict(),
+        "parent_selection_seed_exclusion_registry_binding": _binding("parent-selection-seed-exclusion-registry", parent.schema_version, parent.canonical_bytes).to_dict(),
+    }
+    if tuple(claim_fields) != D7_ITEM22_CLAIM_KEY_FIELDS:
+        raise QualificationContractError("item-22 claim-key field order differs")
+    claim_key = canonical_json_sha256({"schema_version": D7_ITEM22_CLAIM_KEY_SCHEMA_VERSION, "domain_separator": D7_ITEM22_CLAIM_KEY_DOMAIN, **claim_fields})
+    claim = authority.D7ExclusiveSeedSupplyClaimInputRecord(claim_id=f"d7-item22-claim-{claim_key}", supplier_identity_binding=supplier, development_exclusion_registry_binding=authority.D7AuthorityArtifactBinding.from_dict(claim_fields["development_seed_exclusion_registry_binding"]), parent_selection_exclusion_registry_binding=authority.D7AuthorityArtifactBinding.from_dict(claim_fields["parent_selection_seed_exclusion_registry_binding"]), seed_free_readiness_binding=readiness_binding, admission_receipt_binding=admission_binding, source_runtime_receipt_binding=reanchor_binding)
+    return {"runtime": runtime, "closure": closure, "reanchor_introduction_commit": reanchor.introduction_commit, "family": family, "development": development, "parent": parent, "supplier": supplier, "claim": claim, "chronology": (final_code, closure_step, readiness_step, admission_step), "design": _recorded_design(root, _mapping(document["source_observation"], label="source observation"))}
+
+
+def _target_sources(context: dict[str, object], seed_values: tuple[int, int]) -> dict[str, bytes]:
+    development = context["development"]
+    parent = context["parent"]
+    claim = context["claim"]
+    inventory = authority.D7OfficialSeedInventoryRecord(
+        inventory_id="d7-item22-official-seed-inventory-v0-1",
+        development_exclusion_registry_binding=_binding("development-seed-exclusion-registry", development.schema_version, development.canonical_bytes),  # type: ignore[attr-defined]
+        parent_selection_exclusion_registry_binding=_binding("parent-selection-seed-exclusion-registry", parent.schema_version, parent.canonical_bytes),  # type: ignore[attr-defined]
+        seeds=tuple(authority.D7OfficialSeed(seed_slot_id=slot, seed=value) for slot, value in zip(authority.D7_CONFIRMATION_SEED_SLOT_IDS, seed_values, strict=True)),
+    )
+    inventory_binding = _binding("official-seed-inventory", inventory.schema_version, inventory.canonical_bytes)
+    full_inventory_document = official.build_d7_official_full_inventory_document(design=context["design"], official_seed_inventory=inventory)  # type: ignore[arg-type]
+    full_inventory_source = canonical_json_bytes(full_inventory_document)
+    aggregation_document = official.build_d7_official_aggregation_document(implementation_registry_sha256=official.D7_RECORDED_C1_IMPLEMENTATION_REGISTRY_SHA256)
+    aggregation_source = canonical_json_bytes(aggregation_document)
+    full_design_document = official.build_d7_official_full_design_document(design=context["design"], official_seed_inventory=inventory, full_inventory_sha256=sha256_bytes(full_inventory_source), implementation_registry_sha256=official.D7_RECORDED_C1_IMPLEMENTATION_REGISTRY_SHA256, aggregation_sha256=sha256_bytes(aggregation_source))  # type: ignore[arg-type]
+    full_design_source = canonical_json_bytes(full_design_document)
+    full_design_binding = _binding("full-design", official.D7_OFFICIAL_FULL_DESIGN_SCHEMA_VERSION, full_design_source)
+    family = context["family"]
+    closure = context["closure"]
+    runtime = context["runtime"]
+    result_schema = authority.attempt_records._result_schema_descriptor()
+    implementation_binding = authority.D7AuthorityArtifactBinding(artifact_role="implementation-registry", artifact_contract_id=official.D7_RECORDED_C1_IMPLEMENTATION_REGISTRY_SCHEMA_VERSION, canonical_sha256=official.D7_RECORDED_C1_IMPLEMENTATION_REGISTRY_SHA256, byte_count=official.D7_RECORDED_C1_IMPLEMENTATION_REGISTRY_BYTE_COUNT)
+    parents = (authority.D7AuthorityArtifactBinding("recorded-c1", authority.D7_RECORDED_C1_SCHEMA_VERSION, authority.D7_RECORDED_C1_CANONICAL_SHA256, authority.D7_RECORDED_C1_BYTE_COUNT), authority.D7AuthorityArtifactBinding("recorded-c2", authority.D7_RECORDED_C2_SCHEMA_VERSION, authority.D7_RECORDED_C2_CANONICAL_SHA256, authority.D7_RECORDED_C2_BYTE_COUNT), parent.parent_protocol_binding)  # type: ignore[attr-defined]
+    admission_candidate = authority.D7TargetAdmissionBindingCandidate(receipt_binding=family.admission_receipt_binding, generator_family_id=family.generator_family_id, construction_review_binding=family.construction_review_binding, admission_spec_binding=family.admission_spec_binding, source_runtime_receipt_sha256=closure.receipt_binding.canonical_sha256)  # type: ignore[attr-defined]
+    design_candidate = authority.D7TargetFullDesignBindingCandidate(design_binding=full_design_binding, inventory_binding=_binding("full-inventory", official.D7_OFFICIAL_FULL_INVENTORY_SCHEMA_VERSION, full_inventory_source), inventory_sha256=sha256_bytes(full_inventory_source), official_seed_inventory_sha256=inventory.canonical_sha256, implementation_registry_sha256=implementation_binding.canonical_sha256, aggregation_sha256=sha256_bytes(aggregation_source), result_payload_schema_sha256=canonical_json_sha256(result_schema))
+    runtime_candidate = authority.D7TargetSourceRuntimeBindingCandidate(receipt_binding=closure.receipt_binding, runtime_specification_sha256=runtime.canonical_sha256)  # type: ignore[attr-defined]
+    replay_target = authority.D7ReplayTargetInputRecord(replay_target_id="d7-item22-spectral-moment-replay-target-v0-1", parent_bindings=parents, admission_receipt_binding=admission_candidate, official_seed_inventory_binding=inventory_binding, full_design_binding=design_candidate, implementation_registry_binding=implementation_binding, aggregation_binding=_binding("aggregation", official.D7_OFFICIAL_AGGREGATION_SCHEMA_VERSION, aggregation_source), result_payload_schema_binding=_binding("result-payload-schema", authority.attempt_records.D7_RESULT_SCHEMA_DESCRIPTOR_VERSION, canonical_json_bytes(result_schema)), execution_source_runtime_closure_binding=runtime_candidate)
+    invocation = authority.D7SingleSupplierInvocationInputRecord(invocation_id="d7-item22-single-supplier-invocation-v0-1", claim_binding=_binding("exclusive-seed-supply-claim", claim.schema_version, claim.canonical_bytes), supplier_identity_binding=context["supplier"], official_seed_inventory_binding=inventory_binding)  # type: ignore[attr-defined,arg-type]
+    claim_step = _step(authority.D7SeedSupplyTransition.EXCLUSIVE_SEED_SUPPLY_CLAIM, 4, "d7-item22-exclusive-claim-v0-1", context["chronology"][-1].artifact_binding, (invocation.claim_binding,))  # type: ignore[index,union-attr]
+    invocation_step = _step(authority.D7SeedSupplyTransition.SINGLE_SUPPLIER_INVOCATION, 5, "d7-item22-single-invocation-v0-1", claim_step.artifact_binding, (invocation.artifact_binding,))
+    publication_step = _step(authority.D7SeedSupplyTransition.ATOMIC_DESIGN_TARGET_PUBLICATION, 6, "d7-item22-atomic-target-publication-v0-1", invocation_step.artifact_binding, (inventory_binding, full_design_binding, _binding("replay-target", replay_target.schema_version, replay_target.canonical_bytes)))
+    sources = {"official-seed-inventory": inventory.canonical_bytes, "full-inventory": full_inventory_source, "full-design": full_design_source, "replay-target": replay_target.canonical_bytes, "single-supplier-invocation": invocation.canonical_bytes}
+    manifest = {"schema_version": D7_ITEM22_TRANSACTION_MANIFEST_SCHEMA_VERSION, "transaction_id": claim.claim_id, "claim_binding": invocation.claim_binding.to_dict(), "supplier_identity_binding": context["supplier"].to_dict(), "members": [{"artifact_role": role, "filename": filename, "canonical_sha256": sha256_bytes(sources[role]), "byte_count": len(sources[role])} for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT[:-1]], "runtime_specification": runtime.to_dict(), "source_runtime_closure": closure.to_dict(), "family_admission": family.to_dict(), "chronology": [record.to_dict() for record in (*context["chronology"], claim_step, invocation_step, publication_step)], "claim_ceiling": "level_0", "authority": {"launch_authorized": False, "execution_authorized": False, "scientific_claim_eligible": False}}  # type: ignore[attr-defined,misc,union-attr]
+    sources["transaction-manifest"] = canonical_json_bytes(manifest)
+    return sources
+
+
+def _ensure_transaction_root(root: Path) -> durable._DirectoryAnchor:
+    parent = durable._open_real_directory(root / D7_ITEM22_DIRECTORY_REPOSITORY_PATH, label="item-22 experiment directory")
+    try:
+        return durable._open_child_directory(parent, leaf="item22-seed-supply", label="item-22 transaction root", create=True)
+    finally:
+        os.close(parent.descriptor)
+
+
+def _publish_target(transaction: durable._DirectoryAnchor, sources: dict[str, bytes]) -> PersistedQualificationIdentity:
+    stage_leaf = f".published-target.{secrets.token_hex(12)}.staging"
+    stage = None
+    published = False
+    try:
+        durable._verify_anchor(transaction, label="item-22 transaction root")
+        os.mkdir(stage_leaf, 0o700, dir_fd=transaction.descriptor)
+        os.fsync(transaction.descriptor)
+        stage = durable._open_child_directory(transaction, leaf=stage_leaf, label="item-22 target stage", create=False)
+        for role, filename in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT:
+            source = sources[role]
+            durable._write_canonical_file_no_replace(stage, filename, source, expected_sha256=sha256_bytes(source), maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label=f"item-22 {role}", allow_identical_existing=False)
+        if set(os.listdir(stage.descriptor)) != {name for _role, name in D7_ITEM22_ATOMIC_TARGET_MEMBER_LAYOUT}:
+            raise QualificationContractError("item-22 staged target member set differs")
+        os.fsync(stage.descriptor)
+        durable._verify_anchor(transaction, label="item-22 transaction root")
+        durable._rename_file_no_replace(transaction, stage_leaf, "published-target")
+        published = True
+        os.fsync(transaction.descriptor)
+        durable._verify_anchor(transaction, label="item-22 transaction root")
+    finally:
+        if stage is not None and not published:
+            for name in os.listdir(stage.descriptor):
+                observed = durable._relative_stat(stage, name)
+                if observed is not None and stat.S_ISREG(observed.st_mode):
+                    os.unlink(name, dir_fd=stage.descriptor)
+            os.fsync(stage.descriptor)
+        if stage is not None:
+            os.close(stage.descriptor)
+        if not published and durable._relative_stat(transaction, stage_leaf) is not None:
+            os.rmdir(stage_leaf, dir_fd=transaction.descriptor)
+            os.fsync(transaction.descriptor)
+    manifest = sources["transaction-manifest"]
+    return PersistedQualificationIdentity(path=transaction.path / "published-target" / "transaction-manifest.json", source_sha256=sha256_bytes(manifest), canonical_sha256=sha256_bytes(manifest), byte_count=len(manifest))
+
+
+def _persist_abort(transaction: durable._DirectoryAnchor, claim: authority.D7ExclusiveSeedSupplyClaimInputRecord, *, phase: str, supplier_entry_possible: bool) -> None:
+    source = canonical_json_bytes({
+        "schema_version": D7_ITEM22_ABORT_EVIDENCE_SCHEMA_VERSION,
+        "claim_binding": _binding("exclusive-seed-supply-claim", claim.schema_version, claim.canonical_bytes).to_dict(),
+        "failed_phase": phase,
+        "supplier_entry_possible": supplier_entry_possible,
+        "target_published": False,
+        "retry_authorized": False,
+    })
+    identity = durable._write_canonical_file_no_replace(
+        transaction,
+        "seed-supply-abort.json",
+        source,
+        expected_sha256=sha256_bytes(source),
+        maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
+        label="D7 item-22 abort evidence",
+        allow_identical_existing=False,
+    )
+    durable._require_durable(identity, label="D7 item-22 abort evidence")
+
+
+def run_d7_item22_seed_supply_transaction_no_replace(repository_root: str | Path, /) -> PersistedQualificationIdentity:
+    """Claim once, invoke the fixed OS CSPRNG supplier once, and publish once."""
+
+    root = item21._repository_root(repository_root)
+    if observe_d7_item22_seed_supply_state(root) != "preclaim":
+        raise QualificationContractError("item-22 transaction is already consumed")
+    reanchor = _verify_reanchor_live(root)
+    context = _foundation(root, reanchor)
+    claim = context["claim"]
+    transaction = _ensure_transaction_root(root)
+    try:
+        _verify_reanchor_live(root)
+        durable._verify_anchor(transaction, label="item-22 transaction root")
+        if os.listdir(transaction.descriptor):
+            raise QualificationContractError("item-22 transaction lost its preclaim state")
+        claim_identity = durable._write_canonical_file_no_replace(
+            transaction,
+            "exclusive-seed-supply-claim.json",
+            claim.canonical_bytes,  # type: ignore[union-attr]
+            expected_sha256=claim.canonical_sha256,  # type: ignore[union-attr]
+            maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES,
+            label="D7 item-22 exclusive seed-supply claim",
+            allow_identical_existing=False,
+        )
+        durable._require_durable(claim_identity, label="D7 item-22 exclusive seed-supply claim")
+        durable._verify_anchor(transaction, label="item-22 transaction root after claim")
+        claim_rejoin = durable._read_bounded_file(transaction, "exclusive-seed-supply-claim.json", maximum_bytes=MAX_D7_ITEM22_ARTIFACT_BYTES, label="item-22 claim rejoin")
+        if claim_rejoin[0] != claim.canonical_bytes or durable._identity(claim_rejoin[1]) != (claim_identity.device, claim_identity.inode):  # type: ignore[union-attr]
+            raise QualificationContractError("item-22 durable claim identity or bytes differ before supplier entry")
+        phase = "supplier-entry"
+        supplier_entry_possible = True
+        try:
+            seed_values = _FIXED_SUPPLIER()
+            phase = "target-construction"
+            sources = _target_sources(context, seed_values)
+            phase = "atomic-target-publication"
+            identity = _publish_target(transaction, sources)
+            _load_target(root, transaction, claim, context)  # type: ignore[arg-type]
+            return identity
+        except BaseException as error:
+            if durable._relative_stat(transaction, "published-target") is None:
+                try:
+                    _persist_abort(transaction, claim, phase=phase, supplier_entry_possible=supplier_entry_possible)  # type: ignore[arg-type]
+                except BaseException as abort_error:
+                    if hasattr(error, "add_note"):
+                        error.add_note(f"item-22 abort evidence persistence failed: {abort_error}")
+            raise
+    finally:
+        os.close(transaction.descriptor)
