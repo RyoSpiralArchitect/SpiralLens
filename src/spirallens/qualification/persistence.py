@@ -9,11 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from spirallens.core._canonical_source import (
-    SourceDigestMismatchError,
-    bind_canonical_json_source,
-)
-from spirallens.core.canonical import CanonicalJsonError
+from spirallens.core.canonical import CanonicalJsonError, parse_canonical_json
 
 from .common import QualificationContractError
 from .contracts import (
@@ -171,7 +167,14 @@ def _reject_official_standalone_result_persistence(
         )
 
 
-def _read_bounded(path: Path, *, maximum_bytes: int, label: str) -> bytes:
+def _read_canonical_document(
+    path: Path,
+    *,
+    expected_source_sha256: str,
+    expected_canonical_sha256: str,
+    maximum_bytes: int,
+    label: str,
+) -> tuple[bytes, Mapping[str, object], str]:
     try:
         with path.open("rb") as handle:
             source = handle.read(maximum_bytes + 1)
@@ -183,35 +186,22 @@ def _read_bounded(path: Path, *, maximum_bytes: int, label: str) -> bytes:
         )
     if not source:
         raise QualificationContractError(f"{label} must not be empty")
-    return source
-
-
-def _inspect_qualification_source(
-    source: bytes,
-    *,
-    expected_source_sha256: str,
-    maximum_bytes: int,
-    label: str,
-) -> tuple[Mapping[str, object], str]:
+    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
     _sha256(expected_source_sha256, label="expected_source_sha256")
-    try:
-        document, source_sha256 = bind_canonical_json_source(
-            source,
-            label=label,
-            maximum_bytes=maximum_bytes,
-            expected_source_sha256=expected_source_sha256,
-        )
-    except SourceDigestMismatchError as error:
+    source_sha256 = hashlib.sha256(source).hexdigest()
+    if source_sha256 != expected_source_sha256:
         raise QualificationContractError(
             f"{label} source SHA-256 does not match the expected digest"
-        ) from error
+        )
+    try:
+        document = parse_canonical_json(source, label=label)
     except CanonicalJsonError as error:
         raise QualificationContractError(str(error)) from error
     if not isinstance(document, Mapping) or any(
         not isinstance(key, str) for key in document
     ):
         raise QualificationContractError(f"{label} must be a canonical JSON object")
-    return document, source_sha256
+    return source, document, source_sha256
 
 
 def _verify_expected_canonical_digest(
@@ -235,15 +225,10 @@ def load_qualification_protocol(
     """Load one bounded canonical protocol with two mandatory identities."""
 
     source_path = _absolute_path(path)
-    source = _read_bounded(
+    source, document, source_sha256 = _read_canonical_document(
         source_path,
-        maximum_bytes=MAX_QUALIFICATION_PROTOCOL_BYTES,
-        label="qualification protocol",
-    )
-    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
-    document, source_sha256 = _inspect_qualification_source(
-        source,
         expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
         maximum_bytes=MAX_QUALIFICATION_PROTOCOL_BYTES,
         label="qualification protocol",
     )
@@ -285,15 +270,10 @@ def load_qualification_result(
             "selection_attempt_claim must be a SelectionAttemptClaimArtifact"
         )
     source_path = _absolute_path(path)
-    source = _read_bounded(
+    source, document, source_sha256 = _read_canonical_document(
         source_path,
-        maximum_bytes=MAX_QUALIFICATION_RESULT_BYTES,
-        label="qualification result",
-    )
-    _sha256(expected_canonical_sha256, label="expected_canonical_sha256")
-    document, source_sha256 = _inspect_qualification_source(
-        source,
         expected_source_sha256=expected_source_sha256,
+        expected_canonical_sha256=expected_canonical_sha256,
         maximum_bytes=MAX_QUALIFICATION_RESULT_BYTES,
         label="qualification result",
     )

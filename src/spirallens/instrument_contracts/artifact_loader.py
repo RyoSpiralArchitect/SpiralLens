@@ -3,18 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
-
-from spirallens.core._canonical_source import (
-    SourceDigestMismatchError,
-    bind_canonical_json_source,
-)
 
 from .artifacts import (
     InstrumentArtifactValue,
     instrument_artifact_from_dict,
 )
-from .canonical import CanonicalJsonError
+from .canonical import CanonicalJsonError, parse_canonical_json
 from .common import (
     ContractValidationError,
     require_mapping,
@@ -91,15 +87,20 @@ def _load_instrument_artifact_from_bytes(
             expected_canonical_sha256,
             label="expected_canonical_sha256",
         )
+    if len(source) > MAX_INSTRUMENT_ARTIFACT_BYTES:
+        raise InstrumentArtifactSchemaError(
+            f"instrument artifact exceeds {MAX_INSTRUMENT_ARTIFACT_BYTES} bytes"
+        )
+    source_sha256 = hashlib.sha256(source).hexdigest()
+    if expected_source_sha256 is not None and source_sha256 != expected_source_sha256:
+        raise InstrumentArtifactIntegrityError(
+            "instrument artifact source SHA-256 differs"
+        )
     try:
-        parsed, source_sha256 = bind_canonical_json_source(
+        parsed = parse_canonical_json(
             source,
             label="instrument artifact",
-            maximum_bytes=MAX_INSTRUMENT_ARTIFACT_BYTES,
-            expected_source_sha256=expected_source_sha256,
         )
-    except SourceDigestMismatchError as error:
-        raise InstrumentArtifactIntegrityError(str(error)) from error
     except CanonicalJsonError as error:
         raise InstrumentArtifactSchemaError(str(error)) from error
     try:

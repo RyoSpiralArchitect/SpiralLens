@@ -34,7 +34,6 @@ and cannot change experiment status or authority.
 | `spirallens.__version__` | supported root surface | single package version |
 | `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
 | `spirallens.core.canonical` | stable candidate | canonical bytes and legacy `instrument_contracts.canonical` compatibility |
-| `spirallens.core._canonical_source` | internal | authority-free canonical-JSON source binding with no public compatibility commitment, file I/O, typed reconstruction, claim, chronology, publication, or repository semantics |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
 | `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
