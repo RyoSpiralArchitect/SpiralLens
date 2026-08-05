@@ -12,6 +12,15 @@ feature descriptions.
 > designed toward a reusable library, but the public API and artifact schemas
 > remain pre-1.0 and may change.
 
+SpiralLens tracks independent scientific and library maturity lanes. A finite
+scientific `fail` or `insufficient` outcome does not block library maturation,
+and a positive scientific result does not stabilize an API. The
+[Research-to-Library Roadmap](docs/ROADMAP.md#3-two-independent-maturity-axes)
+governs lane states, canonical IDs, cross-lane dependencies, and historical
+aliases. Implementation summaries in this README are non-normative snapshots;
+if they drift, the Roadmap and canonical artifacts prevail until `LIB-L0`
+generated views replace them.
+
 The project now separates two deliberately narrow questions:
 
 > Can we detect reproducible loop or relative-holonomy structure after
@@ -71,7 +80,7 @@ Read these documents before adding a field, graph, loop, or claim:
 
 Pythia-70M is a plumbing smoke and cannot turn an unqualified instrument into
 scientific evidence. Pythia-160M remains the historically intended first
-scientific model family, but M1 qualification must complete before its M2
+scientific model family, but `SCI-S1` qualification must pass before its `SCI-S2`
 protocol can be frozen, and this frame does not authorize that run.
 SAE annotation, training-checkpoint trajectories, transfer operators, and
 natural-language interpretation are intentionally deferred.
@@ -426,7 +435,11 @@ closure nor expected digest. Both specification bytes are canonical, but no
 specification artifact is written and neither an actual replay target nor an
 attempt envelope exists.
 
-Step 18 is now partially implemented in the separate deep-internal
+Canonical identifiers for this D7 execution discussion are owned by the
+[Roadmap ID registry](docs/ROADMAP.md#31-canonical-ids-and-historical-aliases),
+not redefined here. Persisted schema and path identifiers remain unchanged.
+
+`D7-OPS-18` is now partially implemented in the separate deep-internal
 `spirallens.qualification.confirmation_attempt_records` and
 `spirallens.qualification.confirmation_attempt_validation` modules, with
 separate `confirmation_attempt_evidence`,
@@ -481,7 +494,7 @@ receipt does not close any of those later surfaces.
 The evidence-only persistence writer reobserves the declared parent
 device/inode and absent output/terminal leaf, but it can only join the already
 supplied source/runtime and execution-identity digests; it cannot establish
-their authority. The separate deep-internal item-20 operation now implements
+their authority. The separate deep-internal `D7-OPS-20` operation now implements
 the same-call mechanics that reopen the descriptor, match the declared live
 observation surfaces, publish a structural start, revalidate, and enter at
 most one producer callback. Those mechanics have not been officially invoked.
@@ -501,8 +514,8 @@ the strict authoritative-start loader explicitly reports
 `started_unresolved_established=false`. A visible structural start with no
 terminal blocks retry, but only a future official reauthentication of the
 exact authority evidence and durable start could establish that named state.
-The item-19 pin-relative external finalizer accepts only the evidence-only
-prefix type and explicitly does not accept the item-20 authoritative-start
+The `D7-OPS-19` pin-relative external finalizer accepts only the evidence-only
+prefix type and explicitly does not accept the `D7-OPS-20` authoritative-start
 transaction, so it cannot finalize this new start lane. Pin-relative
 observer/verifier signature and terminal-finalization mechanics therefore
 remain evidence-only and provide no official trust-root provenance.
@@ -564,7 +577,7 @@ error, and rejoins only the supplied records. The loaded
 candidate's authority, admission, closure, live-filesystem, absence, freeze,
 and execution claims remain false.
 
-Roadmap item 20 now connects those inputs only inside one deep-internal,
+Roadmap `D7-OPS-20` now connects those inputs only inside one deep-internal,
 same-call transition. A raw descriptor path supplies no expected digest or
 trust token: the loader derives the Git root and current HEAD, reopens a closed
 nine-member inventory, checks every descriptor/member against its clean HEAD
@@ -616,12 +629,12 @@ official start, execution observation receipt, or scientific claim. PR26 now
 tracks the exact `requirements-d7-runtime-lock.txt`, fixes a deep-internal
 zero-argument official producer plus exact full-inventory, aggregation, and
 full-design builders and requires exact equality of the complete installed
-distribution name/version inventory. Those are code-side item-21 ingredients
-only. The corrected item-21 source anchor defines the remaining publication boundary
+distribution name/version inventory. Those are code-side `D7-OPS-21` ingredients
+only. The corrected `D7-OPS-21` source anchor defines the remaining publication boundary
 as three separate tracked artifacts, in this fixed order: an exact
 source/runtime receipt, seed-free readiness, and scoped reviewed
 successor-family admission. At that source-commit stage it creates none of
-them, and all item-21 documentation is already frozen. The receipt is the sole
+them, and all `D7-OPS-21` documentation is already frozen. The receipt is the sole
 addition in its direct-child commit; readiness is the sole addition in the
 next direct child; and admission is the sole addition in the next direct
 child. No merge, intervening change, combined artifact or documentation commit,
@@ -638,23 +651,23 @@ checks the anchor and current HEAD plus every bounded source-path event on their
 descendant ancestry against the exact anchored execution-source tree, so
 edit/revert and merged-away source drift require a versioned re-anchor.
 
-Item 21 is partial at the source commit and complete only at the final corrected item-21 tip,
+`D7-OPS-21` is partial at the source commit and complete only at the final corrected `D7-OPS-21` tip,
 where all three artifacts have been tracked in those commits, strictly
 reloaded, and passed their exact source/runtime and chronology rejoin checks.
 Existing caller-constructible authority-prerequisite records remain
 false-authority structural data and are not promoted by the new issuers or
 loaders. With the versioned v0.1 loader retained, historical reload reconstructs
-the item-21 source and runtime lock from the source commit rather than current
+the `D7-OPS-21` source and runtime lock from the source commit rather than current
 builder functions; current readiness separately requires the live
 execution-source tree and exact runtime still to equal that anchor. Any later
 execution-source change therefore invalidates live readiness without erasing
-the historical receipt. Before item 22 may acquire its claim, that later
+the historical receipt. Before `D7-OPS-22` may acquire its claim, that later
 version must first publish and review a new exact-current source/runtime
 re-anchor at the separate fixed pre-claim path
 `item22-current-source-runtime-reanchor.json`, outside the reserved
-`item22-seed-supply/` namespace, and bind this item-21 chain; the seed supplier
+`item22-seed-supply/` namespace, and bind this `D7-OPS-21` chain; the seed supplier
 cannot be used to bridge that gap.
-The current verifier returns point-in-time evidence only. A future item-22
+The current verifier returns point-in-time evidence only. A future `D7-OPS-22`
 transition must perform the applicable live verification internally immediately
 before its no-replace claim; it must not accept, cache, or treat this returned
 snapshot as freshness or authorization.
@@ -690,7 +703,7 @@ seed-supply abort only if that operation ends without publication or the claim
 is observed on restart. The distinct durable
 `seed-supply-aborted-established` state
 requires an evidence receipt at `seed-supply-abort.json`; target absence alone
-does not establish it. This later item-22 specification explicitly refines the
+does not establish it. This later `D7-OPS-22` specification explicitly refines the
 historical replay-target field
 `seed_supply_chronology_contract.claim_without_target_is_seed_supply_aborted`
 without mutating those historical contract bytes: the older blanket flag grants
@@ -699,7 +712,7 @@ semantic/durable-evidence split above. Supplier identity and the concrete
 claim-key value remain
 absent and mandatory before an exclusive claim. The frozen future derivation
 scheme `spirallens.d7-item22-exclusive-seed-supply-claim-key.v0.1` hashes one
-exact-key canonical JSON object over the fixed claim path, historical item-21
+exact-key canonical JSON object over the fixed claim path, historical `D7-OPS-21`
 triple, reviewed re-anchor, supplier identity, and both exclusion registries.
 Dynamic bindings use one exact five-field identity projection; alternate array,
 role-keyed, extended, or caller-supplied encodings are rejected. This
@@ -721,14 +734,14 @@ Any other combination—including target plus abort, a downstream artifact witho
 claim, or an invalid/partial artifact—fails closed as a contract error with no
 precedence and no supplier retry.
 
-The item-21 artifacts remain historically valid and strictly reloadable, but
+The `D7-OPS-21` artifacts remain historically valid and strictly reloadable, but
 the later contract-spec source no longer matches their exact-current receipt.
-Live readiness is therefore blocked until all item-22 execution source is final
+Live readiness is therefore blocked until all `D7-OPS-22` execution source is final
 and a reviewed versioned re-anchor is published at the fixed external path.
 The contract-spec foundation is not that re-anchor and grants no freshness or
 authority.
 
-The current item-22 contract-spec foundation still has no exclusive supplier
+The current `D7-OPS-22` contract-spec foundation still has no exclusive supplier
 claim or invocation, official seed, atomic seed-bearing target/full-design publication,
 or committed freeze. Launch intent, the canonical nine-member descriptor, an
 official start/run/terminal/result, D7, and D8 also remain absent or `not_run`.
@@ -745,7 +758,7 @@ supplier chronology or seed secrecy. No reusable authorization object is
 issued.
 
 The scoped reviewed successor-family admission exists only in the final corrected
-item-21 chain. Seed-bearing target admission, full-design freeze, official
+`D7-OPS-21` chain. Seed-bearing target admission, full-design freeze, official
 seeds, authoritative target-bound lifecycle instances, an official fused
 invocation,
 official result/failure publication, authoritative terminal publication,
@@ -784,7 +797,7 @@ terminal forbids another runner invocation, but the current loader does not
 establish `started_unresolved`. Preserve it for forensic inspection until a
 future official reauthentication can interpret it. The implemented
 pin-relative external-witness finalizer is typed only for the evidence-only
-prefix and cannot consume the item-20 authoritative-start transaction;
+prefix and cannot consume the `D7-OPS-20` authoritative-start transaction;
 authoritative-start-compatible external-abort integration remains open.
 
 Both the original and successor-aware source receipts remain Level-0,
@@ -836,7 +849,7 @@ path-altering interpreter flags or site customization, and a child that
 replaces or ignores its inherited environment remain outside this guarantee.
 
 Recorded-lineage tests fail closed and require the C1/C2 ancestry they verify
-to be present locally. Item-21 verification rejects every shallow repository
+to be present locally. `D7-OPS-21` verification rejects every shallow repository
 rather than inferring that its visible ancestry is complete; deepen or
 unshallow the clone before running the full suite.
 
@@ -999,7 +1012,7 @@ The example bank used by the separate Pythia atlas path contains only
 project-authored synthetic engineering fixtures. It is not used by the
 model-free P1 representation phantom described above. Every bank entry has
 `role=example` and `claim_eligible=false`. Scientific discovery and held-out
-banks are separate frozen artifacts beginning in M2.
+banks are separate frozen artifacts beginning in `SCI-S2`.
 
 The canonical receipt was produced by the following historical, bounded,
 atlas-only Pythia-70M public-example plumbing invocation:
@@ -1197,13 +1210,17 @@ Atlas arrays are memory-mapped, manifests are written atomically, completed
 files are checksummed, and a resume request must match the original capture
 fingerprint.
 
-## Roadmap: experiment to library
+## Parallel roadmap lanes
 
-SpiralLens is intentionally growing in two stages: first prove that the
-instrument is scientifically auditable, then stabilize the parts that deserve
-to become a general library.
+Scientific qualification and library maturation proceed concurrently. The
+scientific lane may end at a preregistered `fail` or finite-budget
+`insufficient`; the library lane may still mature if it preserves that outcome
+faithfully. The summaries below are non-normative orientation, not a second
+status ledger; the Roadmap and canonical artifacts prevail on any conflict.
 
-- **Now — instrument foundation (`0.1.x`):** analytic phantoms, Pythia
+### Scientific lane
+
+- **Instrument foundation:** analytic phantoms, Pythia
   activation atlases, structural candidate ledgers, versioned provenance, and
   fail-closed storage, plus exact and selected-unpromoted Faiss retrieval,
   full-index/subset-query audits, and verified receipt plumbing.
@@ -1247,7 +1264,7 @@ to become a general library.
   exact successor review contract but embeds no repository-review attestation.
   The committed C2 now verifies declared historical Git source-set closure
   only. At that C1/C2 stage the rule remains ineffective until repository
-  review and typed admission. The final corrected item-21 chain later supplies the
+  review and typed admission. The final corrected `D7-OPS-21` chain later supplies the
   scoped reviewed successor-family admission without altering C1, C2, or the
   historical D6 decision; C2 does not attest runtime or transitive
   dependencies. The successor rule still does not satisfy the historical exact
@@ -1271,7 +1288,7 @@ to become a general library.
   in-process identity, hostile-local-mutation resistance, or current
   compatibility.
 - **Implemented deep-internal contract, prefix-persistence,
-  authority-prerequisite, and item-19/item-20 terminal, witness, runner, and
+  authority-prerequisite, and `D7-OPS-19`/`D7-OPS-20` terminal, witness, runner, and
   fused-start mechanics; step
   18 authority remains partial — replay target and attempt envelope:** two
   canonical, unpersisted
@@ -1283,13 +1300,13 @@ to become a general library.
   identity flow is acyclic: outcome → manifest → consumption. Scientific
   `pass`, `fail`, and `insufficient` remain results; infrastructure failure
   remains a separate non-scientific terminal variant, and no placeholder
-  result may stand in for either. The item-20 structural start binds an
+  result may stand in for either. The `D7-OPS-20` structural start binds an
   external execution identity, but its bytes and strict loader grant no
-  authority and explicitly do not establish `started_unresolved`. The item-19
+  authority and explicitly do not establish `started_unresolved`. The `D7-OPS-19`
   external finalizer remains evidence-only and cannot consume that transaction.
   With final-code source/runtime receipt, seed-free readiness, and scoped
-  reviewed successor-family admission complete in the final corrected item-21 chain, the
-  future item-22 seed-supply lifecycle must acquire its exclusive claim before
+  reviewed successor-family admission complete in the final corrected `D7-OPS-21` chain, the
+  future `D7-OPS-22` seed-supply lifecycle must acquire its exclusive claim before
   the single supplier
   invocation. It then atomically publishes the seed-bearing full design and
   target, commits their freeze receipt, and only then creates launch intent. If
@@ -1311,7 +1328,7 @@ to become a general library.
   `started_unresolved`, or isolated-replay provenance. Exact-current execution
   source/runtime receipt, seed-free readiness, and scoped reviewed
   successor-family admission now follow the completed operational mechanics in
-  the final corrected item-21 receipt-only chain.
+  the final corrected `D7-OPS-21` receipt-only chain.
   Deep-internal canonical component, absence-receipt, evidence-payload, and
   verification-receipt byte schemas now reject arbitrary or noncanonical
   caller bytes and perform pure structural joins. They do not load the frozen
@@ -1365,7 +1382,7 @@ to become a general library.
   existing terminal to the same explicit pins. This proves signature
   authentication only relative to caller-supplied runtime pins. It proves no
   trust-root provenance, official authority, wall-clock freshness,
-  authoritative start, or observed execution. Roadmap item 20 now gives the
+  authoritative start, or observed execution. Roadmap `D7-OPS-20` now gives the
   private post-start ownership type exactly one issuer inside a same-call
   current-HEAD/canonical-origin/declared-runtime/physical revalidation path. It
   publishes a no-replace authoritative-start directory, requires the
@@ -1381,34 +1398,34 @@ to become a general library.
   It makes at most one terminal-publication attempt; hard exit, post-start
   drift, unproved start-parent fsync, or success/failure publication error can
   leave a visible start without a terminal. PR26 completes the earlier
-  code-side portion of item 21: the exact runtime lock, fixed official
+  code-side portion of `D7-OPS-21`: the exact runtime lock, fixed official
   producer, exact full-inventory, aggregation, and full-design builders, and
-  installed-inventory equality check now exist. The corrected item-21 source anchor fixes a
+  installed-inventory equality check now exist. The corrected `D7-OPS-21` source anchor fixes a
   three-artifact successor chain: exact source/runtime receipt, then seed-free
   readiness, then scoped reviewed successor-family admission. It issues none;
-  all item-21 docs are frozen there, and each artifact is the only addition in a
+  all `D7-OPS-21` docs are frozen there, and each artifact is the only addition in a
   strict direct-child commit after its predecessor. The final corrected tip strictly
-  reloads/rejoins all three and completes item 21; existing
+  reloads/rejoins all three and completes `D7-OPS-21`; existing
   caller-constructible authority records remain false and are not promoted.
-  The later deep-internal item-22 transaction contract specification fixes the
+  The later deep-internal `D7-OPS-22` transaction contract specification fixes the
   future root/leaves, atomic six-member `published-target/` layout, and six
   closed state names. Its repository-root-only choice-free loader returns an
   in-memory foundation and exposes no persistence or claim API, supplier or seed
   access, re-anchor, publication, freeze, or launch operation. The historical
-  item-21 chain remains valid, but exact-current live readiness is now blocked
-  until final item-22 source receives its separately reviewed re-anchor. Even
-  with that contract specification, no item-22 supplier claim/invocation,
+  `D7-OPS-21` chain remains valid, but exact-current live readiness is now blocked
+  until final `D7-OPS-22` source receives its separately reviewed re-anchor. Even
+  with that contract specification, no `D7-OPS-22` supplier claim/invocation,
   official seed,
   atomic seed-bearing target/full-design publication, or freeze exists. Launch
   intent, the canonical nine-member descriptor, an official run, D7, and D8
-  remain absent or `not_run`. The operational order is now explicit: retain item-19 and
-  item-20 mechanics without an official run; finish item 21 through that exact
+  remain absent or `not_run`. The operational order is now explicit: retain `D7-OPS-19` and
+  `D7-OPS-20` mechanics without an official run; finish `D7-OPS-21` through that exact
   receipt-only chain. Then claim exclusive supply, invoke the seed supplier
   once, and atomically publish target/full design before committing the freeze
-  and, separately afterward, launch intent. Before item 24, create and commit
+  and, separately afterward, launch intent. Before `D7-OPS-24`, create and commit
   the closed nine-member fused descriptor and pass strict verification-evidence
   replay/rejoin, temporary-Git/runtime end-to-end, and authoritative-start-
-  compatible external-abort integration checks. Item 24 is the first official
+  compatible external-abort integration checks. `D7-OPS-24` is the first official
   fused invocation. Execute without
   overrides and require complete isolated byte replay. Only a
   future scope-specific confirmation artifact may change its own qualification
@@ -1418,7 +1435,7 @@ to become a general library.
   field/defect paths separate, join them only through explicit same-substrate
   artifacts, persist a same-field core-degeneracy scalar and its nested-radius
   profile, and retain Pythia-70M as plumbing-only development material.
-- **Before M2 — quantify sensitivity:** sweep injection amplitude, declared
+- **Before SCI-S2 — quantify sensitivity:** sweep injection amplitude, declared
   perturbation/noise, and sampling density end to end through atlas, ANN,
   graph, and cycle construction. Exact-recall audits are stratified by local
   density. A zero-candidate result is qualified only relative to the frozen
@@ -1432,7 +1449,14 @@ to become a general library.
   by SAE reconstruction relative to a matched-MSE PCA-\(k\) compressor and
   whether held-out, norm-preserving interventions change downstream behavior
   selectively.
-- **Library alpha/beta:** extract stable core APIs, formalize adapter protocols,
+
+### Library lane
+
+- **Research-package consolidation (`0.1.x`, pre-alpha):** extract common evidence mechanics,
+  separate portable APIs from repository-bound official experiments, replace
+  implicit repository discovery with explicit context, and keep the reusable
+  public surface small. This work does not wait for a scientific-lane result.
+- **Library alpha/beta:** stabilize eligible core APIs, formalize adapter protocols,
   add schema migration and compatibility policy, publish documentation and
   benchmarks, then release on PyPI.
 - **1.0:** stable documented API, supported artifact migrations, reproducible
@@ -1482,7 +1506,7 @@ immediate next plan live in the single
   declared-Git-source-set receipt, plus canonical unpersisted replay-target and
   append-only attempt-envelope contract specifications. They are not exported
   from `spirallens.qualification` or the package root. No public admission,
-  seed, execution, result, or promotion surface is published; the scoped item-21
+  seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;

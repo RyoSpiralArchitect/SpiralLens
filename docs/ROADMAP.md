@@ -115,6 +115,65 @@ inconclusive outcomes. Conversely, an interesting Level 2G, Level 2T, or
 Level 3 result does not make the API stable. Release versions describe
 software contracts, not the truth of the motivating hypothesis.
 
+The two axes therefore use different canonical milestone namespaces:
+
+| Lane | Canonical milestones | Current state | What advances the lane |
+| --- | --- | --- | --- |
+| Scientific | `SCI-S0` through `SCI-S4` | `SCI-S0` implemented and hardening; `SCI-S1` in progress | A frozen protocol reaches its declared scientific terminal condition. A `fail` or finite-budget `insufficient` is a completed outcome, although it may leave a later scientific milestone unauthorized. |
+| Library | `LIB-L0` through `LIB-L3` | `LIB-L0` in progress | Software-contract, portability, compatibility, documentation, and release gates pass. No positive scientific result is required. |
+
+Only the following cross-lane dependencies are normative:
+
+- outputs from `SCI-S0` are candidates for `LIB-L0` extraction, but promotion
+  requires a library-owned contract and two independent consumers;
+- `SCI-S1` may use provisional internal APIs and does not wait for `LIB-L1`;
+- `SCI-S1` must terminate under its frozen budget. A qualifying pass can
+  authorize `SCI-S2`; `fail` or `insufficient` closes that attempt without
+  authorizing `SCI-S2` and without blocking the library lane;
+- `SCI-S2` and `SCI-S3` may supply protocols and artifacts for `SCI-S4`, while
+  the absence of an eligible candidate is recorded rather than converted into
+  a software blocker;
+- library adapter conformance may reuse model families examined by `SCI-S4`,
+  but it tests the adapter contract, not replication of a scientific effect;
+- `LIB-L1` through `LIB-L3` never promote a claim level. They must preserve and
+  expose negative, `insufficient`, and `not_run` outcomes without laundering
+  them into evidence.
+
+### 3.1 Canonical IDs and historical aliases
+
+New documents, issues, PRs, and generated status surfaces use the canonical ID
+before any prose description:
+
+| Namespace | Scope | Example |
+| --- | --- | --- |
+| `SCI-Sn` | scientific milestone | `SCI-S1` field qualification |
+| `LIB-Ln` | library milestone | `LIB-L1` alpha |
+| `SCI-S1-Rnn` | numbered requirement in the `SCI-S1` deliverable list | [`SCI-S1-R22`](#sci-s1-r22) count and worst-case gates |
+| `D7-OPS-nn` | numbered chronology in the D7 operations ledger in section 11 | [`D7-OPS-22`](#d7-ops-22) seed-supply transaction contract |
+
+Bare `M1`, `item 22`, or similar references are not unique and are not used for
+new normative references. Existing symbols, schema identifiers, artifact
+bytes, Git history, and quotations retain their historical spellings. When a
+historical alias is needed in new prose, it follows the canonical ID, for
+example `D7-OPS-22 (historical item 22)`.
+
+The former single-axis milestone labels remain historical navigation aliases:
+
+| Historical alias | Canonical destination |
+| --- | --- |
+| `M0` | `SCI-S0` |
+| `M1` | `SCI-S1` |
+| `M2` | `SCI-S2` |
+| `M3` | `SCI-S3` |
+| `M4` | scientific replication and checkpoint dynamics → `SCI-S4`; internal model-observer boundary and framework-neutral core → `LIB-L0`; public adapter protocol → `LIB-L1`; second-adapter portability evidence → `LIB-L2` |
+| `M5` | `LIB-L1` |
+| `M6` | `LIB-L2` |
+| `M7` | `LIB-L3` |
+
+This mapping changes prospective interpretation and references only. It does
+not rename or reinterpret a frozen artifact, protocol, outcome, or historical
+commit.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.
@@ -149,7 +208,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete roadmap items 19-20 without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected item-21 source anchor freezes the strict receipt-only chain from exact source/runtime receipt through seed-free readiness to scoped reviewed successor-family admission, and three artifact-only direct children add, strictly reload, and rejoin them to complete item 21; a canonical descriptor, authoritative item-22 target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` source anchor freezes the strict receipt-only chain from exact source/runtime receipt through seed-free readiness to scoped reviewed successor-family admission, and three artifact-only direct children add, strictly reload, and rejoin them to complete `D7-OPS-21`; a canonical descriptor, authoritative `D7-OPS-22` target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -163,9 +222,12 @@ The target is:
 TransformerLens or any other hook framework may become an adapter, but must not
 define the core mathematical API or artifact schema.
 
-## 6. Milestones
+## 6. Two-lane milestones
 
-### M0 — Auditable instrument foundation
+### Scientific lane
+
+<a id="sci-s0"></a>
+#### SCI-S0 — Auditable instrument foundation (historical `M0`)
 
 **Status:** implemented; hardening continues.
 
@@ -207,10 +269,10 @@ Historical exit criteria, preserved from the C7 roadmap:
 
 Post-C7 interpretation mapping, not a historical exit criterion:
 
-- no M0 artifact exceeds the current Level 1G or Level 1D ceilings;
+- no `SCI-S0` artifact exceeds the current Level 1G or Level 1D ceilings;
 - no real-model defect field reaches Level 1D.
 
-What M0 does **not** prove:
+What `SCI-S0` does **not** prove:
 
 - that a Pythia representation contains a closed semantic loop;
 - that any candidate has non-zero relative holonomy;
@@ -220,7 +282,8 @@ What M0 does **not** prove:
 - that one deterministic graph construction is topology-invariant;
 - that SAE reconstruction removes the hypothesized information.
 
-### M1 — Field qualification and candidate-to-loop integration
+<a id="sci-s1"></a>
+#### SCI-S1 — Field qualification and candidate-to-loop integration (historical `M1`)
 
 **Status:** in progress. Observation, ContextBank, retrieval, qualification,
 and recall-gate machinery exist. The first frozen consumer-safe Pythia-70M
@@ -305,75 +368,73 @@ recomputation; it explicitly grants neither current-engine compatibility nor
 historical reexecution. Neither route collapses execution HEAD and artifact
 HEAD or grants runtime/hostile-mutation attestation.
 
-**Target release family:** `0.2.x`.
-
 Deliverables:
 
-1. `ObservationKey` and `ContextBank` contracts that make model revision,
+1. <a id="sci-s1-r01"></a>**SCI-S1-R01** — `ObservationKey` and `ContextBank` contracts that make model revision,
    context, token position, layer, and capture stage explicit.
-2. A tracked public context bank containing 6–12 project-authored synthetic
+2. <a id="sci-s1-r02"></a>**SCI-S1-R02** — A tracked public context bank containing 6–12 project-authored synthetic
    engineering fixtures. Every context has `role=example` and
    `claim_eligible=false`; the bank tests loading, validation, capture, and
    replay only.
-3. Discovery and held-out roles are rejected from that public engineering
-   bank. Scientific discovery and held-out banks begin in M2 as separate frozen
+3. <a id="sci-s1-r03"></a>**SCI-S1-R03** — Discovery and held-out roles are rejected from that public engineering
+   bank. Scientific discovery and held-out banks begin in `SCI-S2` as separate frozen
    artifacts.
-4. Atlas requests bind the bank's source and canonical digests, selected role,
+4. <a id="sci-s1-r04"></a>**SCI-S1-R04** — Atlas requests bind the bank's source and canonical digests, selected role,
    ordered context IDs, sweep/observation positions, and sweep domain. Resume
    rejects any mismatch before appending an attempt. The binding embeds
    canonical bank content so load/replay can recompute bank, selected-context,
    tokenizer, and request-identity digests independently.
-5. Atlas manifests persist `language_space_atlas=false`,
+5. <a id="sci-s1-r05"></a>**SCI-S1-R05** — Atlas manifests persist `language_space_atlas=false`,
    `semantic_unit=false`; decoded strings, when present downstream, are
    display-only sidecars rather than observation identity. Candidate references
    carry the bound bank/context/spec identities and tokenizer-addressability
    flag rather than aggregating by decoded text.
-6. A neighbor-search protocol suitable for the full 50,304-row Pythia model
+6. <a id="sci-s1-r06"></a>**SCI-S1-R06** — A neighbor-search protocol suitable for the full 50,304-row Pythia model
    input embedding table.
-7. An exact reference backend for bounded datasets and an audited approximate
+7. <a id="sci-s1-r07"></a>**SCI-S1-R07** — An exact reference backend for bounded datasets and an audited approximate
    backend for full-vocabulary discovery.
-8. Recall and determinism evaluation of the approximate backend against exact
+8. <a id="sci-s1-r08"></a>**SCI-S1-R08** — Recall and determinism evaluation of the approximate backend against exact
    subsets; the initial recall target is at least 0.99 at the preregistered
    candidate boundary.
    Promotion also requires the frozen query-local, relative-density,
    density-by-cosine-boundary, and worst-case coverage gates; aggregate recall
    alone is not sufficient. Freezing those measurement rules is not a Pythia
    audit result.
-9. Approximate search is used only for retrieval; every persisted candidate is
+9. <a id="sci-s1-r09"></a>**SCI-S1-R09** — Approximate search is used only for retrieval; every persisted candidate is
    reranked and gated with the exact metric.
-10. Experimental `SubstrateBinding`, `SupportDiagnostic`,
+10. <a id="sci-s1-r10"></a>**SCI-S1-R10** — Experimental `SubstrateBinding`, `SupportDiagnostic`,
     `GeometricFieldEstimate`, `CoreScore`, `OrderParameterSpec`,
     `OrderParameterField`, `CoreCandidate`, and `GroundTruthAnchor` contracts
     qualified on synthetic representation-shaped phantoms before any new
     subject protocol.
-11. Competing field hypotheses with explicit transformation laws, fit scopes,
+11. <a id="sci-s1-r11"></a>**SCI-S1-R11** — Competing field hypotheses with explicit transformation laws, fit scopes,
     claim ceilings, and no outcome-selected winner.
-12. Semantics-free, deterministic mutual-kNN, fixed-radius, and
+12. <a id="sci-s1-r12"></a>**SCI-S1-R12** — Semantics-free, deterministic mutual-kNN, fixed-radius, and
     shared-neighbor candidate graph families with canonical construction
     receipts.
-13. Deterministic cycle construction plus a matched support or homology rule
+13. <a id="sci-s1-r13"></a>**SCI-S1-R13** — Deterministic cycle construction plus a matched support or homology rule
     that remains meaningful across genuinely different graph-construction
     families and compares the same enclosing support/class rather than
     construction-specific cycle indices.
-14. A full crossed field-estimation-graph by cycle-construction-graph null,
+14. <a id="sci-s1-r14"></a>**SCI-S1-R14** — A full crossed field-estimation-graph by cycle-construction-graph null,
     extended by a core-estimation-graph axis whenever the core estimator is
     neither graph-free nor bound to the field graph, with graph diversity,
     support, and worst-case gates.
-15. Local transport estimation using declared JVP, pullback metric, whitening,
+15. <a id="sci-s1-r15"></a>**SCI-S1-R15** — Local transport estimation using declared JVP, pullback metric, whitening,
     projector, and/or Procrustes choices.
-16. Relative holonomy rather than raw endpoint drift on the geometry branch.
-17. Sampled winding only from an eligible, nonzero, orientable
+16. <a id="sci-s1-r16"></a>**SCI-S1-R16** — Relative holonomy rather than raw endpoint drift on the geometry branch.
+17. <a id="sci-s1-r17"></a>**SCI-S1-R17** — Sampled winding only from an eligible, nonzero, orientable
     order-parameter section on the defect branch with a frozen
     trivialization/reference or gauge-invariant connection-corrected lift.
-18. RoPE, LayerNorm, attention value, attention routing, MLP, basis,
+18. <a id="sci-s1-r18"></a>**SCI-S1-R18** — RoPE, LayerNorm, attention value, attention routing, MLP, basis,
     orientation, radius, sampling-density, graph-family, and matched-null
     controls wired into one run artifact.
-19. Each required gate is persisted as `pass`, `fail`, `insufficient`, or
+19. <a id="sci-s1-r19"></a>**SCI-S1-R19** — Each required gate is persisted as `pass`, `fail`, `insufficient`, or
     `not_run`; incomplete gates cannot silently pass.
-20. Versioned substrate, field, graph, discriminated geometry/defect loop, and
+20. <a id="sci-s1-r20"></a>**SCI-S1-R20** — Versioned substrate, field, graph, discriminated geometry/defect loop, and
     result artifacts linking every result back to atlas rows, fit scopes, and
     protocol hashes.
-21. A charge-blind `CoreScore`/`CoreCandidate` receipt bound to the same
+21. <a id="sci-s1-r21"></a>**SCI-S1-R21** — A charge-blind `CoreScore`/`CoreCandidate` receipt bound to the same
     order-parameter field and frozen before loop readout, kept distinct from a
     supplied `GroundTruthAnchor`, with known-core, off-core, density, and
     sparse-support controls. Its D2-only falsifier matrix distinguishes a
@@ -382,38 +443,42 @@ Deliverables:
     support at the candidate itself. The current engine binds the core input
     to the inherited field-estimation graph and keeps this Level-0 candidate
     below any vortex, topology, charge, or core-loop-join claim.
-22. Attempted, evaluable, insufficient, and abstention counts plus worst-case
+22. <a id="sci-s1-r22"></a>**SCI-S1-R22** — Attempted, evaluable, insufficient, and abstention counts plus worst-case
     coverage, recall, and specificity gates across required phantom strata.
-23. A content-addressed `CalibrationSelectionDecision` sealed before hidden
+23. <a id="sci-s1-r23"></a>**SCI-S1-R23** — A content-addressed `CalibrationSelectionDecision` sealed before hidden
     confirmation, followed by a non-selecting
     `CalibrationConfirmationResult`.
-24. A future `SubjectProtocolManifest` and access boundary that reveal no
+24. <a id="sci-s1-r24"></a>**SCI-S1-R24** — A future `SubjectProtocolManifest` and access boundary that reveal no
     subject-derived values before separate review, freeze, and execution
     authorization.
-25. A protocol-declared same-field core-degeneracy scalar recorded at every
+25. <a id="sci-s1-r25"></a>**SCI-S1-R25** — A protocol-declared same-field core-degeneracy scalar recorded at every
     candidate and as a nested-radius radial profile. Its threshold and matching
     rule are frozen before any loop value is read.
-26. An architecture-accounted sampled-winding estimate distribution across the
+26. <a id="sci-s1-r26"></a>**SCI-S1-R26** — An architecture-accounted sampled-winding estimate distribution across the
     eligible loop ensemble, retaining every unrounded cycle total and
     proximity-to-integer residual and comparing them with continuous and
     integer-clustered calibration controls. This is a non-quantization
     diagnostic, emits no resolved charge label, and is never a charge
     certificate by itself.
-27. An opposite-sign dipole phantom with a separation sweep, single-core loop
+27. <a id="sci-s1-r27"></a>**SCI-S1-R27** — An opposite-sign dipole phantom with a separation sweep, single-core loop
     signs, both-core-loop additivity/net-zero checks, and explicit two-core
     resolution. It also calibrates the measurement needed by any future
     checkpoint-series annihilation analysis.
-28. An end-to-end detection-limit surface over injection amplitude, declared
+28. <a id="sci-s1-r28"></a>**SCI-S1-R28** — An end-to-end detection-limit surface over injection amplitude, declared
     perturbation or noise level, and sampling density. Synthetic fields must
     enter through the atlas representation and traverse ANN retrieval, exact
     reranking, graph construction, cycle construction, and the final gates.
     Exact-recall audits are stratified by local-density and candidate-boundary
     cells because exact reranking cannot recover neighbors the ANN never
     retrieved.
-29. A bounded qualification transition rule fixed before further tuning. Each
+29. <a id="sci-s1-r29"></a>**SCI-S1-R29** — A bounded qualification transition rule fixed before further tuning. Each
     protocol declares its maximum revision/resource budget and a terminal
-    action: advance to M2 when the finite gates pass, or stop with a persisted
-    `insufficient` qualification record when the budget is exhausted.
+    action. Complete, evaluable required-gate success is `pass` and may
+    authorize `SCI-S2`. Any complete, evaluable required-gate failure is a
+    terminal `fail`, cannot be retuned under the same protocol identity, and
+    does not authorize `SCI-S2`. Missing evaluability, support, coverage, or
+    sensitivity at budget exhaustion is terminal `insufficient`, supports no
+    falsification or qualified-null claim, and does not authorize `SCI-S2`.
 
 Exit criteria:
 
@@ -422,7 +487,7 @@ Exit criteria:
 - the tracked public example bank validates with all roles equal to `example`
   and with claim eligibility disabled;
 - approximate discovery meets its preregistered recall target on exact subsets;
-- the end-to-end detection-limit surface is frozen and complete before M2 or
+- the end-to-end detection-limit surface is frozen and complete before `SCI-S2` or
   any Pythia-160M run; it reports detection probability and uncertainty over
   injection amplitude, declared perturbation/noise, and sampling density, with
   density-stratified exact-recall and worst-case gates;
@@ -464,16 +529,44 @@ Exit criteria:
 - rerunning from persisted atlas data requires no model download or inference;
 - Level 2G and Level 2T are promoted independently and only after every
   branch-specific control is complete.
+- the terminal `SCI-S1` transition is persisted as exactly one of `pass`,
+  `fail`, or `insufficient` under the frozen protocol and resource budget;
+  adverse evaluable gates cannot be relabeled as missing evidence.
 
 Pythia-70M may exercise this path before qualification only as a
 claim-ineligible plumbing run. It cannot satisfy the detection-limit exit
-criterion or authorize M2.
+criterion or authorize `SCI-S2`.
 
-### M2 — Frozen Pythia-160M scientific protocol
+<a id="sci-s2"></a>
+#### SCI-S2 — Frozen Pythia-160M scientific protocol (historical `M2`)
 
-**Status:** blocked on M1 by design.
+**Status:** blocked on `SCI-S1` by design.
 
-**Target release family:** `0.3.x`.
+Before subject access, the protocol declares one primary endpoint and fixes an
+exactly-one terminal mapping. Required validity, control, or invariance failure
+takes precedence as `fail`; if none fails but required evaluability is missing,
+`insufficient` takes precedence. Only a valid, fully evaluable run can resolve
+the primary endpoint as `positive`, `qualified_zero`, or `qualified_null`:
+
+- `positive`: at least one candidate earns its branch-specific label within
+  the frozen claim ceiling; an eligible structural target may proceed to
+  `SCI-S3`, and the exact quantity may proceed to `SCI-S4` replication;
+- `qualified_zero`: a fully evaluable candidate-count primary endpoint yields
+  zero eligible candidates inside the `SCI-S1`-qualified detection region;
+- `qualified_null`: a fully evaluable preregistered effect/comparison primary
+  endpoint yields no qualifying effect inside its frozen sensitivity region.
+  It is not a synonym for zero candidates;
+- either qualified outcome authorizes no `SCI-S3` semantic target, but its
+  bounded endpoint may proceed to `SCI-S4` replication;
+- `fail`: an evaluable required validity, control, or invariance gate fails.
+  No candidate is promoted, no threshold is retuned under the same protocol
+  identity, and neither `SCI-S3` nor positive-effect replication is authorized;
+- `insufficient`: sensitivity, support, coverage, witness, or evaluability is
+  incomplete. It is neither a qualified zero/null nor a falsification and
+  authorizes neither `SCI-S3` nor `SCI-S4` scientific replication.
+
+Infrastructure-invalid attempts remain separately typed and follow the frozen
+attempt/budget policy; they do not silently become a scientific terminal.
 
 Deliverables:
 
@@ -495,7 +588,7 @@ Deliverables:
   service), with both references bound into the run manifest;
 - complete offline replay artifacts;
 - a concise result report that treats positive, zero, and null outcomes
-  equally; a zero-candidate report names the M1-qualified detectable region
+  equally; a zero-candidate report names the `SCI-S1`-qualified detectable region
   rather than claiming unrestricted absence.
 
 Exit criteria:
@@ -504,20 +597,31 @@ Exit criteria:
 - the signed tag and independent snapshot resolve to the exact protocol and
   source digests before claim-bearing subject access. If the independent
   witness is unavailable, a plumbing-only attempt may record that absence, but
-  the M2 claim-bearing run remains blocked;
+  the `SCI-S2` claim-bearing run remains blocked;
 - every reported candidate links to all required null results;
 - an independent rerun reproduces the persisted structural quantities within
   declared numerical tolerances;
 - any Level 2G or Level 2T label is earned per candidate, not inherited from
   the run.
 
-Passing M2 does not establish semantics or SAE loss.
+Completing `SCI-S2` does not establish semantics or SAE loss.
 
-### M3 — SAE gap and causal semantic validation
+<a id="sci-s3"></a>
+#### SCI-S3 — SAE gap and causal semantic validation (historical `M3`)
 
-**Status:** future research milestone.
+**Status:** future and conditional on an eligible positive structural target
+from `SCI-S2`. If `SCI-S2` ends `qualified_zero`, `qualified_null`, `fail`, or
+`insufficient`, `SCI-S3` is `not_run` or not applicable for that study; this is
+not a software failure.
 
-**Target release family:** `0.4.x`.
+Each `SCI-S3` protocol freezes a finite resource budget and one exactly-one
+terminal before held-out semantics or intervention endpoints are opened:
+`positive` requires every preregistered predictive, causal, and control gate;
+`qualified_null` requires a valid, adequately sensitive evaluation with no
+predicted semantic/causal effect; `fail` records an evaluable adverse required
+gate or falsifying direction; and `insufficient` records missing sensitivity,
+support, coverage, or evaluability. No terminal is converted by extending the
+same protocol after its budget.
 
 Deliverables:
 
@@ -546,33 +650,97 @@ Exit criteria:
 
 Only this milestone can support a Level 3 result.
 
-### M4 — Replication and model abstraction
+<a id="sci-s4"></a>
+#### SCI-S4 — Scientific replication and checkpoint dynamics
 
-**Target release family:** `0.5.x`.
+**Status:** future and conditional on a replayable positive quantity or a
+`qualified_zero`/`qualified_null` from `SCI-S2`, or an eligible Level 3
+quantity or `qualified_null` from `SCI-S3`. `SCI-S2`/`SCI-S3` `insufficient`
+is not a bounded null.
+
+Each `SCI-S4` replication protocol likewise freezes its source quantity,
+tolerances, primary endpoint, and finite budget. It terminates exactly once as
+`positive_replication`, `replicated_qualified_zero`,
+`replicated_qualified_null`, `fail_replication`, or `insufficient`; supported
+disagreement is `fail_replication`, missing evaluability is `insufficient`, and
+neither may be relabeled by adding checkpoints or models after the frozen
+budget.
 
 Deliverables:
 
-- a model-observer adapter protocol independent of Hugging Face class names;
-- a second model family in addition to Pythia/GPT-NeoX;
 - checkpoint, seed, or scale replication where public models permit it;
 - a preregistered public-checkpoint series that treats training step as a
   prospective control variable for candidate density and opposite-sign pair
   trajectories. Layer depth remains a within-model spatial/profile coordinate,
   not a temperature proxy; no Kosterlitz-Thouless or annihilation claim follows
   without the calibrated dipole resolution and branch-specific gates;
-- core mathematical imports that remain free of Torch/Transformers;
-- adapter conformance tests using the same phantom and artifact contracts;
-- explicit measurement of adapter-induced observable differences.
+- explicit separation of adapter-induced observable differences from a
+  scientific replication effect;
+- a preregistered replication interpretation for positive, negative, and
+  inconclusive outcomes.
 
 Exit criteria:
 
-- at least two independent adapter implementations pass the same conformance
-  suite;
-- the core package installs and imports without a model framework;
-- model-specific hook names do not enter stable mathematical contracts;
+- every replication binds the original protocol quantity, admissible
+  tolerances, and all model/checkpoint-specific deviations;
+- checkpoint-series conclusions remain within the calibrated dipole-resolution
+  and detection-limit region;
 - a negative or inconclusive replication remains a first-class artifact.
 
-### M5 — Library alpha
+### Library lane
+
+<a id="lib-l0"></a>
+#### LIB-L0 — Research-package consolidation
+
+**Status:** in progress. The package is installable and much of its mathematics
+is framework-neutral, but repository-bound official experiments and broad
+provisional surfaces are not yet separated from reusable library contracts.
+
+**Historical planning alias:** the software/model-abstraction portion of `M4`.
+
+Deliverables:
+
+- a small common evidence kernel for canonical envelopes, digest-before-parse,
+  claim ceilings, authority facts, typestate transitions, atomic/no-replace
+  publication, and historical pin verification;
+- item-specific evidence contracts expressed as declarative schemas and data
+  wherever doing so preserves their scientific distinctions;
+- explicit `Workspace` or `RepositoryContext` injection for operations that
+  require Git history or repository files; no reusable reader infers a Git
+  root from `__file__`;
+- an explicit boundary between framework-neutral `spirallens` APIs and
+  repository-bound official experiments;
+- an explicit model-observer boundary that keeps framework types out of core
+  contracts; its public adapter protocol is promoted only in `LIB-L1`;
+- core mathematical imports that remain free of Torch, Transformers, and
+  Faiss;
+- read-only generated status/schema/digest views whose authoritative inputs
+  are the human-owned Fundamental Frame, Interpretation Ledger, and this
+  roadmap for policy, plus canonical machine artifacts for observed bytes.
+  Every view binds its generator version and input digests, is regenerated by
+  a declared check rather than hand-edited, and has no authority of its own;
+  policy conflicts resolve to the human-owned source, byte/status conflicts to
+  the canonical artifact, and a stale projection fails validation;
+- a public-surface budget and promotion rule that prevents experiment-specific
+  helpers from becoming provisional exports by default.
+
+Exit criteria:
+
+- the common kernel has two independent consumers and materially reduces
+  duplicated evidence plumbing without merging holonomy, winding, or other
+  scientifically distinct types;
+- wheel-installed library operations declare whether they are portable or
+  require an explicit repository context;
+- the reference adapter passes an internal conformance suite, with
+  adapter-induced differences reported without being called replication;
+- library tests run against the intended installed/source tree with origin
+  verification and without hidden adjacent-worktree imports;
+- synthetic/conformance fixtures for `pass`, `fail`, `insufficient`, and
+  `not_run` can be loaded, rendered, and round-tripped without promotion or
+  loss. No completed `SCI-S1` attempt is required for entry into `LIB-L1`.
+
+<a id="lib-l1"></a>
+#### LIB-L1 — Library alpha (historical `M5`)
 
 **Target release family:** `0.8.x`.
 
@@ -598,7 +766,8 @@ Exit criteria:
 - public functions have types, examples, failure semantics, and tests;
 - package imports do not trigger model downloads, network access, or telemetry.
 
-### M6 — Library beta
+<a id="lib-l2"></a>
+#### LIB-L2 — Library beta (historical `M6`)
 
 **Target release family:** `0.9.x`.
 
@@ -623,7 +792,8 @@ Exit criteria:
 - full examples are reproducible in clean environments;
 - known numerical/backend differences are documented and tested.
 
-### M7 — Stable library 1.0
+<a id="lib-l3"></a>
+#### LIB-L3 — Stable library 1.0 (historical `M7`)
 
 Deliverables and release gates:
 
@@ -680,8 +850,8 @@ their provenance and license are clear.
 
 Context banks have an additional leakage boundary:
 
-- public M1 fixtures remain `role=example` and `claim_eligible=false`;
-- discovery and held-out contexts live in separate frozen M2 artifacts;
+- public `SCI-S1` fixtures remain `role=example` and `claim_eligible=false`;
+- discovery and held-out contexts live in separate frozen `SCI-S2` artifacts;
 - split assignment groups related items by family, source, and template rather
   than assigning individual rows independently;
 - learned transforms are fit only on calibration/discovery data and are frozen
@@ -731,10 +901,15 @@ explicitly stated otherwise.
 | Interesting Pythia-70M result drives confirmatory-bank tuning | Keep 70M as plumbing; freeze 160M contexts, splits, thresholds, and preprocessing independently of its outcomes |
 | Research API ossifies too early | Stabilize only independently reused, documented contracts |
 | Library engineering dilutes scientific falsifiability | Require the same claim ladder through every release |
-| Instrument refinement indefinitely postpones a claim-bearing run | Freeze a finite M1 revision/resource budget and transition rule; advance when all gates pass, stop `insufficient` when qualification does not, and treat an M2 zero-candidate run as a qualified null only inside the calibrated sensitivity region |
+| Instrument refinement indefinitely postpones a claim-bearing run | Freeze a finite `SCI-S1` revision/resource budget and transition rule; advance when all gates pass, stop `insufficient` when qualification does not, and treat an `SCI-S2` zero-candidate run as a qualified null only inside the calibrated sensitivity region |
 | A caller record or serialized token masquerades as launch authority | Treat canonical bytes as inputs only; derive the same-call transition inside one fused verify-and-exclusive-start operation, emit no reusable capability, and reobserve the declared source/runtime surface, physical identity, and absence at the transition |
 
-## 11. Immediate next plan
+## 11. D7 operations ledger and immediate next plan
+
+The ordered entries below have the fixed canonical IDs `D7-OPS-01` through
+`D7-OPS-29`. Their numeric positions are historical navigation aids, not a
+second identity system. Completed entries are never renumbered; a future
+insertion is appended or introduced in a versioned successor ledger.
 
 The original sequence completed the ContextBank, atlas, neighbor-backend,
 recall-gate, producer-qualification, and consumer-safe execution machinery. Its
@@ -750,40 +925,40 @@ Level-0 order-parameter question. No inference from the audit status or empty
 support selected the field hypotheses, graph families, or calibration rules
 below:
 
-1. adopt and review the Fundamental Frame, branched claim taxonomy, and
+1. <a id="d7-ops-01"></a>**D7-OPS-01** — adopt and review the Fundamental Frame, branched claim taxonomy, and
    historical interpretation ledger;
-2. register competing field hypotheses F0–F4 with transformation laws, fit
+2. <a id="d7-ops-02"></a>**D7-OPS-02** — register competing field hypotheses F0–F4 with transformation laws, fit
    scopes, and claim ceilings — implemented as the strict, outcome-excluded P0
    registry;
-3. define canonical substrate, graph, support, geometry-field,
+3. <a id="d7-ops-03"></a>**D7-OPS-03** — define canonical substrate, graph, support, geometry-field,
    order-parameter, connection, discriminated loop, and calibration artifacts
    — implemented as metadata-only experimental v0.1 schemas;
-4. define a canonical closed-world bundle manifest, resolve exact artifact and
+4. <a id="d7-ops-04"></a>**D7-OPS-04** — define a canonical closed-world bundle manifest, resolve exact artifact and
    payload closure, and validate selected cross-manifest metadata joins —
    implemented as a closed-integrity validator that streams opaque payload
    bytes only for length and SHA-256 verification;
-5. add a separately constructed Cartesian Fourier family with the exact
+5. <a id="d7-ops-05"></a>**D7-OPS-05** — add a separately constructed Cartesian Fourier family with the exact
    nonzero-with-core, null-with-core, null-without-core, and
    prerequisite-failure controls — implemented in the D0-D5 engine;
-6. consume deterministic mutual-kNN, fixed-radius, and shared-neighbor
+6. <a id="d7-ops-06"></a>**D7-OPS-06** — consume deterministic mutual-kNN, fixed-radius, and shared-neighbor
    constructors through distinct field/cycle axes on the exact discrete
    domain — implemented for the closed selection engine;
-7. implement separate core-only and loop-only evidence paths, execute the full
+7. <a id="d7-ops-07"></a>**D7-OPS-07** — implement separate core-only and loop-only evidence paths, execute the full
    field-graph by cycle-graph by loop-role matrix, and require a substantive
    field-output effect-size sentinel — implemented without integer or topology
    authority;
-8. freeze nonnumeric failure semantics, exact required stress strata,
+8. <a id="d7-ops-08"></a>**D7-OPS-08** — freeze nonnumeric failure semantics, exact required stress strata,
    all-primary pass, coverage/abstention/recall/specificity, source/evidence
    roots, and one-attempt terminal chronology — implemented at the engine and
    schema level;
-9. commit that engine; commit exact canonical readiness/protocol/freeze
+9. <a id="d7-ops-09"></a>**D7-OPS-09** — commit that engine; commit exact canonical readiness/protocol/freeze
    artifacts as F; persist a launch intent before one exclusive claim; commit
    the store freeze, intent, claim, and descriptor as G; derive and revalidate
    exact G authorization; then perform the live source verification and atomic
    execution-start transition, the one-shot D0-D5 selection, and atomic
    publication of either its fully validated result or typed failure —
    completed with all six Cartesian-surrogate-scoped gates passing;
-10. seal the exact surrogate profile and a construction-diverse confirmation
+10. <a id="d7-ops-10"></a>**D7-OPS-10** — seal the exact surrogate profile and a construction-diverse confirmation
     admission contract before any confirmation access — implemented as the
     scope-limited D6 decision with canonical SHA-256
     `c1c3fbbb9a06e8df120755dcf159e015636d96993bd6ec3a6792312618587a07`;
@@ -794,11 +969,11 @@ below:
     commit because squash/rebase integration invalidates the authoritative
     lineage, and treat its absolute-path end-to-end reload as local archival
     evidence rather than a cross-worktree test;
-11. freeze post-selection descriptive analysis separately from the value-blind
+11. <a id="d7-ops-11"></a>**D7-OPS-11** — freeze post-selection descriptive analysis separately from the value-blind
     D7 structural gap matrix — recorded as two canonical, non-authorizing
     research artifacts; the descriptive lane cannot tune D7, and the gap lane
     cannot read the terminal values, name a candidate, or compute progress;
-12. land the spectral-moment draft foundation: for ordinary or novel
+12. <a id="d7-ops-12"></a>**D7-OPS-12** — land the spectral-moment draft foundation: for ordinary or novel
     construction, exact four-case development generation plus a closed typed
     draft reconstructed only from the authoritative committed-D6 loader receipt.
     Its current internal `v0.2` identity, now preserved as a canonical
@@ -810,7 +985,7 @@ below:
     complete same-schema construction-diversity review, selects no
     confirmation seed or execution inventory, persists no receipt, admits no
     family, exposes no runner/result, and leaves D7/D8 `not_run`;
-13. close the seed-free D7 execution topology before choosing official seeds:
+13. <a id="d7-ops-13"></a>**D7-OPS-13** — close the seed-free D7 execution topology before choosing official seeds:
     reconstruct the full authoritative parent protocol; translate all three
     stresses explicitly; generate the exact 64-primary, 192-core, and
     1,152-loop seed-slot inventory; and exercise the exact crossed
@@ -820,7 +995,7 @@ below:
     incompatibility: required cells and stress-strata bodies contain selection
     seeds and seed-bearing IDs, so structural projection equality is true
     while exact parent-manifest satisfaction and admission remain false;
-14. encode a proposed successor-only fulfillment rule without rewriting D6:
+14. <a id="d7-ops-14"></a>**D7-OPS-14** — encode a proposed successor-only fulfillment rule without rewriting D6:
     graph-axis and threshold bodies remain exact, while cells/stress receive
     distinct successor identities whose structural projections match —
     implemented as an internal `v0.1` factory and strict reader. The historical
@@ -828,7 +1003,7 @@ below:
     unchanged and separately encodes the successor review contract without a
     repository-review attestation. Historical D6 v0.1 exact admission remains
     false;
-15. create **C1**, the atomic and strictly reloadable stable seed-free
+15. <a id="d7-ops-15"></a>**D7-OPS-15** — create **C1**, the atomic and strictly reloadable stable seed-free
     candidate — completed at
     `experiments/qualification/d7_spectral_moment_confirmation_v0_1/c1-seed-free-source-set.json`.
     It binds the design, declared static-bounded construction-diversity review,
@@ -838,7 +1013,7 @@ below:
     repository-review attestation, C2 receipt, official seed, admission, or
     execution authority; declared source set is not declared Git source-set
     closure;
-16. create **C2** as the unique receipt-only child of the exact clean
+16. <a id="d7-ops-16"></a>**D7-OPS-16** — create **C2** as the unique receipt-only child of the exact clean
     post-merge C1 commit — completed. C2 binds
     `e58a8169b41be688628ab7dda583e68088d3affc`; its unique
     receipt-introduction commit is
@@ -846,7 +1021,7 @@ below:
     ancestry and every declared C1 source blob. C2 does not execute historical
     code or attest Python/native runtime, transitive dependencies, in-process
     identity, hostile-local-mutation resistance, or current compatibility;
-17. only after C2, first define the immutable replay target independently from
+17. <a id="d7-ops-17"></a>**D7-OPS-17** — only after C2, first define the immutable replay target independently from
     the launch/claim/start/outcome attempt envelope — implemented at the
     contract-specification level by the canonical, unpersisted
     `D7ReplayTargetContractSpec` and `D7AttemptEnvelopeContractSpec`. Neither is
@@ -856,7 +1031,7 @@ below:
     rather than one mutable nullable object. The future target is exactly
     Level 0 with an all-false local authority vector. Do not create a
     placeholder result to stand in for any of these objects;
-18. expose the concrete inputs needed by the later operational boundary
+18. <a id="d7-ops-18"></a>**D7-OPS-18** — expose the concrete inputs needed by the later operational boundary
     without constructing authority — **partially complete through the
     deep-internal append-only prefix evidence store and PR #23
     non-authorizing structural candidate**.
@@ -923,7 +1098,7 @@ below:
     execution, and emits no reusable capability. A caller-created record,
     digest, serialized “capability,” or token remains data rather than
     authority;
-19. implement the atomic result/failed-attempt terminal transaction,
+19. <a id="d7-ops-19"></a>**D7-OPS-19** — implement the atomic result/failed-attempt terminal transaction,
     authenticated external-witness verification/finalization path, and
     eventual runner mechanics in a separately reviewed sequence —
     **implemented as deep-internal mechanics without an official run**. The
@@ -944,7 +1119,7 @@ below:
     introduced. PR26 later fixes the separately auditable deep-internal
     zero-argument producer and exact full-inventory, aggregation, and
     full-design builders without turning item 19 into an official run;
-20. implement one fused verify-and-exclusive-start operation —
+20. <a id="d7-ops-20"></a>**D7-OPS-20** — implement one fused verify-and-exclusive-start operation —
     **implemented as deep-internal mechanics without an official invocation**.
     The only operation accepts a raw current-HEAD descriptor path and one
     zero-argument producer. It derives the Git root and current HEAD, reopens a
@@ -981,7 +1156,7 @@ below:
     drift, unproved start-parent fsync, or success/failure publication error can
     leave a visible structural start with no terminal. Item-19 external-abort
     finalization remains evidence-only and cannot accept this start type;
-21. close the code-side execution ingredients before positive authority —
+21. <a id="d7-ops-21"></a>**D7-OPS-21** — close the code-side execution ingredients before positive authority —
     **partially complete**. PR26 tracks the exact
     `requirements-d7-runtime-lock.txt`, fixes the deep-internal zero-argument
     official producer and exact full-inventory, aggregation, and full-design
@@ -1013,7 +1188,7 @@ below:
     reconstruction enforces issuer-equivalent source caps; the anchor, HEAD,
     and every bounded source-path event on their descendant ancestry must
     retain the exact anchored tree;
-22. define the item-22 transaction before operating it — **contract-spec
+22. <a id="d7-ops-22"></a>**D7-OPS-22** — define the historical item-22 transaction before operating it — **contract-spec
     foundation complete; persisted transaction and operation absent**. The
     deep-internal
     `spirallens.d7-item22-seed-supply-transaction-contract-spec.v0.1`
@@ -1097,10 +1272,10 @@ below:
     replay target, then commit their freeze receipt before launch intent. A
     claim without target publication remains non-retryable; target absence
     never proves that the supplier was not invoked;
-23. after that committed D7 design-freeze receipt exists, execute the separate
+23. <a id="d7-ops-23"></a>**D7-OPS-23** — after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
     a new version and review;
-24. before the first official fused invocation, create and commit the closed
+24. <a id="d7-ops-24"></a>**D7-OPS-24** — before the first official fused invocation, create and commit the closed
     nine-member descriptor and pass strict verification-evidence replay/rejoin,
     recognizing that structural replay preserves but does not recompute or
     independently reauthenticate its live-observation digests and that terminal
@@ -1112,22 +1287,23 @@ below:
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status. Same-family new seeds remain replication and
     cannot satisfy this item;
-25. only then begin the separate representation-native F0-F4 selection lane;
+25. <a id="d7-ops-25"></a>**D7-OPS-25** — only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
-26. establish the same-substrate field/core/loop join, persist the frozen
+26. <a id="d7-ops-26"></a>**D7-OPS-26** — establish the same-substrate field/core/loop join, persist the frozen
     same-field core-degeneracy scalar and nested-radius profile, and retain the
     architecture-accounted sampled-winding estimate distribution with its
     unrounded cycle totals and residuals; only when the convention permits it
     may calibration-side integer/topology eligibility be assessed;
-27. qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
+27. <a id="d7-ops-27"></a>**D7-OPS-27** — qualify the opposite-sign dipole controls and the atlas-to-ANN-to-cycle
     detection-limit surface over injection amplitude, declared
     perturbation/noise, and sampling density, including density-stratified
     exact-recall and graph-family matched-class gates;
-28. apply the preregistered M1 transition/stop rule. Pythia-70M remains
-    plumbing-only; an exhausted qualification budget ends `insufficient`
-    rather than extending instrumentation indefinitely; and
-29. only after those separately reviewed M1 gates prepare and externally
+28. <a id="d7-ops-28"></a>**D7-OPS-28** — apply the preregistered `SCI-S1` transition/stop rule. Pythia-70M remains
+    plumbing-only; complete evaluable adverse gates end `fail`, while an
+    exhausted budget without adequate evaluability ends `insufficient`, rather
+    than extending instrumentation or relabeling one as the other; and
+29. <a id="d7-ops-29"></a>**D7-OPS-29** — only after those separately reviewed `SCI-S1` gates prepare and externally
     witness a new Pythia-160M subject manifest with new IDs under the
     no-subject-value boundary, while keeping Pythia-70M outcomes unable to
     select any Pythia-160M choice.
