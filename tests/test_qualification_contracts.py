@@ -1101,6 +1101,52 @@ def test_persistence_round_trip_keeps_exact_protocol_join(tmp_path: Path) -> Non
         )
 
 
+def test_protocol_loader_checks_source_digest_before_malformed_json(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "malformed-protocol.json"
+    path.write_bytes(b"not-json")
+
+    with pytest.raises(
+        QualificationContractError,
+        match="source SHA-256 does not match the expected digest",
+    ):
+        load_qualification_protocol(
+            path,
+            expected_source_sha256="0" * 64,
+            expected_canonical_sha256="0" * 64,
+        )
+
+
+def test_result_loader_checks_source_digest_before_malformed_json(
+    tmp_path: Path,
+) -> None:
+    protocol = _protocol()
+    protocol_path = tmp_path / "protocol.json"
+    protocol_identity = write_qualification_protocol(protocol_path, protocol)
+    loaded_protocol = load_qualification_protocol(
+        protocol_path,
+        expected_source_sha256=protocol_identity.source_sha256,
+        expected_canonical_sha256=protocol_identity.canonical_sha256,
+    )
+    freeze, claim = _selection_companions(protocol)
+    result_path = tmp_path / "malformed-result.json"
+    result_path.write_bytes(b"not-json")
+
+    with pytest.raises(
+        QualificationContractError,
+        match="source SHA-256 does not match the expected digest",
+    ):
+        load_qualification_result(
+            result_path,
+            protocol=loaded_protocol,
+            expected_source_sha256="0" * 64,
+            expected_canonical_sha256="0" * 64,
+            selection_freeze_artifact=freeze,
+            selection_attempt_claim=claim,
+        )
+
+
 def test_d3_evidence_requires_pipeline_rerun_and_both_fingerprints() -> None:
     evidence_id = STATIC_REQUIRED_EVIDENCE_IDS[QualificationGateId.D3][0]
     with pytest.raises(QualificationContractError, match="pipeline rerun"):

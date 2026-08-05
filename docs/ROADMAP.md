@@ -700,9 +700,15 @@ provisional surfaces are not yet separated from reusable library contracts.
 
 Deliverables:
 
-- a small common evidence kernel for canonical envelopes, digest-before-parse,
-  claim ceilings, authority facts, typestate transitions, atomic/no-replace
-  publication, and historical pin verification;
+- small authority-free evidence primitives for bounded canonical JSON bytes and
+  digest-before-parse. A shared primitive owns observation order only; typed
+  reconstruction joins and all claim, authority, chronology, publication, and
+  repository meanings remain with each domain contract;
+- explicit policy-equivalence matrices before any consolidation of claim
+  ceilings, authority facts, typestate transitions, atomic/no-replace
+  publication, or historical pin verification. Those contracts remain
+  version-owned and domain-local until two consumers prove that both the
+  accepted inputs and failure semantics are identical;
 - item-specific evidence contracts expressed as declarative schemas and data
   wherever doing so preserves their scientific distinctions;
 - explicit `Workspace` or `RepositoryContext` injection for operations that
@@ -726,9 +732,10 @@ Deliverables:
 
 Exit criteria:
 
-- the common kernel has two independent consumers and materially reduces
-  duplicated evidence plumbing without merging holonomy, winding, or other
-  scientifically distinct types;
+- every promoted common primitive has two independent consumers and materially
+  reduces duplicated evidence plumbing without merging holonomy, winding,
+  authority vocabularies, publication outcomes, or other scientifically and
+  operationally distinct types;
 - wheel-installed library operations declare whether they are portable or
   require an explicit repository context;
 - the reference adapter passes an internal conformance suite, with
@@ -738,6 +745,36 @@ Exit criteria:
 - synthetic/conformance fixtures for `pass`, `fail`, `insufficient`, and
   `not_run` can be loaded, rendered, and round-tripped without promotion or
   loss. No completed `SCI-S1` attempt is required for entry into `LIB-L1`.
+
+The first internal foothold is an authority-free canonical-JSON binding used
+by both instrument-artifact and qualification protocol/result loaders. It fixes
+one observed parse-before-source-digest divergence without changing serialized
+bytes or public exports. It is not a claim/authority envelope, publisher, Git
+reader, typed reconstruction policy, or completion of this milestone. Before
+another common evidence primitive is added, migrations of this binding must
+return its cumulative production-line delta to zero or below; the `LIB-L0` exit
+still requires material net removal of local plumbing.
+
+The pay-down gate is recorded as `LIB-L0-CSB-001`:
+
+- baseline commit:
+  `41e1893f878a00c5e73ac101296aefe7f1ca5ae1`;
+- initial production scope:
+  `src/spirallens/core/_canonical_source.py`,
+  `src/spirallens/instrument_contracts/artifact_loader.py`, and
+  `src/spirallens/qualification/persistence.py`;
+- counter: physical lines computed with Python `str.splitlines()` over those
+  files, treating the absent baseline kernel as zero;
+- baseline/current balance: `568 → 627`, therefore `+59` lines of explicit
+  extraction debt;
+- closure rule: later files may enter this ledger only when their production
+  diff is limited to adopting the same canonical-source binding. Their
+  deletion/addition balance is added to `LIB-L0-CSB-001`; no second common
+  evidence primitive may be introduced until the cumulative balance is `<= 0`.
+
+Tests and documentation are excluded from this counter but remain required for
+each migration. Deleting validation, domain-specific error translation, or
+typed reconstruction checks does not qualify as debt repayment.
 
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
