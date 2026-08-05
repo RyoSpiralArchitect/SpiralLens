@@ -10,6 +10,7 @@ import pytest
 
 import spirallens.qualification.preparation as qualification_preparation
 import spirallens.qualification.runner as qualification_runner
+from spirallens._repository_context import RepositoryContext
 from spirallens.instrument_contracts import load_hypothesis_registry
 from spirallens.qualification import (
     CLOSED_D0_D5_KNOWN_SEED_EXCLUSION_REGISTRY,
@@ -86,7 +87,10 @@ def _git(repository: Path, *arguments: str) -> bytes:
     ).stdout
 
 
-def _readiness_repository(tmp_path: Path) -> tuple[Path, str, Path]:
+def _readiness_repository(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[Path, str, Path]:
     repository = tmp_path / "repository"
     module_path = repository / "src" / "spirallens" / "qualification" / "demo.py"
     registry_path = repository / "protocols" / "registry.yaml"
@@ -110,6 +114,41 @@ def _readiness_repository(tmp_path: Path) -> tuple[Path, str, Path]:
     _git(repository, "add", ".")
     _git(repository, "commit", "-qm", "seed-free preparation sources")
     commit = _git(repository, "rev-parse", "HEAD").decode("ascii").strip()
+
+    # This isolated Git fixture exercises the later source-binding chronology,
+    # not import-origin identity. Dedicated RepositoryContext tests cover the
+    # fail-closed A/B-worktree boundary. Simulate the two imported files as
+    # physically joined while preserving the fixture's intentionally tiny tree.
+    original_match = (
+        qualification_preparation.RepositoryContext.matches_imported_file
+    )
+
+    def match_fixture_import(
+        context: RepositoryContext,
+        *,
+        imported_file: str | Path | None,
+        repository_path: str,
+    ) -> bool:
+        if (
+            context.root == repository.resolve()
+            and repository_path
+            in {
+                "src/spirallens/qualification/preparation.py",
+                "src/spirallens/qualification/runner.py",
+            }
+        ):
+            return True
+        return original_match(
+            context,
+            imported_file=imported_file,
+            repository_path=repository_path,
+        )
+
+    monkeypatch.setattr(
+        qualification_preparation.RepositoryContext,
+        "matches_imported_file",
+        match_fixture_import,
+    )
     return repository, commit, module_path
 
 
@@ -398,7 +437,10 @@ def test_closed_protocol_factory_does_not_generate_phantom_values(
 
 
 def test_current_engine_binding_covers_exact_runner_source_closure() -> None:
-    binding = build_current_qualification_engine_binding(engine_commit="a" * 40)
+    binding = build_current_qualification_engine_binding(
+        engine_commit="a" * 40,
+        repository_root=Path(__file__).resolve().parents[1],
+    )
 
     assert tuple(item.module for item in binding.modules) == tuple(
         sorted(REQUIRED_ENGINE_MODULES)
@@ -416,7 +458,7 @@ def test_seed_free_readiness_precedes_supplier_and_returns_bindable_receipt(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, commit, _module_path = _readiness_repository(tmp_path)
+    repository, commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -485,7 +527,7 @@ def test_preseed_roundtrip_failure_leaves_supplier_unopened(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, commit, _module_path = _readiness_repository(tmp_path)
+    repository, commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -541,7 +583,7 @@ def test_preseed_path_digest_and_tamper_mismatches_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, commit, _module_path = _readiness_repository(tmp_path)
+    repository, commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -598,7 +640,7 @@ def test_invalid_engine_commit_fails_before_seed_supplier(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, _commit, _module_path = _readiness_repository(tmp_path)
+    repository, _commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -623,7 +665,7 @@ def test_dirty_engine_source_fails_before_seed_supplier(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, commit, module_path = _readiness_repository(tmp_path)
+    repository, commit, module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -649,7 +691,7 @@ def test_noncanonical_referent_fails_before_seed_supplier(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, _commit, _module_path = _readiness_repository(tmp_path)
+    repository, _commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",
@@ -683,7 +725,7 @@ def test_seed_free_readiness_api_has_no_seed_input(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    repository, commit, _module_path = _readiness_repository(tmp_path)
+    repository, commit, _module_path = _readiness_repository(tmp_path, monkeypatch)
     monkeypatch.setattr(
         qualification_runner,
         "REQUIRED_ENGINE_MODULES",

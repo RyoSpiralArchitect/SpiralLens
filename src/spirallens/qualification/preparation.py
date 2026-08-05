@@ -19,6 +19,7 @@ from itertools import product
 from pathlib import Path
 from typing import ClassVar
 
+from spirallens._repository_context import RepositoryContext
 from spirallens.core.canonical import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -655,7 +656,7 @@ def publish_closed_d0_d5_preseed_readiness_artifact(
 def build_current_qualification_engine_binding(
     *,
     engine_commit: str,
-    repository_root: str | Path | None = None,
+    repository_root: str | Path,
 ) -> EngineBinding:
     """Bind the current complete runner closure to one declared commit.
 
@@ -664,13 +665,32 @@ def build_current_qualification_engine_binding(
     equals these declarations.
     """
 
-    from .runner import REQUIRED_ENGINE_MODULES
+    from . import runner as runner_module
 
-    root = (
-        Path(__file__).resolve().parents[3]
-        if repository_root is None
-        else Path(repository_root)
+    context = RepositoryContext(
+        root=Path(os.path.abspath(Path(repository_root))),
     )
+    root = context.root
+    imported_sources = (
+        (
+            __file__,
+            "src/spirallens/qualification/preparation.py",
+            "qualification preparation",
+        ),
+        (
+            runner_module.__file__,
+            "src/spirallens/qualification/runner.py",
+            "qualification runner closure",
+        ),
+    )
+    for imported_file, repository_path, label in imported_sources:
+        if not context.matches_imported_file(
+            imported_file=imported_file,
+            repository_path=repository_path,
+        ):
+            raise QualificationContractError(
+                f"{label} import origin differs from repository_root"
+            )
 
     return EngineBinding(
         repository="RyoSpiralArchitect/SpiralLens",
@@ -684,7 +704,7 @@ def build_current_qualification_engine_binding(
                     ).read_bytes()
                 ),
             )
-            for module in sorted(REQUIRED_ENGINE_MODULES)
+            for module in sorted(runner_module.REQUIRED_ENGINE_MODULES)
         ),
         official_executables=tuple(
             RepositoryFileDigest(

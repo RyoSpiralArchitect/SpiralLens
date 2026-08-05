@@ -1039,6 +1039,14 @@ directories while retaining the frozen output basename
 `pythia70-public-example-plumbing-v0.1`; it must not replace the canonical
 receipt.
 
+The current provisional CLI additionally requires
+`--repository-root /absolute/path/to/SpiralLens`. That explicit context was
+introduced after the historical invocation above and therefore is not inserted
+retroactively into its provenance. It grants no Git or scientific authority;
+the runner first requires its imported runner and adapter files to be the same
+physical files named by that root, then performs its existing source and
+protocol checks.
+
 The frozen protocol also binds implementation commit
 `de24a2b73fa408d49ed4252c8a18332554978296`, and the runner requires that commit
 to remain an ancestor of the execution checkout. Integration therefore must
