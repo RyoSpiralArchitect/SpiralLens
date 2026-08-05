@@ -746,35 +746,40 @@ Exit criteria:
   `not_run` can be loaded, rendered, and round-tripped without promotion or
   loss. No completed `SCI-S1` attempt is required for entry into `LIB-L1`.
 
-The first internal foothold is an authority-free canonical-JSON binding used
-by both instrument-artifact and qualification protocol/result loaders. It fixes
-one observed parse-before-source-digest divergence without changing serialized
-bytes or public exports. It is not a claim/authority envelope, publisher, Git
-reader, typed reconstruction policy, or completion of this milestone. Before
-another common evidence primitive is added, migrations of this binding must
-return its cumulative production-line delta to zero or below; the `LIB-L0` exit
-still requires material net removal of local plumbing.
+The first attempted internal foothold was an authority-free canonical-JSON
+source binding shared by the instrument-artifact and qualification loaders.
+A scoped migration inventory found no third semantically compatible consumer:
+every candidate either increased production lines, changed domain-specific
+errors, or crossed a frozen chronology boundary. The abstraction was therefore
+retired instead of being spread into unrelated evidence paths. The portable
+instrument loader again owns its direct domain implementation; qualification
+retains the observed digest-before-parse correction in one consumer-local
+helper. Serialized bytes, public exports, artifact schemas, typed
+reconstruction, and top-level domain exception classes, messages, and
+validation order are unchanged; the retired private cause chain is removed.
 
-The pay-down gate is recorded as `LIB-L0-CSB-001`:
+The completed pay-down gate is recorded as `LIB-L0-CSB-001`:
 
 - baseline commit:
   `41e1893f878a00c5e73ac101296aefe7f1ca5ae1`;
-- initial production scope:
-  `src/spirallens/core/_canonical_source.py`,
-  `src/spirallens/instrument_contracts/artifact_loader.py`, and
-  `src/spirallens/qualification/persistence.py`;
+- production scope and final physical-line balance:
+  - the absent/private kernel: `0 → 0`;
+  - `src/spirallens/instrument_contracts/artifact_loader.py`: `128 → 128`;
+  - `src/spirallens/qualification/persistence.py`: `440 → 438`;
+  - total: `568 → 566`, therefore `-2` cumulative extraction debt;
 - counter: physical lines computed with Python `str.splitlines()` over those
   files, treating the absent baseline kernel as zero;
-- baseline/current balance: `568 → 627`, therefore `+59` lines of explicit
-  extraction debt;
-- closure rule: later files may enter this ledger only when their production
-  diff is limited to adopting the same canonical-source binding. Their
-  deletion/addition balance is added to `LIB-L0-CSB-001`; no second common
-  evidence primitive may be introduced until the cumulative balance is `<= 0`.
+- closure rule: the original `<= 0` requirement is satisfied by abstraction
+  reversal, not by weakening the counter, deleting validation, or enrolling a
+  semantically incompatible consumer.
 
 Tests and documentation are excluded from this counter but remain required for
-each migration. Deleting validation, domain-specific error translation, or
-typed reconstruction checks does not qualify as debt repayment.
+the reversal. The gate's successful rejection is not completion of `LIB-L0`:
+any future common primitive must independently have two genuine consumers and
+materially remove duplicated production plumbing. Retiring this internal
+module changes current source-tree identity only; frozen artifacts and
+historical pins remain unchanged, and any exact-current readiness re-anchor
+must be a new versioned observation rather than a rewrite.
 
 The first repository-context foothold is likewise internal and
 non-authorizing. `build_current_qualification_engine_binding()` and
