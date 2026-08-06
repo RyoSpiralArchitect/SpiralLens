@@ -1,7 +1,8 @@
 # Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan
 
-- **Status:** frozen planning artifacts; the fixed-path descriptive runner is
-  implemented but no descriptive result or confirmation has run
+- **Status:** frozen planning artifacts; the item-22 full-design-freeze receipt
+  is committed and the fixed-path item-23 descriptive runner is ready, but no
+  descriptive result or confirmation has run
 - **Claim ceiling:** Level 0
 - **Claim delta:** none
 - **Scope:** the exact PR #9 Cartesian-surrogate terminal and PR #10 D6 decision
@@ -20,9 +21,9 @@ schedule.
 
 The D7 gap review has a different chronology. It may inspect the already
 sealed D6 admission contract and tracked implementation surfaces, but it may
-not inspect the terminal values or any unopened confirmation values. Combining
-these two activities in one artifact would allow a descriptive result to leak
-into the design of the independent confirmation.
+not inspect the terminal values or any not-yet-observed confirmation outcomes.
+Combining these two activities in one artifact would allow a descriptive
+result to leak into the design of the independent confirmation.
 
 PR #11 therefore freezes two separate canonical artifacts:
 
@@ -312,13 +313,33 @@ parents: 26 are available and the full-scope amplitude/identifiability/support
 separation is explicitly blocked because its historical main-array values were
 not persisted. Its three exact Python files are excluded from the wheel and
 are members of the reviewed exact-current source/runtime re-anchor now tracked
-on this branch. The Level-0 item-22 target is also persisted at
-`publication-complete-unfrozen`, but neither source nor target is an execution
-or result. Item 23 may run only after a distinct target
-review/freeze-authorization commit and a strictly later committed receipt bind
-the full-design, replay-target, and atomic target-publication records. The runner
-separately verifies the frozen target tree and that its result path was absent
-when the freeze first entered history. A launch intent or closed fused
+on this branch. The Level-0 item-22 target was introduced by
+`f2c1e032f153d369eed99c1bbd467da518b5b9fb` at
+`publication-complete-unfrozen`. The PR #39 merge
+`6ea0ad761ebcf9e9aedb21319747b6489db66c52` is the designated repository-local
+chronology checkpoint named by the receipt, and the strictly later
+`f07962db96c4e59020c32e1b27ae8598e69ef6d1` uniquely introduces the receipt
+that binds the full design, replay target, and atomic target-publication
+record. Strict observation therefore now reports `full-design-frozen`, and the
+item-23 prerequisite surface is ready. Neither the source, target, receipt, nor
+readiness state is an execution or result.
+
+The Git checkpoint proves the ancestry
+`f2c1e032f153d369eed99c1bbd467da518b5b9fb` <
+`6ea0ad761ebcf9e9aedb21319747b6489db66c52` <
+`f07962db96c4e59020c32e1b27ae8598e69ef6d1`, unique receipt introduction,
+and unchanged frozen-member blobs. Platform commit signature evidence is
+separate: the receipt does not prove human-signed authorization or review
+content, an independent witness, actor identity, or wall-clock ordering. The
+receipt keeps `freeze_verified=false`; all three bindings keep
+`authoritative_source_loaded=false` and `identity_authenticated=false`.
+Accordingly it grants no launch, execution, semantic, causal, topological, or
+scientific authority. Launch intent, attempt envelope, item-23 result, D7
+result, and D8 replay remain absent or `not_run`.
+
+Item 23 may now run only as the separate no-replace descriptive publication.
+The runner separately verifies the frozen target tree and that its result path
+was absent when the freeze first entered history. A launch intent or closed fused
 descriptor is a later artifact, is not an item-23 prerequisite, and is not an
 item-23 analysis input. The runner must then review the frozen descriptive
 plan and publish one separate result artifact that:
@@ -414,8 +435,9 @@ support, confirmation source closure, lifecycle, or evidence. D7 should reuse
 and bind these kernels rather than reimplement them; their existence does not
 count as confirmation.
 
-Unopened Cartesian seeds remain same-family replication. A new source digest,
-implementation label, or seed cannot create construction diversity.
+A not-yet-executed Cartesian target remains same-family replication. A new
+source digest, implementation label, or seed cannot create construction
+diversity.
 
 ## 9. D7 implementation sequence
 
@@ -509,8 +531,8 @@ Subject to review at each transition, the current full sequence is:
    descriptive-result namespace is still absent;
 4. only then execute and publish the separate post-selection descriptive
    result; any later D7 design change requires a new version and review;
-5. create the closed launch descriptor and run one unopened
-   construction-diverse D7 confirmation;
+5. create the closed launch descriptor and run one preregistered,
+   not-yet-executed construction-diverse D7 confirmation;
 6. run one isolated full-bundle D8 replay;
 7. begin the separate representation-native F0-F4 selection lane;
 8. independently confirm and replay the selected representation instrument;
@@ -525,6 +547,11 @@ Subject to review at each transition, the current full sequence is:
     candidate, apply the already-frozen topology rules without retuning; and
 14. only after a structural candidate exists, run held-out semantic, SAE, and
     causal tests.
+
+Steps 1-3 are now represented by committed history through the item-22
+full-design-freeze receipt. Step 4, the separate item-23 descriptive artifact,
+is the next transition; no launch, confirmation, or D8 action is folded into
+it.
 
 Negative or insufficient results do not invalidate the library. They constrain
 the scientific claim while still exercising canonical codecs, source/evidence

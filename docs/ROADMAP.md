@@ -208,7 +208,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor and one Level-0 `D7-OPS-22` claim/invocation/inventory/six-member target are persisted at `publication-complete-unfrozen`; full-design freeze, descriptor/intent, official run, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor, one Level-0 `D7-OPS-22` claim/invocation/inventory/six-member target, and its later full-design-freeze receipt are persisted; strict observation reports `full-design-frozen`, while `freeze_verified=false`, every receipt binding retains `authoritative_source_loaded=false` and `identity_authenticated=false`, and descriptor/intent, item-23 result, official run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -1248,7 +1248,7 @@ below:
     reconstruction enforces issuer-equivalent source caps; the anchor, HEAD,
     and every bounded source-path event on their descendant ancestry must
     retain the exact anchored tree;
-22. <a id="d7-ops-22"></a>**D7-OPS-22** — record one historical item-22 transaction artifact — **transaction recorded; `publication-complete-unfrozen`; Level 0**.
+22. <a id="d7-ops-22"></a>**D7-OPS-22** — record one historical item-22 transaction and its later freeze receipt — **`full-design-frozen`; Level 0**.
     The repository-root-only operation accepts no caller supplier, seed, claim key, layout, or authority object; it reloads the historical chain and reviewed exact-current re-anchor, durably claims before one fixed supplier-function invocation, excludes both frozen seed registries, and atomically publishes the closed target without replacement. Import and tests create no tracked artifact. Exactly one tracked transaction exists; its artifact claims one honest-local invocation, while claim, invocation, inventory-output, and transition verification fields remain false. It is not independent proof of an exactly-once supplier call, unseen values, or global independence. The fixed
     `item22-seed-supply/` root has
     `exclusive-seed-supply-claim.json`, `seed-supply-abort.json`, atomic
@@ -1326,16 +1326,34 @@ below:
     contract orders live recheck → durable claim → supplier entry → publication,
     and the persisted artifacts claim that chronology, but their verification
     fields remain false and do not independently prove the historical
-    invocation or transition timing. The strict state is
-    `publication-complete-unfrozen`, the claim ceiling is Level 0, all item-22
-    target authority flags are false, and abort evidence is absent. The next
-    steps are a distinct target review/authorization commit followed by a
-    separate committed freeze receipt before launch intent. A
+    invocation or transition timing. That transaction was introduced by
+    `f2c1e032f153d369eed99c1bbd467da518b5b9fb` at
+    `publication-complete-unfrozen`. The later receipt records that commit as
+    `freeze_commit`, records the PR #39 merge
+    `6ea0ad761ebcf9e9aedb21319747b6489db66c52` as its designated
+    repository-local chronology checkpoint, and was uniquely introduced by
+    `f07962db96c4e59020c32e1b27ae8598e69ef6d1`. Git therefore establishes the
+    strict ancestry
+    `f2c1e032f153d369eed99c1bbd467da518b5b9fb` <
+    `6ea0ad761ebcf9e9aedb21319747b6489db66c52` <
+    `f07962db96c4e59020c32e1b27ae8598e69ef6d1`, the receipt's unique
+    introduction, and the unchanged frozen-member blobs. Platform commit
+    signature evidence is separate: the receipt does not establish
+    human-signed authorization or review content, an independent witness,
+    actor identity, or wall-clock ordering. The receipt itself records
+    `freeze_verified=false`; its three bindings record
+    `authoritative_source_loaded=false` and `identity_authenticated=false`.
+    Consequently the strict current state is `full-design-frozen`, but the
+    claim ceiling remains Level 0, all item-22 target authority flags remain
+    false, and the receipt grants no launch, execution, semantic, causal,
+    topological, or scientific authority. Abort evidence, launch intent,
+    attempt envelope, result, and D7/D8 advancement remain absent. The next
+    artifact is the separate item-23 descriptive result, not launch intent. A
     claim without target publication remains non-retryable; target absence
     never proves that the supplier was not invoked;
-23. <a id="d7-ops-23"></a>**D7-OPS-23** — after that committed D7 design-freeze receipt exists, execute the separate
-    descriptive result without changing any D7 design byte; any change requires
-    a new version and review. The repository-only fixed-path source now derives
+23. <a id="d7-ops-23"></a>**D7-OPS-23** — execute the separate descriptive result without changing any D7 design byte — **ready; not run; Level 0**.
+    The committed D7 design-freeze receipt now satisfies the additional
+    metadata prerequisite, and the repository-only fixed-path source derives
     all 27 frozen outputs from committed parents, with exactly 26 available and
     one full-scope output blocked by historically unpersisted D2 values. Its
     sole additional analysis-input class is the committed full-design-freeze
@@ -1446,9 +1464,11 @@ This library slice adds, without changing that generic behavior:
 - the deep-internal item-22 repository-local one-shot operation, which
   implements claim-before-supplier, exclusion-clean OS-CSPRNG supply, and atomic
   target publication. The reviewed re-anchor and one tracked Level-0 target
-  instance now exist at `publication-complete-unfrozen`. Historical item-21
-  reload remains valid; freeze, launch, execution, and scientific authority
-  remain absent.
+  were historically introduced at `publication-complete-unfrozen`; a strictly
+  later receipt now advances the observed state to `full-design-frozen` without
+  setting `freeze_verified` or any authority fact true. Historical item-21
+  reload remains valid; launch, execution, and scientific authority remain
+  absent.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1486,9 +1506,11 @@ cannot attest its future commit or declared Git source-set closure. The
 choice-free C2 receipt is now recorded as the unique receipt-only child of the
 exact clean post-merge C1 commit. It does not attest runtime or transitive
 dependencies. The separate canonical replay-target and attempt-envelope
-contract specifications remain distinct. One Level-0 replay-target instance is
-now persisted inside the unfrozen item-22 target; no attempt-envelope instance
-is persisted. Step 18 is now partially complete: two deep-internal modules
+contract specifications remain distinct. One Level-0 replay-target instance
+was originally introduced inside the item-22 target at
+`publication-complete-unfrozen` and is now bound by the separate
+full-design-freeze receipt; no attempt-envelope instance is persisted. Step 18
+is now partially complete: two deep-internal modules
 define the concrete canonical record schemas and pure structural joins for
 declaration through consumption, and four further deep-internal modules now
 close the canonical result-component, absence-receipt, failure-payload, and
@@ -1563,11 +1585,14 @@ that order, strictly reload/rejoin all three, and complete item 21 at the final
 corrected tip. C2 and the existing caller-constructible false-authority records
 cannot supply or replace them. Those later actions were absent at the final
 corrected `D7-OPS-21` tip. The current tip now tracks the reviewed exact-current
-re-anchor and one item-22 exclusive claim, a receipt claiming one honest-local invocation,
-official seed inventory, and atomic six-member target. Strict reload reports
-`publication-complete-unfrozen`; the target remains Level 0 and every authority
-flag is false. The committed freeze, launch intent, and nine-member descriptor
-remain absent.
+re-anchor; one item-22 exclusive claim; a receipt claiming one honest-local
+invocation; the official seed inventory and atomic six-member target; and the
+later full-design-freeze receipt. The target transaction was historically
+introduced at `publication-complete-unfrozen`; strict reload now reports
+`full-design-frozen`. The freeze receipt records `freeze_verified=false`, and
+its bindings authenticate no source or identity. The target remains Level 0
+and every authority flag is false. Launch intent, the nine-member descriptor,
+and the item-23 result remain absent.
 No official fused invocation,
 start, terminal/result, D7 result, or D8 replay exists; D7 and D8 remain
 `not_run`. Strict verification-evidence replay/rejoin, temporary Git/runtime
