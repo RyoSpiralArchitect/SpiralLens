@@ -112,12 +112,15 @@ def _new_repository(tmp_path: Path) -> _RepositoryLineage:
         "synthetic-runtime==1.0\n",
         encoding="utf-8",
     )
+    for repository_path in preseed.fused_start._REPOSITORY_ONLY_SOURCE_PATHS:
+        _write(root, repository_path, (REPOSITORY / repository_path).read_bytes())
     source_commit = _commit(
         root,
         "item-21 source anchor",
         "src",
         "pyproject.toml",
         preseed.fused_start.D7_RUNTIME_LOCK_REPOSITORY_PATH,
+        *preseed.fused_start._REPOSITORY_ONLY_SOURCE_PATHS,
     )
     return _RepositoryLineage(root, pr26_commit, source_commit)
 
@@ -1137,6 +1140,40 @@ def test_historical_source_inventory_enforces_live_member_cap(
             lineage.root,
             oversized_commit,
             require_current_equality=False,
+        )
+
+
+def test_repository_only_members_are_live_required_but_not_retroactive(
+    tmp_path: Path,
+) -> None:
+    lineage = _new_repository(tmp_path)
+    for repository_path in preseed.fused_start._REPOSITORY_ONLY_SOURCE_PATHS:
+        (lineage.root / repository_path).unlink()
+    without_item23 = _commit(
+        lineage.root,
+        "historical source without future item23 modules",
+        *preseed.fused_start._REPOSITORY_ONLY_SOURCE_PATHS,
+    )
+
+    historical = preseed._source_inventory(
+        lineage.root,
+        without_item23,
+        require_current_equality=False,
+    )
+    historical_paths = {
+        str(member["repository_path"]) for member in historical["members"]
+    }
+    assert not set(preseed.fused_start._REPOSITORY_ONLY_SOURCE_PATHS).intersection(
+        historical_paths
+    )
+    with pytest.raises(
+        QualificationContractError,
+        match="lacks its fixed code or dependency-lock surface",
+    ):
+        preseed._source_inventory(
+            lineage.root,
+            without_item23,
+            require_current_equality=True,
         )
 
 

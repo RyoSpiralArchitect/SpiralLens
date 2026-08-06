@@ -669,11 +669,11 @@ The reviewed successor order is:
    and review the fixed-path exact-current re-anchor bound to item 21; only then
    acquire the
    seed-supply claim, invoke the supplier once, atomically publish the
-   seed-bearing full design and target, commit the freeze, and persist launch
-   intent; execute item 23's separate descriptive result without changing any
-   D7 design byte; and
+   seed-bearing full design and target, and commit the freeze; execute item
+   23's separate descriptive result without changing any D7 design byte; and
 7. before item 24, create and commit the closed nine-member fused descriptor
-   and pass strict verification-evidence replay/rejoin, temporary Git/runtime
+   and its launch intent, neither of which is an item-23 prerequisite or input;
+   then pass strict verification-evidence replay/rejoin, temporary Git/runtime
    end-to-end validation, and authoritative-start-compatible external-abort
    integration. Item 24 is the first official fused invocation and must yield
    the exact terminal outcome before isolated byte replay can qualify.

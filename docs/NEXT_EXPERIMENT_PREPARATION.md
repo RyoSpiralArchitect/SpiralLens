@@ -1068,7 +1068,7 @@ eligibility, retry/replay authority, D7, or D8. No supplier or official seed
 was used, and no official execution occurred.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The remaining order is source-final item-23 implementation → reviewed exact-current re-anchor → one-shot item-22 target → freeze and launch intent → item-23 descriptive artifact → closed descriptor → one item-24 invocation/terminal → byte-identical replay.
+The remaining order is source-final item-23 implementation → reviewed exact-current re-anchor → one-shot item-22 target → committed freeze → item-23 descriptive artifact → closed launch descriptor → one item-24 invocation/terminal → byte-identical replay. Launch intent is not an item-23 prerequisite or input.
 
 This branch performs none of those artifact steps; all official outcomes remain absent or `not_run`.
 

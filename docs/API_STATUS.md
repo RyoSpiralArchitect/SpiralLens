@@ -55,11 +55,17 @@ import-origin comparison prevents executing one checkout while attributing its
 source binding to another; it is not a Git or scientific-authority proof.
 
 The PR #11 post-D6 descriptive plan and value-blind D7 gap matrix are canonical
-research artifacts, not Python APIs. They intentionally add no analysis
-runner, writer, generic mapping validator, family-admission helper, or
-promotion surface. The descriptive artifact is also non-executable until a
-committed full-D7-design freeze receipt exists. Reusable analysis primitives
-remain extraction candidates until a second independent consumer exists.
+research artifacts, not Python APIs. Their historical bytes intentionally add
+no runner, writer, family-admission helper, or promotion surface. Later
+repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
+derivation and repository-bound no-replace lifecycle. They are outside the
+installed wheel and export nothing from the package or qualification
+namespace. The exact three files are mandatory members of the next reviewed
+source/runtime re-anchor; no such re-anchor receipt exists on this source
+branch. The operation remains non-executable in the
+official chronology until a committed full-D7-design freeze receipt exists,
+and no result artifact is present. Reusable analysis primitives remain
+extraction candidates until a second independent consumer exists.
 
 The spectral-moment four-case generator and
 `spirallens.qualification.confirmation_protocol` foundation are internal
@@ -365,7 +371,7 @@ The `D7-OPS-21` chain remains historically reloadable, while current readiness i
 
 The external-abort path now strict-reloads a `D7-OPS-20` structural start and reuses the signed no-replace terminal transaction without granting authority, execution, scientific, retry, replay, or D8 status.
 
-This branch still contains no claim, seed, target, freeze, launch descriptor, official run, D7, or D8. The chronology is source-final item-23 implementation → reviewed re-anchor → item-22 target → freeze and launch intent → item-23 descriptive artifact → closed descriptor → official item 24 → replay. Canonical bytes and signed evidence do not self-promote into authority.
+This branch still contains no claim, seed, target, freeze, launch descriptor, official run, D7, or D8. The chronology is source-final item-23 implementation → reviewed re-anchor → item-22 target → committed freeze → item-23 descriptive artifact → closed launch descriptor → official item 24 → replay. Launch intent is not an item-23 prerequisite or analysis input. Canonical bytes and signed evidence do not self-promote into authority.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

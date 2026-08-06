@@ -730,6 +730,7 @@ def _source_inventory(
             repository_path == "pyproject.toml"
             or repository_path == fused_start.D7_RUNTIME_LOCK_REPOSITORY_PATH
             or repository_path.startswith("src/spirallens/")
+            or repository_path in fused_start._REPOSITORY_ONLY_SOURCE_PATHS
         )
         if not included:
             continue
@@ -772,10 +773,13 @@ def _source_inventory(
         )
     members.sort(key=lambda item: str(item["repository_path"]))
     members_by_path = {str(member["repository_path"]): member for member in members}
-    for required_regular_path in (
+    required_regular_paths = [
         "pyproject.toml",
         fused_start.D7_RUNTIME_LOCK_REPOSITORY_PATH,
-    ):
+    ]
+    if require_current_equality:
+        required_regular_paths.extend(fused_start._REPOSITORY_ONLY_SOURCE_PATHS)
+    for required_regular_path in required_regular_paths:
         required_member = members_by_path.get(required_regular_path)
         if required_member is None or required_member.get("git_mode") != "100644":
             raise QualificationContractError(
