@@ -433,8 +433,9 @@ append-only chronology for one future attempt. The choice-free
 the pinned committed-C2 verifier; it accepts neither a caller-supplied source
 closure nor expected digest. Both specification bytes remain in-memory only.
 One concrete Level-0 replay-target instance is now persisted inside the
-unfrozen item-22 target, but no attempt-envelope instance exists and the target
-grants no launch, execution, or scientific authority.
+item-22 target and bound by a separate full-design-freeze receipt, but no
+attempt-envelope instance exists and neither target nor receipt grants launch,
+execution, or scientific authority.
 
 Canonical identifiers for this D7 execution discussion are owned by the
 [Roadmap ID registry](docs/ROADMAP.md#31-canonical-ids-and-historical-aliases),
@@ -673,17 +674,22 @@ exact-current re-anchor is now tracked and strictly reloadable. The resulting
 transaction—not import or test collection—contains a Level-0 exclusive claim,
 a receipt claiming one honest-local supplier invocation, the
 `official-seed-inventory.json` role, and the canonical six-member target. That
-role name grants no authority: its freeze and supplier-chronology flags remain
-false, unseen status requires external attestation, and identity is not
-authenticated. The strict
-observer state is `publication-complete-unfrozen`; the item-22 target's launch,
-execution, and scientific-authority flags remain false. Claim, invocation,
-inventory-output, and transition verification fields also remain false, so
-the artifacts do not independently prove an exactly-once supplier call. Abort evidence,
-full-design freeze, launch descriptor, item-23 result, official run, D7, and D8
-remain absent or `not_run`. The local OS-CSPRNG record proves neither
-cryptographic nor human unseenness, and it proves no cross-host or global
-statistical independence.
+role name grants no authority: `seed_inventory_frozen`,
+`supplier_chronology_verified`, and `cryptographic_unseen_proof` remain false;
+unseen status requires external attestation, and both exclusion bindings keep
+their source and identity flags false. Before the separate freeze receipt is
+considered, the target
+transaction's historical observer stage is `publication-complete-unfrozen`;
+with the receipt, the combined current state is `full-design-frozen`. The
+item-22 target's launch, execution, and scientific-authority flags remain
+false. Claim, invocation, inventory-output, and transition verification fields
+also remain false, so the artifacts do not independently prove an exactly-once
+supplier call. The freeze receipt keeps `freeze_verified=false`, and all three
+of its binding leaves keep `authoritative_source_loaded=false` and
+`identity_authenticated=false`. Abort evidence, launch descriptor, item-23
+artifact/result, official run, D7, and D8 remain absent or `not_run`. The local
+OS-CSPRNG record proves neither cryptographic nor human unseenness, and it
+proves no cross-host or global statistical independence.
 
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
@@ -695,9 +701,12 @@ supplier chronology or seed secrecy. No reusable authorization object is
 issued.
 
 The scoped reviewed successor-family admission exists only in the final corrected
-`D7-OPS-21` chain. The persisted official seed inventory and unfrozen target do
-not themselves establish seed-bearing target admission, full-design freeze, or
-authority. Authoritative target-bound lifecycle instances, an official fused
+`D7-OPS-21` chain. The persisted official seed inventory and target do not by
+themselves establish seed-bearing target admission or authority. The separate
+receipt changes the valid presence state to `full-design-frozen` but does not
+authenticate its bindings or promote the inventory's false self-attestation
+fields.
+Authoritative target-bound lifecycle instances, an official fused
 invocation,
 official result/failure publication, authoritative terminal publication,
 official abort finalization, an official runner, and replay comparison remain
@@ -1252,16 +1261,30 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   bytes strict-load and claim that chronology, but `claim_verified`,
   `single_invocation_verified`, inventory-output verification, and
   transition-verification fields remain false; they do not independently prove
-  the intra-call order or an exactly-once supplier call. After a distinct
-  target review/authorization commit, the next step commits the target freeze
-  receipt; only then may launch intent be created. If
+  the intra-call order or an exactly-once supplier call. The distinct
+  repository-local checkpoint and strictly later target freeze receipt are now
+  committed. Their ancestry is
+  `f2c1e032f153d369eed99c1bbd467da518b5b9fb` →
+  `6ea0ad761ebcf9e9aedb21319747b6489db66c52` →
+  `f07962db96c4e59020c32e1b27ae8598e69ef6d1`. The receipt designates the
+  middle commit through a repository-local field that contains no human-review
+  or authorization attestation; regardless of platform commit-signature
+  evidence, it proves neither human review nor authenticated authorization.
+  The resulting current state is
+  `full-design-frozen`, so item 23 is the next artifact step; launch intent is
+  still absent and later. If
   the originating operation ends after claiming but before atomic target
   publication, the seed supply is semantically aborted and cannot be retried;
   its durable state nevertheless remains claim-present unless a separate valid
   abort receipt exists, and target absence alone is not evidence that the
-  supplier was never invoked. The persisted unfrozen target remains exactly
-  Level 0 and its local authority vector remains all-false. No authoritative
-  attempt instance, reusable
+  supplier was never invoked. The persisted target remains exactly Level 0 and
+  its local authority vector remains all-false. The freeze receipt retains
+  `freeze_verified=false`; all three binding leaves retain
+  `authoritative_source_loaded=false` and `identity_authenticated=false`. In
+  the inventory, `seed_inventory_frozen`, `supplier_chronology_verified`, and
+  `cryptographic_unseen_proof` remain false, unseen status still requires
+  external attestation, and both exclusion bindings retain false
+  source/identity authentication. No authoritative attempt instance, reusable
   execution capability, official runner/terminal/finalizer, or replay
   comparator is created here. The separate local writer now persists and strictly reloads
   the four-stage caller-supplied Level-0 primary prefix as chained,
@@ -1352,13 +1375,23 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   strict direct-child commit after its predecessor. The final corrected tip strictly
   reloads/rejoins all three and completes `D7-OPS-21`; existing
   caller-constructible authority records remain false and are not promoted.
-  `D7-OPS-22` now has a reviewed exact-current re-anchor and one tracked
-  transaction at `publication-complete-unfrozen`. Commit `f2c1e032f153d369eed99c1bbd467da518b5b9fb`
-  is the sole seven-file transaction introduction; the claim ceiling is Level
-  0 and its authority vector is all-false. The remaining reviewed order is a
-  distinct target review/authorization commit, then the separately committed
-  full-design-freeze receipt, the item-23 descriptive artifact,
-  a closed launch descriptor, then the first official fused invocation at
+  `D7-OPS-22` now has a reviewed exact-current re-anchor, one tracked
+  transaction whose pre-receipt historical stage is
+  `publication-complete-unfrozen`, and a separate freeze receipt that makes the
+  current presence state `full-design-frozen`. Commit
+  `f2c1e032f153d369eed99c1bbd467da518b5b9fb` is the sole seven-file transaction
+  introduction; `6ea0ad761ebcf9e9aedb21319747b6489db66c52` is the later
+  repository-local checkpoint designated by a receipt field that contains no
+  human-review or authorization attestation; and
+  `f07962db96c4e59020c32e1b27ae8598e69ef6d1` is the strictly later one-file
+  freeze-receipt introduction. This ancestry and designation bind no
+  human-signed authorization attestation and do not prove human review or
+  authenticated authorization. The receipt retains `freeze_verified=false`;
+  all three binding leaves retain `authoritative_source_loaded=false` and
+  `identity_authenticated=false`. The target's
+  claim ceiling remains Level 0 and its authority vector remains all-false.
+  The next reviewed order is the item-23 descriptive artifact, a closed launch
+  descriptor, then the first official fused invocation at
   `D7-OPS-24`. Launch intent is not an item-23 prerequisite or analysis input. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
@@ -1438,10 +1471,11 @@ immediate next plan live in the single
   declared-Git-source-set receipt, plus canonical unpersisted replay-target and
   append-only attempt-envelope contract specifications. A separate
   repository-only experiment lane now contains the fixed 27-output
-  `D7-OPS-23` descriptive derivation and no-replace publisher; source exists,
-  but its required committed item-22 freeze and official result artifact do
-  not. It is excluded from the installed wheel, and none of these surfaces is
-  exported from `spirallens.qualification` or the package root. No public admission,
+  `D7-OPS-23` descriptive derivation and no-replace publisher; source and its
+  required committed item-22 freeze now exist, but the item-23 artifact and
+  official result do not. It is excluded from the installed wheel, and none of
+  these surfaces is exported from `spirallens.qualification` or the package
+  root. No public admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   Importing the namespace does not run a selection or confirmation, advance

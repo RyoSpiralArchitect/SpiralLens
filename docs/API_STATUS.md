@@ -39,7 +39,7 @@ and cannot change experiment status or authority.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected receipt-only `D7-OPS-21` chain, and one repository-local `D7-OPS-22` Level-0 transaction at `publication-complete-unfrozen`; none is a public export or caller-configurable supplier surface, and the persisted target is not an official descriptor/start/run, trusted pin root, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected receipt-only `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction, and its separate full-design-freeze receipt; the combined current observer state is `full-design-frozen`, but none is a public export or caller-configurable supplier surface, and the persisted target is not an official descriptor/start/run, trusted pin root, scientific result, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.atlas` | provisional/model extra | import and artifact readers remain installable; the repository-bound public-example runner requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files |
 | `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
@@ -61,10 +61,11 @@ repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
 derivation and repository-bound no-replace lifecycle. They are outside the
 installed wheel and export nothing from the package or qualification
 namespace. The exact three files are members of the reviewed exact-current
-source/runtime re-anchor now tracked on this branch. The operation remains
-non-executable in the
-official chronology until a committed full-D7-design freeze receipt exists,
-and no result artifact is present. Reusable analysis primitives remain
+source/runtime re-anchor now tracked on this branch. The committed
+full-D7-design freeze receipt now satisfies the operation's frozen-input
+prerequisite, so the item-23 descriptive artifact is the next repository step;
+no item-23 artifact or result is present yet. This readiness grants no launch,
+execution, or scientific authority. Reusable analysis primitives remain
 extraction candidates until a second independent consumer exists.
 
 The spectral-moment four-case generator and
@@ -347,9 +348,10 @@ independently reauthenticated by structural reload. Terminal lineage binds the
 evidence bytes rather than those live facts.
 
 The replay contracts and attempt records remain specifications and types. One
-Level-0 replay-target instance is now persisted inside the unfrozen item-22
-target, but no authoritative attempt-envelope instance exists. The local
-prefix writer embeds caller-supplied primary types beneath a distinct
+Level-0 replay-target instance is persisted inside the item-22 target and is
+now bound by a separate full-design-freeze receipt, but no authoritative
+attempt-envelope instance exists. The local prefix writer embeds
+caller-supplied primary types beneath a distinct
 false-authority envelope; it exposes no public supplier and grants no lifecycle
 or execution authority. Isolated replay is rejected before persistence because
 passed-primary consumption cannot yet be established. The seed-supply source
@@ -357,9 +359,10 @@ contract requires final-code source/runtime closure and reviewed family
 admission, then live recheck → durable claim → supplier entry → atomic
 full-design/target publication. The persisted transaction strict-loads and
 claims that chronology, but its verification fields remain false and do not
-independently establish the historical invocation or transition timing. A
-distinct freeze-authorization commit and later freeze receipt remain required
-before launch intent. Once its originating operation ends, a claim left without
+independently establish the historical invocation or transition timing. The
+distinct repository-local checkpoint and later freeze receipt are now
+committed, but neither supplies launch intent or execution authority. Once its
+originating operation ends, a claim left without
 an atomically published target is a semantic, non-retryable abort, but its
 durable state remains claim-present unless a separate valid abort receipt is
 published; target absence does not prove the supplier was invoked. The
@@ -374,10 +377,12 @@ exact-current recheck, durable claim, one fixed supplier-function invocation,
 frozen seed exclusions, then atomic six-member publication. Failure after claim
 is non-retryable. This is honest-local same-filesystem coordination, not global
 idempotency. Import and tests create no tracked artifact and use temporary
-clones. The tracked Level-0 transaction now strict-loads as
-`publication-complete-unfrozen`; its invocation artifact claims one local
-supplier call, while the claim, invocation, inventory-output, and transition
-verification fields remain false. Details
+clones. Before the separate freeze receipt is considered, the tracked Level-0
+transaction strict-loads at its historical `publication-complete-unfrozen`
+stage; with that receipt, the combined current state is `full-design-frozen`.
+Its invocation artifact claims one local supplier call, while the claim,
+invocation, inventory-output, and transition verification fields remain false.
+Details
 remain normative in [the execution design](D7_CONFIRMATION_EXECUTION_DESIGN.md)
 and [`D7-OPS-22`](ROADMAP.md#d7-ops-22).
 
@@ -391,19 +396,30 @@ independence.
 
 The external-abort path now strict-reloads a `D7-OPS-20` structural start and reuses the signed no-replace terminal transaction without granting authority, execution, scientific, retry, replay, or D8 status.
 
-This branch now contains the reviewed re-anchor and one Level-0 item-22 claim,
-a receipt claiming one honest-local invocation, the
-`official-seed-inventory.json` schema role, and six-member
-target. It contains no abort evidence, full-design freeze, launch descriptor,
-item-23 result, official run, D7, or D8; the item-22 target authority vector
-remains all-false. The inventory role name grants no authority; its freeze and
-supplier-chronology flags remain false, unseen status requires external
-attestation, and identity is not authenticated. The remaining chronology is
-target review/authorization commit → full-design-freeze receipt commit →
-item-23 descriptive artifact →
-closed launch descriptor → official item 24 → replay. Launch intent
-is not an item-23 prerequisite or analysis input. Canonical bytes and signed
-evidence do not self-promote into authority.
+This branch now contains the reviewed re-anchor, one Level-0 item-22 claim, a
+receipt claiming one honest-local invocation, the
+`official-seed-inventory.json` schema role, the six-member target, and the
+separately committed `full-design-freeze.json`. The current presence state is
+`full-design-frozen`. Its Git ancestry is the target-publication commit
+`f2c1e032f153d369eed99c1bbd467da518b5b9fb`, then the designated repository-local
+checkpoint `6ea0ad761ebcf9e9aedb21319747b6489db66c52`, then the freeze-receipt
+introduction commit `f07962db96c4e59020c32e1b27ae8598e69ef6d1`. The receipt
+designates the middle commit through a repository-local field that contains no
+human-review or authorization attestation; regardless of platform
+commit-signature evidence, it establishes neither human review nor
+authenticated authorization. The receipt keeps
+`freeze_verified=false`; all three binding leaves keep
+`authoritative_source_loaded=false` and
+`identity_authenticated=false`. The item-22 target authority vector remains
+all-false. In the inventory, `seed_inventory_frozen`,
+`supplier_chronology_verified`, and `cryptographic_unseen_proof` remain false;
+unseen status still requires external attestation, and both exclusion bindings
+retain false source/identity authentication. Abort evidence, launch
+descriptor, item-23 artifact/result, official run, D7, and D8 remain absent or
+`not_run`. The next repository step is the item-23 descriptive artifact,
+followed by a closed launch descriptor, official item 24, and replay. Launch
+intent is not an item-23 prerequisite or analysis input. Canonical bytes and
+repository ancestry do not self-promote into authority.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep

@@ -895,8 +895,8 @@ The one-shot confirmation applies D6 without overrides, exclusions, newly
 required cells, or required cells being removed. All non-advanced competitors
 remain visible as frozen selection outcomes.
 
-D7 is currently `not_run`. Unopened Cartesian seeds would provide a locked
-replication, not construction-family independence.
+D7 is currently `not_run`. A future not-yet-executed Cartesian target would
+provide a locked replication, not construction-family independence.
 
 The spectral-moment lane now has a seed-free execution design that:
 
@@ -955,13 +955,24 @@ by endpoint equality.
 Item 22 has a deep-internal one-shot operation: exact-current recheck, durable
 claim, one fixed supplier-function invocation, frozen seed exclusions, then
 atomic target publication. Restart never re-enters the supplier. The reviewed
-artifact-only exact-current re-anchor is now tracked, and one Level-0
-transaction strict-loads at `publication-complete-unfrozen`. Its invocation
-artifact claims one local supplier call; claim, invocation, inventory-output,
-and transition verification remain false. Historical item-21 reload remains
-valid. This is honest-local same-filesystem coordination only and proves
-neither an independently verified invocation, unseen values, nor global
-independence.
+artifact-only exact-current re-anchor is tracked, and one Level-0 transaction
+was introduced at `publication-complete-unfrozen`. A later separate
+full-design-freeze receipt now strict-loads and makes the item-22 observer
+report `full-design-frozen`. Its invocation artifact claims one local supplier
+call; claim, invocation, inventory-output, transition, and freeze verification
+remain false. Historical item-21 reload remains valid. The target-publication
+commit `f2c1e032f153d369eed99c1bbd467da518b5b9fb` precedes repository-local
+chronology checkpoint `6ea0ad761ebcf9e9aedb21319747b6489db66c52`, whose
+receipt-only direct child is `f07962db96c4e59020c32e1b27ae8598e69ef6d1`.
+Independently of whether the platform commit carries a commit signature, the
+receipt does not establish human-signed review or authorization content, a
+trust root, or an authority grant. The receipt records the first two commits as
+its `freeze_commit` and `authorization_commit`, respectively, while
+`freeze_verified=false`; all three bindings retain
+`authoritative_source_loaded=false` and `identity_authenticated=false`. This is
+honest-local same-filesystem coordination only and
+proves neither an independently verified invocation, unseen values, global
+independence, nor authority.
 Details remain normative in [D7 Confirmation Execution Design](D7_CONFIRMATION_EXECUTION_DESIGN.md)
 and [`D7-OPS-22`](ROADMAP.md#d7-ops-22).
 
@@ -969,9 +980,16 @@ That is implementation conformance, not D7 execution evidence. Committed C2
 verifies only the declared historical Git source set; the final corrected chain
 separately adds exact source/runtime receipt, seed-free readiness, and scoped
 reviewed successor-family admission. The official seed inventory and
-six-member target are persisted, but seed-bearing target admission, freeze,
-lifecycle, authoritative target binding, official terminal publication, and
-isolated replay remain absent. The deep-internal
+six-member target and their separate outer freeze receipt are persisted. The
+inventory record's own `seed_inventory_frozen`,
+`supplier_chronology_verified`, and `cryptographic_unseen_proof` fields remain
+false; the outer receipt does not mutate or promote them. Seed-bearing target
+admission, authoritative freeze proof, lifecycle, authoritative target binding,
+official terminal publication, and isolated replay remain absent. The strict
+item-23 observer is now `ready`, meaning only that the descriptive artifact's
+preconditions strict-load; readiness grants no launch, execution, or scientific
+authority.
+The deep-internal
 persistence-only slice can now record
 and reload a caller-supplied primary declaration-through-start record prefix as chained
 false-authority envelopes in a dedicated evidence-only lane without
@@ -1078,15 +1096,19 @@ eligibility, retry/replay authority, D7, or D8. That external-abort path uses
 no supplier or official seed and performed no official execution.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The remaining order is a distinct target review/freeze-authorization commit →
-a strictly later full-design-freeze receipt commit → item-23 descriptive
-artifact → closed launch descriptor → one item-24 invocation/terminal →
-byte-identical replay. Launch intent is not an item-23 prerequisite or input.
+The target-publication → repository-local chronology checkpoint → full-design-freeze
+receipt chronology is complete. The remaining order starts with the item-23
+descriptive artifact, then the closed launch descriptor, one item-24
+invocation/terminal, and byte-identical replay. Launch intent is not an item-23
+prerequisite or input.
 
-This branch has completed only the reviewed exact-current re-anchor and the
-one-shot item-22 target step. The target remains unfrozen and all later
-official outcomes remain absent or `not_run`; the item-22 target authority
-vector remains all-false.
+This branch contains the reviewed exact-current re-anchor, the one-shot
+item-22 target, and its separate freeze receipt. The item-22 observer is
+`full-design-frozen` and the item-23 observer is `ready`, but the item-23
+artifact and all later official outcomes remain absent or `not_run`.
+`freeze_verified=false`; the item-22 target authority vector and inventory
+self-verification fields remain all-false. No execution or scientific
+authority follows from this readiness.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
