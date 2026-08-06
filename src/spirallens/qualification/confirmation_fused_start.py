@@ -87,7 +87,20 @@ _CANONICAL_ORIGIN_URLS = frozenset(
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 _VERIFIED_INPUT_FACTORY_TOKEN = object()
-_SOURCE_PATHS = ("src/spirallens", "pyproject.toml", D7_RUNTIME_LOCK_REPOSITORY_PATH)
+_REPOSITORY_ONLY_SOURCE_PATHS = (
+    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+    "post_d6_code/_post_d6_outputs_01_12.py",
+    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+    "post_d6_code/_post_d6_outputs_13_27.py",
+    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+    "post_d6_code/confirmation_post_d6_descriptive.py",
+)
+_SOURCE_PATHS = (
+    "src/spirallens",
+    "pyproject.toml",
+    D7_RUNTIME_LOCK_REPOSITORY_PATH,
+    *_REPOSITORY_ONLY_SOURCE_PATHS,
+)
 
 
 def _git(
@@ -266,6 +279,7 @@ def _source_tree_sha256(root: Path, source_commit: str) -> str:
             repository_path == "pyproject.toml"
             or repository_path == D7_RUNTIME_LOCK_REPOSITORY_PATH
             or repository_path.startswith("src/spirallens/")
+            or repository_path in _REPOSITORY_ONLY_SOURCE_PATHS
         )
         if not included:
             continue
@@ -325,6 +339,7 @@ def _source_tree_sha256(root: Path, source_commit: str) -> str:
             isinstance(path, str) and path.startswith("src/spirallens/")
             for path in observed_paths
         )
+        or not set(_REPOSITORY_ONLY_SOURCE_PATHS).issubset(observed_paths)
     ):
         raise QualificationContractError(
             "source/runtime tree lacks its fixed code or dependency-lock surface"

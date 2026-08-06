@@ -1,6 +1,7 @@
 # Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan
 
-- **Status:** frozen planning artifacts; neither analysis nor confirmation has run
+- **Status:** frozen planning artifacts; the fixed-path descriptive runner is
+  implemented but no descriptive result or confirmation has run
 - **Claim ceiling:** Level 0
 - **Claim delta:** none
 - **Scope:** the exact PR #9 Cartesian-surrogate terminal and PR #10 D6 decision
@@ -134,15 +135,18 @@ effect was observed.
 
 ## 4. Scientific grain contract
 
-The descriptive artifact freezes the following grains before its future
-analysis runner exists.
+PR #11 froze the following descriptive grains before any analysis runner
+existed. The later repository-only runner preserves those frozen grains.
 
 ### 4.1 D2 scientific input unit
 
 There are 32 D2 scientific input units. Boundary variants are paired nuisance
-repeats and collapse only after exact agreement. The two seed blocks are not
-proved independent. The 32 units therefore do not authorize an iid
-`n = 32` inference.
+repeats and collapse only after exact agreement of the declared outcomes and
+the persisted `amplitude`, `identifiability_score`, and `support_counts` array
+descriptors. Boundary-specific input, graph, estimator, oracle, and prediction
+identities remain distinct and are reported rather than treated as byte
+identity. The two seed blocks are not proved independent. The 32 units
+therefore do not authorize an iid `n = 32` inference.
 
 The analysis must report:
 
@@ -301,12 +305,21 @@ Only the first two have evidence in the current lane.
 
 ## 6. Descriptive-result publication boundary
 
-PR #11 does not implement the descriptive runner or writer. A later execution
-PR may begin only after a committed receipt binds the complete frozen D7
-family descriptor, admission, protocol, source closure, graph/case/stress and
-aggregation bytes, lifecycle, launch intent, exclusive attempt, and initially
-absent result namespace. It must then review the frozen descriptive plan and
-publish one separate result artifact that:
+PR #11 did not implement the descriptive runner or writer, and its frozen
+canonical metadata remains unchanged. `D7-OPS-23` now has a repository-only,
+fixed-path implementation that derives all 27 declared outputs from the exact
+parents: 26 are available and the full-scope amplitude/identifiability/support
+separation is explicitly blocked because its historical main-array values were
+not persisted. Its three exact Python files are excluded from the wheel and
+are mandatory members of the next reviewed source/runtime re-anchor; no such
+re-anchor receipt exists on this source branch. This source is not an
+execution or a result. It may run only after a committed receipt binds the
+full-design, replay-target, and atomic target-publication records. The runner
+separately verifies the frozen target tree and that its result path was absent
+when the freeze first entered history. A launch intent or closed fused
+descriptor is a later artifact, is not an item-23 prerequisite, and is not an
+item-23 analysis input. The runner must then review the frozen descriptive
+plan and publish one separate result artifact that:
 
 - consumes exactly one additional allowed input class,
   `committed-d7-full-design-freeze-receipt`;
@@ -323,10 +336,29 @@ publish one separate result artifact that:
 - records `official_gate_reclassification_authorized=false`; and
 - is forbidden as a D7 design or admission input.
 
-This future result is exploratory descriptive evidence. Its purpose is to make
-the observed construction legible, not to convert it into independent
-confirmation. A caller-supplied receipt digest is not proof: the runner must
-read and validate the committed blob and include it in the exact read trace.
+The future persisted result is exploratory descriptive evidence. Its purpose
+is to make the observed construction legible, not to convert it into
+independent confirmation. A caller-supplied receipt digest is not proof: the
+runner must read and validate the committed blob and include it in the exact
+read trace. That seven-file trace is explicitly the analysis-input trace.
+Source/runtime re-anchor checks and Git tree chronology are recorded
+separately. The item-23 lane does not enter item 22's seed-parsing observer: it
+checks the immutable presence of the seed-bearing target tree without reading
+or parsing its contents, and therefore does not recompute or claim to
+reauthenticate the target digest graph. The committed freeze receipt is the
+sole additional design-metadata input.
+
+The source implementation also treats provenance and publication as live
+bindings rather than pathname assertions. It rejects change-then-revert events
+across the full reachable Git history of every plan-bound input, joins the
+three repository-only files and all loaded `spirallens` modules to the supplied
+checkout, and retains directory descriptors for both the result namespace and
+the frozen transaction through publication. Before returning success it
+rereads the result through the retained descriptor and requires the exact
+published bytes, device, inode, byte count, and one-link regular-file contract.
+Any exception after the no-replace publication point is an explicitly
+unproved post-publication binding: the visible result is retained, rollback is
+not inferred, and republishing to that namespace is forbidden.
 
 ## 7. Value-blind D7 gap vocabulary
 
@@ -400,14 +432,17 @@ opened, a future sequence must:
 6. implement every locked graph axis, cell, stress stratum, threshold, and
    aggregation rule;
 7. publish a canonical family-admission receipt before confirmation access;
-8. freeze the confirmation protocol, source readiness, launch intent,
-   exclusive attempt, and initially absent output namespace;
+8. freeze the confirmation protocol, source readiness, seed-bearing target,
+   full design, lifecycle policy, and declared result schema;
 9. prohibit policy override and post-selection exclusion in the typed
    lifecycle; and
 10. publish one D7 result or typed failure with a complete evidence root.
 
 Steps 1-9 together form the minimum full-design freeze. Their committed
-receipt must exist before the post-selection descriptive runner may execute.
+receipt must exist before the post-selection descriptive runner may execute;
+the runner separately requires that its output namespace was absent at that
+freeze's immutable introduction. Launch intent remains a later, distinct
+artifact.
 If any of those design bytes changes after descriptive execution, the prior
 admission is invalid for this chronology and a new versioned design and review
 are required; the change cannot be called a continuation of the frozen D7.
@@ -468,11 +503,12 @@ Subject to review at each transition, the current full sequence is:
 1. freeze these two PR #11 artifacts;
 2. implement and commit the value-excluded D7 family descriptor, admission,
    protocol, full path, source closure, and lifecycle;
-3. freeze and receipt-bind the complete D7 design, launch intent, exclusive
-   attempt, and initially absent result namespace;
+3. freeze and receipt-bind the complete D7 design and target while the
+   descriptive-result namespace is still absent;
 4. only then execute and publish the separate post-selection descriptive
    result; any later D7 design change requires a new version and review;
-5. run one unopened construction-diverse D7 confirmation;
+5. create the closed launch descriptor and run one unopened
+   construction-diverse D7 confirmation;
 6. run one isolated full-bundle D8 replay;
 7. begin the separate representation-native F0-F4 selection lane;
 8. independently confirm and replay the selected representation instrument;

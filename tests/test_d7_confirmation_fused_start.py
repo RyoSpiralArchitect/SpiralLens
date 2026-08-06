@@ -359,8 +359,16 @@ def test_verification_evidence_has_strict_canonical_replay_parser(
         )
 
 
+@pytest.mark.parametrize(
+    "drift_path",
+    (
+        "src/spirallens/later.py",
+        fused_start._REPOSITORY_ONLY_SOURCE_PATHS[0],
+    ),
+)
 def test_source_runtime_tree_is_closed_against_later_tracked_members(
     tmp_path: Path,
+    drift_path: str,
 ) -> None:
     repository = tmp_path / "source-repository"
     package = repository / "src" / "spirallens"
@@ -374,6 +382,10 @@ def test_source_runtime_tree_is_closed_against_later_tracked_members(
         "spirallens-test==0.0.0\n",
         encoding="utf-8",
     )
+    for repository_path in fused_start._REPOSITORY_ONLY_SOURCE_PATHS:
+        source_path = repository / repository_path
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text("VALUE = 'frozen'\n", encoding="utf-8")
     fused_start._git(repository, "init", "-q")
     fused_start._git(repository, "config", "user.name", "SpiralLens Test")
     fused_start._git(
@@ -391,10 +403,51 @@ def test_source_runtime_tree_is_closed_against_later_tracked_members(
     first = fused_start._source_tree_sha256(repository, source_commit)
     assert len(first) == 64
 
-    (package / "later.py").write_text("LATER = True\n", encoding="utf-8")
-    fused_start._git(repository, "add", "--", "src/spirallens/later.py")
+    drift = repository / drift_path
+    drift.write_text("VALUE = 'later'\n", encoding="utf-8")
+    fused_start._git(repository, "add", "--", drift_path)
     fused_start._git(repository, "commit", "-q", "-m", "later source")
     with pytest.raises(QualificationContractError, match="inventory differs"):
+        fused_start._source_tree_sha256(repository, source_commit)
+
+
+def test_current_source_runtime_tree_requires_every_repository_only_member(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "missing-repository-only-source"
+    package = repository / "src" / "spirallens"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("VALUE = 'source'\n", encoding="utf-8")
+    (repository / "pyproject.toml").write_text(
+        '[project]\nname = "spirallens-test"\nversion = "0.0.0"\n',
+        encoding="utf-8",
+    )
+    (repository / fused_start.D7_RUNTIME_LOCK_REPOSITORY_PATH).write_text(
+        "spirallens-test==0.0.0\n",
+        encoding="utf-8",
+    )
+    for repository_path in fused_start._REPOSITORY_ONLY_SOURCE_PATHS[:-1]:
+        source_path = repository / repository_path
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text("VALUE = 'present'\n", encoding="utf-8")
+    fused_start._git(repository, "init", "-q")
+    fused_start._git(repository, "config", "user.name", "SpiralLens Test")
+    fused_start._git(
+        repository,
+        "config",
+        "user.email",
+        "spirallens@example.invalid",
+    )
+    fused_start._git(repository, "add", "--", ".")
+    fused_start._git(repository, "commit", "-q", "-m", "incomplete source")
+    source_commit = (
+        fused_start._git(repository, "rev-parse", "HEAD").stdout.decode("ascii").strip()
+    )
+
+    with pytest.raises(
+        QualificationContractError,
+        match="lacks its fixed code or dependency-lock surface",
+    ):
         fused_start._source_tree_sha256(repository, source_commit)
 
 

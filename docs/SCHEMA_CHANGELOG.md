@@ -4,6 +4,49 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-06 — D7 item-23 post-D6 descriptive result source
+
+- Added a repository-only fixed-path derivation and repository-bound
+  no-replace publisher for the frozen
+  `spirallens.postselection-descriptive-analysis-result.v0.1` result shape.
+  The implementation reads the frozen plan, only its five PR #9/PR #10 file
+  parents, and the committed item-22 full-design-freeze receipt. It verifies
+  immutable Git introductions and exact analysis/source blob identities, and
+  records an exact seven-file analysis-input trace. Seed-bearing item-22
+  target members are checked only as immutable Git tree entries: their content
+  bytes are neither read nor parsed, and their digest graph is not
+  reauthenticated by item 23. The three implementation files are excluded
+  from the installed wheel and required by exact path in the next reviewed
+  source/runtime re-anchor. No such re-anchor receipt is created by this
+  source change.
+- Bound plan and parent identities are checked across their complete reachable
+  Git histories, including merged incomparable branches, so a same-byte revert
+  cannot erase an intervening path event. Runtime origin checks join the three
+  repository-only modules and every loaded `spirallens` module to the supplied
+  checkout; this is physical source identity, not scientific authority.
+- The no-replace lifecycle retains the result and freeze-transaction directory
+  descriptors across final validation and publication. Success additionally
+  requires a descriptor-relative reread of the exact result bytes and the
+  writer-returned device, inode, byte count, and one-link regular-file
+  identity. A failure after publication is kept as visible evidence and
+  normalized to an unproved post-publication binding for which rollback and
+  republication are both forbidden.
+- All eight frozen packages and 27 outputs are mandatory. Twenty-six outputs
+  are derivable from persisted evidence. The full-scope D2
+  amplitude/identifiability/support separation remains `blocked`: six
+  confounder rows are present, while the historical main path retained only
+  192 receipt bundles containing 576 relevant amplitude, identifiability, or
+  support array descriptors and not the
+  32-unit/96-graph scalar values. The result
+  therefore remains `insufficient`, `claim_ceiling=level_0`, and
+  `claim_delta=none` after an operationally complete run.
+- The source creates no official artifact on import or in this source PR,
+  exports no public API, reads no D7 result, subject, model, semantic, SAE, or
+  Pythia value, and cannot authorize or tune D7. A launch intent or closed
+  fused descriptor is later than item 23 and is neither its prerequisite nor
+  its input. The frozen PR #11 plan bytes, including its historical not-run
+  metadata, are unchanged.
+
 ## 2026-08-05 — D7 item-22 one-shot transaction operation
 
 - Added deep-internal re-anchor, transaction-manifest, abort-evidence, fixed OS-CSPRNG supplier-identity, and exclusive-claim-key v0.1 records plus a six-member atomic target; this operation supersedes and removes the immediately following contract-spec-only loader, while persisted instances remain absent, provisional, repository-local, non-authorizing, and non-scientific until the later artifact chronology executes them.

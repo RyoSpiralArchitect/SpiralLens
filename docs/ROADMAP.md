@@ -1326,7 +1326,16 @@ below:
     never proves that the supplier was not invoked;
 23. <a id="d7-ops-23"></a>**D7-OPS-23** — after that committed D7 design-freeze receipt exists, execute the separate
     descriptive result without changing any D7 design byte; any change requires
-    a new version and review;
+    a new version and review. The repository-only fixed-path source now derives
+    all 27 frozen outputs from committed parents, with exactly 26 available and
+    one full-scope output blocked by historically unpersisted D2 values. Its
+    sole additional analysis-input class is the committed full-design-freeze
+    receipt; launch intent is a later artifact and is not an item-23
+    prerequisite or input. Its
+    exact three files are outside the installed wheel and mandatory in the
+    next reviewed source/runtime re-anchor, which does not yet exist on this
+    source branch; no official result artifact exists until the post-freeze
+    chronology invokes its no-replace publisher;
 24. <a id="d7-ops-24"></a>**D7-OPS-24** — before the first official fused invocation, create and commit the closed
     nine-member descriptor and pass strict verification-evidence replay/rejoin,
     recognizing that structural replay preserves but does not recompute or

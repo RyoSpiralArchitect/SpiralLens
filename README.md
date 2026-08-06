@@ -1329,7 +1329,7 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   strict direct-child commit after its predecessor. The final corrected tip strictly
   reloads/rejoins all three and completes `D7-OPS-21`; existing
   caller-constructible authority records remain false and are not promoted.
-  `D7-OPS-22` now has source-complete one-shot transaction mechanics, but this branch creates none of its artifacts. The reviewed order remains source-final item-23 implementation, reviewed re-anchor, claim/one supplier invocation/atomic target, freeze and launch intent, separate item-23 descriptive artifact, closed descriptor, then the first official fused invocation at `D7-OPS-24`. Only a
+  `D7-OPS-22` now has source-complete one-shot transaction mechanics, but this branch creates none of its artifacts. The reviewed order remains source-final item-23 implementation, reviewed re-anchor, claim/one supplier invocation/atomic target, committed freeze, separate item-23 descriptive artifact, closed launch descriptor, then the first official fused invocation at `D7-OPS-24`. Launch intent is not an item-23 prerequisite or analysis input. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
   `d6_d8_advanced` and `synthetic_qualified`.
@@ -1406,8 +1406,12 @@ immediate next plan live in the single
   boundary. Deep internal modules now also contain the Level-0 C1 source-set
   candidate, the choice-free C2 issuer/loader, and its committed
   declared-Git-source-set receipt, plus canonical unpersisted replay-target and
-  append-only attempt-envelope contract specifications. They are not exported
-  from `spirallens.qualification` or the package root. No public admission,
+  append-only attempt-envelope contract specifications. A separate
+  repository-only experiment lane now contains the fixed 27-output
+  `D7-OPS-23` descriptive derivation and no-replace publisher; source exists,
+  but its required committed item-22 freeze and official result artifact do
+  not. It is excluded from the installed wheel, and none of these surfaces is
+  exported from `spirallens.qualification` or the package root. No public admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   Importing the namespace does not run a selection or confirmation, advance

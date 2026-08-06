@@ -13,6 +13,7 @@ import pytest
 from spirallens.core.canonical import canonical_json_bytes, parse_canonical_json
 from spirallens.qualification import confirmation_attempt_authority as authority
 from spirallens.qualification import confirmation_fused_authority as fused_authority
+from spirallens.qualification import confirmation_fused_start as fused_start
 from spirallens.qualification import confirmation_official_execution as official
 from spirallens.qualification import confirmation_runtime_observation as runtime_observation
 from spirallens.qualification import confirmation_seed_supply_contracts as item22
@@ -20,6 +21,12 @@ from spirallens.qualification.common import QualificationContractError
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 MODULE_PATH = "src/spirallens/qualification/confirmation_seed_supply_contracts.py"
+SOURCE_PATHS = (
+    MODULE_PATH,
+    "src/spirallens/qualification/confirmation_fused_start.py",
+    "src/spirallens/qualification/confirmation_preseed_authority.py",
+    *fused_start._REPOSITORY_ONLY_SOURCE_PATHS,
+)
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -72,9 +79,12 @@ def exact_locked_test_runtime() -> Iterator[None]:
 @pytest.fixture(scope="module")
 def prepared_repository(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = _clone(REPOSITORY, tmp_path_factory.mktemp("item22-prepared") / "repository")
-    shutil.copyfile(REPOSITORY / MODULE_PATH, root / MODULE_PATH)
-    if _git(root, "status", "--short", MODULE_PATH):
-        source_commit = _commit(root, "item22 final source", MODULE_PATH)
+    for repository_path in SOURCE_PATHS:
+        destination = root / repository_path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REPOSITORY / repository_path, destination)
+    if _git(root, "status", "--short", "--", *SOURCE_PATHS):
+        source_commit = _commit(root, "item22 final source", *SOURCE_PATHS)
     else:
         _git(root, "commit", "--quiet", "--allow-empty", "-m", "item22 final source marker")
         source_commit = _git(root, "rev-parse", "HEAD")
