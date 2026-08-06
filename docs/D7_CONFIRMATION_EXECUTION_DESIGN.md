@@ -19,8 +19,9 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `item21_source_commit_artifacts_absent`,
 `item21_final_corrected_tip_artifacts_tracked_and_strictly_reloaded`,
 `item21_complete_at_final_corrected_tip`,
-`item22_seed_supply_transaction_instance_absent`,
-`item22_live_readiness_blocked_pending_reviewed_reanchor`,
+`item22_current_source_runtime_reanchor_tracked_and_strictly_reloaded`,
+`item22_seed_supply_publication_complete_unfrozen`,
+`item22_level_0_claim_and_six_member_target_persisted_all_authority_false`,
 `canonical_d7_launch_descriptor_absent`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `not_frozen`, `seed_bearing_target_not_admitted`, `not_run`.
@@ -321,12 +322,17 @@ complete inventory:
 
 This is implementation conformance only. The receipt is explicitly
 claim-ineligible, produces no D7 result, and cannot be substituted for a
-future unopened-seed confirmation.
+future preregistered confirmation on the not-yet-executed target. “Unopened”
+would refer only to an unexecuted outcome here, not to human-unseen seed values.
 
 ## 8. Freeze chronology
 
-The official seed values remain absent. Both deliberately separated
-source-only commits are now recorded:
+The `official-seed-inventory.json` role record and six-member target are now
+persisted in an unfrozen Level-0 transaction; seed values are intentionally not
+repeated in this prose. “Official” is the fixed artifact-role name only. The
+record is not frozen, chronology-verified, identity-authenticated, or
+authoritative, and its unseen status requires external attestation. Both
+deliberately separated source-only commits are recorded:
 
 1. **C1 — stable design and declared source set, recorded:** one canonical
    candidate binds the seed-free design, historical proposal plus successor
@@ -358,7 +364,11 @@ records bind but may not redefine the concrete target's seed inventory,
 thresholds, graph/cycle inventory, aggregation, result schema, construction
 family, or identity.
 
-The separate seed-supply chronology is also closed before values exist: the
+The separate seed-supply source contract was committed before the tracked
+seven-file transaction was introduced in Git. Persisted artifacts now reach
+the structural `publication-complete-unfrozen` state, while their false verification fields
+do not independently establish seed-generation, supplier-invocation, or
+transition timing. The
 lifecycle/result/terminal/witness/runner and fused verify-and-exclusive-start
 mechanics are now implemented without an official execution. The fused path
 accepts only a raw current-HEAD descriptor and zero-argument producer, derives
@@ -395,7 +405,11 @@ bounded source-path event on the anchor-to-HEAD descendant ancestry, together
 with both endpoints, so an edit followed by a revert or merge resolution still
 requires a reviewed re-anchor.
 The deep-internal item-22 operation is repository-root-only and accepts no caller supplier, seed, claim key, layout, or authority object. It strictly reloads the historical item-21 chain and reviewed exact-current re-anchor, then rechecks live state, durably claims, calls the fixed honest-local OS-CSPRNG supplier once, excludes both frozen seed registries, and atomically publishes two unique sorted nonnegative signed-int64 seeds with the closed target.
-Import, loading, and tests create no official transaction artifact.
+Import, loading, and tests create no tracked transaction artifact. Exactly one
+transaction now persists at `publication-complete-unfrozen`. Its invocation
+artifact claims one honest-local supplier call, while claim, invocation,
+inventory-output, and transition verification fields remain false. It is not
+independent proof of an exactly-once call, unseen values, or global independence.
 
 The fixed layout retains
 `item22-current-source-runtime-reanchor.json` outside the
@@ -475,8 +489,17 @@ reload. Every unlisted combination—including target plus abort, downstream
 evidence without claim, or any invalid/partial artifact—is a fail-closed
 contract error. Recovery applies no precedence and permits no supplier retry.
 
-The item-21 artifact chain remains historically valid, but live readiness is blocked until all pre-claim source is final and the separate reviewed re-anchor is committed. The operation re-verifies immediately before its no-replace claim and accepts no cached readiness snapshot.
-This branch contains no official claim, supplier invocation, seed, target, freeze, launch descriptor, or execution. Freeze and the closed descriptor remain distinct later steps; item 24 remains the first official fused invocation.
+The item-21 artifact chain remains historically valid. The separate reviewed
+re-anchor is committed and the target structurally binds it. The source
+contract requires a live recheck immediately before the no-replace claim and
+forbids a cached readiness snapshot; persisted verification fields remain
+false and do not independently establish that timing. This branch now contains
+the Level-0 claim, a receipt claiming one honest-local invocation, the
+`official-seed-inventory.json` role record, and six-member target. The branch
+contains no abort evidence, full-design freeze, launch
+descriptor, item-23 result, or execution, and the item-22 target authority
+vector remains all-false. Freeze and the closed descriptor remain distinct later steps; item 24
+remains the first official fused invocation.
 
 The evidence-only local persistence writer performs path-coordinate
 reobservation before exposing a caller-supplied start record, but it does not
@@ -561,7 +584,7 @@ reauthenticate, the repository-HEAD, canonical-origin, source-tree,
 dependency-set, callable, and process observation digests. Terminal lineage
 binds the exact evidence bytes only.
 
-The future target itself remains exactly Level 0 and carries the closed
+The persisted unfrozen target remains exactly Level 0 and carries the closed
 all-false local authority vector. Admission, launch, result, and D8 authority
 are established only by later exact typed joins; they cannot be nested into or
 inferred from the target record.
@@ -577,16 +600,21 @@ at the final corrected tip. C2 cannot do that: it closes only the historical C1 
 source set and covers none of these later surfaces.
 Existing caller-constructible admission, readiness, and source/runtime records
 keep their false verification state and are not promoted into any of the three
-artifacts. A later seed-bearing target must
-bind that new receipt, exactly two unique, sorted, nonnegative signed-int64
+artifacts. The persisted seed-bearing target binds that new receipt, exactly
+two unique, sorted, nonnegative signed-int64
 seeds, rejection of every development and parent selection seed, the
 `confirmation-seed-slot-00` and `confirmation-seed-slot-01` mapping, the
-admission receipt, and the complete frozen design. Seed values may be public
-after freeze; the controlled fact is chronology, not permanent secrecy.
+admission receipt, and the complete design bytes. Seed values are persisted in
+the unfrozen target and may be visible before freeze. The source contract
+requires claim-before-call; the persisted bytes prove canonical identity,
+digest joins, and same-commit introduction only, not the historical invocation
+or intra-call transition timing. Neither pre-freeze secrecy, cryptographic or
+human unseenness, nor global independence is established.
 
 Terminal design must not manufacture a placeholder result merely to reserve
-an output shape. The two contract specifications now type the separation, but
-the actual immutable replay target and attempt envelope still do not exist.
+an output shape. The two contract specifications type the separation. A
+Level-0 replay target now exists inside the unfrozen item-22 publication; the
+attempt envelope does not.
 
 ## 9. Current boundary and next PR sequence
 
@@ -607,10 +635,11 @@ to test without claiming that the records came from trusted issuers. This is a
 newly exposed prerequisite, not an amendment to the meaning or historical
 status of C1, C2, D6, or earlier persisted attempts.
 
-The item-22 module now implements the closed six-state observer and the one-shot
-transaction through abort or `publication-complete-unfrozen`, without creating an official instance on this branch. The historical item-21 chain
-still reloads, while exact-current live readiness remains blocked until the
-final reviewed re-anchor is published separately.
+The item-22 module implements the closed six-state observer and the one-shot
+transaction through abort or `publication-complete-unfrozen`. The reviewed
+exact-current re-anchor and one Level-0 transaction instance are now tracked.
+The historical item-21 chain still reloads; freeze, launch, execution, and
+scientific authority remain absent.
 
 Roadmap items 19 and 20 are now mechanics-complete. The structural terminal, typed
 primary-only runner handoff, two-signature witness inventory member, and
@@ -663,14 +692,16 @@ The reviewed successor order is:
    direct-child commit, only seed-free readiness in the next direct child, and
    only scoped reviewed successor-family admission in the next direct child;
    strictly reload and rejoin all three before item 21 is complete;
-5. retain the item-22 one-shot operation without invoking it or publishing its
-   re-anchor;
-6. because this source changes the exact-current surface, first publish
-   and review the fixed-path exact-current re-anchor bound to item 21; only then
-   acquire the
-   seed-supply claim, invoke the supplier once, atomically publish the
-   seed-bearing full design and target, and commit the freeze; execute item
-   23's separate descriptive result without changing any D7 design byte; and
+5. retain the reviewed fixed-path exact-current re-anchor and the completed
+   one-shot item-22 publication as immutable history; do not retry, replace, or
+   reinterpret its honest-local receipt as unseen-value or global-independence
+   proof;
+6. record a distinct freeze-authorization commit strictly after the
+   target-publication commit, then introduce the separate full-design-freeze
+   receipt in a strictly later commit; only then execute item 23's descriptive
+   result without changing any D7 design byte. This authorization commit is a
+   chronology predecessor for the freeze receipt only; it grants no launch,
+   execution, or scientific authority; and
 7. before item 24, create and commit the closed nine-member fused descriptor
    and its launch intent, neither of which is an item-23 prerequisite or input;
    then pass strict verification-evidence replay/rejoin, temporary Git/runtime
@@ -679,16 +710,16 @@ The reviewed successor order is:
    the exact terminal outcome before isolated byte replay can qualify.
 
 Evidence envelopes, existing caller-constructible authority records, and the
-item-22 contract specification cannot
-be promoted in place; their verification fields remain false. The item-22
-supplier claim and invocation, official seeds, atomic seed-bearing
-target/full-design publication, committed freeze, launch intent, canonical
-nine-member descriptor, official invocation/start/run/terminal/result, D7, and
-D8 remain absent or `not_run`. None may be represented by a placeholder
+item-22 contract specification cannot be promoted in place; their verification
+fields remain false. The item-22 supplier claim, a receipt claiming one
+honest-local invocation, the `official-seed-inventory.json` role record, and atomic seed-bearing target/full-design
+publication are now persisted at Level 0. The committed freeze, launch intent,
+canonical nine-member descriptor, official invocation/start/run/terminal/result,
+D7, and D8 remain absent or `not_run`. None may be represented by a placeholder
 result, inferred from C2 source closure, or authorized by caller-constructible
 records.
 
-After the item-22 source implementation, while its artifact and execution
+After the item-22 target publication, while its freeze and execution
 obligations remain open, the canonical state is:
 
 ```text
@@ -699,7 +730,7 @@ c2_declared_historical_git_source_set_closed
 replay_target_contract_spec_defined
 attempt_envelope_contract_spec_defined
 launch_authority_input_schema_candidate_defined
-replay_target_instance_absent
+replay_target_instance_persisted_level_0_unfrozen
 attempt_envelope_instance_absent
 not_frozen
 seed_bearing_target_not_admitted
@@ -713,9 +744,10 @@ item21_exact_installed_inventory_and_runtime_observed_honest_local
 item21_seed_free_readiness_tracked_strictly_reloaded
 item21_scoped_successor_family_admission_tracked_strictly_reloaded
 item21_complete
-item22_seed_supply_transaction_instance_absent
+item22_seed_supply_publication_complete_unfrozen
 item22_historical_item21_chain_valid
-item22_exact_current_live_readiness_blocked_pending_reviewed_reanchor
+item22_current_source_runtime_reanchor_tracked_strictly_reloaded
+item22_claim_invocation_inventory_target_persisted_all_authority_false
 terminal_witness_runner_mechanics_implemented_non_authorizing
 fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
 canonical_d7_launch_descriptor_absent

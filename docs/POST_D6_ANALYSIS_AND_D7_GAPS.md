@@ -311,10 +311,12 @@ fixed-path implementation that derives all 27 declared outputs from the exact
 parents: 26 are available and the full-scope amplitude/identifiability/support
 separation is explicitly blocked because its historical main-array values were
 not persisted. Its three exact Python files are excluded from the wheel and
-are mandatory members of the next reviewed source/runtime re-anchor; no such
-re-anchor receipt exists on this source branch. This source is not an
-execution or a result. It may run only after a committed receipt binds the
-full-design, replay-target, and atomic target-publication records. The runner
+are members of the reviewed exact-current source/runtime re-anchor now tracked
+on this branch. The Level-0 item-22 target is also persisted at
+`publication-complete-unfrozen`, but neither source nor target is an execution
+or result. Item 23 may run only after a distinct target
+review/freeze-authorization commit and a strictly later committed receipt bind
+the full-design, replay-target, and atomic target-publication records. The runner
 separately verifies the frozen target tree and that its result path was absent
 when the freeze first entered history. A launch intent or closed fused
 descriptor is a later artifact, is not an item-23 prerequisite, and is not an

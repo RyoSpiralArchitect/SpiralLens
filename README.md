@@ -424,16 +424,17 @@ The deep-internal
 `spirallens.qualification.confirmation_replay_contracts` module now
 reconstructs two canonical but unpersisted Level-0 specifications:
 `D7ReplayTargetContractSpec`
-(`spirallens.d7-replay-target-contract-spec.v0.1`) defines what a future
-immutable, seed-bearing replay target must bind, while
+(`spirallens.d7-replay-target-contract-spec.v0.1`) defines what an immutable,
+seed-bearing replay target must bind, while
 `D7AttemptEnvelopeContractSpec`
 (`spirallens.d7-attempt-envelope-contract-spec.v0.1`) defines the separate
 append-only chronology for one future attempt. The choice-free
 `load_d7_replay_attempt_contract_foundation()` entry point internally reruns
 the pinned committed-C2 verifier; it accepts neither a caller-supplied source
-closure nor expected digest. Both specification bytes are canonical, but no
-specification artifact is written and neither an actual replay target nor an
-attempt envelope exists.
+closure nor expected digest. Both specification bytes remain in-memory only.
+One concrete Level-0 replay-target instance is now persisted inside the
+unfrozen item-22 target, but no attempt-envelope instance exists and the target
+grants no launch, execution, or scientific authority.
 
 Canonical identifiers for this D7 execution discussion are owned by the
 [Roadmap ID registry](docs/ROADMAP.md#31-canonical-ids-and-historical-aliases),
@@ -666,7 +667,23 @@ cannot be used to bridge that gap.
 
 Exact paths, states, digest joins, durability boundaries, and non-claims are normative in [the execution design](docs/D7_CONFIRMATION_EXECUTION_DESIGN.md) and [`D7-OPS-22`](docs/ROADMAP.md#d7-ops-22). Invalid, partial, or contradictory presence combinations fail closed and never restore retry.
 
-Import and tests create no tracked or official `D7-OPS-22` artifact in the source checkout; tests exercise temporary clones only. Historical `D7-OPS-21` remains reloadable, while live readiness stays blocked until all pre-claim source receives its separately reviewed re-anchor. Claim, invocation, seeds, target, freeze, launch descriptor, official run, D7, and D8 remain absent or `not_run` on this source branch.
+Import and tests still create no tracked `D7-OPS-22` artifact in the source
+checkout; tests exercise temporary clones only. The separately reviewed
+exact-current re-anchor is now tracked and strictly reloadable. The resulting
+transaction—not import or test collection—contains a Level-0 exclusive claim,
+a receipt claiming one honest-local supplier invocation, the
+`official-seed-inventory.json` role, and the canonical six-member target. That
+role name grants no authority: its freeze and supplier-chronology flags remain
+false, unseen status requires external attestation, and identity is not
+authenticated. The strict
+observer state is `publication-complete-unfrozen`; the item-22 target's launch,
+execution, and scientific-authority flags remain false. Claim, invocation,
+inventory-output, and transition verification fields also remain false, so
+the artifacts do not independently prove an exactly-once supplier call. Abort evidence,
+full-design freeze, launch descriptor, item-23 result, official run, D7, and D8
+remain absent or `not_run`. The local OS-CSPRNG record proves neither
+cryptographic nor human unseenness, and it proves no cross-host or global
+statistical independence.
 
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
@@ -678,8 +695,9 @@ supplier chronology or seed secrecy. No reusable authorization object is
 issued.
 
 The scoped reviewed successor-family admission exists only in the final corrected
-`D7-OPS-21` chain. Seed-bearing target admission, full-design freeze, official
-seeds, authoritative target-bound lifecycle instances, an official fused
+`D7-OPS-21` chain. The persisted official seed inventory and unfrozen target do
+not themselves establish seed-bearing target admission, full-design freeze, or
+authority. Authoritative target-bound lifecycle instances, an official fused
 invocation,
 official result/failure publication, authoritative terminal publication,
 official abort finalization, an official runner, and replay comparison remain
@@ -1213,8 +1231,8 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   authority-prerequisite, and `D7-OPS-19`/`D7-OPS-20` terminal, witness, runner, and
   fused-start mechanics; step
   18 authority remains partial — replay target and attempt envelope:** two
-  canonical, unpersisted
-  internal specifications keep the future immutable seed-bearing replay target
+  canonical in-memory
+  internal specifications keep the immutable seed-bearing replay target
   separate from the append-only attempt chronology. Separate deep-internal
   record and validation modules now define the concrete canonical schemas and
   pure structural joins for declaration, authorization, claim, start,
@@ -1227,18 +1245,23 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   authority and explicitly do not establish `started_unresolved`. The `D7-OPS-19`
   external finalizer remains evidence-only and cannot consume that transaction.
   With final-code source/runtime receipt, seed-free readiness, and scoped
-  reviewed successor-family admission complete in the final corrected `D7-OPS-21` chain, the
-  future `D7-OPS-22` seed-supply lifecycle must acquire its exclusive claim before
-  the single supplier
-  invocation. It then atomically publishes the seed-bearing full design and
-  target, commits their freeze receipt, and only then creates launch intent. If
+  reviewed successor-family admission complete in the final corrected
+  `D7-OPS-21` chain, the reviewed exact-current re-anchor and one `D7-OPS-22`
+  Level-0 transaction are now tracked. The source contract requires live
+  recheck → durable claim → fixed supplier → atomic publication. The persisted
+  bytes strict-load and claim that chronology, but `claim_verified`,
+  `single_invocation_verified`, inventory-output verification, and
+  transition-verification fields remain false; they do not independently prove
+  the intra-call order or an exactly-once supplier call. After a distinct
+  target review/authorization commit, the next step commits the target freeze
+  receipt; only then may launch intent be created. If
   the originating operation ends after claiming but before atomic target
   publication, the seed supply is semantically aborted and cannot be retried;
   its durable state nevertheless remains claim-present unless a separate valid
   abort receipt exists, and target absence alone is not evidence that the
-  supplier was never invoked. The future target remains exactly Level
-  0 and its local authority vector remains all-false. No concrete target,
-  official or authoritative attempt instance, official seed, reusable
+  supplier was never invoked. The persisted unfrozen target remains exactly
+  Level 0 and its local authority vector remains all-false. No authoritative
+  attempt instance, reusable
   execution capability, official runner/terminal/finalizer, or replay
   comparator is created here. The separate local writer now persists and strictly reloads
   the four-stage caller-supplied Level-0 primary prefix as chained,
@@ -1329,7 +1352,14 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   strict direct-child commit after its predecessor. The final corrected tip strictly
   reloads/rejoins all three and completes `D7-OPS-21`; existing
   caller-constructible authority records remain false and are not promoted.
-  `D7-OPS-22` now has source-complete one-shot transaction mechanics, but this branch creates none of its artifacts. The reviewed order remains source-final item-23 implementation, reviewed re-anchor, claim/one supplier invocation/atomic target, committed freeze, separate item-23 descriptive artifact, closed launch descriptor, then the first official fused invocation at `D7-OPS-24`. Launch intent is not an item-23 prerequisite or analysis input. Only a
+  `D7-OPS-22` now has a reviewed exact-current re-anchor and one tracked
+  transaction at `publication-complete-unfrozen`. Commit `f2c1e032f153d369eed99c1bbd467da518b5b9fb`
+  is the sole seven-file transaction introduction; the claim ceiling is Level
+  0 and its authority vector is all-false. The remaining reviewed order is a
+  distinct target review/authorization commit, then the separately committed
+  full-design-freeze receipt, the item-23 descriptive artifact,
+  a closed launch descriptor, then the first official fused invocation at
+  `D7-OPS-24`. Launch intent is not an item-23 prerequisite or analysis input. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official result remains byte-identically false for
   `d6_d8_advanced` and `synthetic_qualified`.
