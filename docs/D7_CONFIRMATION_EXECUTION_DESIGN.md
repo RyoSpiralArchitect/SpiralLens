@@ -364,10 +364,11 @@ records bind but may not redefine the concrete target's seed inventory,
 thresholds, graph/cycle inventory, aggregation, result schema, construction
 family, or identity.
 
-The separate seed-supply source contract was closed before values existed.
-Persisted artifacts now reach the structural
-`publication-complete-unfrozen` state, while their false verification fields
-do not independently establish the historical transitions. The
+The separate seed-supply source contract was committed before the tracked
+seven-file transaction was introduced in Git. Persisted artifacts now reach
+the structural `publication-complete-unfrozen` state, while their false verification fields
+do not independently establish seed-generation, supplier-invocation, or
+transition timing. The
 lifecycle/result/terminal/witness/runner and fused verify-and-exclusive-start
 mechanics are now implemented without an official execution. The fused path
 accepts only a raw current-HEAD descriptor and zero-argument producer, derives

@@ -673,8 +673,9 @@ exact-current re-anchor is now tracked and strictly reloadable. The resulting
 transaction—not import or test collection—contains a Level-0 exclusive claim,
 a receipt claiming one honest-local supplier invocation, the
 `official-seed-inventory.json` role, and the canonical six-member target. That
-role name grants no authority: its freeze, supplier-chronology, identity, and
-unseen-status fields remain negative or externally required. The strict
+role name grants no authority: its freeze and supplier-chronology flags remain
+false, unseen status requires external attestation, and identity is not
+authenticated. The strict
 observer state is `publication-complete-unfrozen`; the item-22 target's launch,
 execution, and scientific-authority flags remain false. Claim, invocation,
 inventory-output, and transition verification fields also remain false, so

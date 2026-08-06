@@ -396,10 +396,11 @@ a receipt claiming one honest-local invocation, the
 `official-seed-inventory.json` schema role, and six-member
 target. It contains no abort evidence, full-design freeze, launch descriptor,
 item-23 result, official run, D7, or D8; the item-22 target authority vector
-remains all-false. The inventory role name grants no authority; its freeze,
-supplier-chronology, identity, and unseen-status fields remain negative or
-externally required. The remaining chronology is target review/authorization
-commit → full-design-freeze receipt commit → item-23 descriptive artifact →
+remains all-false. The inventory role name grants no authority; its freeze and
+supplier-chronology flags remain false, unseen status requires external
+attestation, and identity is not authenticated. The remaining chronology is
+target review/authorization commit → full-design-freeze receipt commit →
+item-23 descriptive artifact →
 closed launch descriptor → official item 24 → replay. Launch intent
 is not an item-23 prerequisite or analysis input. Canonical bytes and signed
 evidence do not self-promote into authority.
