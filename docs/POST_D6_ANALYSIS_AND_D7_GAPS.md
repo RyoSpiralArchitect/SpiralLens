@@ -1,8 +1,8 @@
 # Post-D6 Descriptive Analysis and Value-Blind D7 Gap Plan
 
-- **Status:** frozen planning artifacts; the item-22 full-design-freeze receipt
-  is committed and the fixed-path item-23 descriptive runner is ready, but no
-  descriptive result or confirmation has run
+- **Status:** frozen planning artifacts plus the committed item-23 descriptive
+  result; the descriptive operation is complete but scientifically
+  `insufficient`, while D7 confirmation and D8 replay remain `not_run`
 - **Claim ceiling:** Level 0
 - **Claim delta:** none
 - **Scope:** the exact PR #9 Cartesian-surrogate terminal and PR #10 D6 decision
@@ -45,10 +45,13 @@ information barrier.
 
 The descriptive plan itself was written after opened outcome values were used
 to fix the recorded counts and scientific grains. It therefore records
-`planning_used_opened_outcome_values=true`; only its runner and result remain
-unexecuted. Because there is no independent operator or information barrier,
-the complete D7 family descriptor, admission, protocol, source closure, and
-lifecycle must be frozen and receipt-bound before that runner may execute.
+`planning_used_opened_outcome_values=true`; its frozen historical bytes also
+retain the planning-time `runner_implemented=false`,
+`writer_implemented=false`, and `result_status=not_run` fields. The later
+item-23 publication does not rewrite those bytes. Because there is no
+independent operator or information barrier, the complete D7 family
+descriptor, admission, protocol, source closure, and lifecycle had to be
+frozen and receipt-bound before that runner executed.
 This ordering prevents newly computed fine-grained descriptions from tuning
 the D7 design. It does not erase the operator's earlier aggregate-result
 exposure or turn D7 into a cognitively blinded experiment.
@@ -308,21 +311,32 @@ Only the first two have evidence in the current lane.
 
 PR #11 did not implement the descriptive runner or writer, and its frozen
 canonical metadata remains unchanged. `D7-OPS-23` now has a repository-only,
-fixed-path implementation that derives all 27 declared outputs from the exact
-parents: 26 are available and the full-scope amplitude/identifiability/support
-separation is explicitly blocked because its historical main-array values were
-not persisted. Its three exact Python files are excluded from the wheel and
-are members of the reviewed exact-current source/runtime re-anchor now tracked
-on this branch. The Level-0 item-22 target was introduced by
+fixed-path implementation and a separately committed result. Commit
+`83ed5f419ff27af0935aa84c363df64f04926cac` records `5,293,662` canonical
+bytes with SHA-256
+`d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`,
+schema v0.1, and result ID
+`post-d6-descriptive-a654fa3d9117d2ec9f9275dd`. The result is
+`status=insufficient`, `operational_status=complete`,
+`claim_ceiling=level_0`, and `claim_delta=none`. All 27 mandatory outputs are
+present: 26 are `available`, while
+`amplitude-identifiability-support-separation` alone is `blocked` with reason
+`historical-main-d2-amplitude-identifiability-support-values-not-persisted`.
+The historical main D2 `amplitude`, `identifiability_score`, and
+`support_counts` scalars were not persisted. Descriptor evidence and six
+confounder rows do not meet the required full-scope denominator, and the
+result records that no rerun or current-code reconstruction was performed.
+Its three exact Python files are excluded from the wheel and are members of
+the reviewed exact-current source/runtime re-anchor tracked on this branch.
+The Level-0 item-22 target was introduced by
 `f2c1e032f153d369eed99c1bbd467da518b5b9fb` at
 `publication-complete-unfrozen`. The PR #39 merge
 `6ea0ad761ebcf9e9aedb21319747b6489db66c52` is the designated repository-local
 chronology checkpoint named by the receipt, and the strictly later
 `f07962db96c4e59020c32e1b27ae8598e69ef6d1` uniquely introduces the receipt
 that binds the full design, replay target, and atomic target-publication
-record. Strict observation therefore now reports `full-design-frozen`, and the
-item-23 prerequisite surface is ready. Neither the source, target, receipt, nor
-readiness state is an execution or result.
+record. Item-22 strict observation remains `full-design-frozen`; the separate
+item-23 result commit is a later descendant and does not alter that state.
 
 The Git checkpoint proves the ancestry
 `f2c1e032f153d369eed99c1bbd467da518b5b9fb` <
@@ -334,15 +348,16 @@ content, an independent witness, actor identity, or wall-clock ordering. The
 receipt keeps `freeze_verified=false`; all three bindings keep
 `authoritative_source_loaded=false` and `identity_authenticated=false`.
 Accordingly it grants no launch, execution, semantic, causal, topological, or
-scientific authority. Launch intent, attempt envelope, item-23 result, D7
-result, and D8 replay remain absent or `not_run`.
+scientific authority. The committed item-23 artifact likewise has zero true
+authority facts. Launch intent, attempt envelope, D7 result, and D8 replay
+remain absent or `not_run`.
 
-Item 23 may now run only as the separate no-replace descriptive publication.
-The runner separately verifies the frozen target tree and that its result path
-was absent when the freeze first entered history. A launch intent or closed fused
-descriptor is a later artifact, is not an item-23 prerequisite, and is not an
-item-23 analysis input. The runner must then review the frozen descriptive
-plan and publish one separate result artifact that:
+Item 23 ran only as the separate no-replace descriptive publication. The
+runner separately verified the frozen target tree and that its result path was
+absent when the freeze first entered history. A launch intent or closed fused
+descriptor remains a later artifact, was not an item-23 prerequisite, and was
+not an item-23 analysis input. The committed result satisfies these
+publication-contract requirements:
 
 - consumes exactly one additional allowed input class,
   `committed-d7-full-design-freeze-receipt`;
@@ -359,11 +374,11 @@ plan and publish one separate result artifact that:
 - records `official_gate_reclassification_authorized=false`; and
 - is forbidden as a D7 design or admission input.
 
-The future persisted result is exploratory descriptive evidence. Its purpose
+The persisted result is exploratory descriptive evidence. Its purpose
 is to make the observed construction legible, not to convert it into
 independent confirmation. A caller-supplied receipt digest is not proof: the
-runner must read and validate the committed blob and include it in the exact
-read trace. That seven-file trace is explicitly the analysis-input trace.
+runner read and validated the committed blob and included it in the exact
+seven-file analysis-input read trace.
 Source/runtime re-anchor checks and Git tree chronology are recorded
 separately. The item-23 lane does not enter item 22's seed-parsing observer: it
 checks the immutable presence of the seed-bearing target tree without reading
@@ -548,10 +563,11 @@ Subject to review at each transition, the current full sequence is:
 14. only after a structural candidate exists, run held-out semantic, SAE, and
     causal tests.
 
-Steps 1-3 are now represented by committed history through the item-22
-full-design-freeze receipt. Step 4, the separate item-23 descriptive artifact,
-is the next transition; no launch, confirmation, or D8 action is folded into
-it.
+Steps 1-4 are now represented by committed history through the item-22
+full-design-freeze receipt and separate item-23 descriptive result. The next
+transition is the closed descriptor and launch intent, followed by the first
+official fused invocation at item 24; no launch, confirmation, or D8 action
+was folded into item 23.
 
 Negative or insufficient results do not invalidate the library. They constrain
 the scientific claim while still exercising canonical codecs, source/evidence

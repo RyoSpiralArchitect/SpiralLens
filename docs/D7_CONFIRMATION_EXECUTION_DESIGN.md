@@ -23,7 +23,10 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `item22_full_design_freeze_receipt_tracked_and_strictly_reloaded`,
 `item22_seed_supply_full_design_frozen`,
 `item22_level_0_claim_and_six_member_target_persisted_all_authority_false`,
-`item23_post_d6_descriptive_ready_result_absent`,
+`item23_post_d6_descriptive_result_committed_operational_complete_scientifically_insufficient`,
+`item23_outputs_26_available_1_blocked`,
+`item23_claim_ceiling_level_0_claim_delta_none`,
+`item23_d7_d8_not_run_authority_true_count_0`,
 `canonical_d7_launch_descriptor_absent`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `seed_bearing_target_not_admitted`, `not_run`.
@@ -518,13 +521,18 @@ grant. It records `freeze_commit` as the target-publication commit and
 three nested bindings retain `authoritative_source_loaded=false` and
 `identity_authenticated=false`. Separately, `seed_inventory_frozen`,
 `supplier_chronology_verified`, and `cryptographic_unseen_proof` remain false
-in the inventory record. The branch
-contains no abort evidence, launch descriptor, item-23 result, or execution,
-and the item-22 target authority vector remains all-false. The strict item-23
-observer is now `ready`, meaning only that the descriptive artifact's
-preconditions strict-load; it grants no launch, execution, or scientific
-authority. The closed descriptor remains a distinct later step, and item 24
-remains the first official fused invocation.
+in the inventory record. The branch contains no abort evidence, launch
+descriptor, or official execution, and the item-22 target authority vector
+remains all-false. Commit `83ed5f419ff27af0935aa84c363df64f04926cac`
+separately records the item-23 descriptive result: canonical SHA-256
+`d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`,
+`5,293,662` bytes, schema v0.1, result ID
+`post-d6-descriptive-a654fa3d9117d2ec9f9275dd`, `status=insufficient`,
+`operational_status=complete`, `claim_ceiling=level_0`, and
+`claim_delta=none`. Its strict observer now reports `complete`, which means
+that exact descriptive artifact reloads and rederives; it grants no launch,
+execution, or scientific authority. The closed descriptor remains a distinct
+later step, and item 24 remains the first official fused invocation.
 
 The evidence-only local persistence writer performs path-coordinate
 reobservation before exposing a caller-supplied start record, but it does not
@@ -668,8 +676,10 @@ The item-22 module implements the closed six-state observer and the one-shot
 transaction through abort or `publication-complete-unfrozen`, followed by the
 separate `full-design-frozen` receipt state. The reviewed exact-current
 re-anchor, one Level-0 transaction instance, and its freeze receipt are now
-tracked. The historical item-21 chain still reloads; item 23 is ready but its
-artifact, launch, execution, and scientific authority remain absent.
+tracked. The historical item-21 chain still reloads; the separate item-23
+artifact is now committed with an operationally complete but scientifically
+`insufficient` Level-0 result. Launch, execution, and scientific authority
+remain absent.
 
 Roadmap items 19 and 20 are now mechanics-complete. The structural terminal, typed
 primary-only runner handoff, two-signature witness inventory member, and
@@ -731,8 +741,10 @@ The reviewed successor order is:
    checkpoint `6ea0ad76...`, then receipt-only commit `f07962db...`; regardless
    of platform commit signature, the receipt establishes no human-signed
    review or authorization content, keeps `freeze_verified=false`, and grants
-   no authority. With the strict item-23 observer now `ready`, create its
-   descriptive result next without changing any D7 design byte; and
+   no authority. Retain the strictly later item-23 result commit `83ed5f4...`
+   as the separate operationally complete, scientifically insufficient
+   descriptive publication; do not reinterpret it as a D7 design change,
+   launch, execution, or confirmation; and
 7. before item 24, create and commit the closed nine-member fused descriptor
    and its launch intent, neither of which is an item-23 prerequisite or input;
    then pass strict verification-evidence replay/rejoin, temporary Git/runtime
@@ -748,14 +760,18 @@ publication are persisted at Level 0. The separate full-design-freeze receipt
 is now committed and strict-loads, while `freeze_verified=false`, every
 item-22 target authority fact remains false, and the official inventory's own
 freeze/chronology/unseen-proof fields remain false. The item-23 descriptive
-artifact is now the next no-replace artifact and is still absent. Launch
-intent, the canonical nine-member descriptor, official
-invocation/start/run/terminal/result, D7, and D8 remain absent or `not_run`.
+artifact is now committed: all 27 outputs are present, 26 are `available`, and
+`amplitude-identifiability-support-separation` alone is `blocked`, so the
+operationally complete result remains scientifically `insufficient` at Level 0
+with no claim delta. Launch intent, the canonical nine-member descriptor,
+official D7 invocation/start/run/terminal/result, D7, and D8 remain absent or
+`not_run`.
 None may be represented by a placeholder result, inferred from C2 source
 closure, or authorized by caller-constructible records.
 
-After the separate item-22 full-design-freeze receipt, while item 23 and all
-execution obligations remain open, the canonical state is:
+After the separate item-22 full-design-freeze receipt and committed item-23
+descriptive result, while all launch and execution obligations remain open,
+the canonical state is:
 
 ```text
 c1_seed_free_source_set_candidate_recorded
@@ -770,7 +786,11 @@ attempt_envelope_instance_absent
 full_design_freeze_receipt_tracked_strictly_reloaded
 item22_seed_supply_full_design_frozen
 full_design_freeze_verified_false
-item23_post_d6_descriptive_ready_result_absent
+item23_post_d6_descriptive_result_committed_operational_complete_scientifically_insufficient
+item23_outputs_26_available_1_blocked
+item23_claim_ceiling_level_0_claim_delta_none
+item23_d7_d8_not_run_authority_true_count_0
+item23_analysis_input_read_trace_count_7
 seed_bearing_target_not_admitted
 not_run
 d6_v0_1_exact_admission_unsatisfied
