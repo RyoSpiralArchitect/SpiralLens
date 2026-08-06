@@ -32,16 +32,7 @@ from spirallens.qualification.common import QualificationContractError
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
-SOURCE_PATHS = (
-    "src/spirallens/qualification/confirmation_fused_start.py",
-    "src/spirallens/qualification/confirmation_preseed_authority.py",
-    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
-    "post_d6_code/_post_d6_outputs_01_12.py",
-    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
-    "post_d6_code/_post_d6_outputs_13_27.py",
-    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
-    "post_d6_code/confirmation_post_d6_descriptive.py",
-)
+SOURCE_PATHS = fused_start._SOURCE_PATHS
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -68,6 +59,18 @@ def _clone(source: Path, destination: Path) -> Path:
     )
     _configure_git(destination)
     return destination
+
+
+def _copy_current_execution_source(root: Path) -> None:
+    for repository_path in SOURCE_PATHS:
+        source = REPOSITORY / repository_path
+        destination = root / repository_path
+        if source.is_dir():
+            shutil.rmtree(destination)
+            shutil.copytree(source, destination)
+        else:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
 
 
 def _commit(root: Path, message: str, *paths: str) -> str:
@@ -279,11 +282,42 @@ def _matching_freeze(
 @pytest.fixture(scope="module")
 def frozen_repository(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = _clone(REPOSITORY, tmp_path_factory.mktemp("item23-frozen") / "repository")
-    for repository_path in SOURCE_PATHS:
-        destination = root / repository_path
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REPOSITORY / repository_path, destination)
-    if _git(root, "status", "--short", "--", *SOURCE_PATHS):
+    reanchor_path = (
+        root / item22.D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    )
+    committed_reanchor = None
+    source_history_continuous = False
+    if reanchor_path.is_file():
+        committed_reanchor = item22._load_reanchor(root)
+        source_commit = committed_reanchor.document["lineage"]["source_commit"]
+        try:
+            item22.item21._require_execution_source_history_continuity(
+                root, source_commit
+            )
+        except QualificationContractError as error:
+            if str(error) != "execution-source history changed after the item-21 anchor":
+                raise
+        else:
+            source_history_continuous = True
+        _git(root, "switch", "-C", "item23-fixture-source", source_commit)
+
+    _copy_current_execution_source(root)
+    source_differs = bool(_git(root, "status", "--short", "--", *SOURCE_PATHS))
+    if (
+        committed_reanchor is not None
+        and source_history_continuous
+        and not source_differs
+    ):
+        _git(
+            root,
+            "switch",
+            "-C",
+            "item23-reanchor-fixture",
+            committed_reanchor.introduction_commit,
+        )
+        verified = item22._verify_reanchor_live(root)
+        assert verified.introduction_commit == committed_reanchor.introduction_commit
+    elif source_differs:
         _commit(root, "item23 final source", *SOURCE_PATHS)
     else:
         _git(
@@ -295,12 +329,17 @@ def frozen_repository(tmp_path_factory: pytest.TempPathFactory) -> Path:
             "item23 final source marker",
         )
 
-    item22.issue_d7_item22_current_source_runtime_reanchor(root)
-    _commit(
-        root,
-        "item23 reviewed source runtime reanchor",
-        item22.D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
-    )
+    if (
+        committed_reanchor is None
+        or not source_history_continuous
+        or source_differs
+    ):
+        item22.issue_d7_item22_current_source_runtime_reanchor(root)
+        _commit(
+            root,
+            "item23 reviewed source runtime reanchor",
+            item22.D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
+        )
 
     supplier_patch = pytest.MonkeyPatch()
     values = iter((8_023_001, 8_023_002))
