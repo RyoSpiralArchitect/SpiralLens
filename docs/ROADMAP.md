@@ -208,7 +208,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical unpersisted D7 replay-target and append-only attempt-envelope specifications define later contracts without creating official instances; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official instance or run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` source anchor freezes the strict receipt-only chain from exact source/runtime receipt through seed-free readiness to scoped reviewed successor-family admission, and three artifact-only direct children add, strictly reload, and rejoin them to complete `D7-OPS-21`; a canonical descriptor, authoritative `D7-OPS-22` target/freeze/intent instances, official seeds, official invocation/run, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor and one Level-0 `D7-OPS-22` claim/invocation/inventory/six-member target are persisted at `publication-complete-unfrozen`; full-design freeze, descriptor/intent, official run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -1248,8 +1248,8 @@ below:
     reconstruction enforces issuer-equivalent source caps; the anchor, HEAD,
     and every bounded source-path event on their descendant ancestry must
     retain the exact anchored tree;
-22. <a id="d7-ops-22"></a>**D7-OPS-22** — implement the historical item-22 transaction without operating it — **source operation complete; persisted transaction absent**.
-    The repository-root-only operation accepts no caller supplier, seed, claim key, layout, or authority object; it reloads the historical chain and reviewed exact-current re-anchor, durably claims before one fixed supplier-function invocation, excludes both frozen seed registries, and atomically publishes the closed target without replacement. Import and tests create no official artifact. The fixed
+22. <a id="d7-ops-22"></a>**D7-OPS-22** — record one historical item-22 transaction artifact — **transaction recorded; `publication-complete-unfrozen`; Level 0**.
+    The repository-root-only operation accepts no caller supplier, seed, claim key, layout, or authority object; it reloads the historical chain and reviewed exact-current re-anchor, durably claims before one fixed supplier-function invocation, excludes both frozen seed registries, and atomically publishes the closed target without replacement. Import and tests create no tracked artifact. Exactly one tracked transaction exists; its artifact claims one honest-local invocation, while claim, invocation, inventory-output, and transition verification fields remain false. It is not independent proof of an exactly-once supplier call, unseen values, or global independence. The fixed
     `item22-seed-supply/` root has
     `exclusive-seed-supply-claim.json`, `seed-supply-abort.json`, atomic
     `published-target/` members `official-seed-inventory.json`,
@@ -1312,16 +1312,25 @@ below:
     plus abort, downstream evidence without claim, or invalid/partial
     evidence—fails closed with no precedence or retry. These requirements prove
     neither power-loss survival nor filesystem semantics. Historical
-    item-21 reload remains valid, but this later source
-    surface fails exact-current live readiness. After all pre-claim execution
-    source is final, first publish and review a versioned exact-current
+    item-21 reload remains valid. Before operation, this later source surface
+    failed exact-current live readiness. After all pre-claim execution source
+    became final, the repository first published and reviewed a versioned exact-current
     source/runtime re-anchor bound to the historical item-21 chain at the fixed
     pre-claim path. The source implementation is not that re-anchor. The
     item-22 operation performs the applicable live check internally
     immediately before its no-replace claim and accepts no cached readiness
-    snapshot. Only then acquire the exclusive seed-supply claim, invoke the
-    supplier once, atomically publish the exact seed-bearing full design and
-    replay target, then commit their freeze receipt before launch intent. A
+    snapshot. Only then could it acquire the exclusive seed-supply claim and
+    atomically publish the exact seed-bearing full design and replay target.
+    The Git history proves that the reviewed re-anchor precedes the single
+    same-commit seven-file transaction introduction. The reviewed source
+    contract orders live recheck → durable claim → supplier entry → publication,
+    and the persisted artifacts claim that chronology, but their verification
+    fields remain false and do not independently prove the historical
+    invocation or transition timing. The strict state is
+    `publication-complete-unfrozen`, the claim ceiling is Level 0, all item-22
+    target authority flags are false, and abort evidence is absent. The next
+    steps are a distinct target review/authorization commit followed by a
+    separate committed freeze receipt before launch intent. A
     claim without target publication remains non-retryable; target absence
     never proves that the supplier was not invoked;
 23. <a id="d7-ops-23"></a>**D7-OPS-23** — after that committed D7 design-freeze receipt exists, execute the separate
@@ -1332,9 +1341,9 @@ below:
     sole additional analysis-input class is the committed full-design-freeze
     receipt; launch intent is a later artifact and is not an item-23
     prerequisite or input. Its
-    exact three files are outside the installed wheel and mandatory in the
-    next reviewed source/runtime re-anchor, which does not yet exist on this
-    source branch; no official result artifact exists until the post-freeze
+    exact three files are outside the installed wheel and are included in the
+    reviewed exact-current source/runtime re-anchor now tracked on this branch;
+    no official result artifact exists until the post-freeze
     chronology invokes its no-replace publisher;
 24. <a id="d7-ops-24"></a>**D7-OPS-24** — before the first official fused invocation, create and commit the closed
     nine-member descriptor and pass strict verification-evidence replay/rejoin,
@@ -1436,9 +1445,10 @@ This library slice adds, without changing that generic behavior:
   result, terminal, runner, and fused mechanics without invoking item 22; and
 - the deep-internal item-22 repository-local one-shot operation, which
   implements claim-before-supplier, exclusion-clean OS-CSPRNG supply, and atomic
-  target publication without creating an official instance on this branch.
-  Historical item-21 reload remains valid; exact-current readiness is blocked
-  until final pre-claim source receives its reviewed re-anchor.
+  target publication. The reviewed re-anchor and one tracked Level-0 target
+  instance now exist at `publication-complete-unfrozen`. Historical item-21
+  reload remains valid; freeze, launch, execution, and scientific authority
+  remain absent.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1476,7 +1486,8 @@ cannot attest its future commit or declared Git source-set closure. The
 choice-free C2 receipt is now recorded as the unique receipt-only child of the
 exact clean post-merge C1 commit. It does not attest runtime or transitive
 dependencies. The separate canonical replay-target and attempt-envelope
-contract specifications are implemented in memory, but no concrete instance
+contract specifications remain distinct. One Level-0 replay-target instance is
+now persisted inside the unfrozen item-22 target; no attempt-envelope instance
 is persisted. Step 18 is now partially complete: two deep-internal modules
 define the concrete canonical record schemas and pure structural joins for
 declaration through consumption, and four further deep-internal modules now
@@ -1550,13 +1561,13 @@ successor-family admission—but issues none of those artifacts. Three
 successive receipt-only direct children then add exactly one artifact each in
 that order, strictly reload/rejoin all three, and complete item 21 at the final
 corrected tip. C2 and the existing caller-constructible false-authority records
-cannot supply or replace them. The item-22 module now implements its closed
-observer states and the transaction through abort or unfrozen publication; it creates no instance on this branch, and source
-drift blocks exact-current readiness pending the final reviewed
-re-anchor. Only afterward may item 22 acquire its exclusive supplier claim,
-invoke the supplier once, atomically publish the seed-bearing
-target/full design, and commit the freeze. Those actions, their official seeds,
-launch intent, and the nine-member descriptor are absent at the final corrected tip.
+cannot supply or replace them. Those later actions were absent at the final
+corrected `D7-OPS-21` tip. The current tip now tracks the reviewed exact-current
+re-anchor and one item-22 exclusive claim, a receipt claiming one honest-local invocation,
+official seed inventory, and atomic six-member target. Strict reload reports
+`publication-complete-unfrozen`; the target remains Level 0 and every authority
+flag is false. The committed freeze, launch intent, and nine-member descriptor
+remain absent.
 No official fused invocation,
 start, terminal/result, D7 result, or D8 replay exists; D7 and D8 remain
 `not_run`. Strict verification-evidence replay/rejoin, temporary Git/runtime

@@ -952,16 +952,26 @@ ancestry to retain the exact source tree. Merged-away artifact or source
 mutations and exact source reverts therefore fail rather than being laundered
 by endpoint equality.
 
-Item 22 now has a deep-internal one-shot operation: exact-current recheck, durable claim, one fixed supplier-function invocation, frozen seed exclusions, then atomic target publication. Restart never re-enters the supplier. This is honest-local same-filesystem coordination only. Details remain normative in [D7 Confirmation Execution Design](D7_CONFIRMATION_EXECUTION_DESIGN.md) and [`D7-OPS-22`](ROADMAP.md#d7-ops-22).
-
-Current readiness is deliberately false until all pre-claim source is final and the reviewed artifact-only re-anchor exists; historical item-21 reload remains valid.
+Item 22 has a deep-internal one-shot operation: exact-current recheck, durable
+claim, one fixed supplier-function invocation, frozen seed exclusions, then
+atomic target publication. Restart never re-enters the supplier. The reviewed
+artifact-only exact-current re-anchor is now tracked, and one Level-0
+transaction strict-loads at `publication-complete-unfrozen`. Its invocation
+artifact claims one local supplier call; claim, invocation, inventory-output,
+and transition verification remain false. Historical item-21 reload remains
+valid. This is honest-local same-filesystem coordination only and proves
+neither an independently verified invocation, unseen values, nor global
+independence.
+Details remain normative in [D7 Confirmation Execution Design](D7_CONFIRMATION_EXECUTION_DESIGN.md)
+and [`D7-OPS-22`](ROADMAP.md#d7-ops-22).
 
 That is implementation conformance, not D7 execution evidence. Committed C2
 verifies only the declared historical Git source set; the final corrected chain
 separately adds exact source/runtime receipt, seed-free readiness, and scoped
-reviewed successor-family admission. Concrete confirmation seeds, seed-bearing
-target admission, freeze, lifecycle, authoritative target binding, official
-terminal publication, and isolated replay remain absent. The deep-internal
+reviewed successor-family admission. The official seed inventory and
+six-member target are persisted, but seed-bearing target admission, freeze,
+lifecycle, authoritative target binding, official terminal publication, and
+isolated replay remain absent. The deep-internal
 persistence-only slice can now record
 and reload a caller-supplied primary declaration-through-start record prefix as chained
 false-authority envelopes in a dedicated evidence-only lane without
@@ -1064,13 +1074,19 @@ terminals can be strictly
 reauthenticated to the same pins. This is authentication relative to those
 pins only. It establishes no pin/trust-root provenance, official authority,
 wall-clock freshness, authoritative start, observed execution, scientific
-eligibility, retry/replay authority, D7, or D8. No supplier or official seed
-was used, and no official execution occurred.
+eligibility, retry/replay authority, D7, or D8. That external-abort path uses
+no supplier or official seed and performed no official execution.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The remaining order is source-final item-23 implementation → reviewed exact-current re-anchor → one-shot item-22 target → committed freeze → item-23 descriptive artifact → closed launch descriptor → one item-24 invocation/terminal → byte-identical replay. Launch intent is not an item-23 prerequisite or input.
+The remaining order is a distinct target review/freeze-authorization commit →
+a strictly later full-design-freeze receipt commit → item-23 descriptive
+artifact → closed launch descriptor → one item-24 invocation/terminal →
+byte-identical replay. Launch intent is not an item-23 prerequisite or input.
 
-This branch performs none of those artifact steps; all official outcomes remain absent or `not_run`.
+This branch has completed only the reviewed exact-current re-anchor and the
+one-shot item-22 target step. The target remains unfrozen and all later
+official outcomes remain absent or `not_run`; the item-22 target authority
+vector remains all-false.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
