@@ -198,6 +198,7 @@ def build_d7_item22_current_source_runtime_reanchor(repository_root: str | Path)
     destination = root / D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
     if destination.exists() or destination.is_symlink():
         raise QualificationContractError("item-22 re-anchor path is already present")
+    item21._require_live_paths_absent(root)
     source_commit = item21._head(root)
     return canonical_json_bytes(_reanchor_document(root, source_commit=source_commit, recorded_runtime=None))
 

@@ -21,12 +21,7 @@ from spirallens.qualification.common import QualificationContractError
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 MODULE_PATH = "src/spirallens/qualification/confirmation_seed_supply_contracts.py"
-SOURCE_PATHS = (
-    MODULE_PATH,
-    "src/spirallens/qualification/confirmation_fused_start.py",
-    "src/spirallens/qualification/confirmation_preseed_authority.py",
-    *fused_start._REPOSITORY_ONLY_SOURCE_PATHS,
-)
+SOURCE_PATHS = fused_start._SOURCE_PATHS
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -55,6 +50,18 @@ def _clone(source: Path, destination: Path) -> Path:
     return destination
 
 
+def _copy_current_execution_source(root: Path) -> None:
+    for repository_path in SOURCE_PATHS:
+        source = REPOSITORY / repository_path
+        destination = root / repository_path
+        if source.is_dir():
+            shutil.rmtree(destination)
+            shutil.copytree(source, destination)
+        else:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+
+
 def _commit(root: Path, message: str, *paths: str) -> str:
     _git(root, "add", *paths)
     _git(root, "commit", "--quiet", "-m", message)
@@ -79,11 +86,36 @@ def exact_locked_test_runtime() -> Iterator[None]:
 @pytest.fixture(scope="module")
 def prepared_repository(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = _clone(REPOSITORY, tmp_path_factory.mktemp("item22-prepared") / "repository")
-    for repository_path in SOURCE_PATHS:
-        destination = root / repository_path
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REPOSITORY / repository_path, destination)
-    if _git(root, "status", "--short", "--", *SOURCE_PATHS):
+    reanchor_path = root / item22.D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH
+    committed_reanchor = None
+    source_history_continuous = False
+    if reanchor_path.is_file():
+        committed_reanchor = item22._load_reanchor(root)
+        source_commit = committed_reanchor.document["lineage"]["source_commit"]
+        try:
+            item22.item21._require_execution_source_history_continuity(
+                root, source_commit
+            )
+        except QualificationContractError as error:
+            if str(error) != "execution-source history changed after the item-21 anchor":
+                raise
+        else:
+            source_history_continuous = True
+        _git(root, "switch", "-C", "item22-fixture-source", source_commit)
+
+    _copy_current_execution_source(root)
+    source_differs = bool(_git(root, "status", "--short", "--", *SOURCE_PATHS))
+    if (
+        committed_reanchor is not None
+        and source_history_continuous
+        and not source_differs
+    ):
+        _git(root, "switch", "-C", "item22-reanchor-fixture", committed_reanchor.introduction_commit)
+        verified = item22._verify_reanchor_live(root)
+        assert verified.introduction_commit == committed_reanchor.introduction_commit
+        return root
+
+    if source_differs:
         source_commit = _commit(root, "item22 final source", *SOURCE_PATHS)
     else:
         _git(root, "commit", "--quiet", "--allow-empty", "-m", "item22 final source marker")
@@ -210,6 +242,34 @@ def test_contract_tables_are_small_closed_and_freeze_descriptor_are_separate() -
         "physical-store-lane-identity",
         "full-design-freeze",
     )
+
+
+def test_reanchor_build_rechecks_every_preclaim_absence(
+    prepared_repository: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _clone(prepared_repository, tmp_path / "repository")
+    reanchor = item22._load_reanchor(root)
+    source_commit = reanchor.document["lineage"]["source_commit"]
+    _git(root, "switch", "-C", "test-reanchor-source", source_commit)
+    calls: list[Path] = []
+
+    def reject_preexisting_paths(observed_root: Path) -> None:
+        calls.append(observed_root)
+        raise QualificationContractError("sentinel preclaim path presence")
+
+    assert item22.item21._PRESEED_ABSENCE_PATHS == (
+        item22.D7_ITEM22_CURRENT_SOURCE_RUNTIME_REANCHOR_REPOSITORY_PATH,
+        item22.D7_ITEM22_SEED_SUPPLY_DIRECTORY_REPOSITORY_PATH,
+        item22.D7_ITEM22_FUTURE_LAUNCH_DESCRIPTOR_REPOSITORY_PATH,
+    )
+    monkeypatch.setattr(item22.item21, "_require_live_paths_absent", reject_preexisting_paths)
+
+    with pytest.raises(QualificationContractError, match="sentinel preclaim path presence"):
+        item22.build_d7_item22_current_source_runtime_reanchor(root)
+
+    assert calls == [root]
 
 
 def test_versioned_reanchor_reconstructs_and_verifies_live_source(
