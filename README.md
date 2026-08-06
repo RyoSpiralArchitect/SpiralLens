@@ -686,10 +686,22 @@ false. Claim, invocation, inventory-output, and transition verification fields
 also remain false, so the artifacts do not independently prove an exactly-once
 supplier call. The freeze receipt keeps `freeze_verified=false`, and all three
 of its binding leaves keep `authoritative_source_loaded=false` and
-`identity_authenticated=false`. Abort evidence, launch descriptor, item-23
-artifact/result, official run, D7, and D8 remain absent or `not_run`. The local
-OS-CSPRNG record proves neither cryptographic nor human unseenness, and it
-proves no cross-host or global statistical independence.
+`identity_authenticated=false`. Abort evidence and a launch descriptor remain
+absent. Commit `83ed5f419ff27af0935aa84c363df64f04926cac` separately introduces the
+5,293,662-byte canonical item-23 descriptive result with SHA-256
+`d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`, schema
+`spirallens.postselection-descriptive-analysis-result.v0.1`, and result ID
+`post-d6-descriptive-a654fa3d9117d2ec9f9275dd`. It is operationally
+`complete` but scientifically `insufficient`: 26 outputs are available and the
+sole blocked output is `amplitude-identifiability-support-separation`, because
+the historical main D2 scalar values were not persisted and no rerun or
+current-code reconstruction was performed. Its claim ceiling remains Level 0,
+its claim delta is `none`, its authority vector contains zero `true` values,
+and its exact analysis-input trace contains seven files. It does not change the
+item-22 presence state from `full-design-frozen`, authorize launch, or advance
+D7 or D8; both gates remain `not_run`. The local OS-CSPRNG record proves
+neither cryptographic nor human unseenness, and it proves no cross-host or
+global statistical independence.
 
 This is a positive description of missing inputs, not a retroactive change to
 C1, C2, D6, or the existing replay/attempt schemas. A caller-created record,
@@ -708,7 +720,7 @@ authenticate its bindings or promote the inventory's false self-attestation
 fields.
 Authoritative target-bound lifecycle instances, an official fused
 invocation,
-official result/failure publication, authoritative terminal publication,
+an official D7 result-or-failure publication, an authoritative D7 terminal publication,
 official abort finalization, an official runner, and replay comparison remain
 absent. The local prefix store is a
 persistence-only evidence mechanism: a strictly loaded caller-supplied start
@@ -1270,9 +1282,12 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   middle commit through a repository-local field that contains no human-review
   or authorization attestation; regardless of platform commit-signature
   evidence, it proves neither human review nor authenticated authorization.
-  The resulting current state is
-  `full-design-frozen`, so item 23 is the next artifact step; launch intent is
-  still absent and later. If
+  The resulting item-22 state remains `full-design-frozen`. The separate
+  item-23 descriptive result is now committed at
+  `83ed5f419ff27af0935aa84c363df64f04926cac`, without changing that state or
+  granting authority. The next artifact step is the closed launch
+  descriptor/launch intent, followed by item 24; no launch intent or official
+  invocation exists now. If
   the originating operation ends after claiming but before atomic target
   publication, the seed supply is semantically aborted and cannot be retried;
   its durable state nevertheless remains claim-present unless a separate valid
@@ -1390,12 +1405,13 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   all three binding leaves retain `authoritative_source_loaded=false` and
   `identity_authenticated=false`. The target's
   claim ceiling remains Level 0 and its authority vector remains all-false.
-  The next reviewed order is the item-23 descriptive artifact, a closed launch
-  descriptor, then the first official fused invocation at
-  `D7-OPS-24`. Launch intent is not an item-23 prerequisite or analysis input. Only a
+  The item-23 descriptive artifact is now committed. The next reviewed order
+  is a closed launch descriptor/launch intent, then the first official fused
+  invocation at `D7-OPS-24`; no launch intent exists now. Launch intent was not
+  an item-23 prerequisite or analysis input. Only a
   future scope-specific confirmation artifact may change its own qualification
-  status; the current official result remains byte-identically false for
-  `d6_d8_advanced` and `synthetic_qualified`.
+  status; the current official D0-D5 selection result remains byte-identically
+  false for `d6_d8_advanced` and `synthetic_qualified`.
 - **Then — candidate-to-loop integration:** keep geometry/holonomy and
   field/defect paths separate, join them only through explicit same-substrate
   artifacts, persist a same-field core-degeneracy scalar and its nested-radius
@@ -1471,11 +1487,12 @@ immediate next plan live in the single
   declared-Git-source-set receipt, plus canonical unpersisted replay-target and
   append-only attempt-envelope contract specifications. A separate
   repository-only experiment lane now contains the fixed 27-output
-  `D7-OPS-23` descriptive derivation and no-replace publisher; source and its
-  required committed item-22 freeze now exist, but the item-23 artifact and
-  official result do not. It is excluded from the installed wheel, and none of
-  these surfaces is exported from `spirallens.qualification` or the package
-  root. No public admission,
+  `D7-OPS-23` descriptive derivation and no-replace publisher. Its required
+  item-22 freeze and one committed Level-0 descriptive result now exist; that
+  result is `insufficient`, has no claim delta, and is not an official D7
+  result, launch, or promotion. The lane is excluded from the installed wheel,
+  and none of these surfaces is exported from `spirallens.qualification` or
+  the package root. No public admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   Importing the namespace does not run a selection or confirmation, advance

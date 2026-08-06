@@ -985,10 +985,12 @@ inventory record's own `seed_inventory_frozen`,
 `supplier_chronology_verified`, and `cryptographic_unseen_proof` fields remain
 false; the outer receipt does not mutate or promote them. Seed-bearing target
 admission, authoritative freeze proof, lifecycle, authoritative target binding,
-official terminal publication, and isolated replay remain absent. The strict
-item-23 observer is now `ready`, meaning only that the descriptive artifact's
-preconditions strict-load; readiness grants no launch, execution, or scientific
-authority.
+official terminal publication, and isolated replay remain absent. Commit
+`83ed5f419ff27af0935aa84c363df64f04926cac` now records the separate item-23
+post-D6 descriptive artifact. Its strict observer reports `complete`, but the
+scientific status is `insufficient`, the claim ceiling remains Level 0, the
+claim delta is none, and zero authority facts are true. This operational
+completion grants no launch, execution, or scientific authority.
 The deep-internal
 persistence-only slice can now record
 and reload a caller-supplied primary declaration-through-start record prefix as chained
@@ -1096,19 +1098,20 @@ eligibility, retry/replay authority, D7, or D8. That external-abort path uses
 no supplier or official seed and performed no official execution.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The target-publication → repository-local chronology checkpoint → full-design-freeze
-receipt chronology is complete. The remaining order starts with the item-23
-descriptive artifact, then the closed launch descriptor, one item-24
-invocation/terminal, and byte-identical replay. Launch intent is not an item-23
-prerequisite or input.
+The target-publication → repository-local chronology checkpoint →
+full-design-freeze receipt → item-23 descriptive-result chronology is
+complete. The remaining order starts with the closed descriptor and launch
+intent, then one item-24 invocation/terminal and byte-identical replay. Launch
+intent was not an item-23 prerequisite or input, and none exists yet.
 
 This branch contains the reviewed exact-current re-anchor, the one-shot
-item-22 target, and its separate freeze receipt. The item-22 observer is
-`full-design-frozen` and the item-23 observer is `ready`, but the item-23
-artifact and all later official outcomes remain absent or `not_run`.
+item-22 target, its separate freeze receipt, and the committed item-23 result.
+The item-22 observer remains `full-design-frozen`; item 23 is operationally
+complete but scientifically `insufficient`, with 26 available outputs and the
+full-scope `amplitude-identifiability-support-separation` output blocked.
 `freeze_verified=false`; the item-22 target authority vector and inventory
-self-verification fields remain all-false. No execution or scientific
-authority follows from this readiness.
+self-verification fields remain all-false. D7 and D8 remain `not_run`, and no
+execution or scientific authority follows from the descriptive result.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
@@ -1128,14 +1131,25 @@ There is no D8 promotion helper that can pass from two caller-supplied byte
 strings; typed D7, execution, namespace, source, and replay receipts are still
 required.
 
-### Post-D6 analysis is split before either lane runs
+### Post-D6 analysis remains split across authority lanes
 
 The already-opened PR #9 terminal may be inspected only under the canonical
 `postselection_descriptive_only` plan. That lane declares prior outcome
 exposure, fixed scientific grains, eight mandatory descriptive packages,
 `claim_delta=none`, and an absolute prohibition on D7 design use. It also
-records that planning used opened outcome values; only its runner and result
-remain unexecuted.
+records that planning used opened outcome values. Its frozen historical bytes
+continue to record `runner_implemented=false`, `writer_implemented=false`, and
+`result_status=not_run`; those planning-time fields are not rewritten by the
+later item-23 publication.
+
+The separate committed item-23 result has schema v0.1, result ID
+`post-d6-descriptive-a654fa3d9117d2ec9f9275dd`, canonical SHA-256
+`d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`,
+and byte count `5,293,662`. It records a seven-entry analysis-input read trace
+and contains 26 available outputs and one blocked output. Historical main D2
+`amplitude`, `identifiability_score`, and `support_counts` scalars were not
+persisted; descriptor and six-row confounder evidence do not satisfy the
+required denominator, and no rerun reconstruction was performed.
 
 A separate canonical D7 structural gap matrix may inspect only the D6 decision
 and a tracked source snapshot. It cannot read the terminal result, terminal
@@ -1145,19 +1159,20 @@ confirmation values. Its closed vocabulary is `absent`, `contract_only`,
 `blocked`; it has no completion percentage, weighted score, candidate, or
 admission state.
 
-Both artifacts are frozen but unexecuted. PR #11 adds no public analysis
-runner, writer, D7 admission helper, or promotion API. The detailed chronology,
-unit contract, work packages, gap rows, and full research sequence live in
+Both canonical planning artifacts remain frozen. PR #11 added no public
+analysis runner, writer, D7 admission helper, or promotion API; the later
+repository-only item-23 result does not alter that historical statement or
+create a public surface. The detailed chronology, unit contract, work
+packages, gap rows, and full research sequence live in
 `docs/POST_D6_ANALYSIS_AND_D7_GAPS.md`.
 
-There is no independent operator or information barrier. Therefore the
-complete D7 family descriptor, admission, protocol, declared Git source-set
-closure, graph/case/stress and aggregation bytes, lifecycle, launch intent,
-exclusive attempt, and absent result namespace must be frozen under a
-committed receipt before the descriptive runner may execute. Runtime and
-transitive dependency closure remain separate obligations. Any later D7
-design change requires a new version and review; the prior admission cannot be
-carried forward.
+There is no independent operator or information barrier. Item 23 therefore ran
+only after its declared D7 design metadata and initially absent result
+namespace were bound by the committed full-design-freeze chronology. Launch
+intent and an exclusive attempt remain later artifacts and were neither
+item-23 prerequisites nor analysis inputs. Runtime and transitive dependency
+closure remain separate obligations. Any later D7 design change requires a
+new version and review; the prior admission cannot be carried forward.
 
 Any required failure stops. Any required insufficient result blocks. A
 complete applicable D0-D8 chain is necessary before later subject-protocol

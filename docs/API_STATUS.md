@@ -39,7 +39,7 @@ and cannot change experiment status or authority.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected receipt-only `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction, and its separate full-design-freeze receipt; the combined current observer state is `full-design-frozen`, but none is a public export or caller-configurable supplier surface, and the persisted target is not an official descriptor/start/run, trusted pin root, scientific result, or D7/D8 authority |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, unpersisted replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected receipt-only `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction and its separate full-design-freeze receipt, plus one committed repository-only `D7-OPS-23` Level-0 descriptive result; the item-22 state remains `full-design-frozen`, but none is a public export or caller-configurable supplier surface, and neither the target nor descriptive result is an official descriptor/start/run, trusted pin root, independent confirmation, or D7/D8 authority |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.atlas` | provisional/model extra | import and artifact readers remain installable; the repository-bound public-example runner requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files |
 | `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
@@ -61,12 +61,25 @@ repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
 derivation and repository-bound no-replace lifecycle. They are outside the
 installed wheel and export nothing from the package or qualification
 namespace. The exact three files are members of the reviewed exact-current
-source/runtime re-anchor now tracked on this branch. The committed
-full-D7-design freeze receipt now satisfies the operation's frozen-input
-prerequisite, so the item-23 descriptive artifact is the next repository step;
-no item-23 artifact or result is present yet. This readiness grants no launch,
-execution, or scientific authority. Reusable analysis primitives remain
-extraction candidates until a second independent consumer exists.
+source/runtime re-anchor now tracked on this branch. The historical plan bytes
+retain `status=frozen_not_run`, `runner_implemented=false`, and
+`writer_implemented=false`; those fields describe the plan when it was frozen
+and are not rewritten as living execution metadata. Commit
+`83ed5f419ff27af0935aa84c363df64f04926cac` now introduces the sole item-23
+result: 5,293,662 canonical bytes, SHA-256
+`d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`, schema
+`spirallens.postselection-descriptive-analysis-result.v0.1`, and result ID
+`post-d6-descriptive-a654fa3d9117d2ec9f9275dd`. It has
+`status=insufficient`, `operational_status=complete`, Level-0 claim ceiling,
+`claim_delta=none`, 26 available outputs, one blocked output, and an exact
+seven-file analysis-input trace. The sole blocked output is
+`amplitude-identifiability-support-separation`: the historical main D2 scalar
+values were not persisted, and no rerun or current-code reconstruction was
+performed. No authority flag is true, D7 and D8 remain `not_run`, and the
+item-22 state remains `full-design-frozen`. The next repository step is the
+closed launch descriptor/launch intent, followed by item 24; no launch exists
+now. Reusable analysis primitives remain extraction candidates until a second
+independent consumer exists.
 
 The spectral-moment four-case generator and
 `spirallens.qualification.confirmation_protocol` foundation are internal
@@ -414,12 +427,18 @@ authenticated authorization. The receipt keeps
 all-false. In the inventory, `seed_inventory_frozen`,
 `supplier_chronology_verified`, and `cryptographic_unseen_proof` remain false;
 unseen status still requires external attestation, and both exclusion bindings
-retain false source/identity authentication. Abort evidence, launch
-descriptor, item-23 artifact/result, official run, D7, and D8 remain absent or
-`not_run`. The next repository step is the item-23 descriptive artifact,
-followed by a closed launch descriptor, official item 24, and replay. Launch
-intent is not an item-23 prerequisite or analysis input. Canonical bytes and
-repository ancestry do not self-promote into authority.
+retain false source/identity authentication. Abort evidence, a launch
+descriptor, official run, D7, and D8 remain absent or `not_run`. The separate
+item-23 descriptive result introduced by
+`83ed5f419ff27af0935aa84c363df64f04926cac` is present and committed, with
+SHA-256 `d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`.
+Its operational completion does not change the item-22
+`full-design-frozen` state or supply launch, execution, confirmation, or
+scientific authority. The next repository step is the closed launch
+descriptor/launch intent, followed by official item 24 and replay; no launch
+intent exists now. Launch intent was not an item-23 prerequisite or analysis
+input. Canonical bytes and repository ancestry do not self-promote into
+authority.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
