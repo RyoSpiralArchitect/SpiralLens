@@ -4,6 +4,23 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 descriptive source and blocked entrypoint coordinates
+
+- Added an internal fresh derivation for the frozen post-D6 descriptive result
+  shape. Its read surface is limited to the six declared historical bindings;
+  it does not consume the predecessor result, its value-bearing source files,
+  successor seeds, or confirmation outcomes. Commit-B verification requires
+  its byte-exact rederivation and rejects schema-valid substitute outputs.
+- Added the declared v1 preparation script, runner, and official-callable
+  coordinate. The scripts authenticate import origins and route coordinates;
+  all three coordinates fail closed before publication or dispatch because no
+  closed external chronology, launch authority, or execution-start transition
+  exists.
+- No stage-17 result publisher is included. Reviewed source commit S remains
+  unselected and source completion is not reached; no official artifact or
+  result has been generated, and the claim delta, public API, supported schemas,
+  dependencies, and library maturity are unchanged.
+
 ## 2026-08-10 — D7 v1 private-stage publication primitive
 
 - Added one internal, non-exported source-only primitive for the prospective

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import errno
@@ -10,6 +10,7 @@ import inspect
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from unittest.mock import patch
 
@@ -18,6 +19,9 @@ import pytest
 from spirallens._repository_context import RepositoryContext
 from spirallens.core.canonical import sha256_bytes
 from spirallens.qualification import confirmation_v1_materialization as materialization
+from spirallens.qualification import (
+    confirmation_v1_post_d6_descriptive as descriptive,
+)
 from spirallens.qualification import (
     confirmation_v1_private_publication as private_publication,
 )
@@ -36,6 +40,10 @@ MODULE_PATH = (
 RECORDS_MODULE_PATH = (
     REPOSITORY / "src" / "spirallens" / "qualification" / "confirmation_v1_records.py"
 )
+DESCRIPTIVE_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
+)
+DESCRIPTIVE_MODULE_PATH = REPOSITORY.joinpath(*DESCRIPTIVE_REPOSITORY_PATH.split("/"))
 PRIVATE_PUBLICATION_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_private_publication.py"
 )
@@ -44,6 +52,14 @@ PRIVATE_PUBLICATION_MODULE_PATH = REPOSITORY.joinpath(
 )
 PROTOCOL_PATH = REPOSITORY / "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
+
+
+@pytest.fixture(autouse=True)
+def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
+    """Drop same-file test clones immediately after each isolated test."""
+
+    yield
+    shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _run(repository: Path, *arguments: str) -> str:
@@ -466,6 +482,11 @@ def _build_case(
             target.unlink(missing_ok=True)
             os.link(RECORDS_MODULE_PATH, target)
             continue
+        if repository_path == DESCRIPTIVE_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(DESCRIPTIVE_MODULE_PATH, target)
+            continue
         if repository_path == PRIVATE_PUBLICATION_REPOSITORY_PATH:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.unlink(missing_ok=True)
@@ -603,11 +624,57 @@ def _commit_a(case: _Case, *, extra_delta: bool = False) -> str:
     return _run(case.repository, "rev-parse", "HEAD")
 
 
-def _commit_b(case: _Case, *, extra_delta: bool = False) -> str:
+def _exact_descriptive_result(
+    case: _Case,
+) -> records.D7V1PostselectionDescriptiveResult:
+    historical = case.protocol["historical_input_policy"]
+    assert isinstance(historical, dict)
+    entries = [
+        historical["historical_plan_binding"],
+        *historical["permitted_historical_scientific_parents"],
+    ]
+    sources: dict[str, bytes] = {}
+    for entry in entries:
+        assert isinstance(entry, dict)
+        role = str(entry["artifact_binding_role"])
+        sources[role] = subprocess.run(
+            (
+                "git",
+                "-C",
+                str(case.repository),
+                "show",
+                f"{entry['source_commit']}:{entry['repository_path']}",
+            ),
+            check=True,
+            capture_output=True,
+        ).stdout
+    attempt = case.records_by_role[
+        records.D7V1OfficialExecutionAttemptReservation.artifact_role
+    ]
+    assert isinstance(attempt, records.D7V1OfficialExecutionAttemptReservation)
+    return descriptive._derive_d7_v1_post_d6_descriptive_result(
+        historical_plan_source=sources["historical-post-d6-plan"],
+        parent_protocol_source=sources["parent-protocol"],
+        parent_result_source=sources["parent-result"],
+        parent_manifest_source=sources["parent-manifest"],
+        parent_consumption_source=sources["parent-consumption"],
+        parent_d6_decision_source=sources["parent-d6-decision"],
+        parent_attempt=attempt,
+        chronology_receipt=case.receipt,
+    )
+
+
+def _commit_b(
+    case: _Case,
+    *,
+    extra_delta: bool = False,
+    exact_result: bool = False,
+) -> str:
     result_path = str(
         case.protocol["coordinate_and_member_layout"]["descriptive_result"]
     )
-    _write(case.repository, result_path, case.result.canonical_bytes)
+    result = _exact_descriptive_result(case) if exact_result else case.result
+    _write(case.repository, result_path, result.canonical_bytes)
     if extra_delta:
         _write(
             case.repository,
@@ -625,9 +692,20 @@ def test_staged_joined_loader_and_exact_commit_a_and_b_succeed(tmp_path: Path) -
     commit_a = _commit_a(case)
     verified_a = _verify_commit_a(case, commit_a)
     assert isinstance(verified_a, materialization.D7V1CommitVerification)
-    commit_b = _commit_b(case)
+    commit_b = _commit_b(case, exact_result=True)
     verified_b = _verify_commit_b(case, commit_a, commit_b)
     assert isinstance(verified_b, materialization.D7V1CommitVerification)
+
+
+def test_commit_b_rejects_a_schema_valid_nonrederived_result(
+    tmp_path: Path,
+) -> None:
+    case = _build_case(tmp_path)
+    commit_a = _commit_a(case)
+    commit_b = _commit_b(case)
+
+    with pytest.raises(QualificationContractError, match="fresh six-input derivation"):
+        _verify_commit_b(case, commit_a, commit_b)
 
 
 def test_high_level_verifiers_have_no_external_reader_injection_surface(
@@ -768,6 +846,7 @@ def test_staged_loader_reenumerates_source_blob_and_mode(
     (
         "src/spirallens/qualification/confirmation_v1_materialization.py",
         "src/spirallens/qualification/confirmation_v1_records.py",
+        DESCRIPTIVE_REPOSITORY_PATH,
     ),
 )
 def test_staged_loader_rejects_an_equivalent_but_different_import_origin(
