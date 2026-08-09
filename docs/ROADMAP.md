@@ -189,10 +189,13 @@ The separately frozen
 [`d7-v1-pre-item23-materialization-v0-1`](../protocols/d7_v1_pre_item23_materialization_v0_1.json)
 contract is a prospective `VOY-V3` input design, not a completed VOY stage. It
 defines 11 primary structural schemas over nine future pre-item-23 files and a
-later result, but remains `frozen_not_run`: the remaining v1 source,
-authoritative joined loader, C1/C2 closure, external claims, atomic publication,
-post-commit verifier, result, and execution are all absent. No `D7-OPS`,
-scientific, or library completion credit changes here.
+later result, but remains `frozen_not_run`. An internal read-only kernel now
+strictly rejoins a supplied staged tree and verifies the prospective
+single-parent commit A and result-only commit B. It deliberately has no
+publisher: a caller-owned stage cannot close the validate-to-rename race, so a
+later source PR must define a privately owned, durably published stage. C1/C2,
+external claims, artifact publication, result, and execution remain absent. No
+`D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means
 

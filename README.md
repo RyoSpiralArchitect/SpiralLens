@@ -60,9 +60,11 @@ The prospective
 now fixes the structural vocabulary and the only admissible future chronology:
 11 primary schema roles, nine co-published pre-item-23 repository files, then a
 separate descriptive-result commit. Its status is `frozen_not_run`. The current
-record types are internal, structural, and unauthenticated; no joined loader,
-source closure, seed claim, store, receipt, result, execution authority, public
-API, or library maturity is created by this change.
+record types are internal, structural, and unauthenticated. A separate
+non-exported, read-only verifier now rejoins a supplied exact nine-file staged
+tree and the prospective direct-parent commits A and B; it publishes nothing.
+No source closure, seed claim, store, receipt, result, execution authority,
+public API, or library maturity is created by these source-only changes.
 
 ## Scientific interpretation anchors
 
@@ -1559,6 +1561,9 @@ immediate next plan live in the single
   the package root. No public admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
+  The versioned-successor lane additionally contains an internal read-only
+  staged/commit-A/commit-B verifier. It has no publisher or execution entry and
+  creates no v1 artifact;
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,
