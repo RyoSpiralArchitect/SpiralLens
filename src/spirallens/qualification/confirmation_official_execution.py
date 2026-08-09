@@ -1,9 +1,9 @@
 """Deep-internal exact D7 spectral-moment producer and aggregation.
 
-The sole producer has no arguments and reads one fixed, future, committed
+The sole producer has no arguments and reads one fixed committed
 fused-authority descriptor.  No descriptor, seed, invocation, or result is
-created by this module.  Until that descriptor exists at the canonical path,
-the producer fails closed before reconstructing C1 or touching a generator.
+created by this module.  Descriptor absence and a recorded chronology
+disposition both fail closed before reconstructing C1 or touching a generator.
 
 The numeric execution path deliberately has two global phases: all 64 blind
 primary predictions are sealed first, and only then may any spectral oracle be
@@ -22,6 +22,8 @@ import numpy as np
 from spirallens.core.canonical import (
     canonical_json_bytes,
     canonical_json_sha256,
+    parse_canonical_json,
+    sha256_bytes,
 )
 from spirallens.synthetic.cartesian_fourier_domain_phantom import (
     evaluate_oracle_sampled_response,
@@ -117,6 +119,14 @@ D7_OFFICIAL_PRODUCER_QUALNAME = "produce_d7_official_result"
 D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH = (
     "experiments/qualification/d7_spectral_moment_confirmation_v0_1/launch.json"
 )
+D7_V0_1_CHRONOLOGY_DISPOSITION_REPOSITORY_PATH = (
+    "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+    "item23-chronology-disposition.json"
+)
+D7_V0_1_CHRONOLOGY_DISPOSITION_SCHEMA_VERSION = (
+    "spirallens.d7-chronology-disposition.v0.1"
+)
+D7_V0_1_CHRONOLOGY_BLOCK_ID = "d7-v0-1-item23-chronology-deviation-2026-08-09"
 D7_OFFICIAL_PARENT_PROTOCOL_REPOSITORY_PATH = (
     "protocols/d0_d5_f2_cartesian_selection_v0_1.json"
 )
@@ -173,6 +183,65 @@ def _repository_root() -> Path:
 
 def _official_descriptor_path(root: Path) -> Path:
     return root / D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
+
+
+def _require_v0_1_chronology_execution_eligible(root: Path) -> None:
+    """Reject the obsolete v0.1 identity for every disposition-path state."""
+
+    disposition_path = root / D7_V0_1_CHRONOLOGY_DISPOSITION_REPOSITORY_PATH
+    if not disposition_path.exists() and not disposition_path.is_symlink():
+        raise QualificationContractError(
+            "official D7 v0.1 chronology disposition is absent; execution is blocked"
+        )
+    if not disposition_path.is_file() or disposition_path.is_symlink():
+        raise QualificationContractError(
+            "official D7 v0.1 chronology disposition is not a regular file; "
+            "execution is blocked"
+        )
+    try:
+        source = disposition_path.read_bytes()
+        document = parse_canonical_json(
+            source,
+            label="official D7 v0.1 chronology disposition",
+        )
+        descriptor_source = _official_descriptor_path(root).read_bytes()
+    except (OSError, ValueError) as error:
+        raise QualificationContractError(
+            "official D7 v0.1 chronology disposition cannot be validated; "
+            "execution is blocked"
+        ) from error
+    if type(document) is not dict:
+        raise QualificationContractError(
+            "official D7 v0.1 chronology disposition has the wrong root type; "
+            "execution is blocked"
+        )
+    try:
+        disposition = document["disposition"]
+        descriptor_binding = document["bindings"]["launch_descriptor"]
+        exact_block = (
+            document["schema_version"] == D7_V0_1_CHRONOLOGY_DISPOSITION_SCHEMA_VERSION
+            and document["disposition_id"] == D7_V0_1_CHRONOLOGY_BLOCK_ID
+            and document["claim_ceiling"] == "level_0"
+            and disposition["official_item24_v0_1_invocation_eligible"] is False
+            and disposition["retroactive_protocol_conformance_claimed"] is False
+            and disposition["d7_state"] == "not_run"
+            and disposition["d8_state"] == "not_run"
+            and descriptor_binding["repository_path"]
+            == D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
+            and descriptor_binding["canonical_sha256"]
+            == sha256_bytes(descriptor_source)
+            and descriptor_binding["byte_count"] == len(descriptor_source)
+        )
+    except (KeyError, TypeError):
+        exact_block = False
+    if not exact_block:
+        raise QualificationContractError(
+            "official D7 v0.1 chronology disposition is malformed; execution is blocked"
+        )
+    raise QualificationContractError(
+        "official D7 v0.1 invocation is blocked by chronology deviation: "
+        f"{D7_V0_1_CHRONOLOGY_BLOCK_ID}"
+    )
 
 
 def _seed_by_slot(
@@ -599,6 +668,7 @@ def _load_official_producer_context() -> _D7OfficialProducerContext:
         raise QualificationContractError(
             "official D7 fused descriptor is absent; execution is not authorized"
         )
+    _require_v0_1_chronology_execution_eligible(root)
     snapshot = fused_authority.load_d7_fused_authority_snapshot(descriptor_path)
     if snapshot.repository_root != root or snapshot.descriptor_path != descriptor_path:
         raise QualificationContractError(

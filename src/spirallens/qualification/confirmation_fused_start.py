@@ -563,6 +563,7 @@ def _require_descriptor_bound_official_producer(
     )
     if descriptor_path == official_path:
         official._require_official_producer_identity(scientific_producer)
+        official._require_v0_1_chronology_execution_eligible(repository_root)
 
 
 @dataclass(frozen=True, slots=True)

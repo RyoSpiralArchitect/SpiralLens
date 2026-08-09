@@ -1,18 +1,25 @@
 from __future__ import annotations
 
 import ast
+import hashlib
+import json
 import runpy
 import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
+
+from spirallens.core.canonical import canonical_json_bytes, parse_canonical_json
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 PREPARER = REPOSITORY / "scripts" / "prepare_d7_item24_launch.py"
 RUNNER = REPOSITORY / "scripts" / "run_d7_item24.py"
+CHRONOLOGY_DISPOSITION = (
+    REPOSITORY / "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+    "item23-chronology-disposition.json"
+)
 
 
 def _call_names(path: Path) -> tuple[str, ...]:
@@ -149,7 +156,7 @@ def test_preparer_never_enters_the_producer_or_fused_start() -> None:
         assert forbidden_option not in source
 
 
-def test_runner_gives_the_bare_official_producer_to_one_fused_call() -> None:
+def test_superseded_runner_contains_no_execution_entry() -> None:
     tree = ast.parse(RUNNER.read_text(encoding="utf-8"), filename=str(RUNNER))
     fused_calls = [
         node
@@ -166,13 +173,12 @@ def test_runner_gives_the_bare_official_producer_to_one_fused_call() -> None:
         and node.func.attr == "produce_d7_official_result"
     ]
 
-    assert len(fused_calls) == 1
-    assert len(fused_calls[0].args) == 2
-    producer = fused_calls[0].args[1]
-    assert isinstance(producer, ast.Attribute)
-    assert producer.attr == "produce_d7_official_result"
+    assert fused_calls == []
     assert direct_producer_calls == []
     source = RUNNER.read_text(encoding="utf-8")
+    assert "d7-v0-1-item23-chronology-deviation-2026-08-09" in source
+    assert "confirmation_fused_start" not in source
+    assert "confirmation_official_execution" not in source
     for forbidden_option in (
         "--descriptor",
         "--store",
@@ -185,57 +191,203 @@ def test_runner_gives_the_bare_official_producer_to_one_fused_call() -> None:
         assert forbidden_option not in source
 
 
-def test_runner_dispatches_once_without_entering_the_producer(
+def test_superseded_runner_fails_closed_without_dispatch(
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
 ) -> None:
     module = runpy.run_path(str(RUNNER), run_name="d7_item24_runner_test")
-    calls: list[tuple[object, object]] = []
-    producer_calls = 0
-
-    def producer() -> object:
-        nonlocal producer_calls
-        producer_calls += 1
-        raise AssertionError("the dispatch test must not enter the producer")
-
-    terminal = SimpleNamespace(
-        atomic_no_replace=True,
-        created_by_call=True,
-        parent_directory_fsync_proved=True,
-        path=Path("/var/tmp/spirallens-d7-terminal"),
-        terminal_artifact_kind=SimpleNamespace(value="result"),
-        terminal_artifact_sha256="1" * 64,
-        terminal_consumption_sha256="2" * 64,
-        terminal_manifest_sha256="3" * 64,
-    )
-
-    def fused(descriptor: object, callback: object) -> object:
-        calls.append((descriptor, callback))
-        return terminal
 
     with monkeypatch.context() as context:
-        context.setattr(
-            module["official"],
-            "produce_d7_official_result",
-            producer,
-        )
-        context.setattr(
-            module["fused_start"],
-            "run_d7_fused_verify_start_and_terminal_no_replace",
-            fused,
-        )
         context.setattr(sys, "argv", [str(RUNNER.resolve())])
-        assert module["main"]() == 0  # type: ignore[operator]
+        with pytest.raises(RuntimeError, match="blocked by chronology deviation"):
+            module["main"]()  # type: ignore[operator]
 
-    assert calls == [
+
+def test_chronology_disposition_binds_the_nonretroactive_block() -> None:
+    source = CHRONOLOGY_DISPOSITION.read_bytes()
+    document = parse_canonical_json(source, label="item-23 chronology disposition")
+    assert isinstance(document, dict)
+    assert source == canonical_json_bytes(document)
+
+    assert set(document) == {
+        "bindings",
+        "chronology_observation",
+        "claim_ceiling",
+        "disposition",
+        "disposition_id",
+        "item23_claim_boundary_retained",
+        "launch_bundle_authority_retained",
+        "launch_descriptor_authority_retained",
+        "schema_version",
+    }
+    assert document["claim_ceiling"] == "level_0"
+    assert document["chronology_observation"] == {
+        "full_design_freeze_receipt_contains": {
+            "absent_output_namespace": False,
+            "atomic_target_publication": True,
+            "exclusive_attempt": False,
+            "full_design": True,
+            "launch_intent": False,
+            "replay_target": True,
+        },
+        "implementation_divergence_commit": (
+            "ce4832893e01f04f1c8c5763a51223b3d51637c3"
+        ),
+        "item23_result_precedes_launch_descriptor": True,
+        "later_descriptor_retroactively_cures_deviation": False,
+        "required_pre_item23_receipt_bindings": {
+            "absent_output_namespace": True,
+            "exclusive_attempt": True,
+            "launch_intent": True,
+        },
+        "review_date": "2026-08-09",
+    }
+    assert document["disposition"] == {
+        "d7_state": "not_run",
+        "d8_state": "not_run",
+        "item23_chronology_conformance": "deviated",
+        "item23_d7_ops_completion_credit_allowed": False,
+        "item23_operational_status_retained": "complete",
+        "item23_scientific_status_retained": "insufficient",
+        "launch_presence_state_retained": "launch-intent-present",
+        "official_item24_v0_1_invocation_eligible": False,
+        "requires_versioned_successor_before_execution": True,
+        "retroactive_protocol_conformance_claimed": False,
+    }
+
+    for binding in document["bindings"].values():
+        repository_path = binding["repository_path"]
+        source_commit = binding.get("source_commit")
+        if source_commit is None:
+            payload = (REPOSITORY / repository_path).read_bytes()
+        else:
+            payload = subprocess.run(
+                ["git", "show", f"{source_commit}:{repository_path}"],
+                cwd=REPOSITORY,
+                check=True,
+                capture_output=True,
+            ).stdout
+        assert len(payload) == binding["byte_count"]
+        assert hashlib.sha256(payload).hexdigest() == binding["canonical_sha256"]
+        introduction_commit = binding.get("introduction_commit")
+        if introduction_commit is not None:
+            committed = subprocess.run(
+                ["git", "show", f"{introduction_commit}:{repository_path}"],
+                cwd=REPOSITORY,
+                check=True,
+                capture_output=True,
+            ).stdout
+            assert committed == payload
+            introductions = subprocess.run(
+                [
+                    "git",
+                    "log",
+                    "--diff-filter=A",
+                    "--format=%H",
+                    "--",
+                    repository_path,
+                ],
+                cwd=REPOSITORY,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.splitlines()
+            assert introductions == [introduction_commit]
+
+    for ancestor, descendant in (
+        (
+            "4838cef49997a70f1d6281b8097905510e7ec351",
+            "ce4832893e01f04f1c8c5763a51223b3d51637c3",
+        ),
+        (
+            "ce4832893e01f04f1c8c5763a51223b3d51637c3",
+            "f07962db96c4e59020c32e1b27ae8598e69ef6d1",
+        ),
+        (
+            "f07962db96c4e59020c32e1b27ae8598e69ef6d1",
+            "83ed5f419ff27af0935aa84c363df64f04926cac",
+        ),
+        (
+            "83ed5f419ff27af0935aa84c363df64f04926cac",
+            "09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4",
+        ),
+    ):
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=REPOSITORY,
+            check=True,
+        )
+
+    item23_commit = "83ed5f419ff27af0935aa84c363df64f04926cac"
+    for repository_path in (
+        "experiments/qualification/d7_spectral_moment_confirmation_v0_1/launch.json",
+        "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+        "launch-members/launch-intent.json",
+    ):
+        absent = subprocess.run(
+            ["git", "cat-file", "-e", f"{item23_commit}:{repository_path}"],
+            cwd=REPOSITORY,
+            check=False,
+            capture_output=True,
+        )
+        assert absent.returncode != 0
+
+    item23 = json.loads(
+        (
+            REPOSITORY / document["bindings"]["item23_result"]["repository_path"]
+        ).read_bytes()
+    )
+    assert (
+        document["disposition"]["item23_operational_status_retained"]
+        == (item23["operational_status"])
+    )
+    assert (
+        document["disposition"]["item23_scientific_status_retained"]
+        == (item23["status"])
+    )
+    assert document["claim_ceiling"] == item23["claim_ceiling"]
+    assert document["disposition"]["d7_state"] == item23["gate_states"]["d7"]
+    assert document["disposition"]["d8_state"] == item23["gate_states"]["d8"]
+    assert document["item23_claim_boundary_retained"] == item23["claim_boundary"]
+    assert item23["claim_boundary"]["claim_ceiling"] == "level_0"
+    assert item23["claim_boundary"]["claim_delta"] == "none"
+    assert not any(
+        value
+        for key, value in item23["claim_boundary"].items()
+        if key not in {"claim_ceiling", "claim_delta"}
+    )
+
+    descriptor = json.loads(
         (
             REPOSITORY
-            / module["official"].D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH,
-            producer,
-        )
-    ]
-    assert producer_calls == 0
-    assert '"terminal_artifact_kind":"result"' in capsys.readouterr().out
+            / "experiments/qualification/d7_spectral_moment_confirmation_v0_1/"
+            "launch.json"
+        ).read_bytes()
+    )
+    descriptor_authority_keys = {
+        "authority_authenticated",
+        "execution_authorized",
+        "launch_authorized",
+        "repository_trust_root_authenticated",
+        "reusable_authorization_capability_present",
+        "scientific_claim_eligible",
+    }
+    assert document["launch_descriptor_authority_retained"] == {
+        key: descriptor[key] for key in descriptor_authority_keys
+    }
+    assert not any(document["launch_descriptor_authority_retained"].values())
+    bundle = json.loads(
+        (
+            REPOSITORY
+            / document["bindings"]["launch_authority_input_bundle"]["repository_path"]
+        ).read_bytes()
+    )
+    assert document["launch_bundle_authority_retained"] == bundle["authority"]
+    assert not any(document["launch_bundle_authority_retained"].values())
+    assert all(
+        item["repository_path"]
+        != CHRONOLOGY_DISPOSITION.relative_to(REPOSITORY).as_posix()
+        for item in descriptor["inventory"]
+    )
 
 
 def test_script_bootstraps_restore_the_original_import_path() -> None:
