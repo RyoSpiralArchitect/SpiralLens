@@ -335,8 +335,10 @@ The Level-0 item-22 target was introduced by
 chronology checkpoint named by the receipt, and the strictly later
 `f07962db96c4e59020c32e1b27ae8598e69ef6d1` uniquely introduces the receipt
 that binds the full design, replay target, and atomic target-publication
-record. Item-22 strict observation remains `full-design-frozen`; the separate
-item-23 result commit is a later descendant and does not alter that state.
+record. Item-22 strict observation at the freeze/result checkpoint is
+`full-design-frozen`; the separate item-23 result does not alter that state.
+Only the still-later descriptor/intent commit advances the current presence
+observer to `launch-intent-present`, without authority or execution.
 
 The Git checkpoint proves the ancestry
 `f2c1e032f153d369eed99c1bbd467da518b5b9fb` <
@@ -349,14 +351,15 @@ receipt keeps `freeze_verified=false`; all three bindings keep
 `authoritative_source_loaded=false` and `identity_authenticated=false`.
 Accordingly it grants no launch, execution, semantic, causal, topological, or
 scientific authority. The committed item-23 artifact likewise has zero true
-authority facts. Launch intent, attempt envelope, D7 result, and D8 replay
-remain absent or `not_run`.
+authority facts. The later descriptor/intent is now committed with the same
+all-false authority ceiling; attempt start, D7 result, and D8 replay remain
+absent or `not_run`.
 
 Item 23 ran only as the separate no-replace descriptive publication. The
 runner separately verified the frozen target tree and that its result path was
-absent when the freeze first entered history. A launch intent or closed fused
-descriptor remains a later artifact, was not an item-23 prerequisite, and was
-not an item-23 analysis input. The committed result satisfies these
+absent when the freeze first entered history. The now-committed launch intent
+and closed fused descriptor remain later than item 23; neither was an item-23
+prerequisite or analysis input. The committed result satisfies these
 publication-contract requirements:
 
 - consumes exactly one additional allowed input class,
@@ -563,11 +566,13 @@ Subject to review at each transition, the current full sequence is:
 14. only after a structural candidate exists, run held-out semantic, SAE, and
     causal tests.
 
-Steps 1-4 are now represented by committed history through the item-22
-full-design-freeze receipt and separate item-23 descriptive result. The next
-transition is the closed descriptor and launch intent, followed by the first
-official fused invocation at item 24; no launch, confirmation, or D8 action
-was folded into item 23.
+Steps 1-4 are represented by committed history through the item-22
+full-design-freeze receipt and separate item-23 descriptive result. The later
+artifact-only commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4` records the
+closed descriptor and launch intent with all authority facts false. The next
+transition is canonical-main merge/rejoin followed by the first official fused
+invocation at item 24; no launch, confirmation, or D8 action was folded into
+item 23, and descriptor persistence itself is not execution.
 
 Negative or insufficient results do not invalidate the library. They constrain
 the scientific claim while still exercising canonical codecs, source/evidence

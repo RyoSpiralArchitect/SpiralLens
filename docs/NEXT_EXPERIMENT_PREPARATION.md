@@ -957,10 +957,12 @@ claim, one fixed supplier-function invocation, frozen seed exclusions, then
 atomic target publication. Restart never re-enters the supplier. The reviewed
 artifact-only exact-current re-anchor is tracked, and one Level-0 transaction
 was introduced at `publication-complete-unfrozen`. A later separate
-full-design-freeze receipt now strict-loads and makes the item-22 observer
-report `full-design-frozen`. Its invocation artifact claims one local supplier
-call; claim, invocation, inventory-output, transition, and freeze verification
-remain false. Historical item-21 reload remains valid. The target-publication
+full-design-freeze receipt strict-loads and makes the historical item-22
+checkpoint `full-design-frozen`. The still-later descriptor/intent commit moves
+the current presence observer to `launch-intent-present`. Its invocation
+artifact claims one local supplier call; claim, invocation, inventory-output,
+transition, and freeze verification remain false. Historical item-21 reload
+remains valid. The target-publication
 commit `f2c1e032f153d369eed99c1bbd467da518b5b9fb` precedes repository-local
 chronology checkpoint `6ea0ad761ebcf9e9aedb21319747b6489db66c52`, whose
 receipt-only direct child is `f07962db96c4e59020c32e1b27ae8598e69ef6d1`.
@@ -1099,19 +1101,22 @@ no supplier or official seed and performed no official execution.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
 The target-publication → repository-local chronology checkpoint →
-full-design-freeze receipt → item-23 descriptive-result chronology is
-complete. The remaining order starts with the closed descriptor and launch
-intent, then one item-24 invocation/terminal and byte-identical replay. Launch
-intent was not an item-23 prerequisite or input, and none exists yet.
+full-design-freeze receipt → item-23 descriptive-result → closed
+descriptor/launch-intent chronology is complete through artifact commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`. Launch intent was not an item-23
+prerequisite or input. The remaining order is canonical-main merge/rejoin, one
+item-24 invocation/terminal, and byte-identical replay.
 
 This branch contains the reviewed exact-current re-anchor, the one-shot
 item-22 target, its separate freeze receipt, and the committed item-23 result.
-The item-22 observer remains `full-design-frozen`; item 23 is operationally
-complete but scientifically `insufficient`, with 26 available outputs and the
-full-scope `amplitude-identifiability-support-separation` output blocked.
-`freeze_verified=false`; the item-22 target authority vector and inventory
-self-verification fields remain all-false. D7 and D8 remain `not_run`, and no
-execution or scientific authority follows from the descriptive result.
+The item-22 observer now reports `launch-intent-present`; item 23 remains
+operationally complete but scientifically `insufficient`, with 26 available
+outputs and the full-scope `amplitude-identifiability-support-separation`
+output blocked.
+`freeze_verified=false`; the item-22 target authority vector, descriptor
+authority vector, and inventory self-verification fields remain all-false. D7
+and D8 remain `not_run`, and no execution or scientific authority follows from
+the descriptor or descriptive result.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,

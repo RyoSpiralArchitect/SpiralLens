@@ -9,7 +9,7 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `launch_authority_input_schema_candidate_defined`,
 `fused_launch_descriptor_schema_defined`,
 `authoritative_start_transaction_schema_defined`,
-`strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised`,
+`strict_rejoin_temp_validated_official_descriptor_rejoined_without_start`,
 `fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked`,
 `d7_runtime_lock_exact_tracked`,
 `fixed_official_zero_argument_producer_implemented_deep_internal`,
@@ -27,7 +27,8 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `item23_outputs_26_available_1_blocked`,
 `item23_claim_ceiling_level_0_claim_delta_none`,
 `item23_d7_d8_not_run_authority_true_count_0`,
-`canonical_d7_launch_descriptor_absent`,
+`canonical_d7_launch_descriptor_committed_all_authority_false`,
+`item22_launch_intent_present`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `seed_bearing_target_not_admitted`, `not_run`.
 
@@ -524,9 +525,9 @@ grant. It records `freeze_commit` as the target-publication commit and
 three nested bindings retain `authoritative_source_loaded=false` and
 `identity_authenticated=false`. Separately, `seed_inventory_frozen`,
 `supplier_chronology_verified`, and `cryptographic_unseen_proof` remain false
-in the inventory record. The branch contains no abort evidence, launch
-descriptor, or official execution, and the item-22 target authority vector
-remains all-false. Commit `83ed5f419ff27af0935aa84c363df64f04926cac`
+in the inventory record. The branch contains no abort evidence or official
+execution, and the item-22 target authority vector remains all-false. Commit
+`83ed5f419ff27af0935aa84c363df64f04926cac`
 separately records the item-23 descriptive result: canonical SHA-256
 `d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`,
 `5,293,662` bytes, schema v0.1, result ID
@@ -534,8 +535,9 @@ separately records the item-23 descriptive result: canonical SHA-256
 `operational_status=complete`, `claim_ceiling=level_0`, and
 `claim_delta=none`. Its strict observer now reports `complete`, which means
 that exact descriptive artifact reloads and rederives; it grants no launch,
-execution, or scientific authority. The closed descriptor remains a distinct
-later step, and item 24 remains the first official fused invocation.
+execution, or scientific authority. The distinct later descriptor is now
+committed by `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`; item 24 remains the
+first official fused invocation.
 
 The evidence-only local persistence writer performs path-coordinate
 reobservation before exposing a caller-supplied start record, but it does not
@@ -748,12 +750,13 @@ The reviewed successor order is:
    as the separate operationally complete, scientifically insufficient
    descriptive publication; do not reinterpret it as a D7 design change,
    launch, execution, or confirmation; and
-7. before item 24, create and commit the closed nine-member fused descriptor
-   and its launch intent, neither of which is an item-23 prerequisite or input;
-   then pass strict verification-evidence replay/rejoin, temporary Git/runtime
-   end-to-end validation, and authoritative-start-compatible external-abort
-   integration. Item 24 is the first official fused invocation and must yield
-   the exact terminal outcome before isolated byte replay can qualify.
+7. retain the committed closed nine-member fused descriptor and its launch
+   intent, neither of which was an item-23 prerequisite or input. Its strict
+   verification-evidence replay/rejoin, temporary Git/runtime end-to-end
+   validation, and authoritative-start-compatible external-abort integration
+   pass without producer entry. Merge and rejoin that exact artifact on
+   canonical `main`; item 24 is the first official fused invocation and must
+   yield the exact terminal outcome before isolated byte replay can qualify.
 
 The item-24 preparation and dispatch scripts are experiment-only repository
 plumbing, not installed library API and not launch authority. Preparation
@@ -773,11 +776,17 @@ launcher path, cwd, argv, interpreter identity, producer identity, and live
 canonical-main HEAD are checked, but the launcher bytes are not part of the
 pre-item-22 frozen execution-source closure and mutable pre-entry process state
 is not authenticated. Therefore the source-parent commit alone is neither a
-hostile-local-operator-resistant closure nor item-24 readiness. Before any
-official invocation, the artifact child must commit and strict-rejoin the
-descriptor on canonical `main`, and the exact frozen runtime, live execution
-identity (including wrong-interpreter rejection), temporary Git/runtime
-end-to-end path, and real external-abort/no-retry integration must still pass.
+hostile-local-operator-resistant closure nor item-24 readiness. The exact
+eight-file artifact child is commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`: descriptor SHA-256
+`0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`
+and bundle SHA-256
+`b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`.
+It strict-rejoins all nine members on its current HEAD; the exact frozen
+runtime, live execution identity, wrong-envelope rejection, temporary
+Git/runtime end-to-end path, and real external-abort/no-retry integration pass
+without producer entry. Canonical-main merge/rejoin and review remain before
+the official invocation.
 
 Evidence envelopes, existing caller-constructible authority records, and the
 item-22 contract specification cannot be promoted in place; their verification
@@ -790,9 +799,10 @@ freeze/chronology/unseen-proof fields remain false. The item-23 descriptive
 artifact is now committed: all 27 outputs are present, 26 are `available`, and
 `amplitude-identifiability-support-separation` alone is `blocked`, so the
 operationally complete result remains scientifically `insufficient` at Level 0
-with no claim delta. Launch intent, the canonical nine-member descriptor,
-official D7 invocation/start/run/terminal/result, D7, and D8 remain absent or
-`not_run`.
+with no claim delta. Launch intent and the canonical nine-member descriptor are
+committed at Level 0 and strict-rejoin, changing the item-22 observer to
+`launch-intent-present`; every authority fact remains false. Official D7
+invocation/start/run/terminal/result, D7, and D8 remain absent or `not_run`.
 None may be represented by a placeholder result, inferred from C2 source
 closure, or authorized by caller-constructible records.
 
@@ -833,16 +843,18 @@ item22_historical_item21_chain_valid
 item22_current_source_runtime_reanchor_tracked_strictly_reloaded
 item22_claim_invocation_inventory_target_persisted_all_authority_false
 item22_inventory_self_freeze_chronology_unseen_proof_fields_false
+item22_launch_intent_present
+canonical_d7_launch_descriptor_committed_all_authority_false
+canonical_d7_launch_descriptor_sha256_0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac
 terminal_witness_runner_mechanics_implemented_non_authorizing
 fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
-canonical_d7_launch_descriptor_absent
 d7_runtime_lock_exact_tracked
 fixed_official_zero_argument_producer_implemented_deep_internal
 exact_full_inventory_aggregation_and_full_design_builders_implemented_deep_internal
 installed_inventory_exact_equality_enforced
 official_authoritative_start_instance_absent
 official_d7_run_absent
-strict_verification_evidence_replay_rejoin_implemented_not_officially_exercised
-temporary_git_runtime_end_to_end_validation_pending
-authoritative_start_external_abort_integration_pending
+strict_rejoin_temp_validated_official_descriptor_rejoined_without_start
+temporary_git_runtime_end_to_end_validation_passed_without_producer_entry
+authoritative_start_external_abort_integration_passed_in_temp_without_producer_entry
 ```

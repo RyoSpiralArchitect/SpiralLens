@@ -4,6 +4,32 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-09 — D7 item-24 closed launch projection and non-authorizing preparer
+
+- Added experiment-only preparation and fixed-dispatch scripts outside the
+  installed package and the pre-item-22 frozen execution-source surface. The
+  preparer accepts no scientific/path override, never enters the producer or
+  fused start, and publishes a fixed external empty start lane, seven new
+  canonical member projections, and the descriptor last.
+- Clarified the previously ambiguous external launch naming: canonical
+  `launch.json` is the closed descriptor, while
+  `launch-members/launch-intent.json` is the distinct launch-intent member.
+  Together with the reused item-22 replay target and full-design-freeze receipt,
+  the descriptor inventory contains exactly nine ordered roles.
+- Artifact-only commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`
+  introduces those exact eight repository files. Descriptor SHA-256 is
+  `0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`;
+  bundle SHA-256 is
+  `b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`.
+  Strict current-HEAD replay rejoins all nine members and reports
+  `launch-intent-present`, while authority, execution, result, scientific,
+  retry, replay, D7, and D8 facts remain false.
+- The preparer retains a promoted store/lane descriptor witness and reopens all
+  member bytes before and after descriptor publication. Partial preparation is
+  retained fail-closed and requires a reviewed versioned successor; it is not
+  auto-resumed or cleaned up. The launcher bytes and mutable pre-entry process
+  state remain outside the honest-local closure and are not authenticated.
+
 ## 2026-08-06 — D7 item-23 post-D6 descriptive result source
 
 - Added a repository-only fixed-path derivation and repository-bound
