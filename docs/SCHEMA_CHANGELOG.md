@@ -4,6 +4,27 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 read-only joined verifier
+
+- Added one internal, non-exported verifier for the frozen D7 v1 structural
+  protocol. It strictly rejoins an exact supplied nine-file stage and verifies
+  the prospective direct-parent artifact commit A and result-only commit B.
+- Git verification uses system Git with a minimal non-inherited environment,
+  disables replacement refs and lazy fetch, rejects shallow repositories and
+  repository-local grafts, applies each role's byte cap before reading its blob,
+  and checks exact add-only deltas and unique introductions over full history.
+  Imported source modules join both to the repository under verification and
+  to their exact blobs at reviewed source commit S; S must descend from the
+  frozen protocol's merge.
+- No publisher is provided. Publication from a caller-owned validated stage was
+  rejected because validation and rename are not one atomic content operation;
+  the later materializer must own its private stage and specify durability and
+  partial-state behavior.
+- This source-only change writes no official path, supplies no seed, creates no
+  C1/C2 closure, claim, receipt, artifact, or result, invokes no model or
+  producer, and changes no public API, supported-schema status, scientific
+  claim, or library maturity.
+
 ## 2026-08-10 — D7 v1 structural records and pre-item-23 materialization contract
 
 - Added the 43,288-byte canonical

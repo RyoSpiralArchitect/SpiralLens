@@ -584,6 +584,44 @@ canonical-main commit; these definitions alone authorize nothing.
 `none`. This is a prospective structural contract, not scientific evidence,
 execution readiness, or subject access.
 
+### 3.17 D7 v1 read-only materialization verification kernel
+
+**Decision source and timing**
+
+After the structural protocol entered `main` at merge commit
+`052893036f0562292f869118dbcbc72746df329a`, the project added a source-only,
+non-exported verifier for that unchanged protocol. This entry records software
+verification scope only. It issues no source closure, seed, receipt, attempt,
+artifact, result, or execution authority.
+
+**Implemented boundary**
+
+The verifier accepts an explicitly supplied exact nine-file staged tree and
+rejoins its record roles, digests, canonical bytes, source commit, historical
+inputs, and durable external claim projections. Its Git path verifies a
+single-parent, exact-add commit A and a later single-parent, result-only commit
+B, with role-specific byte caps applied before blob reads, replacement refs
+disabled, system Git run under a minimal non-inherited environment, lazy fetch
+disabled, shallow repositories and repository-local grafts rejected, unique
+introductions checked over full history, and the imported verifier and record
+module joined both to the supplied repository and to their exact blobs at
+reviewed source commit S. S must descend from the merge that introduced the
+frozen protocol.
+
+No publication primitive is included. Review rejected publication from a
+caller-owned staged path because mutation can occur after validation and before
+rename. A later versioned source change must instead own and anchor its private
+stage, define durability and partial-state behavior, and pass a separate review
+before any official coordinate is materialized. The current verifier neither
+creates nor consumes such evidence.
+
+**Current boundary and claim delta**
+
+`none`. VOY-V3 remains incomplete and `frozen_not_run`; the official v1
+repository and external artifact chronology remains unmaterialized. This is
+Level-0 software evidence, not subject access, execution readiness, scientific
+evidence, or library/API promotion.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
