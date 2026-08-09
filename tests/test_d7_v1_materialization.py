@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import errno
 import importlib
 import inspect
 import json
@@ -16,6 +18,9 @@ import pytest
 from spirallens._repository_context import RepositoryContext
 from spirallens.core.canonical import sha256_bytes
 from spirallens.qualification import confirmation_v1_materialization as materialization
+from spirallens.qualification import (
+    confirmation_v1_private_publication as private_publication,
+)
 from spirallens.qualification import confirmation_v1_records as records
 from spirallens.qualification.common import QualificationContractError
 
@@ -30,6 +35,12 @@ MODULE_PATH = (
 )
 RECORDS_MODULE_PATH = (
     REPOSITORY / "src" / "spirallens" / "qualification" / "confirmation_v1_records.py"
+)
+PRIVATE_PUBLICATION_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_private_publication.py"
+)
+PRIVATE_PUBLICATION_MODULE_PATH = REPOSITORY.joinpath(
+    *PRIVATE_PUBLICATION_REPOSITORY_PATH.split("/")
 )
 PROTOCOL_PATH = REPOSITORY / "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
@@ -393,6 +404,10 @@ def _build_case(
         "/experiments/qualification/d7_spectral_moment_confirmation_v1/*",
     )
     _run(repository, "checkout", "--quiet", "HEAD")
+    (repository / "experiments" / "qualification").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
     _run(repository, "config", "user.name", "SpiralLens test")
     _run(repository, "config", "user.email", "spirallens-test@example.invalid")
     if source_base_commit is not None:
@@ -431,8 +446,11 @@ def _build_case(
         )
     required = protocol["source_contract"]["required_new_source_paths"]
     assert isinstance(required, list)
-    for path_value in required:
-        repository_path = str(path_value)
+    source_closure_paths = [
+        *map(str, required),
+        PRIVATE_PUBLICATION_REPOSITORY_PATH,
+    ]
+    for repository_path in source_closure_paths:
         target = repository.joinpath(*repository_path.split("/"))
         if repository_path == (
             "src/spirallens/qualification/confirmation_v1_materialization.py"
@@ -447,6 +465,11 @@ def _build_case(
             target.parent.mkdir(parents=True, exist_ok=True)
             target.unlink(missing_ok=True)
             os.link(RECORDS_MODULE_PATH, target)
+            continue
+        if repository_path == PRIVATE_PUBLICATION_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(PRIVATE_PUBLICATION_MODULE_PATH, target)
             continue
         if repository_path == ("protocols/d7_v1_pre_item23_materialization_v0_1.json"):
             _write(repository, repository_path, PROTOCOL_PATH.read_bytes())
@@ -466,7 +489,7 @@ def _build_case(
     source_commit = _run(repository, "rev-parse", "HEAD")
 
     source_paths = [
-        *map(str, required),
+        *source_closure_paths,
         str(protocol["route_binding"]["repository_path"]),
     ]
     members = _source_members(repository, source_commit, source_paths)
@@ -1051,7 +1074,7 @@ def test_module_import_and_protocol_load_have_no_operational_side_effects() -> N
     assert materialization.__all__ == ()
 
 
-def test_read_only_verifier_boundary_is_projected_without_api_promotion() -> None:
+def test_v1_private_publication_boundary_is_projected_without_api_promotion() -> None:
     readme = (REPOSITORY / "README.md").read_text(encoding="utf-8")
     roadmap = (REPOSITORY / "docs/ROADMAP.md").read_text(encoding="utf-8")
     ledger = (REPOSITORY / "docs/EXPERIMENT_INTERPRETATION_LEDGER.md").read_text(
@@ -1059,8 +1082,839 @@ def test_read_only_verifier_boundary_is_projected_without_api_promotion() -> Non
     )
     changelog = (REPOSITORY / "docs/SCHEMA_CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert "non-exported, read-only verifier" in readme
-    assert "caller-owned stage cannot close the validate-to-rename race" in roadmap
-    assert "### 3.17 D7 v1 read-only materialization verification kernel" in ledger
-    assert "## 2026-08-10 — D7 v1 read-only joined verifier" in changelog
-    assert "No publisher is provided." in changelog
+    assert "source-only primitive now owns its private repository stage" in readme
+    assert "no caller-owned-stage publisher" in " ".join(roadmap.split())
+    assert "### 3.18 D7 v1 private-stage publication mechanism" in ledger
+    assert "## 2026-08-10 — D7 v1 private-stage publication primitive" in changelog
+    assert "The primitive has not been" in changelog
+
+
+def _private_publication_sources(case: _Case) -> dict[str, bytes]:
+    return {
+        role: case.records_by_role[role].canonical_bytes
+        for role in materialization._ROLE_CLASSES
+    }
+
+
+def _private_publication_paths(case: _Case) -> tuple[Path, Path]:
+    protocol = materialization._load_d7_v1_materialization_protocol(case.context)
+    _parent, _destination_leaf, _stage_leaf, destination = (
+        private_publication._publication_coordinates(
+            case.context,
+            protocol,
+            case.receipt.canonical_sha256,
+        )
+    )
+    stage = destination.parent / (
+        f".{destination.name}{private_publication._STAGE_MARKER}"
+        f"{case.receipt.canonical_sha256}"
+    )
+    return stage, destination
+
+
+def _publish_private_case(
+    case: _Case,
+) -> private_publication.D7V1PrivatePublicationReceipt:
+    with patch.object(
+        materialization,
+        "_default_external_reader",
+        case.external_reader,
+    ):
+        return private_publication._publish_d7_v1_pre_item23_records_no_replace(
+            case.context,
+            _private_publication_sources(case),
+            expected_receipt_sha256=case.receipt.canonical_sha256,
+        )
+
+
+def _tree_snapshot(root: Path) -> tuple[tuple[str, int, int, int, bytes | None], ...]:
+    result: list[tuple[str, int, int, int, bytes | None]] = []
+    for path in sorted(root.rglob("*")):
+        observed = path.lstat()
+        result.append(
+            (
+                path.relative_to(root).as_posix(),
+                observed.st_mode,
+                observed.st_ino,
+                observed.st_size,
+                path.read_bytes() if path.is_file() else None,
+            )
+        )
+    return tuple(result)
+
+
+def test_private_publication_fresh_success_observer_and_reentry(
+    tmp_path: Path,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            case.context,
+            receipt_sha256=case.receipt.canonical_sha256,
+        )
+        == "absent"
+    )
+
+    receipt = _publish_private_case(case)
+
+    assert receipt.destination == destination
+    assert receipt.source_commit == case.source_commit
+    assert receipt.receipt_sha256 == case.receipt.canonical_sha256
+    assert receipt.namespace_atomic is True
+    assert receipt.parent_directory_fsync_completed is True
+    assert receipt.retry_authorized is False
+    assert receipt.cleanup_authorized is False
+    assert receipt.authority_granted is False
+    assert not stage.exists()
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            case.context,
+            receipt_sha256=case.receipt.canonical_sha256,
+        )
+        == "destination-present"
+    )
+    protocol = materialization._load_d7_v1_materialization_protocol(case.context)
+    paths = materialization._expected_stage_files(protocol)
+    sources = _private_publication_sources(case)
+    assert {
+        role: (destination / relative).read_bytes() for role, relative in paths.items()
+    } == sources
+    before = _tree_snapshot(destination)
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "destination_collision"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert caught.value.retry_authorized is False
+    assert caught.value.cleanup_authorized is False
+    assert _tree_snapshot(destination) == before
+
+
+@pytest.mark.parametrize("failing_fsync_call", (2, 3))
+def test_private_publication_retains_stage_after_create_or_write_fsync_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failing_fsync_call: int,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    real_fsync = private_publication.os.fsync
+    call_count = 0
+
+    def fail_selected_fsync(descriptor: int) -> None:
+        nonlocal call_count
+        call_count += 1
+        if call_count == failing_fsync_call:
+            raise OSError(errno.EIO, "injected private-stage fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(private_publication.os, "fsync", fail_selected_fsync)
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "stage_partial_retained"
+    assert caught.value.stage_retained is True
+    assert caught.value.publication_visible is False
+    assert stage.is_dir()
+    assert not destination.exists()
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            case.context,
+            receipt_sha256=case.receipt.canonical_sha256,
+        )
+        == "exact-private-stage-present"
+    )
+    before = _tree_snapshot(stage)
+
+    monkeypatch.setattr(private_publication.os, "fsync", real_fsync)
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as second:
+        _publish_private_case(case)
+    assert second.value.disposition == "stage_collision"
+    assert second.value.stage_path is None
+    assert second.value.stage_retained is None
+    assert second.value.publication_visible is None
+    assert second.value.retry_authorized is False
+    assert second.value.cleanup_authorized is False
+    assert _tree_snapshot(stage) == before
+
+
+def test_private_publication_preflight_fsync_failure_creates_no_namespace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    real_fsync = private_publication.os.fsync
+    failed = False
+
+    def fail_first_fsync(descriptor: int) -> None:
+        nonlocal failed
+        if not failed:
+            failed = True
+            raise OSError(errno.EIO, "injected preflight parent fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(private_publication.os, "fsync", fail_first_fsync)
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "preflight_rejected"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert not stage.exists()
+    assert not destination.exists()
+
+
+def test_private_publication_resolves_rename_then_error_by_owned_inode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    primitive, real_rename = private_publication._native_exclusive_rename()
+
+    def rename_factory() -> tuple[str, private_publication._NativeRename]:
+        def rename_then_error(
+            parent_fd: int,
+            source_leaf: str,
+            destination_leaf: str,
+        ) -> None:
+            real_rename(parent_fd, source_leaf, destination_leaf)
+            raise OSError(errno.EIO, "injected ambiguous rename return")
+
+        return primitive, rename_then_error
+
+    monkeypatch.setattr(
+        private_publication,
+        "_native_exclusive_rename",
+        rename_factory,
+    )
+    receipt = _publish_private_case(case)
+    assert receipt.destination == destination
+    assert receipt.native_primitive == primitive
+    assert destination.is_dir()
+    assert not stage.exists()
+
+
+def test_private_publication_post_rename_destination_swap_is_unknown_not_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    _stage, destination = _private_publication_paths(case)
+    primitive, real_rename = private_publication._native_exclusive_rename()
+    moved_leaf = f"{destination.name}.moved-after-rename"
+
+    def rename_factory() -> tuple[str, private_publication._NativeRename]:
+        def rename_swap_then_interrupt(
+            parent_fd: int,
+            source_leaf: str,
+            destination_leaf: str,
+        ) -> None:
+            real_rename(parent_fd, source_leaf, destination_leaf)
+            os.rename(
+                destination_leaf,
+                moved_leaf,
+                src_dir_fd=parent_fd,
+                dst_dir_fd=parent_fd,
+            )
+            os.mkdir(destination_leaf, 0o700, dir_fd=parent_fd)
+            raise RuntimeError("injected post-rename destination substitution")
+
+        return primitive, rename_swap_then_interrupt
+
+    monkeypatch.setattr(
+        private_publication,
+        "_native_exclusive_rename",
+        rename_factory,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "rename_outcome_ambiguous"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert caught.value.retry_authorized is False
+    assert destination.is_dir()
+    assert (destination.parent / moved_leaf).is_dir()
+
+
+def test_private_publication_rename_to_foreign_leaf_is_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    foreign_leaf = f"{stage.name}.foreign"
+
+    def rename_factory() -> tuple[str, private_publication._NativeRename]:
+        def move_to_foreign_leaf_then_error(
+            parent_fd: int,
+            source_leaf: str,
+            destination_leaf: str,
+        ) -> None:
+            del destination_leaf
+            os.rename(
+                source_leaf,
+                foreign_leaf,
+                src_dir_fd=parent_fd,
+                dst_dir_fd=parent_fd,
+            )
+            raise OSError(errno.EIO, "injected foreign-leaf rename outcome")
+
+        return "test.foreign-leaf-rename", move_to_foreign_leaf_then_error
+
+    monkeypatch.setattr(
+        private_publication,
+        "_native_exclusive_rename",
+        rename_factory,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "rename_outcome_ambiguous"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert not stage.exists()
+    assert not destination.exists()
+    assert (destination.parent / foreign_leaf).is_dir()
+
+
+def test_private_publication_reports_visible_but_undurable_after_parent_fsync_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    primitive, real_rename = private_publication._native_exclusive_rename()
+    real_fsync = private_publication.os.fsync
+    renamed = False
+    failed = False
+
+    def rename_factory() -> tuple[str, private_publication._NativeRename]:
+        def mark_rename(
+            parent_fd: int,
+            source_leaf: str,
+            destination_leaf: str,
+        ) -> None:
+            nonlocal renamed
+            real_rename(parent_fd, source_leaf, destination_leaf)
+            renamed = True
+
+        return primitive, mark_rename
+
+    def fail_first_post_rename_fsync(descriptor: int) -> None:
+        nonlocal failed
+        if renamed and not failed:
+            failed = True
+            raise OSError(errno.EIO, "injected publication-parent fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(
+        private_publication,
+        "_native_exclusive_rename",
+        rename_factory,
+    )
+    monkeypatch.setattr(
+        private_publication.os,
+        "fsync",
+        fail_first_post_rename_fsync,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "published_durability_unknown"
+    assert caught.value.publication_visible is True
+    assert caught.value.stage_retained is False
+    assert caught.value.retry_authorized is False
+    assert destination.is_dir()
+    assert not stage.exists()
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            case.context,
+            receipt_sha256=case.receipt.canonical_sha256,
+        )
+        == "destination-present"
+    )
+
+
+def test_private_publication_refuses_destination_and_stage_collisions(
+    tmp_path: Path,
+) -> None:
+    destination_case = _build_case(tmp_path / "destination")
+    _stage, destination = _private_publication_paths(destination_case)
+    destination.mkdir()
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as collision:
+        _publish_private_case(destination_case)
+    assert collision.value.disposition == "destination_collision"
+    assert collision.value.stage_retained is None
+    assert collision.value.publication_visible is None
+    assert destination.is_dir()
+
+    stage_case = _build_case(tmp_path / "stage")
+    stage, stage_destination = _private_publication_paths(stage_case)
+    stage.mkdir()
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as partial:
+        _publish_private_case(stage_case)
+    assert partial.value.disposition == "stage_collision"
+    assert partial.value.stage_path is None
+    assert partial.value.stage_retained is None
+    assert partial.value.publication_visible is None
+    assert stage.is_dir()
+    assert not stage_destination.exists()
+
+    combined_case = _build_case(tmp_path / "combined")
+    combined_stage, combined_destination = _private_publication_paths(combined_case)
+    combined_stage.mkdir()
+    combined_destination.mkdir()
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as combined:
+        _publish_private_case(combined_case)
+    assert combined.value.disposition == "destination_collision"
+    assert combined.value.stage_path is None
+    assert combined.value.stage_retained is None
+    assert combined.value.publication_visible is None
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            combined_case.context,
+            receipt_sha256=combined_case.receipt.canonical_sha256,
+        )
+        == "destination-and-private-stage-present"
+    )
+
+
+def test_private_publication_failure_before_namespace_scan_is_unknown(
+    tmp_path: Path,
+) -> None:
+    case = _build_case(tmp_path)
+    _stage, destination = _private_publication_paths(case)
+    destination.mkdir()
+    (destination / "foreign.json").write_bytes(b"foreign")
+    sources = _private_publication_sources(case)
+    first_role = sorted(sources)[0]
+    sources[first_role] = b"{}"
+
+    with patch.object(
+        materialization,
+        "_default_external_reader",
+        case.external_reader,
+    ):
+        with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+            private_publication._publish_d7_v1_pre_item23_records_no_replace(
+                case.context,
+                sources,
+                expected_receipt_sha256=case.receipt.canonical_sha256,
+            )
+    assert caught.value.disposition == "preflight_rejected"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert (
+        private_publication._observe_d7_v1_pre_item23_publication(
+            case.context,
+            receipt_sha256=case.receipt.canonical_sha256,
+        )
+        == "destination-present"
+    )
+
+
+def test_private_publication_failed_stage_recovery_probe_is_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+
+    def create_root_then_fail(
+        parent_fd: int,
+        *,
+        stage_leaf: str,
+        destination_leaf: str,
+        paths_by_role: Mapping[str, str],
+        sources_by_role: Mapping[str, bytes],
+    ) -> private_publication._OwnedStage:
+        del destination_leaf, paths_by_role, sources_by_role
+        os.mkdir(stage_leaf, 0o700, dir_fd=parent_fd)
+        raise OSError(errno.EIO, "injected post-mkdir failure")
+
+    def fail_namespace_observation(
+        _parent_fd: int, _leaf: str
+    ) -> os.stat_result | None:
+        raise OSError(errno.EIO, "injected namespace observation failure")
+
+    monkeypatch.setattr(
+        private_publication,
+        "_create_owned_stage",
+        create_root_then_fail,
+    )
+    monkeypatch.setattr(
+        private_publication,
+        "_entry_stat",
+        fail_namespace_observation,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "stage_creation_state_unknown"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert stage.is_dir()
+    assert not destination.exists()
+
+
+def test_private_publication_stage_create_collision_is_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+
+    def collide_at_stage_create(
+        parent_fd: int,
+        *,
+        stage_leaf: str,
+        destination_leaf: str,
+        paths_by_role: Mapping[str, str],
+        sources_by_role: Mapping[str, bytes],
+    ) -> private_publication._OwnedStage:
+        del destination_leaf, paths_by_role, sources_by_role
+        os.mkdir(stage_leaf, 0o700, dir_fd=parent_fd)
+        raise FileExistsError(errno.EEXIST, "injected concurrent stage collision")
+
+    monkeypatch.setattr(
+        private_publication,
+        "_create_owned_stage",
+        collide_at_stage_create,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "stage_collision_state_unknown"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert stage.is_dir()
+    assert not destination.exists()
+
+
+@pytest.mark.parametrize("collision_kind", ("file", "symlink"))
+def test_private_publication_racing_arbitrary_collision_has_unknown_visibility(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    collision_kind: str,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    real_open_parent = private_publication._open_publication_parent
+    inserted = False
+
+    def open_parent_then_collide(
+        repository: RepositoryContext,
+        parent_parts: tuple[str, ...],
+    ) -> int:
+        nonlocal inserted
+        descriptor = real_open_parent(repository, parent_parts)
+        if not inserted:
+            inserted = True
+            if collision_kind == "file":
+                collision = os.open(
+                    destination.name,
+                    private_publication._file_create_flags(),
+                    0o600,
+                    dir_fd=descriptor,
+                )
+                try:
+                    os.write(collision, b"collision")
+                finally:
+                    os.close(collision)
+            else:
+                os.symlink(
+                    "missing-collision-target",
+                    destination.name,
+                    dir_fd=descriptor,
+                )
+        return descriptor
+
+    monkeypatch.setattr(
+        private_publication,
+        "_open_publication_parent",
+        open_parent_then_collide,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert inserted is True
+    assert caught.value.disposition == "destination_collision"
+    assert caught.value.stage_path is None
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert not stage.exists()
+    if collision_kind == "file":
+        assert destination.read_bytes() == b"collision"
+    else:
+        assert destination.is_symlink()
+
+
+def test_private_publication_concurrency_has_one_complete_winner(
+    tmp_path: Path,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    sources = _private_publication_sources(case)
+
+    def publish() -> object:
+        try:
+            return private_publication._publish_d7_v1_pre_item23_records_no_replace(
+                case.context,
+                sources,
+                expected_receipt_sha256=case.receipt.canonical_sha256,
+            )
+        except private_publication.D7V1PrivatePublicationFailure as error:
+            return error
+
+    with patch.object(
+        materialization,
+        "_default_external_reader",
+        case.external_reader,
+    ):
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            outcomes = tuple(executor.map(lambda _index: publish(), range(4)))
+
+    winners = tuple(
+        item
+        for item in outcomes
+        if type(item) is private_publication.D7V1PrivatePublicationReceipt
+    )
+    losers = tuple(
+        item
+        for item in outcomes
+        if type(item) is private_publication.D7V1PrivatePublicationFailure
+    )
+    assert len(winners) == 1
+    assert len(losers) == 3
+    assert all(item.retry_authorized is False for item in losers)
+    for loser in losers:
+        if "collision" in loser.disposition:
+            assert loser.stage_retained is None
+            assert loser.publication_visible is None
+    assert destination.is_dir()
+    assert not stage.exists()
+
+
+@pytest.mark.parametrize("mutation", ("mode", "bytes", "same-name-replacement"))
+def test_private_publication_rejects_owned_member_mutation_before_rename(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    case = _build_case(tmp_path)
+    stage_path, destination = _private_publication_paths(case)
+    real_revalidate = private_publication._revalidate_owned_stage
+    injected = False
+
+    def mutate_then_revalidate(
+        stage: private_publication._OwnedStage,
+        *,
+        paths_by_role: Mapping[str, str],
+        sources_by_role: Mapping[str, bytes],
+        published: bool,
+    ) -> dict[str, bytes]:
+        nonlocal injected
+        if not injected and not published:
+            injected = True
+            relative = sorted(stage.file_fds)[0]
+            descriptor = stage.file_fds[relative]
+            if mutation == "mode":
+                os.fchmod(descriptor, 0o640)
+            elif mutation == "bytes":
+                os.lseek(descriptor, 0, os.SEEK_SET)
+                original = os.read(descriptor, 1)
+                os.lseek(descriptor, 0, os.SEEK_SET)
+                os.write(descriptor, b"x" if original != b"x" else b"y")
+                os.fsync(descriptor)
+            else:
+                parent, leaf = private_publication._path_parent(relative)
+                parent_fd = stage.directory_fds[parent]
+                moved = f"{leaf}.moved"
+                os.rename(
+                    leaf,
+                    moved,
+                    src_dir_fd=parent_fd,
+                    dst_dir_fd=parent_fd,
+                )
+                replacement = os.open(
+                    leaf,
+                    private_publication._file_create_flags(),
+                    0o600,
+                    dir_fd=parent_fd,
+                )
+                try:
+                    role = next(
+                        role
+                        for role, candidate in paths_by_role.items()
+                        if candidate == relative
+                    )
+                    private_publication._write_all(
+                        replacement,
+                        sources_by_role[role],
+                    )
+                    os.fsync(replacement)
+                finally:
+                    os.close(replacement)
+                os.unlink(moved, dir_fd=parent_fd)
+        return real_revalidate(
+            stage,
+            paths_by_role=paths_by_role,
+            sources_by_role=sources_by_role,
+            published=published,
+        )
+
+    monkeypatch.setattr(
+        private_publication,
+        "_revalidate_owned_stage",
+        mutate_then_revalidate,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert injected is True
+    assert caught.value.disposition == "stage_partial_retained"
+    assert caught.value.stage_retained is True
+    assert stage_path.is_dir()
+    assert not destination.exists()
+
+
+def test_private_publication_rejects_live_parent_replacement_before_rename(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    real_require_anchor = private_publication._require_live_parent_anchor
+    moved_parent = destination.parent.with_name(f"{destination.parent.name}-moved")
+    injected = False
+
+    def replace_parent_then_require(
+        repository: RepositoryContext,
+        parent_parts: tuple[str, ...],
+        anchored_parent_fd: int,
+    ) -> None:
+        nonlocal injected
+        if not injected:
+            injected = True
+            live_parent = repository.root.joinpath(*parent_parts)
+            live_parent.rename(moved_parent)
+            live_parent.mkdir()
+        real_require_anchor(repository, parent_parts, anchored_parent_fd)
+
+    monkeypatch.setattr(
+        private_publication,
+        "_require_live_parent_anchor",
+        replace_parent_then_require,
+    )
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert injected is True
+    assert caught.value.disposition == "namespace_reauthentication_failed"
+    assert caught.value.stage_retained is None
+    assert caught.value.publication_visible is None
+    assert caught.value.stage_path is None
+    assert not destination.exists()
+    assert (moved_parent / stage.name).is_dir()
+
+
+def test_private_publication_rejects_equivalent_different_import_origin(
+    tmp_path: Path,
+) -> None:
+    case = _build_case(tmp_path)
+    stage, destination = _private_publication_paths(case)
+    target = case.repository.joinpath(*PRIVATE_PUBLICATION_REPOSITORY_PATH.split("/"))
+    source = target.read_bytes()
+    target.unlink()
+    target.write_bytes(source)
+
+    with pytest.raises(private_publication.D7V1PrivatePublicationFailure) as caught:
+        _publish_private_case(case)
+    assert caught.value.disposition == "preflight_rejected"
+    assert not stage.exists()
+    assert not destination.exists()
+
+
+def test_private_publication_negative_capability_and_official_paths_untouched() -> None:
+    protocol = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
+    layout = protocol["coordinate_and_member_layout"]
+    external = protocol["external_durable_chronology_contract"]
+    destination = REPOSITORY.joinpath(*str(layout["repository_root"]).split("/"))
+    watched = {
+        destination,
+        destination.parent
+        / f".{destination.name}{private_publication._STAGE_MARKER}{'0' * 64}",
+        Path(str(external["route_future_external_coordinates"]["external_store_path"])),
+        Path(
+            str(external["route_future_external_coordinates"]["external_staging_path"])
+        ),
+    }
+    before = {path: path.exists() or path.is_symlink() for path in watched}
+    importlib.reload(private_publication)
+    assert {path: path.exists() or path.is_symlink() for path in watched} == before
+    assert private_publication.__all__ == ()
+
+    signature = inspect.signature(
+        private_publication._publish_d7_v1_pre_item23_records_no_replace
+    )
+    assert set(signature.parameters) == {
+        "repository",
+        "sources_by_role",
+        "expected_receipt_sha256",
+    }
+    assert not {
+        "stage_root",
+        "destination",
+        "external_reader",
+        "native_rename",
+        "supplier",
+    } & set(signature.parameters)
+
+    tree = ast.parse(PRIVATE_PUBLICATION_MODULE_PATH.read_text(encoding="utf-8"))
+    imported: set[str] = set()
+    calls: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            imported.add(node.module)
+        elif isinstance(node, ast.Call):
+            name = node.func
+            parts: list[str] = []
+            while isinstance(name, ast.Attribute):
+                parts.append(name.attr)
+                name = name.value
+            if isinstance(name, ast.Name):
+                parts.append(name.id)
+            calls.add(".".join(reversed(parts)))
+    forbidden_import_fragments = {
+        "confirmation_attempt_",
+        "confirmation_authoritative_start_persistence",
+        "confirmation_c1",
+        "confirmation_execution_design",
+        "confirmation_execution_kernel",
+        "confirmation_fused_",
+        "confirmation_official_execution",
+        "confirmation_preseed_authority",
+        "confirmation_seed_supply_contracts",
+        "confirmation_source_closure",
+        "confirmation_terminal_operations",
+    }
+    assert not any(
+        fragment in module_name
+        for module_name in imported
+        for fragment in forbidden_import_fragments
+    )
+    assert not imported & {"torch", "transformers"}
+    forbidden_calls = {
+        "from_pretrained",
+        "load_model",
+        "produce_d7_v1_official_result",
+        "rmdir",
+        "remove",
+        "replace",
+        "rmtree",
+        "unlink",
+    }
+    assert not any(call.rsplit(".", 1)[-1] in forbidden_calls for call in calls)

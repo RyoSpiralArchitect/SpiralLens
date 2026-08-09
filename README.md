@@ -62,9 +62,14 @@ now fixes the structural vocabulary and the only admissible future chronology:
 separate descriptive-result commit. Its status is `frozen_not_run`. The current
 record types are internal, structural, and unauthenticated. A separate
 non-exported, read-only verifier now rejoins a supplied exact nine-file staged
-tree and the prospective direct-parent commits A and B; it publishes nothing.
-No source closure, seed claim, store, receipt, result, execution authority,
-public API, or library maturity is created by these source-only changes.
+tree and the prospective direct-parent commits A and B. A second internal
+source-only primitive now owns its private repository stage, fsyncs the exact
+tree, and can publish that tree only through a native no-replace directory
+rename; it has not been invoked. Its in-memory success observation is
+structural-only and explicitly grants no authority, materialization status, or
+commit-A verification. No final source closure, seed claim, store, receipt,
+artifact, result, execution authority, public API, or library maturity is
+created by these source-only changes.
 
 ## Scientific interpretation anchors
 
