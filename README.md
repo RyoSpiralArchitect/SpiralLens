@@ -1408,7 +1408,17 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   The item-23 descriptive artifact is now committed. The next reviewed order
   is a closed launch descriptor/launch intent, then the first official fused
   invocation at `D7-OPS-24`; no launch intent exists now. Launch intent was not
-  an item-23 prerequisite or analysis input. Only a
+  an item-23 prerequisite or analysis input. The source-parent preparation and
+  fixed-dispatch scripts are experiment-only, non-authorizing plumbing:
+  preparation cannot enter the producer, `launch.json` is the nine-member
+  descriptor, and `launch-members/launch-intent.json` is the separate intent
+  member. Descriptor publication remains last and requires an exact live
+  member/store/lane rejoin. Any partial preparation is retained fail-closed and
+  requires a reviewed versioned successor, not automatic resume or cleanup.
+  The launcher remains outside the pre-item-22 frozen source closure under the
+  explicit honest-local boundary, so committed canonical-main rejoin,
+  exact-runtime/live-identity checks, temporary end-to-end validation, and real
+  external-abort integration are still required before item 24. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official D0-D5 selection result remains byte-identically
   false for `d6_d8_advanced` and `synthetic_qualified`.

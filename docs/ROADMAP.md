@@ -1380,7 +1380,21 @@ below:
     overrides or post-selection exclusions, require one exact terminal outcome,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status. Same-family new seeds remain replication and
-    cannot satisfy this item;
+    cannot satisfy this item. The experiment-only source-parent preparer and
+    fixed dispatcher are non-authorizing plumbing: they accept no scientific
+    override and never call the producer during preparation. `launch.json` is
+    the descriptor, while `launch-members/launch-intent.json` is its distinct
+    launch-intent member. Descriptor publication is last and is bounded by
+    exact live rejoin of all nine member projections plus an anchored promoted
+    store and empty authoritative-start lane. A preparation partial is retained
+    and fail-closed; v0.1 is neither resumed nor cleaned up automatically, and
+    recovery requires a reviewed versioned successor. The launcher path/cwd/argv
+    and execution HEAD are bound, but launcher bytes remain outside the
+    pre-item-22 frozen source closure under the explicit honest-local boundary.
+    Consequently the parent source commit is not item-24 readiness: committed
+    descriptor rejoin on canonical `main`, exact-runtime/live-identity checks,
+    temporary Git/runtime end-to-end validation, and real external-abort
+    integration remain mandatory before the one official invocation;
 25. <a id="d7-ops-25"></a>**D7-OPS-25** — only then begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;

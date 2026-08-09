@@ -430,8 +430,11 @@ atomic `published-target/` directory, and, only after complete publication, the
 later `full-design-freeze.json` leaf. The exact `published-target/` members are
 `official-seed-inventory.json`, `full-inventory.json`, `full-design.json`,
 `replay-target.json`, `single-supplier-invocation.json`, and
-`transaction-manifest.json`. Launch intent remains the existing external
-`launch.json` and is not a transaction-root member.
+`transaction-manifest.json`. Launch intent remains on the later external
+launch surface and is not a transaction-root member. On that surface,
+`launch.json` is the closed nine-member descriptor; the distinct
+launch-intent record is
+`launch-members/launch-intent.json` and is one descriptor member.
 All six publication members must be canonical regular unaliased files;
 unknown members, partial visibility, replacement, and publication retry are
 forbidden. The manifest binds the other five members, never itself. This durable
@@ -751,6 +754,30 @@ The reviewed successor order is:
    end-to-end validation, and authoritative-start-compatible external-abort
    integration. Item 24 is the first official fused invocation and must yield
    the exact terminal outcome before isolated byte replay can qualify.
+
+The item-24 preparation and dispatch scripts are experiment-only repository
+plumbing, not installed library API and not launch authority. Preparation
+accepts no scientific or path override, never enters the producer or fused
+start, and publishes the seven new member projections, promotes one fixed
+external store, and publishes the descriptor last. Immediately before and
+after descriptor publication, it reopens every descriptor member and rejoins
+its exact bytes, byte count, and digest while retaining live anchors for the
+promoted store and empty authoritative-start lane. Any preparation staging,
+partial member publication, promoted-store-without-descriptor state, or
+descriptor temporary file is fail-closed and retained for audit. It is not an
+automatic resume or cleanup capability; recovery requires a separately
+reviewed versioned successor rather than reuse of the v0.1 coordinates.
+
+This route deliberately retains the declared honest-local boundary. The exact
+launcher path, cwd, argv, interpreter identity, producer identity, and live
+canonical-main HEAD are checked, but the launcher bytes are not part of the
+pre-item-22 frozen execution-source closure and mutable pre-entry process state
+is not authenticated. Therefore the source-parent commit alone is neither a
+hostile-local-operator-resistant closure nor item-24 readiness. Before any
+official invocation, the artifact child must commit and strict-rejoin the
+descriptor on canonical `main`, and the exact frozen runtime, live execution
+identity (including wrong-interpreter rejection), temporary Git/runtime
+end-to-end path, and real external-abort/no-retry integration must still pass.
 
 Evidence envelopes, existing caller-constructible authority records, and the
 item-22 contract specification cannot be promoted in place; their verification
