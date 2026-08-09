@@ -185,6 +185,15 @@ filesystem reservation or ownership claim. It grants no public-API,
 repository-bound-export, console-script, runtime-dependency, maturity, or
 schema promotion; the library lane is independent of VOY progress.
 
+The separately frozen
+[`d7-v1-pre-item23-materialization-v0-1`](../protocols/d7_v1_pre_item23_materialization_v0_1.json)
+contract is a prospective `VOY-V3` input design, not a completed VOY stage. It
+defines 11 primary structural schemas over nine future pre-item-23 files and a
+later result, but remains `frozen_not_run`: the remaining v1 source,
+authoritative joined loader, C1/C2 closure, external claims, atomic publication,
+post-commit verifier, result, and execution are all absent. No `D7-OPS`,
+scientific, or library completion credit changes here.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

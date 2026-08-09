@@ -55,6 +55,15 @@ creates no receipt, seed, attempt, execution, scientific authority, API
 promotion, or library-lane gate; the canonical Roadmap milestones remain
 authoritative.
 
+The prospective
+[D7 v1 pre-item-23 materialization protocol](protocols/d7_v1_pre_item23_materialization_v0_1.json)
+now fixes the structural vocabulary and the only admissible future chronology:
+11 primary schema roles, nine co-published pre-item-23 repository files, then a
+separate descriptive-result commit. Its status is `frozen_not_run`. The current
+record types are internal, structural, and unauthenticated; no joined loader,
+source closure, seed claim, store, receipt, result, execution authority, public
+API, or library maturity is created by this change.
+
 ## Scientific interpretation anchors
 
 The project adopted an order-parameter-first fundamental interpretation after
