@@ -506,7 +506,14 @@ def _build_case(
         )
         _write(repository, result_path, b"{}")
     _run(repository, "add", "--all")
-    _run(repository, "commit", "--quiet", "-m", "test source S")
+    _run(
+        repository,
+        "commit",
+        "--allow-empty",
+        "--quiet",
+        "-m",
+        "test source S",
+    )
     source_commit = _run(repository, "rev-parse", "HEAD")
 
     source_paths = [

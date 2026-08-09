@@ -562,6 +562,46 @@ def test_v1_descriptive_retains_one_blocked_output_as_insufficient(
     blocked_data = outputs[blocked[0]]["data"]
     assert blocked_data["rerun_authorized"] is False
     assert blocked_data["persisted_representation"] == "dtype-shape-sha256-only"
+    confounder_rows = blocked_data["confounder_observation_rows"]
+    assert blocked_data["confounder_observation_row_count"] == 6
+    assert len(confounder_rows) == 6
+    assert sha256_bytes(canonical_json_bytes(confounder_rows)) == (
+        "ca6a5abde73deaf789d78390a6172ace588da568396ae02d45e12450c68135ca"
+    )
+    assert {row["confounder_id"] for row in confounder_rows} == {
+        "high-amplitude-local-identifiability-loss-decoy",
+        "low-amplitude-missing-candidate-support-abstain",
+    }
+    assert {row["field_graph_id"] for row in confounder_rows} == {
+        "a-mutual",
+        "a-radius",
+        "a-shared",
+    }
+    assert all(
+        row["expected_attempt_status"] == row["observed_attempt_status"]
+        and row["expected_prediction_class"] == row["observed_prediction_class"]
+        and row["expected_reason_codes"] == row["observed_reason_codes"]
+        and row["state"] == "pass"
+        and row["oracle_input_present"] is False
+        and row["selection_seed_present"] is False
+        and row["sealed_before_oracle_score"] is True
+        and row["oracle_read"] is False
+        for row in confounder_rows
+    )
+    assert blocked_data["confounder_matrix_metadata"] == {
+        "schema_version": "spirallens.qualification-d2-confounder-matrix.v0.2",
+        "state": "pass",
+        "failed_cell_ids": [],
+        "field_graph_ids": ["a-mutual", "a-radius", "a-shared"],
+        "policy_fingerprint_sha256": (
+            "18b3b1293a7f719e2eb83b8d72214262b8155f00514530cca8f30e55b9d7e536"
+        ),
+        "selection_seed_consumed": False,
+        "oracle_scoring_used": False,
+        "joint_loop_registry_consumed": False,
+    }
+    assert blocked_data["confounder_rows_are_not_main_d2_scientific_units"] is True
+    assert blocked_data["confounder_rows_do_not_cure_main_d2_absence"] is True
 
 
 def test_v1_descriptive_collapses_d2_boundary_repeats_and_retains_not_run(
@@ -573,43 +613,299 @@ def test_v1_descriptive_collapses_d2_boundary_repeats_and_retains_not_run(
     assert isinstance(outputs, dict)
 
     core_matrix = outputs["core-no-core-abstain-matrix"]["data"]
-    assert core_matrix["source_boundary_repeat_row_count"] == 64
-    assert core_matrix["unit_count"] == 32
-    assert core_matrix["boundary_repeat_collapsed"] is True
-    assert sum(row["count"] for row in core_matrix["rows"]) == 32
-    assert sorted(row["count"] for row in core_matrix["rows"]) == [8, 8, 8, 8]
+    assert len(core_matrix["rows"]) == 32
+    assert core_matrix["nested_graph_row_count"] == 96
+    assert core_matrix["expected_disposition_counts"] == {
+        "localized_core": 16,
+        "no_core": 8,
+        "prerequisite_failure": 8,
+    }
+    assert core_matrix["attempt_status_counts"] == {
+        "evaluable": 24,
+        "insufficient": 8,
+    }
+    assert sha256_bytes(canonical_json_bytes(core_matrix["rows"])) == (
+        "2c22c937180bf90104295eb7fbd7363b0650dd733286476d01044cf25d4b9143"
+    )
 
     repeat = outputs["boundary-repeat-exact-agreement"]["data"]
-    assert repeat["paired_unit_count"] == 32
-    assert repeat["exact_agreement_count"] == 32
-    assert repeat["all_pairs_exact"] is True
-    assert repeat["graph_cell_payload_byte_equality_claimed"] is False
-    assert "max_candidate_symmetric_difference_rows" in repeat["agreement_scope_fields"]
+    assert len(repeat["rows"]) == 96
+    assert repeat["all_declared_outcomes_equal"] is True
+    assert repeat["all_blind_array_descriptors_equal"] is True
+    assert repeat["comparison_scope"] == (
+        "declared-outcomes-and-blind-array-descriptors-not-byte-or-graph-identity"
+    )
+    assert sha256_bytes(canonical_json_bytes(repeat["rows"])) == (
+        "7847d8cf7ee633eca9044f5510cda4a3917dfbac9295334d4dd33184ca5a4813"
+    )
 
     prerequisite = outputs["mandatory-prerequisite-failure-table"]["data"]
-    assert prerequisite["core_primary_unit_count"] == 8
-    assert prerequisite["loop_primary_unit_count"] == 16
+    assert prerequisite["primary_unit_count"] == 16
+    assert prerequisite["core_leaf_record_count"] == 48
+    assert prerequisite["loop_leaf_record_count"] == 288
 
     typed = outputs["typed-failure-coverage"]["data"]
-    not_run_rows = [row for row in typed["rows"] if row["status"] == "not_run"]
-    assert {(row["surface"], row["gate_id"]) for row in not_run_rows} == {
-        ("advancement-decision", "d7"),
-        ("advancement-decision", "d8"),
+    not_run_rows = [row for row in typed["rows"] if row["expected_state"] == "not_run"]
+    assert {row["route_id"] for row in not_run_rows} == {
+        "d7-not-run",
+        "d8-not-run",
     }
-    assert typed["not_run_row_count"] == 2
+    assert all(row["observed_attempt_status"] == "not_run" for row in not_run_rows)
+    assert typed["route_count"] == 6
     assert typed["not_run_retained_as_distinct_status"] is True
 
-    reference = outputs["reference-o2-error"]["data"]
-    assert reference["obligation_ids"] == [
-        "local-frame-gauge",
-        "reference-orientation",
-        "reference-reflection",
-        "reference-rotation",
-        "spin-two-double-angle",
-    ]
-    assert {row["obligation_id"] for row in reference["rows"]} == set(
-        reference["obligation_ids"]
+
+def test_v1_descriptive_d1_retains_persisted_checks_and_matched_families(
+    descriptive_result: records.D7V1PostselectionDescriptiveResult,
+) -> None:
+    outputs = descriptive_result.to_dict()["payload"]["outputs"]
+
+    margins = outputs["signed-margin-by-analytic-check"]["data"]
+    assert margins["row_count"] == 78
+    assert margins["family_row_counts"] == {
+        "cartesian-fourier-family-verified": 60,
+        "representation-family-verified": 18,
+    }
+    assert sha256_bytes(canonical_json_bytes(margins["rows"])) == (
+        "e480d14477c42260a47378baf854e6e34fe0480040c74b49a041b88a41a39b5a"
     )
+    assert all(
+        set(
+            (
+                "field_graph_fingerprint_sha256",
+                "estimator_output_sha256",
+                "oracle_fingerprint_sha256",
+            )
+        ).issubset(row)
+        for row in margins["rows"]
+    )
+
+    fragility = outputs["fragility-without-threshold-change"]["data"]
+    assert fragility["evaluation_unit"] == "d1-matched-class-unit"
+    assert fragility["matched_class_unit_count"] == 2
+    assert [row["analytic_check_count"] for row in fragility["rows"]] == [60, 18]
+    assert [row["zero_margin_count"] for row in fragility["rows"]] == [12, 6]
+    assert fragility["minimum_observed_signed_margin"] == 0.0
+    assert fragility["minimum_strictly_positive_margin"] == 9.999877875467292e-11
+    assert fragility["exact_zero_margins_kept_distinct_from_positive_fragility"] is True
+    assert sha256_bytes(canonical_json_bytes(fragility["rows"])) == (
+        "cb9444f720b596267681dcaf893f058dd433ce6cdfff7d3a0e417cf662362503"
+    )
+
+
+def test_v1_descriptive_d3_uses_complete_aggregate_surfaces(
+    descriptive_result: records.D7V1PostselectionDescriptiveResult,
+) -> None:
+    outputs = descriptive_result.to_dict()["payload"]["outputs"]
+    expected_pairs = [
+        [field_graph_id, cycle_graph_id]
+        for field_graph_id in ("a-mutual", "a-radius", "a-shared")
+        for cycle_graph_id in ("b-mutual", "b-radius", "b-shared")
+    ]
+
+    ambient = outputs["ambient-basis-error"]["data"]
+    assert ambient["evaluation_unit"] == "d3-matched-class-unit"
+    assert ambient["matched_class_unit_count"] == 2
+    assert ambient["family_row_count"] == 2
+    assert [row["source_check_count"] for row in ambient["rows"]] == [1, 4]
+    assert ambient["rows"][1]["observed_error"] == 4.440892098500626e-16
+    assert (
+        ambient["maximum_pipeline_ambient_equivariance_error"] == 7.216449660063518e-16
+    )
+    assert (
+        sha256_bytes(canonical_json_bytes(ambient["rows"]))
+        == "ffccd9b359d0ff3d3b5f76d4da3b8da990393c26223b092f5cdf9ddabf12cb31"
+    )
+
+    reference = outputs["reference-o2-error"]["data"]
+    assert reference["law_groups"] == [
+        "reference_rotation",
+        "reference_reflection",
+    ]
+    assert [row["source_check_count"] for row in reference["rows"]] == [1, 1, 9, 9]
+    assert [row["expected_orientation_sign"] for row in reference["rows"]] == [
+        1,
+        -1,
+        1,
+        -1,
+    ]
+    assert all(row["all_verified"] is True for row in reference["rows"])
+    assert reference["rows"][2]["field_cycle_pairs"] == expected_pairs
+    assert reference["rows"][3]["field_cycle_pairs"] == expected_pairs
+    assert reference["maximum_observed_field_error"] == 3.3306690738754696e-16
+    assert (
+        reference["maximum_observed_loop_or_signed_total_error"]
+        == 1.1102230246251565e-16
+    )
+    assert (
+        sha256_bytes(canonical_json_bytes(reference["rows"]))
+        == "c72681683e623061d0c5d708e2bd6a687f67f7fa566e17cdeca4fb8060061be9"
+    )
+
+    reversal = outputs["loop-reversal-signed-total-error"]["data"]
+    assert [row["source_check_count"] for row in reversal["rows"]] == [1, 9]
+    assert [row["expected_orientation_sign"] for row in reversal["rows"]] == [-1, -1]
+    assert reversal["rows"][1]["field_cycle_pairs"] == expected_pairs
+    assert reversal["maximum_observed_error_cycles"] == 0.0
+    assert (
+        sha256_bytes(canonical_json_bytes(reversal["rows"]))
+        == "25c8437738a4a8827d3c67ad554ca22acec3a3a5ebb5945fb1361ff4f71decca"
+    )
+
+    separated = outputs["array-versus-observable-law-separation"]["data"]
+    assert separated["cartesian_pipeline_row_count"] == 4
+    assert separated["representation_pipeline_row_count"] == 3
+    assert separated["representation_crossed_loop_cell_count"] == 9
+    assert [row["row_id"] for row in separated["rows"]] == [
+        "ambient-signed-permutation",
+        "reference-rotation",
+        "reference-reflection",
+        "loop-reversal",
+        "a-mutual",
+        "a-radius",
+        "a-shared",
+    ]
+    assert all(row["verified"] is True for row in separated["rows"])
+    assert separated["family_maximum_errors"] == {
+        "cartesian_array_or_field": 3.3306690738754696e-16,
+        "cartesian_sampled_loop": 1.1102230246251565e-16,
+        "representation_array_or_field": 1.1102230246251565e-15,
+        "representation_sampled_loop": 0.0,
+    }
+    assert (
+        sha256_bytes(canonical_json_bytes(separated["rows"]))
+        == "f1a71c1ab3a84b5df229e75afd83eccc0b8a0dd3d719ce11eaaf56f063d53c98"
+    )
+
+    for output in (ambient, reference, reversal, separated):
+        assert (
+            output["diagnostic_rows_are_independent_scientific_observations"] is False
+        )
+        assert output["integer_output_present"] is False
+        assert output["topology_claimed"] is False
+
+
+def test_v1_descriptive_outputs_13_through_27_retain_exact_rows_and_grains(
+    descriptive_result: records.D7V1PostselectionDescriptiveResult,
+) -> None:
+    outputs = descriptive_result.to_dict()["payload"]["outputs"]
+    expected_rows = {
+        "three-by-three-field-cycle-graph-matrix": (
+            128,
+            "874ffb1458b344940d46cf710fac251df2cc7d75262bc5fd392f9489de39caa1",
+        ),
+        "loop-role-separated-primary-boundary-and-offcore-control-table": (
+            128,
+            "3292fbc16e1d19896e76df66fed2bf14d642eeb0813b6d1e7c0dbb21ea6c16c0",
+        ),
+        "diagonal-offdiagonal-separation": (
+            4,
+            "87aa8e00ecce8dcb0112bf1506ea503e2a0b5e935bdb7c44835aae75e2d1d7f1",
+        ),
+        "adjacency-output-loop-total-effects": (
+            192,
+            "3fe342c7e2ee5403fa006708623230787164a52c3c026d5f5676f15cf06675ec",
+        ),
+        "support-aware-cell-table": (
+            1_152,
+            "4e32c26e8c8ca2cd7e4bf22b41445a97f8a81d6e9bb37d944e642cffd3532627",
+        ),
+        "worst-case-by-stress-stratum": (
+            108,
+            "f9b9ee936f2e352ff920a7b026fb5b5e9fd56dae56642cd94001d056db5b1527",
+        ),
+        "loop-role-separated-worst-case-and-coverage-table": (
+            12,
+            "3752f9cbea160116384dfa3ec3629dc791a513cb6085c6d45bfd89a43fdfc0c1",
+        ),
+        "coverage-abstention-recall-specificity-table": (
+            6,
+            "73abed0da72b6d40ffd30799ddefef3534e07fe5b01bd7bf68721c68863f3422",
+        ),
+        "mandatory-prerequisite-failure-table": (
+            16,
+            "65cf2b1fd554f366d00ea7ef9b4cf122c875c80e6208373d54235556eced0b3a",
+        ),
+        "required-nonvacuity-evidence": (
+            64,
+            "9badfd0277567521ed5d1f30a1c430b918eda264fcb7bd064c9e16ad5316a938",
+        ),
+        "abstention-reason-table": (
+            339,
+            "961f390bbc18a08ecda924e4b6cb090efb493d34aad9fe22a035dade516c424b",
+        ),
+        "typed-failure-coverage": (
+            6,
+            "9f24b07960d6cbaac0bf85c758f1eadf0fb5691bff5eb087bde70a5958998efc",
+        ),
+        "shared-generator-seed-graph-boundary-implementation-oracle-map": (
+            9,
+            "32c6ca166b0ebe9b027baefe0e2c570b18ecfa5c062469739bbcf18045410201",
+        ),
+        "replication-versus-construction-diversity-table": (
+            5,
+            "de08769d626af4d5a154e1ea9f1ad3a7d0719a591eec07fd04347c31108dfb2b",
+        ),
+        "epistemic-independence-nonclaim": (
+            1,
+            "7568abe9a9588fa5832f02714f5c259397868cda2c025348561bbdb664b9b119",
+        ),
+    }
+    data = {output_id: outputs[output_id]["data"] for output_id in expected_rows}
+    for output_id, (row_count, rows_sha256) in expected_rows.items():
+        rows = data[output_id]["rows"]
+        assert len(rows) == row_count
+        assert sha256_bytes(canonical_json_bytes(rows)) == rows_sha256
+
+    stress = data["worst-case-by-stress-stratum"]
+    assert stress["required_strata_are_overlapping_marginals"] is True
+    assert stress["stratum_rows_may_be_summed"] is False
+
+    role = data["loop-role-separated-worst-case-and-coverage-table"]
+    assert role["graph_cells_reduced_within_execution_first"] is True
+    assert role["execution_denominator_per_row"] == 32
+
+    coverage = data["coverage-abstention-recall-specificity-table"]
+    assert all(len(row["primary_unit_ids"]) == 32 for row in coverage["rows"])
+    assert coverage["stratum_rows_may_be_summed"] is False
+
+    prerequisite = data["mandatory-prerequisite-failure-table"]
+    assert prerequisite["core_leaf_record_count"] == 48
+    assert prerequisite["loop_leaf_record_count"] == 288
+
+    nonvacuity = data["required-nonvacuity-evidence"]
+    assert nonvacuity["field_graph_pair_effect_count"] == 192
+    assert nonvacuity["component_effect_count"] == 768
+
+    abstention = data["abstention-reason-table"]
+    assert abstention["logical_reason_occurrence_count"] == 915
+
+    typed = data["typed-failure-coverage"]
+    assert typed["exhaustive"] is False
+
+    independence = data[
+        "shared-generator-seed-graph-boundary-implementation-oracle-map"
+    ]
+    assert independence["dimension_count"] == 9
+    assert all(row["independence_supported"] is False for row in independence["rows"])
+
+    diversity = data["replication-versus-construction-diversity-table"]
+    assert diversity["category_count"] == 5
+    assert all(
+        row["independent_confirmation_credit"] is False for row in diversity["rows"]
+    )
+
+    nonclaim = data["epistemic-independence-nonclaim"]
+    assert nonclaim["claim_ceiling"] == "level_0"
+    assert nonclaim["claim_delta"] == "none"
+    assert nonclaim["scientific_claim_eligible"] is False
+    assert nonclaim["independent_confirmation_observed"] is False
+    row = nonclaim["rows"][0]
+    assert row["claim_ceiling"] == "level_0"
+    assert row["claim_delta"] == "none"
+    assert row["construction_family_generalization_claimed"] is False
+    assert row["epistemic_independence_claimed"] is False
+    assert row["inferential_sample_size_claimed"] is False
 
 
 def test_v1_descriptive_result_round_trips_under_the_large_record_cap(
