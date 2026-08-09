@@ -539,6 +539,51 @@ cannot be rewritten or used for a rescue retry.
 `none`. This entry records a future navigation decision, not qualification,
 scientific evidence, execution readiness, or subject authority.
 
+### 3.16 D7 v1 pre-item-23 structural contract
+
+**Decision source and timing**
+
+After the strict-successor route was merged as commit
+`2645ab360598c9ff4f1d9e628b9a9fe1857aedf6`, the project prospectively fixed
+`d7-v1-pre-item23-materialization-v0-1`. The canonical protocol is 43,288
+bytes, SHA-256
+`13d013e007fa30775abb4cd092b264482207dcad23f772aecd966a51cbafbaad`.
+This entry does not amend the v0.1 disposition, backdate a receipt, or claim
+that any declared filesystem coordinate was observed or reserved.
+
+**Structural decision**
+
+The future lineage has 11 primary schema roles: C1, C2, an exclusive seed
+claim, seed inventory, one embedded full design, replay target, design freeze,
+launch intent, pre-start attempt reservation, pre-item-23 receipt, and later
+descriptive result. The pre-result repository publication contains exactly
+nine files. Its receipt binds eight predecessor path/schema/digest tuples and
+the nine-path inventory; it cannot and does not hash itself.
+
+The only prospective chronology is reviewed source S, durable external seed
+claim, one supplier entry, fresh target/design, a separately domain-separated
+pre-start attempt reservation, receipt formation last, one atomic no-replace
+nine-file publication, artifact-only commit A, then a separately published
+result-only commit B. The result may read only the historical plan and five
+declared scientific parents; successful or insufficient formation closes the
+same 27 descriptive output roles. Successor seed and confirmation values, the
+old item-23 result, and its three value-bearing source files remain forbidden.
+
+**Current boundary**
+
+The record kernel is structural and unauthenticated. The source closure,
+joined loader, predecessor-inventory reauthentication, external/repository
+byte join, atomic-publication witness, post-commit chronology verifier, C1/C2,
+seed, attempt, receipt, result, and execution all remain absent or `not_run`.
+No VOY, D7/D8, SCI, API, supported-schema, or library milestone completes.
+Future materialization requires the remaining reviewed source and a later
+canonical-main commit; these definitions alone authorize nothing.
+
+**Claim delta**
+
+`none`. This is a prospective structural contract, not scientific evidence,
+execution readiness, or subject access.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

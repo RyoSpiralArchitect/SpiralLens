@@ -4,6 +4,34 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 structural records and pre-item-23 materialization contract
+
+- Added the 43,288-byte canonical
+  `spirallens.d7-v1-pre-item23-materialization-protocol.v0.1` planning record,
+  SHA-256
+  `13d013e007fa30775abb4cd092b264482207dcad23f772aecd966a51cbafbaad`.
+  It closes 11 primary schema roles across nine co-published pre-item-23 files
+  plus a later descriptive result; the embedded full design has one canonical
+  subdocument shape and is not a second file.
+- Added one internal, non-exported record kernel for those structural shapes.
+  It retains canonical bytes, verifies digests before parse, rejects unknown
+  fields, binds internal role to schema, joins receipt paths to eight
+  predecessor digests without a recursive self-hash, and closes the permitted
+  historical read surface and 27 embedded canonical output subdocuments.
+- Froze domain-separated future derivations for source-tree, seed-claim, and
+  official-attempt identities, and required later joined verification of Git
+  source bytes, predecessor seed exclusion, external durable projections,
+  atomic nine-file publication, unique commit-A introduction, result-namespace
+  absence, and result-only commit B.
+- Froze a 4 MiB default primary-record cap and a 16 MiB descriptive-result cap;
+  the larger bound is required because the bound historical descriptive result
+  is 5,293,662 bytes. Future loaders must enforce cap, digest, canonical parse,
+  and joined verification in that order.
+- The protocol remains `frozen_not_run`. This change performs no persistence,
+  path observation or reservation, source closure, supplier invocation,
+  artifact publication, model/subject access, execution, scientific claim,
+  public-API addition, supported-schema promotion, or library maturity change.
+
 ## 2026-08-09 — V1–V9 navigation and strict-successor coordinate declaration
 
 - Added the 13,806-byte canonical
