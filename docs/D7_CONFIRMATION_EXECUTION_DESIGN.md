@@ -27,8 +27,13 @@ Status: `c1_seed_free_source_set_candidate_recorded`,
 `item23_outputs_26_available_1_blocked`,
 `item23_claim_ceiling_level_0_claim_delta_none`,
 `item23_d7_d8_not_run_authority_true_count_0`,
+`item23_chronology_conformance_deviated`,
+`item23_d7_ops_completion_credit_false`,
 `canonical_d7_launch_descriptor_committed_all_authority_false`,
 `item22_launch_intent_present`,
+`d7_v0_1_superseded_before_official_execution`,
+`official_item24_v0_1_invocation_blocked_by_protocol_deviation`,
+`current_source_closure_intentionally_differs_from_v0_1`,
 `official_authoritative_start_instance_absent`, `official_d7_run_absent`,
 `seed_bearing_target_not_admitted`, `not_run`.
 
@@ -431,8 +436,10 @@ atomic `published-target/` directory, and, only after complete publication, the
 later `full-design-freeze.json` leaf. The exact `published-target/` members are
 `official-seed-inventory.json`, `full-inventory.json`, `full-design.json`,
 `replay-target.json`, `single-supplier-invocation.json`, and
-`transaction-manifest.json`. Launch intent remains on the later external
-launch surface and is not a transaction-root member. On that surface,
+`transaction-manifest.json`. In the superseded, chronology-deviated v0.1
+layout, launch intent was placed on a later external launch surface and was not
+a transaction-root member. That physical layout remains historical evidence,
+not a valid pre-item-23 chronology. On that surface,
 `launch.json` is the closed nine-member descriptor; the distinct
 launch-intent record is
 `launch-members/launch-intent.json` and is one descriptor member.
@@ -536,8 +543,11 @@ separately records the item-23 descriptive result: canonical SHA-256
 `claim_delta=none`. Its strict observer now reports `complete`, which means
 that exact descriptive artifact reloads and rederives; it grants no launch,
 execution, or scientific authority. The distinct later descriptor is now
-committed by `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`; item 24 remains the
-first official fused invocation.
+committed by `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`. A 2026-08-09 review
+found that item 23 preceded chronology bindings required by the unchanged
+Fundamental Frame. Its separate conformance axis is therefore `deviated`, it
+supplies no `D7-OPS-23` completion credit, and the later descriptor does not
+cure the ordering. D7/D8 remain `not_run`, and official v0.1 item 24 is blocked.
 
 The evidence-only local persistence writer performs path-coordinate
 reobservation before exposing a caller-supplied start record, but it does not
@@ -751,12 +761,17 @@ The reviewed successor order is:
    descriptive publication; do not reinterpret it as a D7 design change,
    launch, execution, or confirmation; and
 7. retain the committed closed nine-member fused descriptor and its launch
-   intent, neither of which was an item-23 prerequisite or input. Its strict
+   intent as later all-false evidence. The narrower machine path treated them
+   as non-prerequisites, contrary to the unchanged Fundamental Frame's broader
+   receipt-bound chronology. Their strict
    verification-evidence replay/rejoin, temporary Git/runtime end-to-end
    validation, and authoritative-start-compatible external-abort integration
-   pass without producer entry. Merge and rejoin that exact artifact on
-   canonical `main`; item 24 is the first official fused invocation and must
-   yield the exact terminal outcome before isolated byte replay can qualify.
+   had passed without producer entry at descriptor commit `09b0cc5c...`, before
+   the disposition source changes. Those historical plumbing validations do
+   not satisfy current v0.1 live-source equality or cure item 23. Retain the
+   canonical non-retroactive disposition, keep D7/D8 `not_run`, and do not
+   invoke v0.1 item 24. Any future execution requires a separately reviewed
+   versioned identity and new coordinates.
 
 The item-24 preparation and dispatch scripts are experiment-only repository
 plumbing, not installed library API and not launch authority. Preparation
@@ -782,11 +797,19 @@ eight-file artifact child is commit
 `0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`
 and bundle SHA-256
 `b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`.
-It strict-rejoins all nine members on its current HEAD; the exact frozen
-runtime, live execution identity, wrong-envelope rejection, temporary
-Git/runtime end-to-end path, and real external-abort/no-retry integration pass
-without producer entry. Canonical-main merge/rejoin and review remain before
-the official invocation.
+It strict-rejoins all nine members on its current HEAD. At descriptor commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`, before the disposition source
+changes, the exact frozen runtime, live execution identity, wrong-envelope
+rejection, temporary Git/runtime end-to-end path, and real
+external-abort/no-retry integration passed without producer entry. Those are
+historical plumbing validations and do not satisfy current v0.1 live-source
+equality. Commit
+`897dd7c60411f5fd36c6c50fb5064802a25a471b` records the canonical chronology
+disposition. The v0.1 runner, canonical fused entry, and direct producer now
+fail closed before start or generator access; the source change intentionally
+ends equality with the old v0.1 execution-source closure. This is not
+hostile-local or cryptographic revocation. It is an honest-local, versioned
+protocol stop, and canonical-main merge/rejoin cannot make v0.1 eligible.
 
 Evidence envelopes, existing caller-constructible authority records, and the
 item-22 contract specification cannot be promoted in place; their verification
@@ -799,16 +822,20 @@ freeze/chronology/unseen-proof fields remain false. The item-23 descriptive
 artifact is now committed: all 27 outputs are present, 26 are `available`, and
 `amplitude-identifiability-support-separation` alone is `blocked`, so the
 operationally complete result remains scientifically `insufficient` at Level 0
-with no claim delta. Launch intent and the canonical nine-member descriptor are
+with no claim delta. Its separate chronology conformance is `deviated`, it
+receives no `D7-OPS-23` completion credit, and this does not change its
+scientific status to `fail`. Launch intent and the canonical nine-member descriptor are
 committed at Level 0 and strict-rejoin, changing the item-22 observer to
 `launch-intent-present`; every authority fact remains false. Official D7
 invocation/start/run/terminal/result, D7, and D8 remain absent or `not_run`.
+The post-descriptor presence state is not the item-23-time state, and the
+descriptor does not retroactively cure the missing receipt-bound chronology.
 None may be represented by a placeholder result, inferred from C2 source
 closure, or authorized by caller-constructible records.
 
-After the separate item-22 full-design-freeze receipt and committed item-23
-descriptive result, while all launch and execution obligations remain open,
-the canonical state is:
+After the separate item-22 full-design-freeze receipt, committed item-23
+descriptive result, later closed descriptor, and non-retroactive chronology
+disposition, the canonical state is:
 
 ```text
 c1_seed_free_source_set_candidate_recorded
@@ -828,6 +855,8 @@ item23_outputs_26_available_1_blocked
 item23_claim_ceiling_level_0_claim_delta_none
 item23_d7_d8_not_run_authority_true_count_0
 item23_analysis_input_read_trace_count_7
+item23_chronology_conformance_deviated
+item23_d7_ops_completion_credit_false
 seed_bearing_target_not_admitted
 not_run
 d6_v0_1_exact_admission_unsatisfied
@@ -846,6 +875,9 @@ item22_inventory_self_freeze_chronology_unseen_proof_fields_false
 item22_launch_intent_present
 canonical_d7_launch_descriptor_committed_all_authority_false
 canonical_d7_launch_descriptor_sha256_0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac
+d7_v0_1_superseded_before_official_execution
+official_item24_v0_1_invocation_blocked_by_protocol_deviation
+current_source_closure_intentionally_differs_from_v0_1
 terminal_witness_runner_mechanics_implemented_non_authorizing
 fused_verify_and_exclusive_start_mechanics_implemented_not_officially_invoked
 d7_runtime_lock_exact_tracked

@@ -39,7 +39,7 @@ and cannot change experiment status or authority.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, current-HEAD closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction/freeze receipt, one insufficient `D7-OPS-23` result, and one all-false nine-member descriptor/intent; strict observation is `launch-intent-present`, but none is a public export or caller-configurable supplier surface, and no official start/run, trusted pin root, independent confirmation, or D7/D8 authority exists |
+| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction/freeze receipt, one operationally complete/scientifically insufficient but chronology-deviated item-23 result, one all-false nine-member descriptor/intent, and a canonical v0.1 disposition; structural observation is `launch-intent-present`, but every official v0.1 execution entry is blocked, none is a public export or caller-configurable supplier surface, and no official start/run, trusted pin root, independent confirmation, or D7/D8 authority exists |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.atlas` | provisional/model extra | import and artifact readers remain installable; the repository-bound public-example runner requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files |
 | `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
@@ -75,13 +75,16 @@ result: 5,293,662 canonical bytes, SHA-256
 seven-file analysis-input trace. The sole blocked output is
 `amplitude-identifiability-support-separation`: the historical main D2 scalar
 values were not persisted, and no rerun or current-code reconstruction was
-performed. No authority flag is true, and D7 and D8 remain `not_run`. The
+performed. No authority flag is true, and D7 and D8 remain `not_run`. A later
+review found that item 23 did not satisfy the broader 2026-07-29 chronology;
+its separate conformance axis is therefore `deviated`, and it supplies no
+`D7-OPS-23` completion credit. The
 historical item-22 freeze checkpoint is `full-design-frozen`; the later
 all-false descriptor/intent commit moves the current observer to
-`launch-intent-present` without launching anything. The next repository step
-is canonical-main review/merge/rejoin followed by item 24. Reusable analysis
-primitives remain extraction candidates until a second independent consumer
-exists.
+`launch-intent-present` without launching anything or curing the deviation.
+Official v0.1 item 24 is blocked; any execution requires a reviewed versioned
+successor. Reusable analysis primitives remain extraction candidates until a
+second independent consumer exists.
 
 The spectral-moment four-case generator and
 `spirallens.qualification.confirmation_protocol` foundation are internal
@@ -359,9 +362,10 @@ loader strictly reparses the descriptor and verification evidence and rejoins
 their inventory and persisted start bindings. The official descriptor now
 exists and strict-rejoins without start or producer entry; full start/reload
 was exercised only in the temporary qualification namespace. Repository-HEAD,
-callable, and process observation digests are preserved, not recomputed or
-independently reauthenticated by structural reload. Terminal lineage binds the
-evidence bytes rather than those live facts.
+canonical-origin, source-tree, dependency-set, callable, and process
+observation digests are preserved, not recomputed or independently
+reauthenticated by structural reload. Terminal lineage binds the evidence
+bytes rather than those live facts.
 
 The replay contracts and attempt records remain specifications and types. One
 Level-0 replay-target instance is persisted inside the item-22 target and is
@@ -442,16 +446,27 @@ item-23 descriptive result introduced by
 SHA-256 `d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`.
 Its operational completion does not change the item-22
 historical `full-design-frozen` checkpoint or supply launch, execution,
-confirmation, or scientific authority. The later artifact-only commit
+confirmation, or scientific authority. A later non-retroactive disposition
+records `item23_chronology_conformance=deviated`, grants no `D7-OPS-23`
+completion credit, and retains its operational `complete` and scientific
+`insufficient` axes. The later artifact-only commit
 `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4` records the descriptor at SHA-256
 `0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`
 and its nine-member bundle at SHA-256
 `b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`.
-Strict current-HEAD rejoin and exact-runtime/process/store observations pass,
-but every authority, execution, result, retry, replay, D7, and D8 fact remains
-false. The next repository step is canonical-main review/merge/rejoin followed
-by the separately controlled official item-24 invocation and replay. Canonical
-bytes and repository ancestry do not self-promote into authority.
+Descriptor/member structural rejoin remains valid at current HEAD. At
+descriptor commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`, before the
+disposition source changes, exact-runtime/process/store qualification passed
+without producer entry. That is historical plumbing evidence; it does not
+satisfy current v0.1 live-source equality, and every authority, execution,
+result, retry, replay, D7, and D8 fact remains false. Commit
+`897dd7c60411f5fd36c6c50fb5064802a25a471b` records the canonical
+chronology disposition and blocks the v0.1 runner, canonical fused entry, and
+direct producer before start or generator access. The source change
+intentionally breaks equality with the old v0.1 execution-source closure.
+That identity is superseded before official execution; any future invocation
+requires a separately reviewed versioned successor and new coordinates.
+Canonical bytes and repository ancestry do not self-promote into authority.
 
 The package root deliberately does not re-export provisional scientific APIs.
 Each provisional namespace maintains an explicit `__all__`; undocumented deep
