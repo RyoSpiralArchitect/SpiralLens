@@ -48,6 +48,13 @@ it supplies no D7 completion credit. D7/D8 remain `not_run`; the later
 all-false descriptor does not cure the ordering, and every official v0.1
 execution entry now fails closed. See Ledger section 3.14.
 
+The canonical [VOY-V1–V9 strict-successor route](protocols/voy_v1_v9_strict_successor_route_v0_1.json)
+adds navigation aliases and declares fresh, single-host v1 coordinate
+templates only; it performs no filesystem reservation or ownership claim. It
+creates no receipt, seed, attempt, execution, scientific authority, API
+promotion, or library-lane gate; the canonical Roadmap milestones remain
+authoritative.
+
 ## Scientific interpretation anchors
 
 The project adopted an order-parameter-first fundamental interpretation after

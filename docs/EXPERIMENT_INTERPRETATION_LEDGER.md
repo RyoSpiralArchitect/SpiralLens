@@ -489,6 +489,56 @@ its bytes, promote the descriptor, or claim cryptographic revocation or
 hostile-local deletion/race resistance. Neither a later document nor the
 existing descriptor may be read as satisfying a prerequisite after the fact.
 
+### 3.15 Strict-successor route selection and V1–V9 navigation
+
+**Decision source and timing**
+
+This prospective decision was recorded on 2026-08-09 after PR #42 merge commit
+`aa5364da5478c4ebe782cfd382f4a18725a50e04`. The route itself records no v1
+source closure, receipt, seed, attempt, descriptor, result, execution authority,
+or materialization, and it makes no claim that the declared filesystem paths
+were absent at decision time. It does not amend or cure the v0.1 chronology in
+section 3.14.
+
+The canonical planning record is
+`voy-v1-v9-strict-successor-route-v0-1`, 13,806 bytes, SHA-256
+`c8d28138c95d16ab96f508c2386de1d62360e1659057e0b8f7cbe8a380a90e35`.
+Its `VOY-V1` through `VOY-V9` names are navigation aliases over the existing
+Roadmap IDs and carry no copied live status or completion authority.
+
+**Forward route choice**
+
+The separately versioned strict-successor route is selected. The model-free
+exploratory-only alternative is not selected, and an exploratory label cannot
+bypass the current subject gate. The route declares fresh single-host lexical
+coordinate templates but performs no filesystem reservation, ownership claim,
+live physical observation, successor materialization-artifact publication, or
+execution.
+
+Before a successor descriptive result, one committed receipt must bind the
+fresh replay target and full-design freeze, distinct launch intent, exclusive
+no-replace official execution-attempt envelope, and descriptive-result
+namespace absence. The replay target must transitively bind the complete
+family, admission, protocol, source, graph, and lifecycle design. A later
+descriptor cannot cure an omitted pre-result binding.
+
+**Scientific and library boundaries**
+
+F2 and F4 remain unresolved order-parameter candidates; F0, F1, and F3 retain
+their diagnostic, geometry, and projection-baseline roles. Subject, defect,
+semantic, or SAE outcomes may not select the family. This route has no effect
+on the independent library lane and grants no API, dependency, maturity,
+schema, claim-level, subject, topology, or execution promotion.
+
+Any later change to the route requires a new route version, review, and a
+dated Ledger entry before the affected inputs are consumed. The same identity
+cannot be rewritten or used for a rescue retry.
+
+**Claim delta**
+
+`none`. This entry records a future navigation decision, not qualification,
+scientific evidence, execution readiness, or subject authority.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

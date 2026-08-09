@@ -174,6 +174,17 @@ This mapping changes prospective interpretation and references only. It does
 not rename or reinterpret a frozen artifact, protocol, outcome, or historical
 commit.
 
+### 3.2 V1–V9 navigation overlay
+
+The canonical
+[`VOY-V1`–`VOY-V9` route](../protocols/voy_v1_v9_strict_successor_route_v0_1.json)
+is a navigation and fresh-coordinate declaration overlay on the existing
+`D7-OPS`, `SCI-Sn`, and `LIB-Ln` namespaces. It neither reproduces their live
+status nor renames, completes, or authorizes them, and it performs no
+filesystem reservation or ownership claim. It grants no public-API,
+repository-bound-export, console-script, runtime-dependency, maturity, or
+schema promotion; the library lane is independent of VOY progress.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

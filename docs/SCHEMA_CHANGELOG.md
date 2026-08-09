@@ -4,6 +4,28 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-09 — V1–V9 navigation and strict-successor coordinate declaration
+
+- Added the 13,806-byte canonical
+  `spirallens.voy-navigation-route.v0.1` planning record, SHA-256
+  `c8d28138c95d16ab96f508c2386de1d62360e1659057e0b8f7cbe8a380a90e35`.
+  `VOY-V1` through `VOY-V9` are navigation aliases over existing Roadmap IDs;
+  they carry no copied live status, completion credit, or execution authority.
+- Selected the strict versioned-successor route and declared disjoint v1
+  repository root, entrypoint names, external store, lanes, output, and
+  terminal templates for one host. No filesystem reservation or ownership
+  claim, successor source closure, physical identity, receipt, seed, attempt
+  key, descriptor, result, or run is created here. The six predecessor root
+  instances and their operational attempt/seed/physical/source-runtime
+  descendants are non-reusable; unchanged scientific-parent identities may be
+  cited only as authority-free historical evidence.
+- Kept F2 and F4 unresolved and outcome-blind, with F0/F1/F3 as controls. Any
+  future model-native derivation must be frozen before subject access.
+- Bound the route to the PR #42 non-retroactive disposition and preserved a
+  library guard that gives this route no public API, repository-bound export,
+  console-script, runtime-dependency, maturity, claim-level, or supported-schema
+  promotion and does not gate the independent library lane.
+
 ## 2026-08-09 — D7 v0.1 chronology disposition and official-entry block
 
 - Added the canonical 4,728-byte
