@@ -3,9 +3,9 @@
 This module implements the source-side machinery frozen by
 ``d7_v1_pre_item23_materialization_v0_1.json``.  Importing it performs no I/O.
 It does not generate seeds, enter a supplier, construct a scientific result,
-access a model or subject, or invoke an official runner.  A publisher is
-intentionally absent: a later materializer must create and own a private stage
-before it can make an atomic-publication claim.
+access a model or subject, or invoke an official runner.  Repository
+publication is kept in the separate private-stage primitive; this module
+remains read-only.
 
 The record classes validate one canonical document at a time.  This module is
 the deliberately separate layer which proves that those documents bind the
@@ -34,6 +34,7 @@ from spirallens.core.canonical import (
 )
 
 from .common import QualificationContractError, require_sha256
+from . import confirmation_v1_post_d6_descriptive as descriptive
 from . import confirmation_v1_records as records
 
 __all__: tuple[str, ...] = ()
@@ -46,6 +47,9 @@ _PROTOCOL_SCHEMA = "spirallens.d7-v1-pre-item23-materialization-protocol.v0.1"
 _PROTOCOL_ID = "d7-v1-pre-item23-materialization-v0-1"
 _PROTOCOL_MERGE_COMMIT = "052893036f0562292f869118dbcbc72746df329a"
 _MODULE_PATH = "src/spirallens/qualification/confirmation_v1_materialization.py"
+_DESCRIPTIVE_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
+)
 _RECORDS_MODULE_PATH = "src/spirallens/qualification/confirmation_v1_records.py"
 _ROUTE_ROLE = "navigation-route"
 _PROTOCOL_ROLE = "v1-materialization-protocol"
@@ -431,13 +435,24 @@ def _require_import_origins(repository: RepositoryContext) -> None:
         raise QualificationContractError(
             "records module import origin differs from repository"
         )
+    if not repository.matches_imported_file(
+        imported_file=descriptive.__file__,
+        repository_path=_DESCRIPTIVE_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "descriptive module import origin differs from repository"
+        )
 
 
 def _require_executing_sources_match_commit(
     repository: RepositoryContext,
     source_commit: str,
 ) -> None:
-    for repository_path in (_MODULE_PATH, _RECORDS_MODULE_PATH):
+    for repository_path in (
+        _MODULE_PATH,
+        _RECORDS_MODULE_PATH,
+        _DESCRIPTIVE_MODULE_PATH,
+    ):
         _mode, committed = _git_blob(
             repository,
             source_commit,
@@ -855,10 +870,13 @@ def _verify_source_join(
     return source_commit
 
 
-def _historical_bindings(
+def _historical_sources_and_bindings(
     repository: RepositoryContext,
     protocol: D7V1MaterializationProtocol,
-) -> dict[str, records.D7V1ArtifactBinding]:
+) -> tuple[
+    dict[str, bytes],
+    dict[str, records.D7V1ArtifactBinding],
+]:
     policy = _mapping(
         protocol.document.get("historical_input_policy"),
         label="historical_input_policy",
@@ -873,7 +891,8 @@ def _historical_bindings(
             )
         ),
     ]
-    result: dict[str, records.D7V1ArtifactBinding] = {}
+    sources: dict[str, bytes] = {}
+    bindings: dict[str, records.D7V1ArtifactBinding] = {}
     for entry in entries:
         role = _string(entry.get("artifact_binding_role"), label="historical role")
         source_commit = _resolve_commit(
@@ -896,17 +915,30 @@ def _historical_bindings(
         )
         if sha256_bytes(source) != expected_sha or len(source) != expected_size:
             raise QualificationContractError(f"{role} historical bytes differ")
-        result[role] = records.D7V1ArtifactBinding(
+        document = _parse_canonical_mapping(source, label=f"{role} historical input")
+        artifact_contract_id = _string(
+            entry.get("artifact_contract_id"), label=f"{role} contract"
+        )
+        if document.get("schema_version") != artifact_contract_id:
+            raise QualificationContractError(f"{role} historical schema differs")
+        sources[role] = source
+        bindings[role] = records.D7V1ArtifactBinding(
             artifact_role=role,
-            artifact_contract_id=_string(
-                entry.get("artifact_contract_id"), label=f"{role} contract"
-            ),
+            artifact_contract_id=artifact_contract_id,
             canonical_sha256=expected_sha,
             byte_count=expected_size,
         )
-    if len(result) != 6:
+    if tuple(bindings) != records._DESCRIPTIVE_READ_TRACE_ROLES:
         raise QualificationContractError("historical input binding set is not closed")
-    return result
+    return sources, bindings
+
+
+def _historical_bindings(
+    repository: RepositoryContext,
+    protocol: D7V1MaterializationProtocol,
+) -> dict[str, records.D7V1ArtifactBinding]:
+    _sources, bindings = _historical_sources_and_bindings(repository, protocol)
+    return bindings
 
 
 def _negative_seed_binding(
@@ -1550,7 +1582,7 @@ def _verify_result_joins(
     protocol: D7V1MaterializationProtocol,
     joined: D7V1JoinedRecords,
     result: records.D7V1PostselectionDescriptiveResult,
-) -> None:
+) -> dict[str, bytes]:
     coordinates = _coordinates(protocol)
     if _record_repository_path(result) != coordinates["descriptive_result"]:
         raise QualificationContractError("result repository path differs")
@@ -1568,7 +1600,9 @@ def _verify_result_joins(
         _record_binding(joined.receipt),
         label="result chronology receipt",
     )
-    historical = _historical_bindings(repository, protocol)
+    historical_sources, historical = _historical_sources_and_bindings(
+        repository, protocol
+    )
     trace = _sequence(payload.get("read_trace"), label="result read_trace")
     observed: list[records.D7V1ArtifactBinding] = []
     for item in trace:
@@ -1577,6 +1611,7 @@ def _verify_result_joins(
     expected = [historical[role] for role in records._DESCRIPTIVE_READ_TRACE_ROLES]
     if observed != expected[: len(observed)]:
         raise QualificationContractError("result read trace differs from pinned inputs")
+    return historical_sources
 
 
 def _verify_and_load_d7_v1_commit_b(
@@ -1632,7 +1667,28 @@ def _verify_and_load_d7_v1_commit_b(
         result_source,
         expected_sha256=sha256_bytes(result_source),
     )
-    _verify_result_joins(repository, commit_a.joined.protocol, commit_a.joined, result)
+    historical_sources = _verify_result_joins(
+        repository,
+        commit_a.joined.protocol,
+        commit_a.joined,
+        result,
+    )
+    attempt = commit_a.joined.record(
+        records.D7V1OfficialExecutionAttemptReservation.artifact_role
+    )
+    if not isinstance(attempt, records.D7V1OfficialExecutionAttemptReservation):
+        raise QualificationContractError("joined result parent is not an attempt")
+    descriptive._verify_d7_v1_post_d6_descriptive_result(
+        result,
+        historical_plan_source=historical_sources["historical-post-d6-plan"],
+        parent_protocol_source=historical_sources["parent-protocol"],
+        parent_result_source=historical_sources["parent-result"],
+        parent_manifest_source=historical_sources["parent-manifest"],
+        parent_consumption_source=historical_sources["parent-consumption"],
+        parent_d6_decision_source=historical_sources["parent-d6-decision"],
+        parent_attempt=attempt,
+        chronology_receipt=commit_a.joined.receipt,
+    )
     return D7V1CommitVerification(
         commit_a.source_commit,
         commit_a.artifact_commit,

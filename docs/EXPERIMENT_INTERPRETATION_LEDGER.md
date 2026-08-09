@@ -659,6 +659,38 @@ artifact commit A, descriptive result, model access, execution, scientific
 claim, public API, supported-schema promotion, or library milestone is created
 or completed. VOY-V3 remains `frozen_not_run`.
 
+### 3.19 D7 v1 descriptive derivation and blocked entrypoint coordinates
+
+**Decision source and timing**
+
+After the private-stage publication primitive was merged, the project added
+additional declared source coordinates required before a final reviewed source
+commit S can be considered. This source change does not select S or invoke any
+successor operation, and source completion remains unmet.
+
+**Implemented boundary**
+
+The internal descriptive module freshly derives the frozen 27-output result
+shape from exactly the historical plan and five permitted scientific parents.
+It does not read the predecessor item-23 result or its three value-bearing
+implementation files, and it provides no repository publication step. The
+commit-B verifier accepts a result only when fresh derivation from those exact
+six inputs reproduces its canonical bytes, not merely when its 27-output
+envelope is schema-valid. The preparation script, runner, and
+official-callable module implement the route's declared names but fail closed:
+the frozen contract contains neither a closed external-chronology orchestrator
+nor the launch-authority and execution-start records required for dispatch.
+Import and help do not create official paths or dispatch work.
+
+**Current boundary and claim delta**
+
+`none`. There is no stage-17 descriptive-result publisher, official execution
+authority, source closure, seed, supplier invocation, artifact commit A,
+result commit B, generated artifact, generated result, model access, or
+scientific evidence. Source completion remains unmet and S remains unselected.
+This is source-level software qualification only and changes no public API,
+supported schema, VOY status, or library milestone.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

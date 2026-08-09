@@ -69,7 +69,15 @@ rename; it has not been invoked. Its in-memory success observation is
 structural-only and explicitly grants no authority, materialization status, or
 commit-A verification. No final source closure, seed claim, store, receipt,
 artifact, result, execution authority, public API, or library maturity is
-created by these source-only changes.
+created by these source-only changes. Fresh v1 source now also derives the
+post-D6 descriptive document only from the six frozen historical reads and
+defines the declared preparation, runner, and official-callable coordinates.
+Commit-B verification requires byte-exact reproduction by that six-input
+derivation, so a merely schema-valid 27-output envelope is rejected.
+It includes no stage-17 result publisher or closed external chronology
+orchestrator, so every execution coordinate fails closed. Reviewed source
+completion has not been reached, commit S has not been selected, and no
+artifact or descriptive result has been generated.
 
 ## Scientific interpretation anchors
 
