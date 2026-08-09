@@ -432,6 +432,63 @@ A future surrogate D7/D8 pass may not be described as a model-side order
 parameter, a same-substrate core-loop observation, model topology, or
 permission to prepare a Pythia subject.
 
+### 3.14 D7 v0.1 item-23 chronology-deviation disposition
+
+**Detection source and timing**
+
+This deviation was identified on 2026-08-09, after the item-23 result commit
+`83ed5f419ff27af0935aa84c363df64f04926cac` and the later descriptor commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`. It is not backdated. The original
+2026-07-29 rule in section 3.13 and the byte-pinned Fundamental Frame remain
+unchanged.
+
+**Conflict recognized**
+
+The 2026-07-29 rule required launch intent, an exclusive official D7 execution
+attempt, and output-namespace absence to be bound under the committed receipt
+before the post-selection descriptive runner executed. Commit
+`ce4832893e01f04f1c8c5763a51223b3d51637c3` later implemented a narrower
+machine path that required only the full-design-freeze receipt and described
+launch intent as later, without first appending the required interpretation
+amendment. Item 23 then ran under that narrower path. The exclusive execution
+attempt named here is not the earlier item-22 exclusive seed-supply claim.
+
+**Evidence retained**
+
+The item-23 artifact remains immutable and retains its two independent status
+axes: `operational_status=complete` and scientific `status=insufficient`, with
+Level-0 claim ceiling and `claim_delta=none`. D7 and D8 remain `not_run`. The
+later descriptor is a closed all-false Level-0 artifact and does not contain
+the item-23 result as a member. Its post-descriptor presence state is
+`launch-intent-present`; that was not the state when item 23 ran.
+
+Commit `897dd7c60411f5fd36c6c50fb5064802a25a471b` records the 4,728-byte
+canonical disposition artifact at
+`experiments/qualification/d7_spectral_moment_confirmation_v0_1/item23-chronology-disposition.json`,
+SHA-256 `b0b0a84bcc594aa86d0fe53d1228eed80d0b08907de4dfa1a60f5b50685ce17c`.
+It binds the unchanged Frame source, the historical section-3.13 Ledger blob,
+the full-design freeze, item-23 result, descriptor, bundle, and frozen
+post-D6 plan, and records the exact commit order.
+
+**Conformance and execution disposition**
+
+Item 23 is chronology-nonconforming and supplies no `D7-OPS-23` completion
+credit. The later descriptor does not retroactively cure that ordering. D7
+v0.1 is superseded before official execution: its runner, canonical fused
+entry, and direct zero-argument producer all fail closed before start
+publication or generator access, including when the disposition is absent or
+malformed. The source change also intentionally ends equality with the old
+v0.1 execution-source closure. A future execution requires a separately
+reviewed versioned identity and new coordinates; no successor rule is selected
+by this entry.
+
+**Claim delta and forbidden rereading**
+
+`none`. This correction does not turn item 23 into a scientific `fail`, erase
+its bytes, promote the descriptor, or claim cryptographic revocation or
+hostile-local deletion/race resistance. Neither a later document nor the
+existing descriptor may be read as satisfying a prerequisite after the fact.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

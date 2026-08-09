@@ -544,6 +544,11 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
             REPOSITORY / "docs" / "EXPERIMENT_INTERPRETATION_LEDGER.md"
         ).read_text().split()
     )
+    execution_design = " ".join(
+        (
+            REPOSITORY / "docs" / "D7_CONFIRMATION_EXECUTION_DESIGN.md"
+        ).read_text().split()
+    )
 
     assert (
         "begin the separate representation-native F0-F4 selection lane"
@@ -564,6 +569,20 @@ def test_surrogate_d8_does_not_unlock_subject_or_model_topology() -> None:
     )
     assert (
         "Post-D6 analysis separation and lane nontransfer decision" in ledger
+    )
+    assert "D7 v0.1 item-23 chronology-deviation disposition" in ledger
+    assert "Item 23 is chronology-nonconforming" in ledger
+    assert "D7 v0.1 is superseded before official execution" in ledger
+    assert "official D7 v0.1 entry is blocked" in anchor
+    assert "existing v0.1 item-24 identity must not be invoked" in preparation
+    assert "official v0.1 invocation blocked by protocol deviation" in roadmap
+    assert "Launch intent remains a later, distinct artifact." not in anchor
+    assert "the current full sequence is:" not in anchor
+    assert "not a current or reusable successor plan" in anchor
+    assert "superseded, chronology-deviated v0.1 layout" in execution_design
+    assert (
+        "Launch intent remains on the later external launch surface"
+        not in execution_design
     )
     assert POST_D6_DECISION_SOURCE_COMMIT in ledger
     assert DESCRIPTIVE_SHA256 in ledger

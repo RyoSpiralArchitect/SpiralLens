@@ -957,10 +957,12 @@ claim, one fixed supplier-function invocation, frozen seed exclusions, then
 atomic target publication. Restart never re-enters the supplier. The reviewed
 artifact-only exact-current re-anchor is tracked, and one Level-0 transaction
 was introduced at `publication-complete-unfrozen`. A later separate
-full-design-freeze receipt now strict-loads and makes the item-22 observer
-report `full-design-frozen`. Its invocation artifact claims one local supplier
-call; claim, invocation, inventory-output, transition, and freeze verification
-remain false. Historical item-21 reload remains valid. The target-publication
+full-design-freeze receipt strict-loads and makes the historical item-22
+checkpoint `full-design-frozen`. The still-later descriptor/intent commit moves
+the current presence observer to `launch-intent-present`. Its invocation
+artifact claims one local supplier call; claim, invocation, inventory-output,
+transition, and freeze verification remain false. Historical item-21 reload
+remains valid. The target-publication
 commit `f2c1e032f153d369eed99c1bbd467da518b5b9fb` precedes repository-local
 chronology checkpoint `6ea0ad761ebcf9e9aedb21319747b6489db66c52`, whose
 receipt-only direct child is `f07962db96c4e59020c32e1b27ae8598e69ef6d1`.
@@ -990,7 +992,10 @@ official terminal publication, and isolated replay remain absent. Commit
 post-D6 descriptive artifact. Its strict observer reports `complete`, but the
 scientific status is `insufficient`, the claim ceiling remains Level 0, the
 claim delta is none, and zero authority facts are true. This operational
-completion grants no launch, execution, or scientific authority.
+completion grants no launch, execution, or scientific authority. A later
+non-retroactive review separately records chronology conformance as
+`deviated`: item 23 receives no `D7-OPS-23` completion credit, and the later
+descriptor cannot cure the ordering.
 The deep-internal
 persistence-only slice can now record
 and reload a caller-supplied primary declaration-through-start record prefix as chained
@@ -1098,20 +1103,30 @@ eligibility, retry/replay authority, D7, or D8. That external-abort path uses
 no supplier or official seed and performed no official execution.
 That terminal body now also accepts a strict-reloaded item-20 structural start, without turning structural bytes or explicit pins into authority.
 
-The target-publication → repository-local chronology checkpoint →
-full-design-freeze receipt → item-23 descriptive-result chronology is
-complete. The remaining order starts with the closed descriptor and launch
-intent, then one item-24 invocation/terminal and byte-identical replay. Launch
-intent was not an item-23 prerequisite or input, and none exists yet.
+The observed Git order is target publication → repository-local chronology
+checkpoint → full-design-freeze receipt → item-23 descriptive result → closed
+descriptor/launch intent, complete through artifact commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`. The narrower machine path had
+treated launch intent, the exclusive official D7 execution-attempt envelope,
+and receipt-bound output-namespace absence as later, but the unchanged
+2026-07-29 Fundamental Frame required them before item 23. Commit
+`897dd7c60411f5fd36c6c50fb5064802a25a471b` therefore records a
+non-retroactive chronology deviation. The existing v0.1 item-24 identity must
+not be invoked or replayed; a future execution requires a separately reviewed
+versioned successor and new coordinates.
 
 This branch contains the reviewed exact-current re-anchor, the one-shot
 item-22 target, its separate freeze receipt, and the committed item-23 result.
-The item-22 observer remains `full-design-frozen`; item 23 is operationally
-complete but scientifically `insufficient`, with 26 available outputs and the
-full-scope `amplitude-identifiability-support-separation` output blocked.
-`freeze_verified=false`; the item-22 target authority vector and inventory
-self-verification fields remain all-false. D7 and D8 remain `not_run`, and no
-execution or scientific authority follows from the descriptive result.
+The item-22 observer now reports `launch-intent-present`; item 23 remains
+operationally complete but scientifically `insufficient`, with 26 available
+outputs and the full-scope `amplitude-identifiability-support-separation`
+output blocked. Its separate chronology conformance is `deviated`, it supplies
+no `D7-OPS-23` completion credit, and the post-descriptor presence state is not
+the item-23-time state.
+`freeze_verified=false`; the item-22 target authority vector, descriptor
+authority vector, and inventory self-verification fields remain all-false. D7
+and D8 remain `not_run`; official v0.1 entry is blocked, and no execution or
+scientific authority follows from the descriptor or descriptive result.
 
 The terminal schema keeps the immutable replay target separate from
 the attempt envelope that binds launch authorization, exclusive claim,
@@ -1166,13 +1181,17 @@ create a public surface. The detailed chronology, unit contract, work
 packages, gap rows, and full research sequence live in
 `docs/POST_D6_ANALYSIS_AND_D7_GAPS.md`.
 
-There is no independent operator or information barrier. Item 23 therefore ran
-only after its declared D7 design metadata and initially absent result
-namespace were bound by the committed full-design-freeze chronology. Launch
-intent and an exclusive attempt remain later artifacts and were neither
-item-23 prerequisites nor analysis inputs. Runtime and transitive dependency
-closure remain separate obligations. Any later D7 design change requires a
-new version and review; the prior admission cannot be carried forward.
+There is no independent operator or information barrier. Item 23 ran after the
+narrower machine contract bound its declared D7 design metadata and observed
+an initially absent result namespace through the committed full-design-freeze
+chronology. It did not bind the broader Frame's launch intent, exclusive
+official D7 execution-attempt envelope, and output-namespace absence under the
+same pre-run receipt. The exclusive execution attempt here is distinct from
+the earlier item-22 exclusive seed-supply claim. That gap is a chronology
+deviation, not a later prerequisite that can be supplied after the fact.
+Runtime and transitive dependency closure remain separate obligations. Any
+future execution requires a new version, coordinates, and review; the prior
+admission cannot be carried forward.
 
 Any required failure stops. Any required insufficient result blocks. A
 complete applicable D0-D8 chain is necessary before later subject-protocol

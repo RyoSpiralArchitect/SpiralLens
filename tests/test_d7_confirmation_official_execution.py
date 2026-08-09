@@ -82,10 +82,11 @@ def test_official_fused_path_rejects_spoofed_and_ordinary_callbacks() -> None:
     def ordinary_callback() -> None:
         return None
 
-    fused_start._require_descriptor_bound_official_producer(
-        snapshot,
-        official.produce_d7_official_result,
-    )
+    with pytest.raises(QualificationContractError, match="chronology deviation"):
+        fused_start._require_descriptor_bound_official_producer(
+            snapshot,
+            official.produce_d7_official_result,
+        )
     for substitute in (same_name_spoof, ordinary_callback):
         with pytest.raises(QualificationContractError, match="identity differs"):
             fused_start._require_descriptor_bound_official_producer(
@@ -138,6 +139,57 @@ def test_absent_fixed_descriptor_fails_before_c1_or_generator_access(
     assert official._official_descriptor_path(tmp_path) == (
         tmp_path / D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
     )
+
+
+def test_absent_chronology_disposition_blocks_before_snapshot_or_generator(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    descriptor_path = tmp_path / D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
+    descriptor_path.parent.mkdir(parents=True)
+    descriptor_path.write_bytes(b"{}")
+    calls: list[str] = []
+
+    def forbidden(*args: object, **kwargs: object) -> None:
+        calls.append("forbidden")
+        raise AssertionError("post-disposition work was reached")
+
+    monkeypatch.setattr(official, "_repository_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        official.fused_authority,
+        "load_d7_fused_authority_snapshot",
+        forbidden,
+    )
+    monkeypatch.setattr(official, "_recorded_c1_design", forbidden)
+    monkeypatch.setattr(official, "SpectralMomentConfirmationGenerator", forbidden)
+
+    with pytest.raises(QualificationContractError, match="disposition is absent"):
+        official.produce_d7_official_result()
+
+    assert calls == []
+
+
+def test_chronology_disposition_blocks_direct_official_producer_before_access(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def forbidden(*args: object, **kwargs: object) -> None:
+        calls.append("forbidden")
+        raise AssertionError("post-disposition work was reached")
+
+    monkeypatch.setattr(
+        official.fused_authority,
+        "load_d7_fused_authority_snapshot",
+        forbidden,
+    )
+    monkeypatch.setattr(official, "_recorded_c1_design", forbidden)
+    monkeypatch.setattr(official, "SpectralMomentConfirmationGenerator", forbidden)
+
+    with pytest.raises(QualificationContractError, match="chronology deviation"):
+        official.produce_d7_official_result()
+
+    assert calls == []
 
 
 def test_committed_c1_reconstructs_the_exact_typed_design_and_pinned_bodies() -> None:
@@ -341,7 +393,8 @@ def _test_only_inventory() -> D7OfficialSeedInventoryRecord:
 
 def test_test_only_full_execution_is_deterministic_and_writes_no_artifact() -> None:
     descriptor_path = _ROOT / D7_OFFICIAL_FUSED_DESCRIPTOR_REPOSITORY_PATH
-    assert not descriptor_path.exists()
+    assert descriptor_path.is_file()
+    assert not descriptor_path.is_symlink()
     experiment_root = descriptor_path.parent
     before = {
         item.relative_to(experiment_root): item.read_bytes()
@@ -392,4 +445,4 @@ def test_test_only_full_execution_is_deterministic_and_writes_no_artifact() -> N
         if item.is_file()
     }
     assert after == before
-    assert not descriptor_path.exists()
+    assert descriptor_path.read_bytes() == before[Path("launch.json")]

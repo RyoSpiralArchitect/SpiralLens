@@ -40,6 +40,14 @@ topological-defect candidate currently exists. Local anisotropy, effective
 rank, projected norm, and spectral gaps remain possible diagnostics, not
 order parameters by themselves.
 
+On 2026-08-09, review found that the D7 v0.1 item-23 descriptive result was
+published before chronology bindings required by the 2026-07-29 Fundamental
+Frame. Its immutable result remains operationally `complete`, scientifically
+`insufficient`, and Level 0, but its chronology conformance is `deviated` and
+it supplies no D7 completion credit. D7/D8 remain `not_run`; the later
+all-false descriptor does not cure the ordering, and every official v0.1
+execution entry now fails closed. See Ledger section 3.14.
+
 ## Scientific interpretation anchors
 
 The project adopted an order-parameter-first fundamental interpretation after
@@ -594,7 +602,9 @@ declared live observation and strictly reloads the exact start directory.
 That reload strictly reparses the descriptor and verification evidence and
 rejoins the descriptor inventory plus attempt, target, intent,
 execution-identity, runtime-specification, and freeze bindings. No official
-descriptor exists to exercise that replay path yet. Repository-HEAD,
+start instance exists yet. The committed official descriptor has been
+strict-rejoined without start or producer entry; the full start/reload path was
+exercised only in the temporary qualification namespace. Repository-HEAD,
 canonical-origin, source-tree, dependency-set, callable, and process
 observation digests are preserved in the evidence bytes but are not recomputed
 or independently reauthenticated by this structural reload. Terminal lineage
@@ -618,11 +628,12 @@ publication, failed-terminal publication, a hard exit or `BaseException`,
 post-start drift, unproved start-parent fsync, or publication failure can leave
 a visible structural start with no terminal.
 
-That positive boundary is deliberately narrow: it binds one transition
-to canonical repository state under the live Git-transport and honest-local-
-process assumptions. It is not a signed trust-root proof, hostile-local-
-mutation defense, public API, reusable capability, official descriptor,
-official start, execution observation receipt, or scientific claim. PR26 now
+The fused transition mechanic's positive boundary is deliberately narrow: it
+binds one transition to canonical repository state under the live Git-transport
+and honest-local-process assumptions. It is not itself a signed trust-root
+proof, hostile-local-mutation defense, public API, reusable capability,
+official descriptor, official start, execution observation receipt, or
+scientific claim. PR26 now
 tracks the exact `requirements-d7-runtime-lock.txt`, fixes a deep-internal
 zero-argument official producer plus exact full-inventory, aggregation, and
 full-design builders and requires exact equality of the complete installed
@@ -680,13 +691,15 @@ unseen status requires external attestation, and both exclusion bindings keep
 their source and identity flags false. Before the separate freeze receipt is
 considered, the target
 transaction's historical observer stage is `publication-complete-unfrozen`;
-with the receipt, the combined current state is `full-design-frozen`. The
+with the receipt, the later historical checkpoint is `full-design-frozen`.
+The subsequently committed descriptor moves the current presence state to
+`launch-intent-present`. The
 item-22 target's launch, execution, and scientific-authority flags remain
 false. Claim, invocation, inventory-output, and transition verification fields
 also remain false, so the artifacts do not independently prove an exactly-once
 supplier call. The freeze receipt keeps `freeze_verified=false`, and all three
 of its binding leaves keep `authoritative_source_loaded=false` and
-`identity_authenticated=false`. Abort evidence and a launch descriptor remain
+`identity_authenticated=false`. Abort evidence and official execution remain
 absent. Commit `83ed5f419ff27af0935aa84c363df64f04926cac` separately introduces the
 5,293,662-byte canonical item-23 descriptive result with SHA-256
 `d0d498b4fb62b38b31de063010516eb17323a4f5b96f44b3ba1f8e7d5680cf4a`, schema
@@ -697,9 +710,15 @@ sole blocked output is `amplitude-identifiability-support-separation`, because
 the historical main D2 scalar values were not persisted and no rerun or
 current-code reconstruction was performed. Its claim ceiling remains Level 0,
 its claim delta is `none`, its authority vector contains zero `true` values,
-and its exact analysis-input trace contains seven files. It does not change the
-item-22 presence state from `full-design-frozen`, authorize launch, or advance
-D7 or D8; both gates remain `not_run`. The local OS-CSPRNG record proves
+and its exact analysis-input trace contains seven files. It does not itself
+change the historical item-22 `full-design-frozen` checkpoint, authorize
+launch, or advance D7 or D8; the later descriptor alone moves the presence
+observer to `launch-intent-present`, and both scientific gates remain
+`not_run`. A 2026-08-09 non-retroactive disposition separately records that
+item 23 violated the broader receipt-bound chronology in the Fundamental
+Frame: its operational and scientific fields remain historical facts, but its
+chronology conformance is `deviated`, it receives no `D7-OPS-23` completion
+credit, and the later descriptor cannot cure it. The local OS-CSPRNG record proves
 neither cryptographic nor human unseenness, and it proves no cross-host or
 global statistical independence.
 
@@ -718,11 +737,12 @@ themselves establish seed-bearing target admission or authority. The separate
 receipt changes the valid presence state to `full-design-frozen` but does not
 authenticate its bindings or promote the inventory's false self-attestation
 fields.
-Authoritative target-bound lifecycle instances, an official fused
-invocation,
+An official fused invocation,
 an official D7 result-or-failure publication, an authoritative D7 terminal publication,
-official abort finalization, an official runner, and replay comparison remain
-absent. The local prefix store is a
+official abort finalization, and replay comparison remain
+absent. Current v0.1 official entry is additionally blocked before start or
+generator access; execution requires a separately reviewed versioned
+successor. The local prefix store is a
 persistence-only evidence mechanism: a strictly loaded caller-supplied start
 record with an absent terminal entry is only
 `caller_supplied_start_record_present_terminal_absent`; any file, directory,
@@ -1282,12 +1302,13 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   middle commit through a repository-local field that contains no human-review
   or authorization attestation; regardless of platform commit-signature
   evidence, it proves neither human review nor authenticated authorization.
-  The resulting item-22 state remains `full-design-frozen`. The separate
-  item-23 descriptive result is now committed at
+  The resulting historical item-22 freeze checkpoint is
+  `full-design-frozen`. The separate item-23 descriptive result is now
+  committed at
   `83ed5f419ff27af0935aa84c363df64f04926cac`, without changing that state or
-  granting authority. The next artifact step is the closed launch
-  descriptor/launch intent, followed by item 24; no launch intent or official
-  invocation exists now. If
+  granting authority. The later artifact commit `09b0cc5c...` now records the
+  closed descriptor/launch intent and moves the observer to
+  `launch-intent-present`; no official invocation exists now. If
   the originating operation ends after claiming but before atomic target
   publication, the seed supply is semantically aborted and cannot be retried;
   its durable state nevertheless remains claim-present unless a separate valid
@@ -1392,8 +1413,8 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   caller-constructible authority records remain false and are not promoted.
   `D7-OPS-22` now has a reviewed exact-current re-anchor, one tracked
   transaction whose pre-receipt historical stage is
-  `publication-complete-unfrozen`, and a separate freeze receipt that makes the
-  current presence state `full-design-frozen`. Commit
+  `publication-complete-unfrozen`, and a separate freeze receipt that makes its
+  historical checkpoint `full-design-frozen`. Commit
   `f2c1e032f153d369eed99c1bbd467da518b5b9fb` is the sole seven-file transaction
   introduction; `6ea0ad761ebcf9e9aedb21319747b6489db66c52` is the later
   repository-local checkpoint designated by a receipt field that contains no
@@ -1405,10 +1426,37 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
   all three binding leaves retain `authoritative_source_loaded=false` and
   `identity_authenticated=false`. The target's
   claim ceiling remains Level 0 and its authority vector remains all-false.
-  The item-23 descriptive artifact is now committed. The next reviewed order
-  is a closed launch descriptor/launch intent, then the first official fused
-  invocation at `D7-OPS-24`; no launch intent exists now. Launch intent was not
-  an item-23 prerequisite or analysis input. Only a
+  The item-23 descriptive artifact is committed. A later review found that the
+  narrower machine path had treated launch intent, an exclusive official D7
+  execution attempt, and receipt-bound output-namespace absence as later even
+  though the unchanged 2026-07-29 Fundamental Frame required those chronology
+  bindings before item 23. The result remains operationally `complete` and
+  scientifically `insufficient`, but its separate chronology conformance is
+  `deviated` and it supplies no `D7-OPS-23` completion credit. The later
+  artifact-only commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4` records the
+  closed launch descriptor and distinct launch intent; it does not cure that
+  ordering. The strict observer reports the post-descriptor presence state
+  `launch-intent-present`, while D7/D8 remain `not_run`. The source-parent
+  preparation and fixed-dispatch scripts are experiment-only, non-authorizing
+  plumbing:
+  preparation cannot enter the producer, `launch.json` is the nine-member
+  descriptor, and `launch-members/launch-intent.json` is the separate intent
+  member. Descriptor publication remains last and requires an exact live
+  member/store/lane rejoin. Any partial preparation is retained fail-closed and
+  requires a reviewed versioned successor, not automatic resume or cleanup.
+  The launcher remains outside the pre-item-22 frozen source closure under the
+  explicit honest-local boundary. At descriptor commit
+  `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`, before the disposition source
+  changes, exact-runtime/live-identity checks, temporary end-to-end validation,
+  and real external-abort/no-retry integration passed without entering the
+  scientific producer. Those are historical plumbing validations, not current
+  v0.1 live-source eligibility. Commit
+  `897dd7c60411f5fd36c6c50fb5064802a25a471b` records the canonical chronology
+  disposition and makes the v0.1 runner, canonical fused entry, and direct
+  producer fail closed before start or generator access. The old v0.1 source
+  closure is intentionally no longer current; item 24 must not be invoked on
+  these coordinates, and any future execution requires a reviewed versioned
+  successor. Only a
   future scope-specific confirmation artifact may change its own qualification
   status; the current official D0-D5 selection result remains byte-identically
   false for `d6_d8_advanced` and `synthetic_qualified`.

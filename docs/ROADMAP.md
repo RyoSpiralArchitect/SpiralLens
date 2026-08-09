@@ -208,7 +208,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; PR26 adds the exact runtime lock, a fixed deep-internal zero-argument official producer, exact full-inventory, aggregation, and full-design builders, and exact installed-inventory equality; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor, one Level-0 `D7-OPS-22` claim/invocation/inventory/six-member target, and its later full-design-freeze receipt are persisted; strict item-22 observation remains `full-design-frozen`, while the separate committed item-23 result is operationally complete but scientifically `insufficient` with 26 available outputs and one blocked output; `freeze_verified=false`, every receipt binding retains `authoritative_source_loaded=false` and `identity_authenticated=false`, and descriptor/intent, official run, replay, and D7/D8 authority remain absent |
+| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence lane, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor, Level-0 `D7-OPS-22` transaction/freeze receipt, operationally complete/scientifically insufficient but chronology-deviated item-23 result, later all-false nine-member descriptor/intent, and canonical non-retroactive disposition are persisted; strict observation now reports the post-descriptor presence state `launch-intent-present`, while v0.1 official entry is blocked; `freeze_verified=false`, every receipt binding retains `authoritative_source_loaded=false` and `identity_authenticated=false`, and official run, replay, and D7/D8 authority remain absent |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -1256,8 +1256,9 @@ below:
     `full-inventory.json`, `full-design.json`, `replay-target.json`,
     `single-supplier-invocation.json`, and `transaction-manifest.json`, then the
     later `full-design-freeze.json` leaf. The re-anchor remains outside that
-    root at `item22-current-source-runtime-reanchor.json`; launch intent remains
-    the external `launch.json`. All six atomic members are canonical regular
+    root at `item22-current-source-runtime-reanchor.json`; the closed launch
+    descriptor is the external `launch.json`, while its distinct launch-intent
+    member is `launch-members/launch-intent.json`. All six atomic members are canonical regular
     unaliased files; the manifest binds the other five, and unknown members,
     partial visibility, replacement, and publication retry are forbidden.
     Exact digest edges must rejoin full inventory to seed inventory, full
@@ -1353,7 +1354,7 @@ below:
     not launch intent. A
     claim without target publication remains non-retryable; target absence
     never proves that the supplier was not invoked;
-23. <a id="d7-ops-23"></a>**D7-OPS-23** — execute the separate descriptive result without changing any D7 design byte — **committed; operationally complete; scientifically `insufficient`; Level 0**.
+23. <a id="d7-ops-23"></a>**D7-OPS-23** — separate descriptive result persisted — **operationally complete; scientifically `insufficient`; chronology `deviated`; completion credit false; Level 0**.
     Commit `83ed5f419ff27af0935aa84c363df64f04926cac` records the
     `5,293,662`-byte schema-v0.1 result
     `post-d6-descriptive-a654fa3d9117d2ec9f9275dd`, with canonical SHA-256
@@ -1365,23 +1366,60 @@ below:
     Partial descriptor and confounder evidence does not meet the full-scope
     denominator, and no rerun reconstruction was performed. The result records
     `operational_status=complete`, `claim_delta=none`, D7/D8 `not_run`, and
-    zero true authority facts. The item-22 state remains
-    `full-design-frozen`. Launch intent was neither a prerequisite nor an
-    analysis input and remains a later artifact; the next sequence is the
-    closed descriptor and launch intent, followed by item 24;
-24. <a id="d7-ops-24"></a>**D7-OPS-24** — before the first official fused invocation, create and commit the closed
+    zero true authority facts. The item-22 state at this historical checkpoint
+    is `full-design-frozen`. The narrower machine path treated launch intent,
+    the exclusive official D7 execution-attempt envelope, and receipt-bound
+    output-namespace absence as later. The unchanged 2026-07-29 Fundamental
+    Frame required those chronology bindings before item 23, so commit
+    `897dd7c60411f5fd36c6c50fb5064802a25a471b` records the non-retroactive
+    disposition: item 23 supplies no `D7-OPS-23` completion credit. The later
+    descriptor/intent commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`
+    does not cure that ordering;
+24. <a id="d7-ops-24"></a>**D7-OPS-24** — **descriptor committed; official v0.1 invocation blocked by protocol deviation; D7/D8 `not_run`; Level 0**.
+    The intended v0.1 sequence was to create and commit the closed
     nine-member descriptor and pass strict verification-evidence replay/rejoin,
     recognizing that structural replay preserves but does not recompute or
     independently reauthenticate its live-observation digests and that terminal
     lineage binds the evidence bytes only; pass temporary Git/runtime end-to-end
     validation and authoritative-start-compatible external-abort integration.
-    Then invoke the fused
+    The plan then called for the fused
     verify-and-exclusive-start operation, run the admitted family without
     overrides or post-selection exclusions, require one exact terminal outcome,
     and require complete isolated byte-identical replay before setting any
     scope-specific D7/D8 status. Same-family new seeds remain replication and
-    cannot satisfy this item;
-25. <a id="d7-ops-25"></a>**D7-OPS-25** — only then begin the separate representation-native F0-F4 selection lane;
+    cannot satisfy this item. The experiment-only source-parent preparer and
+    fixed dispatcher are non-authorizing plumbing: they accept no scientific
+    override and never call the producer during preparation. `launch.json` is
+    the descriptor, while `launch-members/launch-intent.json` is its distinct
+    launch-intent member. Descriptor publication is last and is bounded by
+    exact live rejoin of all nine member projections plus an anchored promoted
+    store and empty authoritative-start lane. A preparation partial is retained
+    and fail-closed; v0.1 is neither resumed nor cleaned up automatically, and
+    recovery requires a reviewed versioned successor. The launcher path/cwd/argv
+    and execution HEAD are bound, but launcher bytes remain outside the
+    pre-item-22 frozen source closure under the explicit honest-local boundary.
+    The source parent is commit
+    `0508b339655221acffb81523388becf968108b66`; the exact eight-file
+    artifact-only child is
+    `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`. Its descriptor SHA-256 is
+    `0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`,
+    its bundle SHA-256 is
+    `b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`,
+    and the strict observer reports `launch-intent-present`. At descriptor
+    commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`, before the disposition
+    source changes, exact-runtime/live-identity checks, wrong-envelope
+    rejection, temporary Git/runtime end-to-end, hard-exit no-retry, and signed
+    external-abort integration passed without producer entry. Those are
+    historical plumbing validations, not current v0.1 live-source eligibility.
+    Every authority, execution, result, scientific,
+    retry, replay, D7, and D8 fact remains false. Canonical-main merge/rejoin
+    cannot make this v0.1 identity eligible. The canonical disposition blocks
+    its fixed runner, canonical fused entry, and direct producer before start
+    or generator access, and the source change intentionally breaks equality
+    with the old v0.1 execution-source closure. Do not invoke or reuse these
+    coordinates. Any future execution requires a separately reviewed
+    versioned successor with new coordinates;
+25. <a id="d7-ops-25"></a>**D7-OPS-25** — after an eligible separately versioned qualification successor, begin the separate representation-native F0-F4 selection lane;
     independently confirm and replay its selected instrument without
     transferring Cartesian D2-D5 evidence;
 26. <a id="d7-ops-26"></a>**D7-OPS-26** — establish the same-substrate field/core/loop join, persist the frozen
@@ -1471,10 +1509,11 @@ This library slice adds, without changing that generic behavior:
   implements claim-before-supplier, exclusion-clean OS-CSPRNG supply, and atomic
   target publication. The reviewed re-anchor and one tracked Level-0 target
   were historically introduced at `publication-complete-unfrozen`; a strictly
-  later receipt now advances the observed state to `full-design-frozen` without
-  setting `freeze_verified` or any authority fact true. Historical item-21
-  reload remains valid; launch, execution, and scientific authority remain
-  absent.
+  later receipt advances that historical checkpoint to `full-design-frozen`
+  without setting `freeze_verified` or any authority fact true. The still-later
+  descriptor/intent commit now makes the presence observer
+  `launch-intent-present`; historical item-21 reload remains valid, and launch
+  authorization, execution, and scientific authority remain absent.
 
 These capabilities make the pointwise same-object and value-validation
 obligations testable. The `spirallens.graphs` foundation constructs three
@@ -1600,13 +1639,23 @@ its bindings authenticate no source or identity. The target remains Level 0
 and every authority flag is false. The item-23 descriptive result is now
 committed with `operational_status=complete`, scientific
 `status=insufficient`, 26 available outputs, one blocked output, and no claim
-delta. Launch intent and the nine-member descriptor remain absent.
+delta. Its separate chronology conformance is `deviated`, it receives no
+`D7-OPS-23` completion credit, and this does not reclassify the scientific
+status as `fail`. The later launch intent and nine-member descriptor are committed at
+Level 0 and strict reload now reports `launch-intent-present`.
 No official fused invocation,
 start, terminal/result, D7 result, or D8 replay exists; D7 and D8 remain
-`not_run`. Strict verification-evidence replay/rejoin, temporary Git/runtime
+`not_run`. At descriptor commit `09b0cc5c...`, before the disposition source
+changes, strict verification-evidence replay/rejoin, temporary Git/runtime
 end-to-end validation, and authoritative-start-compatible external-abort
-integration must pass before item 24 becomes the first official fused
-invocation. Lifecycle and
+integration passed without producer entry. Those historical plumbing
+validations do not satisfy current v0.1 live-source equality. The canonical disposition introduced
+by `897dd7c60411f5fd36c6c50fb5064802a25a471b` is non-retroactive: the later
+descriptor does not cure item 23, v0.1 official entry is blocked before start
+or generator access, and the old source closure is intentionally superseded.
+Any future official execution requires a separately reviewed versioned
+successor and new coordinates.
+Lifecycle and
 terminal work keep the replay target separate from the attempt envelope and
 create no placeholder result. The current
 four-case generator, C1 design, rebinding record, contract specifications,

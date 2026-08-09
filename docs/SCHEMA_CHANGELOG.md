@@ -4,6 +4,60 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-09 — D7 v0.1 chronology disposition and official-entry block
+
+- Added the canonical 4,728-byte
+  `item23-chronology-disposition.json`, introduced by commit
+  `897dd7c60411f5fd36c6c50fb5064802a25a471b`, with SHA-256
+  `b0b0a84bcc594aa86d0fe53d1228eed80d0b08907de4dfa1a60f5b50685ce17c`.
+  It binds the unchanged Fundamental Frame, historical Ledger decision source,
+  frozen plan, full-design freeze, item-23 result, later descriptor, and
+  descriptor bundle plus their Git ordering.
+- Retained item 23's internal axes exactly: operational `complete`, scientific
+  `insufficient`, Level 0, `claim_delta=none`, and D7/D8 `not_run`. A separate
+  chronology-conformance axis is `deviated`, `D7-OPS-23` completion credit is
+  false, and the later descriptor is explicitly non-curative.
+- Made every official v0.1 entry fail closed before start publication or
+  generator access: the fixed runner dispatches nothing, the canonical fused
+  path checks the disposition before start, and the direct producer checks it
+  before snapshot/C1/generator access. An absent, nonregular, unreadable,
+  noncanonical, malformed, or valid disposition all block this v0.1 identity.
+- The source change intentionally ends equality with the old v0.1
+  execution-source closure. Any future execution requires a separately
+  reviewed versioned identity and new coordinates. This is an honest-local
+  protocol stop, not cryptographic revocation or hostile-local deletion/race
+  resistance.
+
+## 2026-08-09 — D7 item-24 closed launch projection and non-authorizing preparer
+
+- Added experiment-only preparation and fixed-dispatch scripts outside the
+  installed package and the pre-item-22 frozen execution-source surface. The
+  preparer accepts no scientific/path override, never enters the producer or
+  fused start, and publishes a fixed external empty start lane, seven new
+  canonical member projections, and the descriptor last.
+- Clarified the previously ambiguous external launch naming: canonical
+  `launch.json` is the closed descriptor, while
+  `launch-members/launch-intent.json` is the distinct launch-intent member.
+  Together with the reused item-22 replay target and full-design-freeze receipt,
+  the descriptor inventory contains exactly nine ordered roles.
+- Artifact-only commit `09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4`
+  introduces those exact eight repository files. Descriptor SHA-256 is
+  `0335d80cfef3e54a9dc14045b6d76d3cf0f939dfeb373203a4cce2b1df7704ac`;
+  bundle SHA-256 is
+  `b796ef191840af4ada4172f157be1e7b3e98f1380c7df47d80f4950c0388ee94`.
+  Strict current-HEAD replay rejoins all nine members and reports
+  `launch-intent-present`, while authority, execution, result, scientific,
+  retry, replay, D7, and D8 facts remain false.
+- The preparer retains a promoted store/lane descriptor witness and reopens all
+  member bytes before and after descriptor publication. Partial preparation is
+  retained fail-closed and requires a reviewed versioned successor; it is not
+  auto-resumed or cleaned up. The launcher bytes and mutable pre-entry process
+  state remain outside the honest-local closure and are not authenticated.
+- The later chronology disposition does not mutate this descriptor or its
+  all-false facts, but it blocks the descriptor from being used for an official
+  v0.1 invocation and prevents the descriptor from curing item 23 after the
+  fact.
+
 ## 2026-08-06 — D7 item-23 post-D6 descriptive result source
 
 - Added a repository-only fixed-path derivation and repository-bound
@@ -42,10 +96,12 @@ promote a claim.
   `claim_delta=none` after an operationally complete run.
 - The source creates no official artifact on import or in this source PR,
   exports no public API, reads no D7 result, subject, model, semantic, SAE, or
-  Pythia value, and cannot authorize or tune D7. A launch intent or closed
-  fused descriptor is later than item 23 and is neither its prerequisite nor
-  its input. The frozen PR #11 plan bytes, including its historical not-run
-  metadata, are unchanged.
+  Pythia value, and cannot authorize or tune D7. The narrower machine path
+  treated launch intent and the closed fused descriptor as later and outside
+  the item-23 inputs; the non-retroactive 2026-08-09 disposition above records
+  that this contradicted the unchanged Fundamental Frame's broader
+  receipt-bound chronology. The frozen PR #11 plan bytes, including its
+  historical not-run metadata, are unchanged.
 
 ## 2026-08-05 — D7 item-22 one-shot transaction operation
 
@@ -719,8 +775,10 @@ continuity as protocol requirements rather than later additions.
 - The seed-supply contract orders final-code source/runtime closure and
   reviewed family admission before its exclusive claim and one supplier
   invocation, then atomic no-replace full-design/target publication and a
-  committed freeze receipt before launch intent. After its originating
-  operation ends, a claim without a published target is a semantic,
+  committed freeze receipt. Its historical v0.1 physical layout placed launch
+  intent later; the 2026-08-09 disposition records that this was insufficient
+  for the broader pre-item-23 chronology. After its originating operation
+  ends, a claim without a published target is a semantic,
   non-retryable abort, but remains in the durable claim-present state unless a
   separate valid abort receipt exists; target absence does not prove that the
   supplier was invoked.

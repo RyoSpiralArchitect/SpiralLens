@@ -12,9 +12,11 @@ identity, and two path-absence observations.  A dedicated no-replace start
 transaction is made durable before the producer can be entered.  The private
 ownership handoff is consumed before callback invocation and is never returned.
 
-No official descriptor or attempt exists in the repository yet.  Therefore
-this module establishes mechanics and failure semantics, not an official D7
-execution, result, scientific claim, replay permission, or D8 state.
+An all-false official v0.1 descriptor now exists, but the canonical chronology
+disposition makes that identity ineligible and no official D7 execution
+attempt or start exists.  This module establishes mechanics and failure
+semantics, not an official D7 execution, result, scientific claim, replay
+permission, or D8 state.
 """
 
 from __future__ import annotations
@@ -563,6 +565,7 @@ def _require_descriptor_bound_official_producer(
     )
     if descriptor_path == official_path:
         official._require_official_producer_identity(scientific_producer)
+        official._require_v0_1_chronology_execution_eligible(repository_root)
 
 
 @dataclass(frozen=True, slots=True)

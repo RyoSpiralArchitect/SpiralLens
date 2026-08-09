@@ -2,7 +2,9 @@
 
 - **Status:** frozen planning artifacts plus the committed item-23 descriptive
   result; the descriptive operation is complete but scientifically
-  `insufficient`, while D7 confirmation and D8 replay remain `not_run`
+  `insufficient`; its separate chronology conformance is `deviated`, it has no
+  `D7-OPS-23` completion credit, official D7 v0.1 entry is blocked, and D7
+  confirmation and D8 replay remain `not_run`
 - **Claim ceiling:** Level 0
 - **Claim delta:** none
 - **Scope:** the exact PR #9 Cartesian-surrogate terminal and PR #10 D6 decision
@@ -55,6 +57,14 @@ frozen and receipt-bound before that runner executed.
 This ordering prevents newly computed fine-grained descriptions from tuning
 the D7 design. It does not erase the operator's earlier aggregate-result
 exposure or turn D7 into a cognitively blinded experiment.
+
+A 2026-08-09 review found that the narrower machine path did not satisfy that
+broader rule: it bound the full-design-freeze receipt but left launch intent,
+the exclusive official D7 execution-attempt envelope, and receipt-bound
+output-namespace absence until later. The exclusive execution attempt here is
+not the earlier item-22 exclusive seed-supply claim. The immutable item-23
+result is retained, but its chronology is nonconforming and cannot support D7
+completion credit or an official v0.1 invocation.
 
 ## 2. Exact parent evidence
 
@@ -335,8 +345,10 @@ The Level-0 item-22 target was introduced by
 chronology checkpoint named by the receipt, and the strictly later
 `f07962db96c4e59020c32e1b27ae8598e69ef6d1` uniquely introduces the receipt
 that binds the full design, replay target, and atomic target-publication
-record. Item-22 strict observation remains `full-design-frozen`; the separate
-item-23 result commit is a later descendant and does not alter that state.
+record. Item-22 strict observation at the freeze/result checkpoint is
+`full-design-frozen`; the separate item-23 result does not alter that state.
+Only the still-later descriptor/intent commit advances the current presence
+observer to `launch-intent-present`, without authority or execution.
 
 The Git checkpoint proves the ancestry
 `f2c1e032f153d369eed99c1bbd467da518b5b9fb` <
@@ -349,15 +361,18 @@ receipt keeps `freeze_verified=false`; all three bindings keep
 `authoritative_source_loaded=false` and `identity_authenticated=false`.
 Accordingly it grants no launch, execution, semantic, causal, topological, or
 scientific authority. The committed item-23 artifact likewise has zero true
-authority facts. Launch intent, attempt envelope, D7 result, and D8 replay
-remain absent or `not_run`.
+authority facts. The later descriptor/intent is now committed with the same
+all-false authority ceiling; attempt start, D7 result, and D8 replay remain
+absent or `not_run`.
 
 Item 23 ran only as the separate no-replace descriptive publication. The
 runner separately verified the frozen target tree and that its result path was
-absent when the freeze first entered history. A launch intent or closed fused
-descriptor remains a later artifact, was not an item-23 prerequisite, and was
-not an item-23 analysis input. The committed result satisfies these
-publication-contract requirements:
+absent when the freeze first entered history. The now-committed launch intent
+and closed fused descriptor remain later than item 23. That was accepted by
+the narrower machine plan but contradicted the unchanged Fundamental Frame;
+the later descriptor does not retroactively supply the missing receipt-bound
+chronology. Independently of that conformance failure, the committed result
+satisfies these artifact-publication mechanics:
 
 - consumes exactly one additional allowed input class,
   `committed-d7-full-design-freeze-receipt`;
@@ -477,11 +492,13 @@ opened, a future sequence must:
    lifecycle; and
 10. publish one D7 result or typed failure with a complete evidence root.
 
-Steps 1-9 together form the minimum full-design freeze. Their committed
-receipt must exist before the post-selection descriptive runner may execute;
-the runner separately requires that its output namespace was absent at that
-freeze's immutable introduction. Launch intent remains a later, distinct
-artifact.
+Under the narrower, now-deviated v0.1 machine path, steps 1-9 formed its
+full-design freeze; the runner required that receipt and separately checked
+that its output namespace was absent at the freeze's immutable introduction.
+That path placed launch intent on a later surface. It did not satisfy the
+unchanged Fundamental Frame, which additionally required launch intent, the
+exclusive official D7 execution-attempt envelope, and output-namespace absence
+to be bound under the committed receipt before the descriptive runner.
 If any of those design bytes changes after descriptive execution, the prior
 admission is invalid for this chronology and a new versioned design and review
 are required; the change cannot be called a continuation of the frozen D7.
@@ -535,9 +552,11 @@ Lane E is not an input to either PR #11 artifact. PR #6's descriptor-only
 prepare mechanism is a framework-neutral access primitive, not an issued
 subject protocol or project-level subject-preparation authority.
 
-## 12. Full research sequence
+## 12. Historical v0.1 sequence and forward constraint
 
-Subject to review at each transition, the current full sequence is:
+The following is the narrower historical v0.1 sequence as implemented. It is
+retained to show where the chronology deviation occurred; it is not a current
+or reusable successor plan:
 
 1. freeze these two PR #11 artifacts;
 2. implement and commit the value-excluded D7 family descriptor, admission,
@@ -563,11 +582,25 @@ Subject to review at each transition, the current full sequence is:
 14. only after a structural candidate exists, run held-out semantic, SAE, and
     causal tests.
 
-Steps 1-4 are now represented by committed history through the item-22
-full-design-freeze receipt and separate item-23 descriptive result. The next
-transition is the closed descriptor and launch intent, followed by the first
-official fused invocation at item 24; no launch, confirmation, or D8 action
-was folded into item 23.
+Placing step 5 after step 4 violated the broader receipt-bound chronology. No
+successor branch is selected here. A strict versioned successor would have to
+bind the complete design and target, launch intent, exclusive official D7
+execution-attempt envelope, and output-namespace absence under one committed
+pre-run receipt before any new descriptive runner. An exploratory-only
+successor could choose a different order only by permanently forgoing D7
+completion credit for that lane.
+
+Artifacts corresponding to steps 1-4 exist through the item-22
+full-design-freeze receipt and separate item-23 descriptive result, but the
+required chronology is not conforming. The later artifact-only commit
+`09b0cc5c08c11e1dfea019ec13fd7a50bcc50bb4` records the closed descriptor and
+launch intent with all authority facts false; its post-descriptor observer is
+`launch-intent-present`, not the item-23-time state. Commit
+`897dd7c60411f5fd36c6c50fb5064802a25a471b` records the non-retroactive
+disposition and blocks the v0.1 runner, canonical fused entry, and direct
+producer before start or generator access. D7/D8 remain `not_run`, and any
+future execution requires a separately reviewed versioned successor with new
+coordinates.
 
 Negative or insufficient results do not invalidate the library. They constrain
 the scientific claim while still exercising canonical codecs, source/evidence
