@@ -622,6 +622,43 @@ repository and external artifact chronology remains unmaterialized. This is
 Level-0 software evidence, not subject access, execution readiness, scientific
 evidence, or library/API promotion.
 
+### 3.18 D7 v1 private-stage publication mechanism
+
+**Decision source and timing**
+
+After the read-only joined verifier was merged, the project selected the
+smallest next source-only step: qualify one privately owned repository-stage
+publication primitive before implementing the remaining successor producer and
+entrypoint source. This is not the reviewed source commit S. S can be selected
+only after every source path and dependency required by the frozen v1 contract
+has been merged and reviewed.
+
+**Implemented boundary**
+
+The internal primitive accepts only the closed nine-record byte set, rejoins it
+against the unchanged protocol and the declared external durable projections,
+creates its own deterministic sibling stage, writes members with exclusive
+no-follow file creation, fsyncs members and the complete directory tree, and
+revalidates path entries against held descriptors. It then permits one native
+exclusive directory rename, publication-parent fsync, live-parent re-anchor,
+and post-publication held-file rejoin. A caller cannot supply a stage or
+destination. Preexisting stages and destinations fail closed, and any partial
+state after stage creation is retained without cleanup, resume, replacement,
+or retry. The honest-local boundary remains: this is not cryptographic defense
+against a hostile same-UID process mutating the repository concurrently.
+
+The returned object records only structural namespace and durability facts.
+It fixes `structural_only=true` while authority, materialization authorization,
+commit-A verification, execution authorization, and scientific eligibility
+remain false. The primitive has not been called on the declared v1 coordinates.
+
+**Current boundary and claim delta**
+
+`none`. No C1/C2, seed claim, supplier entry, external store, attempt, receipt,
+artifact commit A, descriptive result, model access, execution, scientific
+claim, public API, supported-schema promotion, or library milestone is created
+or completed. VOY-V3 remains `frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

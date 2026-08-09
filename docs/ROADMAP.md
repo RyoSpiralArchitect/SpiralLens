@@ -192,10 +192,14 @@ defines 11 primary structural schemas over nine future pre-item-23 files and a
 later result, but remains `frozen_not_run`. An internal read-only kernel now
 strictly rejoins a supplied staged tree and verifies the prospective
 single-parent commit A and result-only commit B. It deliberately has no
-publisher: a caller-owned stage cannot close the validate-to-rename race, so a
-later source PR must define a privately owned, durably published stage. C1/C2,
-external claims, artifact publication, result, and execution remain absent. No
-`D7-OPS`, scientific, or library completion credit changes here.
+caller-owned-stage publisher: that shape cannot close the validate-to-rename
+race. A separate internal source-only primitive now owns a
+private stage, performs exact-tree and joined validation, fsyncs members and
+directories, and uses only a native no-replace directory rename. It remains
+uninvoked and its observation is structural-only; the remaining successor
+source, reviewed source commit S, C1/C2, external claims, artifact publication,
+result, and execution remain absent. No `D7-OPS`, scientific, or library
+completion credit changes here.
 
 ## 4. What “library” means
 

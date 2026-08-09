@@ -4,6 +4,25 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 private-stage publication primitive
+
+- Added one internal, non-exported source-only primitive for the prospective
+  nine-file D7 v1 repository publication. It creates and retains its own
+  deterministic private stage, uses anchored directory descriptors and
+  exclusive file creation, fsyncs every member and directory, revalidates the
+  closed tree and joined records, and publishes only with the platform's native
+  no-replace directory rename followed by publication-parent fsync.
+- Failures after stage creation retain their partial evidence. There is no
+  cleanup, resume, retry, overwrite, or portable rename fallback; ambiguous
+  rename outcomes are classified by the held stage inode rather than by an
+  exception alone.
+- The returned observation is in memory, structural-only, and explicitly
+  carries no authority, materialization authorization, commit-A verification,
+  execution eligibility, or scientific claim. The primitive has not been
+  invoked, no official coordinate or artifact is created by this source change,
+  and no public API, dependency, entrypoint, supported schema, or library
+  maturity changes.
+
 ## 2026-08-10 — D7 v1 read-only joined verifier
 
 - Added one internal, non-exported verifier for the frozen D7 v1 structural
