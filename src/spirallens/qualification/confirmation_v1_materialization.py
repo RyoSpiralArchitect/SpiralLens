@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+import hashlib
 import os
 from pathlib import Path, PurePosixPath
 import shutil
@@ -379,6 +380,89 @@ def _git(repository: RepositoryContext, *arguments: str) -> bytes:
             f"git {' '.join(arguments)} failed: {detail or completed.returncode}"
         )
     return completed.stdout
+
+
+def _kill_and_wait(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is None:
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+    process.wait()
+
+
+def _git_bounded(
+    repository: RepositoryContext,
+    maximum_stdout_bytes: int,
+    *arguments: str,
+) -> bytes:
+    """Run one Git read while bounding combined stdout/stderr before EOF."""
+
+    if (
+        isinstance(maximum_stdout_bytes, bool)
+        or not isinstance(maximum_stdout_bytes, int)
+        or maximum_stdout_bytes < 0
+    ):
+        raise ValueError("maximum_stdout_bytes must be a non-negative integer")
+    process = subprocess.Popen(
+        (
+            _git_executable(),
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-c",
+            "core.trustctime=true",
+            "-c",
+            "core.checkStat=default",
+            "-c",
+            "core.fileMode=true",
+            "-c",
+            f"core.attributesFile={os.devnull}",
+            "-C",
+            str(repository.root),
+            "--no-optional-locks",
+            *arguments,
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=0,
+        env=_git_environment(),
+    )
+    try:
+        if process.stdout is None:
+            raise QualificationContractError("cannot open bounded Git output pipe")
+        chunks: list[bytes] = []
+        remaining = maximum_stdout_bytes + 1
+        while remaining:
+            chunk = process.stdout.read(remaining)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        output = b"".join(chunks)
+        if len(output) > maximum_stdout_bytes:
+            raise QualificationContractError(
+                f"git {' '.join(arguments)} output exceeds its cap"
+            )
+        returncode = process.wait()
+        if returncode != 0:
+            detail = output.decode("utf-8", errors="replace").strip()
+            raise QualificationContractError(
+                f"git {' '.join(arguments)} failed: {detail or returncode}"
+            )
+        return output
+    except BaseException:
+        _kill_and_wait(process)
+        raise
+    finally:
+        if process.stdout is not None:
+            try:
+                process.stdout.close()
+            except OSError:
+                pass
 
 
 def _resolve_commit(repository: RepositoryContext, value: str, *, label: str) -> str:
@@ -928,8 +1012,9 @@ def _choice_free_d7_v1_source_tree_entries(
     )
     fixed_paths = required_paths | {*_SOURCE_TREE_FIXED_PATHS, route_path}
     pathspecs = (_SOURCE_TREE_ROOT, *sorted(fixed_paths))
-    listing = _git(
+    listing = _git_bounded(
         repository,
+        _MAX_SOURCE_TREE_METADATA_BYTES,
         "ls-tree",
         "-r",
         "-l",
@@ -939,8 +1024,6 @@ def _choice_free_d7_v1_source_tree_entries(
         "--",
         *pathspecs,
     )
-    if len(listing) > _MAX_SOURCE_TREE_METADATA_BYTES:
-        raise QualificationContractError("Git source-tree metadata exceeds its cap")
     source_prefix = _SOURCE_TREE_ROOT + "/"
     entries: dict[str, tuple[str, str, int]] = {}
     total_bytes = 0
@@ -1024,19 +1107,16 @@ def _choice_free_d7_v1_source_paths(
     )
 
 
-def _batch_git_source_blobs(
+def _batch_git_source_sha256(
     repository: RepositoryContext,
     entries: Sequence[tuple[str, str, str, int]],
-) -> tuple[bytes, ...]:
+) -> tuple[str, ...]:
     if not entries or len(entries) > _MAX_SOURCE_TREE_FILE_COUNT:
         raise QualificationContractError("Git source batch has invalid cardinality")
     expected_total = sum(size for _path, _mode, _object_id, size in entries)
     if expected_total > _MAX_SOURCE_TREE_TOTAL_BYTES:
         raise QualificationContractError("Git source batch exceeds its aggregate cap")
-    request = b"".join(
-        object_id.encode("ascii") + b"\n" for _path, _mode, object_id, _size in entries
-    )
-    completed = subprocess.run(
+    process = subprocess.Popen(
         (
             _git_executable(),
             "--no-replace-objects",
@@ -1058,43 +1138,75 @@ def _batch_git_source_blobs(
             "cat-file",
             "--batch",
         ),
-        input=request,
-        check=False,
-        capture_output=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=0,
         env=_git_environment(),
     )
-    if completed.returncode != 0:
-        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+    result: list[str] = []
+    try:
+        if process.stdin is None or process.stdout is None:
+            raise QualificationContractError("cannot open Git source batch pipes")
+        for repository_path, _mode, object_id, expected_size in entries:
+            request = object_id.encode("ascii") + b"\n"
+            written = 0
+            while written < len(request):
+                count = process.stdin.write(request[written:])
+                if count is None or count <= 0:
+                    raise QualificationContractError(
+                        "Git source batch request is incomplete"
+                    )
+                written += count
+            header = process.stdout.readline(129)
+            expected_header = f"{object_id} blob {expected_size}\n".encode("ascii")
+            if len(header) > 128 or header != expected_header:
+                raise QualificationContractError(
+                    f"Git source batch header differs: {repository_path}"
+                )
+            digest = hashlib.sha256()
+            remaining = expected_size
+            while remaining:
+                chunk = process.stdout.read(min(64 * 1024, remaining))
+                if not chunk:
+                    raise QualificationContractError(
+                        f"Git source batch body is incomplete: {repository_path}"
+                    )
+                digest.update(chunk)
+                remaining -= len(chunk)
+            if process.stdout.read(1) != b"\n":
+                raise QualificationContractError(
+                    f"Git source batch body is incomplete: {repository_path}"
+                )
+            result.append(digest.hexdigest())
+        process.stdin.close()
+        if process.stdout.read(1):
+            raise QualificationContractError("Git source batch has trailing output")
+        returncode = process.wait()
+        if returncode != 0:
+            raise QualificationContractError(
+                f"git cat-file --batch failed: {returncode}"
+            )
+        return tuple(result)
+    except OSError as error:
+        _kill_and_wait(process)
         raise QualificationContractError(
-            f"git cat-file --batch failed: {detail or completed.returncode}"
-        )
-    output = completed.stdout
-    maximum_response = expected_total + len(entries) * 128
-    if len(output) > maximum_response:
-        raise QualificationContractError("Git source batch response exceeds its cap")
-    cursor = 0
-    result: list[bytes] = []
-    for repository_path, _mode, object_id, expected_size in entries:
-        header_end = output.find(b"\n", cursor)
-        if header_end < 0:
-            raise QualificationContractError("Git source batch header is incomplete")
-        header = output[cursor:header_end]
-        expected_header = f"{object_id} blob {expected_size}".encode("ascii")
-        if header != expected_header:
-            raise QualificationContractError(
-                f"Git source batch header differs: {repository_path}"
-            )
-        source_start = header_end + 1
-        source_end = source_start + expected_size
-        if source_end >= len(output) or output[source_end : source_end + 1] != b"\n":
-            raise QualificationContractError(
-                f"Git source batch body is incomplete: {repository_path}"
-            )
-        result.append(output[source_start:source_end])
-        cursor = source_end + 1
-    if cursor != len(output):
-        raise QualificationContractError("Git source batch has trailing output")
-    return tuple(result)
+            f"git cat-file --batch pipe failed: {error}"
+        ) from error
+    except BaseException:
+        _kill_and_wait(process)
+        raise
+    finally:
+        if process.stdin is not None and not process.stdin.closed:
+            try:
+                process.stdin.close()
+            except OSError:
+                pass
+        if process.stdout is not None:
+            try:
+                process.stdout.close()
+            except OSError:
+                pass
 
 
 def _enumerate_choice_free_d7_v1_source_members(
@@ -1107,17 +1219,17 @@ def _enumerate_choice_free_d7_v1_source_members(
         protocol,
         source_commit,
     )
-    sources = _batch_git_source_blobs(repository, entries)
+    digests = _batch_git_source_sha256(repository, entries)
     return tuple(
         records.D7V1SourceMember(
             repository_path=repository_path,
             git_mode=mode,
-            sha256=sha256_bytes(source),
-            byte_count=len(source),
+            sha256=digest,
+            byte_count=size,
         )
-        for (repository_path, mode, _object_id, _size), source in zip(
+        for (repository_path, mode, _object_id, size), digest in zip(
             entries,
-            sources,
+            digests,
             strict=True,
         )
     )

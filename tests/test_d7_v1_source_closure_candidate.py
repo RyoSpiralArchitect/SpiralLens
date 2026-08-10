@@ -260,6 +260,24 @@ def _build(case: object) -> source_closure.D7V1SourceClosureCandidate:
     )
 
 
+def test_bounded_git_output_cap_cleans_up_and_is_reusable(tmp_path: Path) -> None:
+    case = _case(tmp_path / "bounded-git")
+    with pytest.raises(
+        QualificationContractError,
+        match=r"git rev-parse HEAD output exceeds its cap",
+    ):
+        materialization._git_bounded(case.context, 8, "rev-parse", "HEAD")
+
+    observed = materialization._git_bounded(
+        case.context,
+        41,
+        "rev-parse",
+        "HEAD",
+    )
+    assert observed == f"{case.source_commit}\n".encode("ascii")
+    assert len(observed) == 41
+
+
 def test_choice_free_candidate_is_deterministic_exact_and_non_authorizing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

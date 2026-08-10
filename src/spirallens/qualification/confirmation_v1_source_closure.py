@@ -162,15 +162,14 @@ def _require_exact_clean_head(
         raise QualificationContractError(
             "source_commit must equal the exact current repository HEAD"
         )
-    status = materialization._git(
+    status = materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "status",
         "--porcelain=v1",
         "-z",
         "--untracked-files=all",
     )
-    if len(status) > _MAX_STATUS_BYTES:
-        raise QualificationContractError("Git worktree status exceeds its cap")
     if status:
         raise QualificationContractError(
             "source-closure candidate requires a completely clean repository"
@@ -210,8 +209,9 @@ def _git_admin_directory(
 def _require_unredirected_repository_state(
     repository: RepositoryContext,
 ) -> None:
-    config_source = materialization._git(
+    config_source = materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "config",
         "--local",
         "--no-includes",
@@ -235,8 +235,9 @@ def _require_unredirected_repository_state(
             "source-closure candidate rejects mutable local Git indirection"
         )
 
-    index_source = materialization._git(
+    index_source = materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "ls-files",
         "-v",
         "-z",
@@ -257,31 +258,29 @@ def _require_unredirected_repository_state(
             "source-closure candidate rejects tracked Git attribute files"
         )
 
-    untracked_source = materialization._git(
+    untracked_source = materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "ls-files",
         "--others",
         "-z",
         "--",
         ".",
     )
-    if len(untracked_source) > _MAX_STATUS_BYTES:
-        raise QualificationContractError("Git untracked-file inventory exceeds its cap")
     if untracked_source:
         raise QualificationContractError(
             "source-closure candidate requires zero untracked repository files"
         )
 
-    staged_source = materialization._git(
+    staged_source = materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "ls-files",
         "--stage",
         "-z",
         "--",
         ".",
     )
-    if len(staged_source) > _MAX_STATUS_BYTES:
-        raise QualificationContractError("Git staged-file inventory exceeds its cap")
     for item in (entry for entry in staged_source.split(b"\0") if entry):
         try:
             metadata, repository_path = item.split(b"\t", 1)
@@ -323,8 +322,9 @@ def _require_unredirected_repository_state(
         raise QualificationContractError(
             "source-closure candidate rejects mutable Git admin indirection"
         )
-    if materialization._git(
+    if materialization._git_bounded(
         repository,
+        _MAX_STATUS_BYTES,
         "for-each-ref",
         "--format=%(refname)",
         "refs/replace",
