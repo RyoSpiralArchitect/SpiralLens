@@ -723,6 +723,36 @@ receipt, artifact commit A, descriptive result, result commit B, execution,
 scientific evidence, public API, supported-schema promotion, or library
 milestone. VOY-V3 remains `frozen_not_run`.
 
+### 3.21 D7 v1 descriptive work-package split before source selection
+
+**Decision source and timing**
+
+The source-only descriptive derivation had reached 4,699 lines before reviewed
+source commit S was selected. Because any split after S would invalidate that
+source identity, the implementation was divided now, before C1/C2 or any
+successor input consumption. This later source decision does not amend the
+frozen route, materialization protocol, schemas, or chronology.
+
+**Implemented boundary**
+
+The existing derivation and verification callables remain on a 287-line facade.
+Eight private work packages own the shared six-input vocabulary, D1, D2, D3,
+D4, D5 input normalization, D5 output derivation, and independence outputs.
+The pre-split and post-split derivations produce the same 5,308,075 canonical
+bytes and SHA-256
+`bc8b324794a096e915ac4cde57446c2d912e7c94bda68e2d4a0584bff7515680`.
+Each helper is a non-exported internal source and is independently required to
+match its repository import origin, live bytes, source-S Git blob, and C1
+member tuple before the joined loader accepts the lineage.
+
+**Current boundary and claim delta**
+
+`none`. This refactor creates no source closure and selects no S. It creates no
+C1/C2 instance, seed, claim, supplier invocation, external store, attempt,
+receipt, artifact, result, commit A/B, execution, scientific evidence, public
+API, supported-schema promotion, dependency, or library milestone. VOY-V3
+remains `frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

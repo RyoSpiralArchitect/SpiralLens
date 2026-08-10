@@ -207,7 +207,11 @@ bytes by rejoining exact commit A and source S and rerunning the six-input
 derivation; it accepts no caller result, path, or stage and can publish only at
 the fixed coordinate with fsync plus native no-replace rename. It remains
 uninvoked. Future commit-B verification requires the same byte-exact
-rederivation and rejects schema-valid substitute outputs. Source completion
+rederivation and rejects schema-valid substitute outputs. Before S selection,
+the descriptive implementation was split from one 4,699-line module into a
+287-line facade and eight bounded private work packages. Its canonical result
+bytes are unchanged, and every helper is now joined independently to its import
+origin, live source, source-S blob, and C1 member tuple. Source completion
 remains unmet, S remains unselected, and no artifact or result has been
 generated. No `D7-OPS`, scientific, or library completion credit changes here.
 

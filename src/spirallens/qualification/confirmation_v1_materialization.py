@@ -34,6 +34,14 @@ from spirallens.core.canonical import (
 )
 
 from .common import QualificationContractError, require_sha256
+from . import confirmation_v1_descriptive_common as descriptive_common
+from . import confirmation_v1_descriptive_d1 as descriptive_d1
+from . import confirmation_v1_descriptive_d2 as descriptive_d2
+from . import confirmation_v1_descriptive_d3 as descriptive_d3
+from . import confirmation_v1_descriptive_d4 as descriptive_d4
+from . import confirmation_v1_descriptive_d5_inputs as descriptive_d5_inputs
+from . import confirmation_v1_descriptive_d5_outputs as descriptive_d5_outputs
+from . import confirmation_v1_descriptive_independence as descriptive_independence
 from . import confirmation_v1_post_d6_descriptive as descriptive
 from . import confirmation_v1_records as records
 
@@ -49,6 +57,51 @@ _PROTOCOL_MERGE_COMMIT = "052893036f0562292f869118dbcbc72746df329a"
 _MODULE_PATH = "src/spirallens/qualification/confirmation_v1_materialization.py"
 _DESCRIPTIVE_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
+)
+_DESCRIPTIVE_HELPER_MODULES = (
+    (
+        descriptive_common,
+        "src/spirallens/qualification/confirmation_v1_descriptive_common.py",
+        "descriptive common module",
+    ),
+    (
+        descriptive_d1,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d1.py",
+        "descriptive D1 module",
+    ),
+    (
+        descriptive_d2,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d2.py",
+        "descriptive D2 module",
+    ),
+    (
+        descriptive_d3,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d3.py",
+        "descriptive D3 module",
+    ),
+    (
+        descriptive_d4,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d4.py",
+        "descriptive D4 module",
+    ),
+    (
+        descriptive_d5_inputs,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d5_inputs.py",
+        "descriptive D5 input module",
+    ),
+    (
+        descriptive_d5_outputs,
+        "src/spirallens/qualification/confirmation_v1_descriptive_d5_outputs.py",
+        "descriptive D5 output module",
+    ),
+    (
+        descriptive_independence,
+        "src/spirallens/qualification/confirmation_v1_descriptive_independence.py",
+        "descriptive independence module",
+    ),
+)
+_DESCRIPTIVE_HELPER_PATHS = tuple(
+    repository_path for _module, repository_path, _label in _DESCRIPTIVE_HELPER_MODULES
 )
 _RECORDS_MODULE_PATH = "src/spirallens/qualification/confirmation_v1_records.py"
 _ROUTE_ROLE = "navigation-route"
@@ -442,6 +495,14 @@ def _require_import_origins(repository: RepositoryContext) -> None:
         raise QualificationContractError(
             "descriptive module import origin differs from repository"
         )
+    for module, repository_path, label in _DESCRIPTIVE_HELPER_MODULES:
+        if not repository.matches_imported_file(
+            imported_file=module.__file__,
+            repository_path=repository_path,
+        ):
+            raise QualificationContractError(
+                f"{label} import origin differs from repository"
+            )
 
 
 def _require_executing_sources_match_commit(
@@ -452,6 +513,7 @@ def _require_executing_sources_match_commit(
         _MODULE_PATH,
         _RECORDS_MODULE_PATH,
         _DESCRIPTIVE_MODULE_PATH,
+        *_DESCRIPTIVE_HELPER_PATHS,
     ):
         _mode, committed = _git_blob(
             repository,
@@ -828,8 +890,9 @@ def _verify_source_join(
         route_binding.get("repository_path"), label="route path"
     )
     member_paths = {member.repository_path for member in c1_members}
-    if not required | {route_path} <= member_paths:
-        missing = sorted((required | {route_path}) - member_paths)
+    required_members = required | {route_path} | set(_DESCRIPTIVE_HELPER_PATHS)
+    if not required_members <= member_paths:
+        missing = sorted(required_members - member_paths)
         raise QualificationContractError(f"C1 omits required source paths: {missing}")
     route_source, route_document = _route_source(repository, protocol)
     route_commit = _full_commit(route_binding.get("merge_commit"), label="route commit")

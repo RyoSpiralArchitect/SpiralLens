@@ -44,6 +44,27 @@ DESCRIPTIVE_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
 )
 DESCRIPTIVE_MODULE_PATH = REPOSITORY.joinpath(*DESCRIPTIVE_REPOSITORY_PATH.split("/"))
+DESCRIPTIVE_HELPER_REPOSITORY_PATHS = (
+    "src/spirallens/qualification/confirmation_v1_descriptive_common.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d1.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d2.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d3.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d4.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d5_inputs.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d5_outputs.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_independence.py",
+)
+DESCRIPTIVE_HELPER_MODULE_PATHS = tuple(
+    REPOSITORY.joinpath(*repository_path.split("/"))
+    for repository_path in DESCRIPTIVE_HELPER_REPOSITORY_PATHS
+)
+DESCRIPTIVE_HELPER_SOURCE_PATHS = dict(
+    zip(
+        DESCRIPTIVE_HELPER_REPOSITORY_PATHS,
+        DESCRIPTIVE_HELPER_MODULE_PATHS,
+        strict=True,
+    )
+)
 PRIVATE_PUBLICATION_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_private_publication.py"
 )
@@ -470,6 +491,7 @@ def _build_case(
     assert isinstance(required, list)
     source_closure_paths = [
         *map(str, required),
+        *DESCRIPTIVE_HELPER_REPOSITORY_PATHS,
         PRIVATE_PUBLICATION_REPOSITORY_PATH,
         RESULT_PUBLICATION_REPOSITORY_PATH,
     ]
@@ -493,6 +515,11 @@ def _build_case(
             target.parent.mkdir(parents=True, exist_ok=True)
             target.unlink(missing_ok=True)
             os.link(DESCRIPTIVE_MODULE_PATH, target)
+            continue
+        if repository_path in DESCRIPTIVE_HELPER_SOURCE_PATHS:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(DESCRIPTIVE_HELPER_SOURCE_PATHS[repository_path], target)
             continue
         if repository_path == PRIVATE_PUBLICATION_REPOSITORY_PATH:
             target.parent.mkdir(parents=True, exist_ok=True)
