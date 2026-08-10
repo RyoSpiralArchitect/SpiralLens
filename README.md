@@ -80,6 +80,12 @@ stage; it must rejoin exact commit A and source S, freshly derive the result,
 and can publish only at the fixed coordinate through a private fsynced file and
 native no-replace rename. It remains uninvoked. There is still no closed
 external chronology orchestrator, so every execution coordinate fails closed.
+Before selecting S, the 4,699-line descriptive implementation was split behind
+a 287-line facade into eight private D1--D5, independence, and shared work
+packages. The 27-output canonical result is byte-identical to the pre-split
+derivation. The verifier now requires every helper's import origin, live bytes,
+source-S blob, and C1 member tuple to agree, so the split cannot weaken source
+provenance. This is an internal source refactor, not library promotion.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

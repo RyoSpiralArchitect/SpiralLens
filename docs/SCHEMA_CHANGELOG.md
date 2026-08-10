@@ -4,6 +4,20 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 descriptive private work-package split
+
+- Replaced the 4,699-line descriptive implementation module with a 287-line
+  compatibility facade over eight private D1--D5, independence, and shared
+  work packages. The six-input derivation, 27 output identities, validation
+  order, and canonical 5,308,075-byte result remain unchanged.
+- Extended the internal source-S gate so every helper must independently match
+  its repository import origin, live bytes, Git blob at S, and C1 source-member
+  tuple. The frozen protocol remains byte-unchanged; the code-level helper
+  minimum is a later source provenance requirement.
+- This is an uninvoked internal refactor. S remains unselected, VOY-V3 remains
+  `frozen_not_run`, and no schema, artifact, authority, public API, dependency,
+  console script, or library maturity changed.
+
 ## 2026-08-10 — D7 v1 private result-publication primitive
 
 - Added one internal, non-exported source-only primitive for prospective
