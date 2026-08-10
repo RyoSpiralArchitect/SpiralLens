@@ -86,6 +86,17 @@ packages. The 27-output canonical result is byte-identical to the pre-split
 derivation. The verifier now requires every helper's import origin, live bytes,
 source-S blob, and C1 member tuple to agree, so the split cannot weaken source
 provenance. This is an internal source refactor, not library promotion.
+A further private builder can now form an in-memory C1/C2 structural candidate
+from one explicitly pinned clean `HEAD`. Its inventory is choice-free: every
+tracked ordinary blob below `src/spirallens`, plus `pyproject.toml`, the
+declared D7 runtime lock, frozen protocol and route, and required v1 scripts.
+It accepts no caller path, member, byte, record ID, or callback, and repeats
+the clean-HEAD assertion after canonical C1/C2 reload and rejoin. Runtime-lock
+membership is inventory evidence only, not installed-runtime conformity. The
+entire frozen v1 repository root must be absent in that asserted tree; this is
+only a current-tree observation, not artifact-chronology proof. The candidate
+neither reviews nor selects S and grants no persistence,
+materialization, execution, or scientific authority.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

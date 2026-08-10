@@ -25,7 +25,9 @@ import subprocess
 from types import MappingProxyType
 from typing import TypeAlias, cast
 
+from spirallens import _repository_context as repository_context_module
 from spirallens._repository_context import RepositoryContext
+from spirallens.core import canonical as canonical_module
 from spirallens.core.canonical import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -33,6 +35,7 @@ from spirallens.core.canonical import (
     sha256_bytes,
 )
 
+from . import common as common_module
 from .common import QualificationContractError, require_sha256
 from . import confirmation_v1_descriptive_common as descriptive_common
 from . import confirmation_v1_descriptive_d1 as descriptive_d1
@@ -54,9 +57,15 @@ _PROTOCOL_BYTE_COUNT = 43_288
 _PROTOCOL_SCHEMA = "spirallens.d7-v1-pre-item23-materialization-protocol.v0.1"
 _PROTOCOL_ID = "d7-v1-pre-item23-materialization-v0-1"
 _PROTOCOL_MERGE_COMMIT = "052893036f0562292f869118dbcbc72746df329a"
+_REPOSITORY_CONTEXT_MODULE_PATH = "src/spirallens/_repository_context.py"
+_CANONICAL_MODULE_PATH = "src/spirallens/core/canonical.py"
+_COMMON_MODULE_PATH = "src/spirallens/qualification/common.py"
 _MODULE_PATH = "src/spirallens/qualification/confirmation_v1_materialization.py"
 _DESCRIPTIVE_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
+)
+_SOURCE_CLOSURE_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_v1_source_closure.py"
 )
 _DESCRIPTIVE_HELPER_MODULES = (
     (
@@ -108,7 +117,15 @@ _ROUTE_ROLE = "navigation-route"
 _PROTOCOL_ROLE = "v1-materialization-protocol"
 _MAX_PROTOCOL_BYTES = 64 * 1024
 _MAX_SOURCE_MEMBER_BYTES = 64 * 1024 * 1024
+_MAX_SOURCE_TREE_FILE_COUNT = 4_096
+_MAX_SOURCE_TREE_METADATA_BYTES = 16 * 1024 * 1024
+_MAX_SOURCE_TREE_TOTAL_BYTES = 512 * 1024 * 1024
 _COMMIT_LENGTH = 40
+_SOURCE_TREE_ROOT = "src/spirallens"
+_SOURCE_TREE_FIXED_PATHS = (
+    "pyproject.toml",
+    "requirements-d7-runtime-lock.txt",
+)
 
 _COORDINATE_ROLES = {
     "c1_source_set": records.D7V1C1SourceSetRecord.artifact_role,
@@ -309,6 +326,7 @@ def _git_environment() -> dict[str, str]:
         "GIT_CONFIG_COUNT": "0",
         "GIT_CONFIG_GLOBAL": os.devnull,
         "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_ATTR_NOSYSTEM": "1",
         "GIT_LITERAL_PATHSPECS": "1",
         "GIT_NO_LAZY_FETCH": "1",
         "GIT_NO_REPLACE_OBJECTS": "1",
@@ -333,6 +351,19 @@ def _git(repository: RepositoryContext, *arguments: str) -> bytes:
     completed = subprocess.run(
         (
             _git_executable(),
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-c",
+            "core.trustctime=true",
+            "-c",
+            "core.checkStat=default",
+            "-c",
+            "core.fileMode=true",
+            "-c",
+            f"core.attributesFile={os.devnull}",
             "-C",
             str(repository.root),
             "--no-optional-locks",
@@ -375,6 +406,19 @@ def _is_ancestor(
     completed = subprocess.run(
         (
             _git_executable(),
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-c",
+            "core.trustctime=true",
+            "-c",
+            "core.checkStat=default",
+            "-c",
+            "core.fileMode=true",
+            "-c",
+            f"core.attributesFile={os.devnull}",
             "-C",
             str(repository.root),
             "--no-optional-locks",
@@ -474,6 +518,23 @@ def _git_blob(
 
 
 def _require_import_origins(repository: RepositoryContext) -> None:
+    for module, repository_path, label in (
+        (
+            repository_context_module,
+            _REPOSITORY_CONTEXT_MODULE_PATH,
+            "repository-context module",
+        ),
+        (canonical_module, _CANONICAL_MODULE_PATH, "canonical module"),
+        (common_module, _COMMON_MODULE_PATH, "qualification common module"),
+    ):
+        try:
+            matches = (repository.root / repository_path).samefile(module.__file__)
+        except (OSError, TypeError, ValueError):
+            matches = False
+        if not matches:
+            raise QualificationContractError(
+                f"{label} import origin differs from repository"
+            )
     if not repository.matches_imported_file(
         imported_file=__file__,
         repository_path=_MODULE_PATH,
@@ -510,9 +571,13 @@ def _require_executing_sources_match_commit(
     source_commit: str,
 ) -> None:
     for repository_path in (
+        _REPOSITORY_CONTEXT_MODULE_PATH,
+        _CANONICAL_MODULE_PATH,
+        _COMMON_MODULE_PATH,
         _MODULE_PATH,
         _RECORDS_MODULE_PATH,
         _DESCRIPTIVE_MODULE_PATH,
+        _SOURCE_CLOSURE_MODULE_PATH,
         *_DESCRIPTIVE_HELPER_PATHS,
     ):
         _mode, committed = _git_blob(
@@ -837,6 +902,227 @@ def _enumerate_d7_v1_source_members(
     return tuple(result)
 
 
+def _choice_free_d7_v1_source_tree_entries(
+    repository: RepositoryContext,
+    protocol: D7V1MaterializationProtocol,
+    source_commit: str,
+) -> tuple[tuple[str, str, str, int], ...]:
+    """Derive exact ``(path, mode, object, size)`` entries from Git S."""
+
+    commit = _resolve_commit(repository, source_commit, label="source_commit")
+    source_contract = _mapping(
+        protocol.document.get("source_contract"), label="source_contract"
+    )
+    required_paths = {
+        _relative_path(item, label="required source path")
+        for item in _sequence(
+            source_contract.get("required_new_source_paths"),
+            label="required_new_source_paths",
+        )
+    }
+    route_binding = _mapping(
+        protocol.document.get("route_binding"), label="route_binding"
+    )
+    route_path = _relative_path(
+        route_binding.get("repository_path"), label="route path"
+    )
+    fixed_paths = required_paths | {*_SOURCE_TREE_FIXED_PATHS, route_path}
+    pathspecs = (_SOURCE_TREE_ROOT, *sorted(fixed_paths))
+    listing = _git(
+        repository,
+        "ls-tree",
+        "-r",
+        "-l",
+        "-z",
+        "--full-tree",
+        commit,
+        "--",
+        *pathspecs,
+    )
+    if len(listing) > _MAX_SOURCE_TREE_METADATA_BYTES:
+        raise QualificationContractError("Git source-tree metadata exceeds its cap")
+    source_prefix = _SOURCE_TREE_ROOT + "/"
+    entries: dict[str, tuple[str, str, int]] = {}
+    total_bytes = 0
+    for entry in (item for item in listing.split(b"\0") if item):
+        try:
+            metadata, encoded_path = entry.split(b"\t", 1)
+            mode_source, kind_source, object_source, size_source = metadata.split()
+            mode = mode_source.decode("ascii", errors="strict")
+            kind = kind_source.decode("ascii", errors="strict")
+            object_id = object_source.decode("ascii", errors="strict")
+            size = int(size_source.decode("ascii", errors="strict"))
+            repository_path = encoded_path.decode("utf-8", errors="strict")
+        except (UnicodeDecodeError, ValueError) as error:
+            raise QualificationContractError(
+                "Git source-tree metadata is malformed"
+            ) from error
+        normalized = _relative_path(
+            repository_path,
+            label="Git source-tree repository_path",
+        )
+        if not normalized.startswith(source_prefix) and normalized not in fixed_paths:
+            raise QualificationContractError(
+                "Git source-tree enumeration escaped its exact path policy"
+            )
+        if kind != "blob" or mode not in {"100644", "100755"}:
+            raise QualificationContractError(
+                f"{normalized} must be an ordinary 100644/100755 Git blob"
+            )
+        if (
+            len(object_id) != _COMMIT_LENGTH
+            or any(character not in "0123456789abcdef" for character in object_id)
+            or size < 0
+            or size > _MAX_SOURCE_MEMBER_BYTES
+        ):
+            raise QualificationContractError(
+                f"{normalized} has invalid or oversized Git blob metadata"
+            )
+        if normalized in entries:
+            raise QualificationContractError(
+                "Git source-tree enumeration contains a duplicate path"
+            )
+        entries[normalized] = (mode, object_id, size)
+        total_bytes += size
+        if len(entries) > _MAX_SOURCE_TREE_FILE_COUNT:
+            raise QualificationContractError(
+                "Git source-tree enumeration exceeds its file-count cap"
+            )
+        if total_bytes > _MAX_SOURCE_TREE_TOTAL_BYTES:
+            raise QualificationContractError(
+                "Git source-tree enumeration exceeds its aggregate byte cap"
+            )
+    if not entries:
+        raise QualificationContractError("Git source-tree enumeration is empty")
+    if not fixed_paths <= set(entries):
+        missing = sorted(fixed_paths - set(entries))
+        raise QualificationContractError(
+            f"Git source-tree enumeration omits fixed source paths: {missing}"
+        )
+    return tuple(
+        (repository_path, mode, object_id, size)
+        for repository_path, (mode, object_id, size) in sorted(entries.items())
+    )
+
+
+def _choice_free_d7_v1_source_paths(
+    repository: RepositoryContext,
+    protocol: D7V1MaterializationProtocol,
+    source_commit: str,
+) -> tuple[str, ...]:
+    """Derive the exact v1 source inventory only from the Git tree at S."""
+
+    return tuple(
+        repository_path
+        for repository_path, _mode, _object_id, _size in (
+            _choice_free_d7_v1_source_tree_entries(
+                repository,
+                protocol,
+                source_commit,
+            )
+        )
+    )
+
+
+def _batch_git_source_blobs(
+    repository: RepositoryContext,
+    entries: Sequence[tuple[str, str, str, int]],
+) -> tuple[bytes, ...]:
+    if not entries or len(entries) > _MAX_SOURCE_TREE_FILE_COUNT:
+        raise QualificationContractError("Git source batch has invalid cardinality")
+    expected_total = sum(size for _path, _mode, _object_id, size in entries)
+    if expected_total > _MAX_SOURCE_TREE_TOTAL_BYTES:
+        raise QualificationContractError("Git source batch exceeds its aggregate cap")
+    request = b"".join(
+        object_id.encode("ascii") + b"\n" for _path, _mode, object_id, _size in entries
+    )
+    completed = subprocess.run(
+        (
+            _git_executable(),
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-c",
+            "core.trustctime=true",
+            "-c",
+            "core.checkStat=default",
+            "-c",
+            "core.fileMode=true",
+            "-c",
+            f"core.attributesFile={os.devnull}",
+            "-C",
+            str(repository.root),
+            "--no-optional-locks",
+            "cat-file",
+            "--batch",
+        ),
+        input=request,
+        check=False,
+        capture_output=True,
+        env=_git_environment(),
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise QualificationContractError(
+            f"git cat-file --batch failed: {detail or completed.returncode}"
+        )
+    output = completed.stdout
+    maximum_response = expected_total + len(entries) * 128
+    if len(output) > maximum_response:
+        raise QualificationContractError("Git source batch response exceeds its cap")
+    cursor = 0
+    result: list[bytes] = []
+    for repository_path, _mode, object_id, expected_size in entries:
+        header_end = output.find(b"\n", cursor)
+        if header_end < 0:
+            raise QualificationContractError("Git source batch header is incomplete")
+        header = output[cursor:header_end]
+        expected_header = f"{object_id} blob {expected_size}".encode("ascii")
+        if header != expected_header:
+            raise QualificationContractError(
+                f"Git source batch header differs: {repository_path}"
+            )
+        source_start = header_end + 1
+        source_end = source_start + expected_size
+        if source_end >= len(output) or output[source_end : source_end + 1] != b"\n":
+            raise QualificationContractError(
+                f"Git source batch body is incomplete: {repository_path}"
+            )
+        result.append(output[source_start:source_end])
+        cursor = source_end + 1
+    if cursor != len(output):
+        raise QualificationContractError("Git source batch has trailing output")
+    return tuple(result)
+
+
+def _enumerate_choice_free_d7_v1_source_members(
+    repository: RepositoryContext,
+    protocol: D7V1MaterializationProtocol,
+    source_commit: str,
+) -> tuple[records.D7V1SourceMember, ...]:
+    entries = _choice_free_d7_v1_source_tree_entries(
+        repository,
+        protocol,
+        source_commit,
+    )
+    sources = _batch_git_source_blobs(repository, entries)
+    return tuple(
+        records.D7V1SourceMember(
+            repository_path=repository_path,
+            git_mode=mode,
+            sha256=sha256_bytes(source),
+            byte_count=len(source),
+        )
+        for (repository_path, mode, _object_id, _size), source in zip(
+            entries,
+            sources,
+            strict=True,
+        )
+    )
+
+
 def _verify_source_join(
     repository: RepositoryContext,
     protocol: D7V1MaterializationProtocol,
@@ -853,6 +1139,18 @@ def _verify_source_join(
         _string(derivation.get("merged_source_commit"), label="merged_source_commit"),
         label="reviewed source commit S",
     )
+    layout = _mapping(
+        protocol.document.get("coordinate_and_member_layout"),
+        label="coordinate_and_member_layout",
+    )
+    repository_root = _relative_path(
+        layout.get("repository_root"),
+        label="repository_root",
+    )
+    if not _git_path_absent(repository, source_commit, repository_root):
+        raise QualificationContractError(
+            "D7 v1 materialization repository_root must be entirely absent at source S"
+        )
     _require_executing_sources_match_commit(repository, source_commit)
     _require_binding(
         c2_payload.get("c1_binding"), _record_binding(c1), label="C2 C1 binding"
@@ -866,13 +1164,15 @@ def _verify_source_join(
     )
     if derived_members != c1_members:
         raise QualificationContractError("C2 source members differ from C1")
-    observed = _enumerate_d7_v1_source_members(
+    observed = _enumerate_choice_free_d7_v1_source_members(
         repository,
+        protocol,
         source_commit,
-        tuple(member.repository_path for member in c1_members),
     )
     if observed != c1_members:
-        raise QualificationContractError("C1 source members differ from Git tree S")
+        raise QualificationContractError(
+            "C1 source members differ from the exact choice-free Git tree S inventory"
+        )
     source_contract = _mapping(
         protocol.document.get("source_contract"), label="source_contract"
     )
