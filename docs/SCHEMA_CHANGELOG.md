@@ -4,6 +4,21 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 private result-publication primitive
+
+- Added one internal, non-exported source-only primitive for prospective
+  stage-17 descriptive-result publication. It accepts no caller result, path,
+  or stage; exact commit A and source S are rejoined before the six frozen
+  inputs are freshly rederived into the fixed result bytes.
+- The primitive uses an owned deterministic private file, file fsync, native
+  no-replace rename, publication-parent fsync, and post-publication inode and
+  byte reauthentication. Failure authorizes neither cleanup nor retry, and the
+  in-memory success observation creates or verifies no result commit B.
+- The primitive is uninvoked. No route or persisted schema changed; S remains
+  unselected, VOY-V3 remains `frozen_not_run`, and no official artifact,
+  result, authority, public API, dependency, console script, or library
+  maturity was created.
+
 ## 2026-08-10 — D7 v1 descriptive source and blocked entrypoint coordinates
 
 - Added an internal fresh derivation for the frozen post-D6 descriptive result

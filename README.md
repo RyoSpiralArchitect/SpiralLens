@@ -74,10 +74,15 @@ post-D6 descriptive document only from the six frozen historical reads and
 defines the declared preparation, runner, and official-callable coordinates.
 Commit-B verification requires byte-exact reproduction by that six-input
 derivation, so a merely schema-valid 27-output envelope is rejected.
-It includes no stage-17 result publisher or closed external chronology
-orchestrator, so every execution coordinate fails closed. Reviewed source
-completion has not been reached, commit S has not been selected, and no
-artifact or descriptive result has been generated.
+A third internal source-only primitive now implements the prospective stage-17
+result publication boundary. It accepts no caller-supplied result, path, or
+stage; it must rejoin exact commit A and source S, freshly derive the result,
+and can publish only at the fixed coordinate through a private fsynced file and
+native no-replace rename. It remains uninvoked. There is still no closed
+external chronology orchestrator, so every execution coordinate fails closed.
+Reviewed source completion has not been reached, commit S has not been
+selected, and no artifact or descriptive result has been generated. VOY-V3
+remains `frozen_not_run`.
 
 ## Scientific interpretation anchors
 
@@ -1575,8 +1580,10 @@ immediate next plan live in the single
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   The versioned-successor lane additionally contains an internal read-only
-  staged/commit-A/commit-B verifier. It has no publisher or execution entry and
-  creates no v1 artifact;
+  staged/commit-A/commit-B verifier, the uninvoked private nine-file publisher,
+  and an uninvoked fixed-coordinate stage-17 result publisher. These source-only
+  internals grant no authority, expose no execution entry, and create no v1
+  artifact;
   Importing the namespace does not run a selection or confirmation, advance
   global D6-D8, or authorize subject access;
 - `factors/` accounts for LayerNorm, RoPE, attention value transport, routing,

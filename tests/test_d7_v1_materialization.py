@@ -50,6 +50,12 @@ PRIVATE_PUBLICATION_REPOSITORY_PATH = (
 PRIVATE_PUBLICATION_MODULE_PATH = REPOSITORY.joinpath(
     *PRIVATE_PUBLICATION_REPOSITORY_PATH.split("/")
 )
+RESULT_PUBLICATION_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_result_publication.py"
+)
+RESULT_PUBLICATION_MODULE_PATH = REPOSITORY.joinpath(
+    *RESULT_PUBLICATION_REPOSITORY_PATH.split("/")
+)
 PROTOCOL_PATH = REPOSITORY / "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
 
@@ -465,6 +471,7 @@ def _build_case(
     source_closure_paths = [
         *map(str, required),
         PRIVATE_PUBLICATION_REPOSITORY_PATH,
+        RESULT_PUBLICATION_REPOSITORY_PATH,
     ]
     for repository_path in source_closure_paths:
         target = repository.joinpath(*repository_path.split("/"))
@@ -491,6 +498,11 @@ def _build_case(
             target.parent.mkdir(parents=True, exist_ok=True)
             target.unlink(missing_ok=True)
             os.link(PRIVATE_PUBLICATION_MODULE_PATH, target)
+            continue
+        if repository_path == RESULT_PUBLICATION_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(RESULT_PUBLICATION_MODULE_PATH, target)
             continue
         if repository_path == ("protocols/d7_v1_pre_item23_materialization_v0_1.json"):
             _write(repository, repository_path, PROTOCOL_PATH.read_bytes())
