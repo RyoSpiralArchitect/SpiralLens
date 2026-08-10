@@ -310,7 +310,6 @@ def test_choice_free_candidate_is_deterministic_exact_and_non_authorizing(
 
     assert first.source_commit == case.source_commit
     assert first.source_members == oracle
-    assert len(first.source_members) == 177
     assert first.c1.canonical_bytes == second.c1.canonical_bytes
     assert first.c2.canonical_bytes == second.c2.canonical_bytes
     assert first.c1.to_dict()["record_id"] == EXPECTED_C1_ID

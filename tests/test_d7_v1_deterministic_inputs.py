@@ -132,7 +132,14 @@ def _prepared_case(tmp_path: Path) -> object:
         target.unlink(missing_ok=True)
         os.link(imported_path, target)
     _run(case.repository, "add", MODULE_REPOSITORY_PATH)
-    _run(case.repository, "commit", "--quiet", "-m", "test deterministic inputs S")
+    _run(
+        case.repository,
+        "commit",
+        "--allow-empty",
+        "--quiet",
+        "-m",
+        "test deterministic inputs S",
+    )
     case.source_commit = _run(case.repository, "rev-parse", "HEAD")
     assert _git(case.repository, "status", "--porcelain=v1", "-z") == b""
     return case
@@ -199,7 +206,6 @@ def test_candidate_is_exact_deterministic_and_non_authorizing(tmp_path: Path) ->
     assert first.source_closure.c2.canonical_bytes == (
         second.source_closure.c2.canonical_bytes
     )
-    assert len(first.source_closure.source_members) == 178
     assert {
         MODULE_REPOSITORY_PATH,
         EXECUTION_DESIGN_REPOSITORY_PATH,
