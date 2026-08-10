@@ -691,6 +691,38 @@ scientific evidence. Source completion remains unmet and S remains unselected.
 This is source-level software qualification only and changes no public API,
 supported schema, VOY status, or library milestone.
 
+### 3.20 D7 v1 private stage-17 result-publication primitive
+
+**Decision source and timing**
+
+After the fresh descriptive derivation and blocked entrypoint coordinates were
+merged, the project added the smallest remaining repository-side persistence
+mechanism required by the frozen prospective chronology. This is a later
+source-only implementation decision. It does not select reviewed source commit
+S, create a chronology fact, or amend the frozen route or protocol.
+
+**Implemented boundary**
+
+The internal stage-17 primitive accepts only a repository context plus explicit
+source-S and artifact-A commit identities. It accepts no caller result bytes,
+destination, stage, reader, writer, rename implementation, or filesystem
+callback. Before publishing, it must reauthenticate its own C1/source-S bytes,
+verify exact commit A, reread the six frozen historical inputs, and freshly
+derive the descriptive result. It can write only the protocol-fixed result
+coordinate through an owned deterministic private file, file fsync, native
+no-replace rename, publication-parent fsync, and post-publication inode and byte
+revalidation. Failures authorize neither cleanup nor retry. Its returned
+observation is structural-only and creates or verifies no result commit B.
+
+**Current boundary and claim delta**
+
+`none`. The primitive is uninvoked on the declared v1 coordinates. There is no
+closed external chronology or record-construction orchestrator, selected S,
+C1/C2 instance, seed claim, supplier invocation, external store, attempt,
+receipt, artifact commit A, descriptive result, result commit B, execution,
+scientific evidence, public API, supported-schema promotion, or library
+milestone. VOY-V3 remains `frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

@@ -201,12 +201,15 @@ source, reviewed source commit S, C1/C2, external claims, artifact publication,
 result, and execution remain absent. Fresh source now implements the bounded
 six-read post-D6 descriptive derivation and the declared v1 preparation,
 runner, and official-callable coordinates. The entrypoints stop before
-publication or dispatch because neither a stage-17 result publisher nor a
-closed external chronology and execution-start authority exists. Future
-commit-B verification also requires byte-exact six-input rederivation and
-rejects schema-valid substitute outputs. Source completion remains unmet, S
-remains unselected, and no artifact or result has been generated. No `D7-OPS`,
-scientific, or library completion credit changes here.
+dispatch because no closed external chronology or execution-start authority
+exists. A separate internal source-only stage-17 primitive now owns its result
+bytes by rejoining exact commit A and source S and rerunning the six-input
+derivation; it accepts no caller result, path, or stage and can publish only at
+the fixed coordinate with fsync plus native no-replace rename. It remains
+uninvoked. Future commit-B verification requires the same byte-exact
+rederivation and rejects schema-valid substitute outputs. Source completion
+remains unmet, S remains unselected, and no artifact or result has been
+generated. No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means
 
