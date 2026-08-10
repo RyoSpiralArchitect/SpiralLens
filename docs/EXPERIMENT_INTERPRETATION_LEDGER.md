@@ -791,6 +791,42 @@ public API, supported-schema promotion, dependency, or library milestone. The
 builder is uninvoked on the declared v1 coordinates and VOY-V3 remains
 `frozen_not_run`.
 
+### 3.23 D7 v1 deterministic-input contract candidate
+
+**Decision source and timing**
+
+After choice-free C1/C2 candidate construction was implemented, review found
+that the frozen v1 contract fixes a supplier binding role and cross-record
+equality, but not a supplier identifier, callable, schema, or identity bytes.
+It likewise fixes two ordered seed slots in the approved seed-free design and
+seven embedded full-design binding roles, while the current seed inventory
+does not persist slot identifiers and the six non-inventory binding referents
+remain unspecified. Selecting any of those missing values inside an external
+chronology would therefore be caller laundering rather than verification.
+
+**Implemented boundary**
+
+One private builder accepts a repository context plus an existing in-memory
+source-closure candidate, rebuilds that candidate from the same exact clean
+`HEAD`, and requires byte-identical C1/C2 and source-member joins. It then
+rejoins only the already-declared deterministic surface: role
+`supplier-identity`; seed slots `confirmation-seed-slot-00` and
+`confirmation-seed-slot-01`; and the exact seven full-design field-to-role
+entries shared by the frozen protocol and record implementation. Its own
+source and the approved execution-design source must match their import
+origins, live bytes, Git blobs at S, and C1 members. The result is factory-only
+and in-memory.
+
+**Current boundary and claim delta**
+
+`none`. Structural contract observation is not supplier selection or identity
+authentication. Required seed count and slot order are observed source facts,
+not authorization to persist values. No supplier identifier, callable,
+identity bytes, binding bytes, seed, claim, inventory, full design, freeze,
+chronology, external store, publication, commit A/B, execution, result, or
+scientific evidence is created. S remains unreviewed and unselected, every
+authority axis remains false, and VOY-V3 remains `frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

@@ -4,6 +4,22 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 deterministic-input contract candidate
+
+- Added one internal, non-exported read-only candidate that rebuilds the
+  choice-free C1/C2 source candidate and rejoins the supplier-identity role,
+  exact two ordered confirmation seed slots, and seven embedded full-design
+  field-to-role entries across the frozen v1 protocol, record implementation,
+  and approved execution-design source.
+- The candidate intentionally contains no supplier identifier, callable,
+  identity or binding bytes, seed values, claim, inventory, full design, or
+  chronology. Observing count and slot order does not authorize their use in a
+  persisted record; the six non-inventory binding referents remain unresolved.
+- This adds no persisted or supported schema, protocol or route revision,
+  public API, dependency, console script, artifact, authority, library
+  maturity, or scientific claim. S remains unselected and VOY-V3 remains
+  `frozen_not_run`.
+
 ## 2026-08-10 — D7 v1 choice-free source-closure candidate builder
 
 - Added one internal, non-exported source-only builder for prospective C1/C2
