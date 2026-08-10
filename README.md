@@ -97,6 +97,15 @@ entire frozen v1 repository root must be absent in that asserted tree; this is
 only a current-tree observation, not artifact-chronology proof. The candidate
 neither reviews nor selects S and grants no persistence,
 materialization, execution, or scientific authority.
+A further private read-only candidate now rejoins the exact supplier-identity
+role, the two ordered confirmation seed-slot identifiers, and the seven
+embedded full-design field-to-role entries across the frozen v1 protocol,
+record implementation, and approved seed-free design source. It deliberately
+does not choose a supplier, define supplier identity bytes, authorize the
+two-seed cardinality, resolve any of the six non-inventory design bindings, or
+create a claim, inventory, design, store, or chronology. Those unresolved
+values require a later source-selected contract and independent verifier
+rederivation before any external chronology can begin.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

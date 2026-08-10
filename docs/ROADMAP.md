@@ -222,7 +222,16 @@ or select S. The entire frozen v1 repository root must be absent in that
 asserted tree, but this current-tree fact does not prove artifact chronology.
 Runtime-lock membership does not attest installed dependency or runtime
 conformity. Source completion remains unmet, S remains unselected, and no
-artifact or result has been generated.
+artifact or result has been generated. A later private source-only candidate
+now rebuilds that C1/C2 candidate and rejoins only the deterministic contract
+surface already available without choosing values: supplier role
+`supplier-identity`, ordered slots `confirmation-seed-slot-00` and
+`confirmation-seed-slot-01`, and the exact seven embedded full-design
+field-to-role entries. It returns no supplier identity, binding bytes, seed,
+claim, inventory, full design, or chronology. In particular, neither the
+two-seed cardinality nor any of the six non-inventory bindings is authorized
+for persistence until a later source-selected derivation and verifier close
+those currently unspecified values. VOY-V3 remains `frozen_not_run`.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means
