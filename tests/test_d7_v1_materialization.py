@@ -77,6 +77,24 @@ RESULT_PUBLICATION_REPOSITORY_PATH = (
 RESULT_PUBLICATION_MODULE_PATH = REPOSITORY.joinpath(
     *RESULT_PUBLICATION_REPOSITORY_PATH.split("/")
 )
+SOURCE_CLOSURE_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_source_closure.py"
+)
+SOURCE_CLOSURE_MODULE_PATH = REPOSITORY.joinpath(
+    *SOURCE_CLOSURE_REPOSITORY_PATH.split("/")
+)
+REPOSITORY_CONTEXT_REPOSITORY_PATH = "src/spirallens/_repository_context.py"
+CANONICAL_REPOSITORY_PATH = "src/spirallens/core/canonical.py"
+COMMON_REPOSITORY_PATH = "src/spirallens/qualification/common.py"
+FOUNDATION_SOURCE_PATHS = {
+    REPOSITORY_CONTEXT_REPOSITORY_PATH: REPOSITORY.joinpath(
+        *REPOSITORY_CONTEXT_REPOSITORY_PATH.split("/")
+    ),
+    CANONICAL_REPOSITORY_PATH: REPOSITORY.joinpath(
+        *CANONICAL_REPOSITORY_PATH.split("/")
+    ),
+    COMMON_REPOSITORY_PATH: REPOSITORY.joinpath(*COMMON_REPOSITORY_PATH.split("/")),
+}
 PROTOCOL_PATH = REPOSITORY / "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
 
@@ -130,38 +148,6 @@ def _metadata_binding(
         canonical_sha256=str(metadata["canonical_sha256"]),
         byte_count=int(metadata["byte_count"]),
     )
-
-
-def _source_members(
-    repository: Path,
-    source_commit: str,
-    paths: Sequence[str],
-) -> tuple[records.D7V1SourceMember, ...]:
-    members: list[records.D7V1SourceMember] = []
-    for repository_path in sorted(set(paths)):
-        line = _run(repository, "ls-tree", source_commit, "--", repository_path)
-        assert line, repository_path
-        mode = line.split(maxsplit=1)[0]
-        source = subprocess.run(
-            (
-                "git",
-                "-C",
-                str(repository),
-                "show",
-                f"{source_commit}:{repository_path}",
-            ),
-            check=True,
-            capture_output=True,
-        ).stdout
-        members.append(
-            records.D7V1SourceMember(
-                repository_path=repository_path,
-                git_mode=mode,
-                sha256=sha256_bytes(source),
-                byte_count=len(source),
-            )
-        )
-    return tuple(members)
 
 
 def _coordinate_paths(protocol: Mapping[str, object]) -> dict[str, str]:
@@ -415,6 +401,8 @@ def _build_case(
     result_present_at_source: bool = False,
     prior_introduction: str | None = None,
     source_base_commit: str | None = None,
+    isolated_clone: bool = False,
+    sparse_checkout: bool = True,
     mutate_source_member: Callable[
         [tuple[records.D7V1SourceMember, ...]],
         tuple[records.D7V1SourceMember, ...],
@@ -422,30 +410,32 @@ def _build_case(
     | None = None,
 ) -> _Case:
     repository = tmp_path / "repository"
+    clone_storage = ("--no-local",) if isolated_clone else ("--shared",)
     subprocess.run(
         (
             "git",
             "clone",
             "--quiet",
-            "--shared",
+            *clone_storage,
             "--no-checkout",
             str(REPOSITORY),
             str(repository),
         ),
         check=True,
     )
-    _run(repository, "sparse-checkout", "init", "--no-cone")
-    _run(
-        repository,
-        "sparse-checkout",
-        "set",
-        "--no-cone",
-        "/README.md",
-        "/protocols/*",
-        "/scripts/*",
-        "/src/spirallens/qualification/*",
-        "/experiments/qualification/d7_spectral_moment_confirmation_v1/*",
-    )
+    if sparse_checkout:
+        _run(repository, "sparse-checkout", "init", "--no-cone")
+        _run(
+            repository,
+            "sparse-checkout",
+            "set",
+            "--no-cone",
+            "/README.md",
+            "/protocols/*",
+            "/scripts/*",
+            "/src/spirallens/qualification/*",
+            "/experiments/qualification/d7_spectral_moment_confirmation_v1/*",
+        )
     _run(repository, "checkout", "--quiet", "HEAD")
     (repository / "experiments" / "qualification").mkdir(
         parents=True,
@@ -491,12 +481,19 @@ def _build_case(
     assert isinstance(required, list)
     source_closure_paths = [
         *map(str, required),
+        *FOUNDATION_SOURCE_PATHS,
         *DESCRIPTIVE_HELPER_REPOSITORY_PATHS,
         PRIVATE_PUBLICATION_REPOSITORY_PATH,
         RESULT_PUBLICATION_REPOSITORY_PATH,
+        SOURCE_CLOSURE_REPOSITORY_PATH,
     ]
     for repository_path in source_closure_paths:
         target = repository.joinpath(*repository_path.split("/"))
+        if repository_path in FOUNDATION_SOURCE_PATHS:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(FOUNDATION_SOURCE_PATHS[repository_path], target)
+            continue
         if repository_path == (
             "src/spirallens/qualification/confirmation_v1_materialization.py"
         ):
@@ -531,6 +528,11 @@ def _build_case(
             target.unlink(missing_ok=True)
             os.link(RESULT_PUBLICATION_MODULE_PATH, target)
             continue
+        if repository_path == SOURCE_CLOSURE_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(SOURCE_CLOSURE_MODULE_PATH, target)
+            continue
         if repository_path == ("protocols/d7_v1_pre_item23_materialization_v0_1.json"):
             _write(repository, repository_path, PROTOCOL_PATH.read_bytes())
             continue
@@ -555,11 +557,13 @@ def _build_case(
     )
     source_commit = _run(repository, "rev-parse", "HEAD")
 
-    source_paths = [
-        *source_closure_paths,
-        str(protocol["route_binding"]["repository_path"]),
-    ]
-    members = _source_members(repository, source_commit, source_paths)
+    context = RepositoryContext(root=repository.resolve())
+    loaded_protocol = materialization._load_protocol_source(PROTOCOL_PATH.read_bytes())
+    members = materialization._enumerate_choice_free_d7_v1_source_members(
+        context,
+        loaded_protocol,
+        source_commit,
+    )
     if mutate_source_member is not None:
         members = mutate_source_member(members)
     records_by_role = _build_records(
@@ -590,7 +594,7 @@ def _build_case(
     }
     return _Case(
         repository=repository,
-        context=RepositoryContext(root=repository.resolve()),
+        context=context,
         source_commit=source_commit,
         stage_root=stage_root,
         protocol=protocol,

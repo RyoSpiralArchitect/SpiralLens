@@ -211,9 +211,19 @@ rederivation and rejects schema-valid substitute outputs. Before S selection,
 the descriptive implementation was split from one 4,699-line module into a
 287-line facade and eight bounded private work packages. Its canonical result
 bytes are unchanged, and every helper is now joined independently to its import
-origin, live source, source-S blob, and C1 member tuple. Source completion
-remains unmet, S remains unselected, and no artifact or result has been
-generated. No `D7-OPS`, scientific, or library completion credit changes here.
+origin, live source, source-S blob, and C1 member tuple. A private source-only
+builder now derives an in-memory C1/C2 candidate from an asserted clean current
+`HEAD` without accepting caller source paths, members, bytes, record IDs, or
+callbacks. Its exact Git inventory contains every tracked ordinary
+`src/spirallens` blob plus the project metadata, declared runtime lock, frozen
+protocol and route, and required v1 scripts. It canonically reloads and rejoins
+both records and repeats the clean-HEAD gate before return. This does not review
+or select S. The entire frozen v1 repository root must be absent in that
+asserted tree, but this current-tree fact does not prove artifact chronology.
+Runtime-lock membership does not attest installed dependency or runtime
+conformity. Source completion remains unmet, S remains unselected, and no
+artifact or result has been generated.
+No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means
 

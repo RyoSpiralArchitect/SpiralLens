@@ -753,6 +753,44 @@ receipt, artifact, result, commit A/B, execution, scientific evidence, public
 API, supported-schema promotion, dependency, or library milestone. VOY-V3
 remains `frozen_not_run`.
 
+### 3.22 D7 v1 choice-free source-closure candidate builder
+
+**Decision source and timing**
+
+The frozen chronology requires C1 and C2 immediately after a reviewed source
+commit, but the record factories alone accept caller-selected member lists and
+record identifiers. Before selecting S, the source-only implementation now
+closes that construction choice without publishing either record or changing
+the frozen protocol.
+
+**Implemented boundary**
+
+One private builder accepts a repository context and a full source commit only
+as an assertion of the exact clean current `HEAD`. Before and after
+construction it requires that identity and a completely clean staged, tracked,
+and untracked status. It derives the member set exclusively from the Git tree:
+all tracked ordinary blobs below `src/spirallens`, `pyproject.toml`, the
+declared D7 runtime lock, the frozen materialization protocol and navigation
+route, and the required v1 scripts. It accepts no caller path, member, bytes,
+record ID, stage, writer, or callback. Fixed non-attesting record labels feed
+the existing C1/C2 factories; their canonical bytes are reloaded and the exact
+choice-free inventory is rejoined before an in-memory candidate is returned.
+Legacy-module and runtime-lock membership are inventory facts only and grant
+neither reuse permission nor installed-runtime conformity. The joined verifier
+also requires the entire frozen v1 repository root to be absent in the asserted
+`HEAD` tree. That is a current-tree observation, not unique-introduction or
+artifact-chronology verification; those later Git gates remain false.
+
+**Current boundary and claim delta**
+
+`none`. The candidate does not prove repository review, select S, publish C1
+or C2, authenticate the installed runtime, or establish runtime dependency
+closure. It creates no external store, claim, supplier invocation, seed,
+attempt, receipt, artifact, result, commit A/B, execution, scientific evidence,
+public API, supported-schema promotion, dependency, or library milestone. The
+builder is uninvoked on the declared v1 coordinates and VOY-V3 remains
+`frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

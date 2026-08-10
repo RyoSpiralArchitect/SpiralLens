@@ -4,6 +4,24 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-10 — D7 v1 choice-free source-closure candidate builder
+
+- Added one internal, non-exported source-only builder for prospective C1/C2
+  construction. A caller supplies no member list, bytes, record identifier,
+  path, writer, or callback; the full commit argument is only an assertion of
+  the exact clean current `HEAD`, checked before and after construction.
+- The exact inventory is derived from ordinary Git blobs below
+  `src/spirallens` plus `pyproject.toml`, the declared D7 runtime lock, frozen
+  protocol and route, and required v1 scripts. Existing C1/C2 factories are
+  canonically reloaded and rejoined against that complete set.
+- The entire frozen v1 repository root must be absent in the asserted current
+  tree. This does not attest unique introduction history or artifact chronology;
+  those facts remain false until the later commit verifiers.
+- This remains an in-memory candidate. Runtime-lock membership does not attest
+  installed-runtime conformity, S is not reviewed or selected, and no schema,
+  persisted C1/C2 instance, artifact, authority, public API, dependency,
+  console script, library maturity, or VOY-V3 status changed.
+
 ## 2026-08-10 — D7 v1 descriptive private work-package split
 
 - Replaced the 4,699-line descriptive implementation module with a 287-line

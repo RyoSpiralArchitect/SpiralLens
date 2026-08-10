@@ -408,7 +408,10 @@ def test_work_packages_are_c1_bound_and_fail_closed_on_origin_or_source_drift(
             tmp_path / "omitted",
             mutate_source_member=omit_first_helper,
         )
-        with pytest.raises(QualificationContractError, match="C1 omits required"):
+        with pytest.raises(
+            QualificationContractError,
+            match="C1 source members differ from the exact choice-free Git tree",
+        ):
             helpers._load_stage(omitted_case)
     finally:
         shutil.rmtree(tmp_path, ignore_errors=True)
