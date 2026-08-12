@@ -9,6 +9,23 @@ a separately versioned and reviewed `SubjectProtocolManifest` that follows the
 same capture discipline. Neither this 70M protocol nor the model-family intent
 authorizes that future preparation or run.
 
+A private source-only identity-acquisition contract now defines how a later
+review may record bounded provider model metadata and exact `config.json`
+bytes for Pythia-160M. The contract source itself performs no request and ships
+no receipt instance. Its unregistered script has only been exercised through
+blocked preflight and synthetic tests in the change that introduces it; a later
+invocation must use a separately reviewed exact source commit. Equality with a
+local `origin/main` tracking ref alone is not remote-current or review proof.
+Any resulting four-file directory remains `review_pending`,
+with provider sibling metadata unrecomputed, weights and tokenizer unread, and
+all preparation, model-access, execution, capture, scientific, `SCI-S1`, and
+`SCI-S2` authority closed.
+The later one-shot acquisition reserves and fsyncs an empty private stage before
+its first request; any failure after successful reservation retains the stage
+and permits no cleanup, resume, or retry. Its no-replace publication assumes a
+quiescent, honest local checkout and does not claim resistance to a hostile
+same-user rename race.
+
 The current 70M public-example smoke validates only exact offline model-file
 resolution, bounded capture, storage, checksum, manifest reload, and receipt
 plumbing. Its frozen protocol allows only atlas integrity validation.

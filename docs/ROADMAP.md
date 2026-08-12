@@ -1668,6 +1668,19 @@ The separate private Pythia-160M pre-observation assessor does not register a
 160M engineering profile or reuse the 70M lane. It ships no declaration
 instance, reads no subject or model value, and can report only a statically
 computed, externally blocked assessment with Level-0/no-delta boundaries.
+One later source-only increment now defines a private provider-metadata and
+`config.json` identity-acquisition contract. Its live acquisition never passes
+preflight in that increment: no provider request or persisted receipt exists.
+A separately reviewed follow-up may run the exact selected source commit to
+produce review-pending evidence, but it may not read
+weights, tokenizer bytes, cache entries, model values, or activations; register
+Pythia-160M; satisfy the pre-observation assessor; advance `SCI-S1`; unblock
+`SCI-S2`; or grant preparation, execution, capture, or scientific authority.
+That later operation must reserve its durable private stage before the first
+provider request and retain it on every failure after successful reservation,
+with cleanup, resume, and retry all unauthorized. Publication is an honest,
+quiescent-local guarantee: it does not claim security against a hostile
+same-user process racing the final native directory rename.
 A separate deterministic offline fake-NeoX check now hardens selected-position
 snapshot ownership and exact per-module train/eval-flag restoration in the
 current `PythiaAdapter`. It verifies zero-intervention and hook mechanics only
