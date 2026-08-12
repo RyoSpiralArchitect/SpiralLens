@@ -112,6 +112,7 @@ def case(tmp_path_factory: pytest.TempPathFactory) -> Iterator[object]:
         value.repository,
         "commit",
         "--quiet",
+        "--allow-empty",
         "-m",
         "test pre-item23 orchestrator source S",
     )
