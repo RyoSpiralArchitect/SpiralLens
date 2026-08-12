@@ -21,6 +21,8 @@ import numpy as np
 from .engineering_protocol import (
     LoadedPublicExamplePlumbingProtocol,
     PublicExamplePlumbingProtocolError,
+    _UnsupportedEngineeringModelProfileError,
+    _require_engineering_model_profile,
     validate_engineering_request_binding,
 )
 from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION
@@ -422,7 +424,12 @@ def _validate_receipt_payload(value: Mapping[str, object]) -> None:
         },
         label="model",
     )
-    _nonempty_string(model["model_id"], label="model.model_id")
+    try:
+        _require_engineering_model_profile(model["model_id"])
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingReceiptError(
+            "receipt model is not registered for public-example engineering"
+        ) from error
     requested_revision = _nonempty_string(
         model["requested_revision"],
         label="model.requested_revision",
@@ -515,10 +522,7 @@ def _validate_receipt_payload(value: Mapping[str, object]) -> None:
     ):
         item = _mapping(root[field], label=field)
         exact = set(item) == set(expected) and all(
-            (
-                type(item[name]) is bool
-                and item[name] is expected_value
-            )
+            (type(item[name]) is bool and item[name] is expected_value)
             if type(expected_value) is bool
             else (
                 type(item[name]) is type(expected_value)
@@ -647,12 +651,10 @@ def _receipt_from_validated_atlas_manifest(
     )
     if (
         embedded_binding.get("source_sha256") != binding.source_sha256
-        or embedded_binding.get("canonical_sha256")
-        != binding.canonical_sha256
+        or embedded_binding.get("canonical_sha256") != binding.canonical_sha256
         or embedded_protocol.canonical_sha256 != binding.canonical_sha256
         or embedded_protocol.capture.output_id != binding.output_id
-        or embedded_protocol.token_selection.token_ids
-        != binding.token_ids
+        or embedded_protocol.token_selection.token_ids != binding.token_ids
         or embedded_protocol.model.model_id != binding.model_id
         or embedded_protocol.model.revision != binding.model_revision
         or dict(embedded_protocol.model.files).get("config.json")
@@ -725,6 +727,12 @@ def _receipt_from_validated_atlas_manifest(
             "atlas request capture fingerprint differs from its manifest"
         )
 
+    try:
+        profile = _require_engineering_model_profile(binding.model_id)
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingReceiptError(
+            "protocol model is not registered for public-example engineering"
+        ) from error
     implementation = _mapping(
         capture.get("capture_implementation"),
         label="atlas capture implementation",
@@ -738,19 +746,11 @@ def _receipt_from_validated_atlas_manifest(
             "accelerator_to_cpu_copy": "synchronous",
             "activation_dtype": "float32",
         }
-        or layout
-        != [
-            {
-                "device": "cpu",
-                "dtype": "float32",
-                "parameter_tensors": 76,
-                "parameter_values": 70_426_624,
-            }
-        ]
+        or layout != profile.effective_parameter_layout
     ):
         raise PublicExamplePlumbingReceiptError(
-            "atlas capture is not the exact Pythia-70M CPU/float32 "
-            "production implementation"
+            f"atlas capture is not the exact {profile.display_name} "
+            "CPU/float32 production implementation"
         )
 
     runtime = {
@@ -794,9 +794,7 @@ def _receipt_from_validated_atlas_manifest(
             "repository_path": (
                 embedded_protocol.source.implementation_repository_path
             ),
-            "module_sha256": (
-                embedded_protocol.source.implementation_module_sha256
-            ),
+            "module_sha256": (embedded_protocol.source.implementation_module_sha256),
         },
         "manifest": {
             "output_id": binding.output_id,
@@ -841,9 +839,7 @@ def _build_public_example_plumbing_receipt(
         loaded_protocol,
         LoadedPublicExamplePlumbingProtocol,
     ):
-        raise TypeError(
-            "loaded_protocol must be a LoadedPublicExamplePlumbingProtocol"
-        )
+        raise TypeError("loaded_protocol must be a LoadedPublicExamplePlumbingProtocol")
     protocol = loaded_protocol.protocol
     root = Path(atlas_output_dir).resolve()
     if root.name != protocol.capture.output_id:
@@ -883,9 +879,7 @@ def _build_public_example_plumbing_receipt(
         model_id=protocol.model.model_id,
         model_revision=protocol.model.revision,
         config_blob_sha256=dict(protocol.model.files)["config.json"],
-        model_blob_sha256=dict(protocol.model.files)[
-            "model.safetensors"
-        ],
+        model_blob_sha256=dict(protocol.model.files)["model.safetensors"],
     )
     return _receipt_from_validated_atlas_manifest(
         manifest,

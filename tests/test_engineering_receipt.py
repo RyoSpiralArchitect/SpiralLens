@@ -147,12 +147,8 @@ def _manifest() -> dict[str, object]:
             "semantic_unit": False,
             "context_bank_binding": {
                 "bank": {
-                    "source_sha256": (
-                        protocol.context_bank.source_sha256
-                    ),
-                    "canonical_sha256": (
-                        protocol.context_bank.canonical_sha256
-                    ),
+                    "source_sha256": (protocol.context_bank.source_sha256),
+                    "canonical_sha256": (protocol.context_bank.canonical_sha256),
                     "content": {"claim_eligible": False},
                 },
                 "selected_context": {
@@ -160,13 +156,9 @@ def _manifest() -> dict[str, object]:
                     "role": "example",
                 },
             },
-            "public_example_plumbing_protocol_binding": (
-                engineering_binding
-            ),
+            "public_example_plumbing_protocol_binding": (engineering_binding),
             "public_example_plumbing_protocol_binding_sha256": (
-                public_example_plumbing_protocol_binding_sha256(
-                    engineering_binding
-                )
+                public_example_plumbing_protocol_binding_sha256(engineering_binding)
             ),
         },
         "model": {
@@ -290,6 +282,14 @@ def test_receipt_has_exact_fields_and_relative_output_identity() -> None:
     with pytest.raises(
         PublicExamplePlumbingReceiptError,
         match="fields differ",
+    ):
+        PublicExamplePlumbingReceipt.from_payload(payload)
+
+    payload = _receipt().to_dict()
+    payload["model"]["model_id"] = "EleutherAI/pythia-160m"
+    with pytest.raises(
+        PublicExamplePlumbingReceiptError,
+        match="not registered",
     ):
         PublicExamplePlumbingReceipt.from_payload(payload)
 

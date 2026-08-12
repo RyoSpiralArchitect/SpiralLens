@@ -4,6 +4,23 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private Pythia-70M engineering model profile
+
+- Consolidated the existing exact Pythia-70M public-example identity,
+  dimensions, parameter count, tensor count, and model-file set in one private,
+  immutable model-profile seam inside the existing protocol implementation,
+  shared by the protocol, runner, and receipt. No new executable source module
+  or source-trust root is introduced; Python runtime and bytecode-cache
+  authentication remain outside this refactor and are not claimed.
+- The registry still contains only Pythia-70M. Pythia-160M remains
+  unregistered and is rejected before model-file or ContextBank resolution,
+  model loading, or output creation. This refactor does not create a readiness
+  artifact, authorize model access, or begin a Pythia-160M run.
+- The frozen Pythia-70M protocol and receipt bytes, public API, CLI, schemas,
+  dependencies, capture implementation, authorizations, and `not_run` states
+  are unchanged. `SCI-S1` remains in progress, `SCI-S2` remains blocked, and
+  claim delta is `none`.
+
 ## 2026-08-12 — D7 v1 private referent-document work-package split
 
 - Split the 2,108-line private full-design-referent module into a 721-line pure

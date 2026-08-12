@@ -470,3 +470,31 @@ def test_pr5_frozen_engineering_artifact_bytes_are_unchanged() -> None:
     assert {
         path: hashlib.sha256(path.read_bytes()).hexdigest() for path in expected
     } == expected
+
+    from spirallens.atlas.engineering_protocol import (
+        load_public_example_plumbing_protocol,
+    )
+    from spirallens.atlas.engineering_receipt import (
+        load_public_example_plumbing_receipt,
+    )
+
+    loaded_protocol = load_public_example_plumbing_protocol(next(iter(expected)))
+    loaded_receipt = load_public_example_plumbing_receipt(
+        repository
+        / "experiments"
+        / "pythia"
+        / "receipts"
+        / "pythia70_public_example_plumbing_v0_1.json",
+        expected_source_sha256=(
+            "4ab51c1e01992dc63f9bea18a7f53e00293a0ec11617f4970abf2a400723ce82"
+        ),
+        expected_canonical_sha256=(
+            "4ab51c1e01992dc63f9bea18a7f53e00293a0ec11617f4970abf2a400723ce82"
+        ),
+    )
+    assert loaded_protocol.canonical_sha256 == (
+        "968ad990e7c80ddae3cadcf71c5b39aa37f7b5cad88ea473df094cedb6b633d6"
+    )
+    assert loaded_receipt.to_dict()["protocol"]["canonical_sha256"] == (
+        loaded_protocol.canonical_sha256
+    )
