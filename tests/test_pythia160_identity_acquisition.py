@@ -1391,6 +1391,94 @@ def test_main_stages_and_atomically_publishes_exact_four_files(
     assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in output.iterdir())
 
 
+def test_main_passes_one_tls_context_to_all_three_explicit_https_openers(
+    script_namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_fetch = script_namespace["_fetch_bytes"]
+    sources, _events = _configure_fake_main(script_namespace, monkeypatch, tmp_path)
+    stage = script_namespace["_STAGE_DIRECTORY"]
+    output = script_namespace["_OUTPUT_DIRECTORY"]
+    tls_context = object()
+    opened_contexts: list[object] = []
+
+    class Response:
+        status = 200
+
+        def __init__(self, url: str, source: bytes) -> None:
+            self._url = url
+            self._source = source
+            self.headers = {
+                "Content-Encoding": "identity",
+                "Content-Length": str(len(source)),
+            }
+
+        def __enter__(self) -> "Response":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def geturl(self) -> str:
+            return self._url
+
+        def read(self, _maximum: int) -> bytes:
+            return self._source
+
+    class Opener:
+        def open(self, request: object, *, timeout: int) -> Response:
+            assert timeout == script_namespace["_TIMEOUT_SECONDS"]
+            url = request.full_url
+            if "/revision/" in url:
+                source = sources["exact"]
+            elif url.endswith("/config.json"):
+                source = sources["config"]
+            else:
+                source = sources["default"]
+            return Response(url, source)
+
+    def build(*handlers: object) -> Opener:
+        assert len(handlers) == 3
+        assert type(handlers[0]) is script_namespace["ProxyHandler"]
+        assert handlers[0].proxies == {}
+        assert type(handlers[1]) is script_namespace["HTTPSHandler"]
+        assert type(handlers[2]) is script_namespace["_PinnedRedirectHandler"]
+        opened_contexts.append(handlers[1]._context)
+        return Opener()
+
+    def fake_publish(owned: object, _expected: dict[str, bytes]) -> None:
+        os.rename(
+            stage.name,
+            output.name,
+            src_dir_fd=owned.parent_fd,
+            dst_dir_fd=owned.parent_fd,
+        )
+        os.fsync(owned.parent_fd)
+
+    monkeypatch.setitem(
+        script_namespace, "_build_fixed_tls_context", lambda: tls_context
+    )
+    monkeypatch.setitem(
+        script_namespace,
+        "_require_usable_tls_context",
+        lambda context: (
+            context is tls_context
+            or (_ for _ in ()).throw(AssertionError("TLS context identity changed"))
+        ),
+    )
+    monkeypatch.setitem(script_namespace, "build_opener", build)
+    monkeypatch.setitem(script_namespace, "_fetch_bytes", real_fetch)
+    monkeypatch.setitem(
+        script_namespace, "_native_publish_stage_no_replace", fake_publish
+    )
+
+    assert script_namespace["main"]() == 0
+    assert opened_contexts == [tls_context, tls_context, tls_context]
+    assert output.is_dir()
+    assert not stage.exists()
+
+
 def test_provider_failure_retains_durable_empty_stage_and_never_writes(
     script_namespace: dict[str, object],
     monkeypatch: pytest.MonkeyPatch,
