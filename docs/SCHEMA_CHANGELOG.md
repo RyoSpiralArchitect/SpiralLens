@@ -4,6 +4,30 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private D7 v1 pre-item-23 chronology source
+
+- Added one internal, non-exported, uninvoked operation that accepts only a
+  repository and asserted exact source commit, derives every record and fixed
+  coordinate internally, makes the external claim durable before one captured
+  fixed-supplier entry, makes the attempt durable, promotes and reverifies the
+  exact two-file external store without replacement, forms the chronology
+  receipt last, passes the joined hard gate, and delegates the exact nine-file
+  repository publication to the existing private publisher. Failure never
+  authorizes cleanup, resume, or retry.
+- Extended that private publisher only with a sealed, factory-produced held-FD
+  capability for the exact frozen external paths. It accepts no arbitrary
+  reader, reauthenticates the full parent/store/child/file identity through all
+  joined gates, and lets composite failures preserve facts for both namespaces.
+- The preparation entrypoint remains deliberately unwired and fail-closed. The
+  operation's commit argument does not attest independent source review,
+  source selection, runtime/dependency closure, or invocation authority.
+- No instance was created and no schema, protocol, route, structural record,
+  public API, dependency, or library milestone changed. No C1/C2, claim,
+  supplier invocation, seed, attempt, store, receipt, repository publication,
+  commit A/B, execution, result, or scientific evidence exists. Claim delta is
+  `none`; S remains unreviewed and unselected, VOY-V3 remains
+  `frozen_not_run`, and D7/D8 remain `not_run`.
+
 ## 2026-08-13 — Private Pythia-70M engineering model profile
 
 - Consolidated the existing exact Pythia-70M public-example identity,

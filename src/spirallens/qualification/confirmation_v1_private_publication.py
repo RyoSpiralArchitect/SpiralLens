@@ -1,9 +1,10 @@
 """Private-stage, no-replace repository publication for the D7 v1 successor.
 
 Importing this module performs no I/O.  The one high-level operation accepts
-only the closed nine-record byte set, derives every path from the frozen v1
-protocol, owns its stage from creation through publication, and never invokes a
-supplier, model, subject, result producer, or official runner.
+the closed nine-record byte set and, only for the closed orchestration owner, a
+publisher-sealed held-descriptor capability.  It derives every path from the
+frozen v1 protocol, owns its stage from creation through publication, and never
+invokes a supplier, model, subject, result producer, or official runner.
 
 Once a stage directory has been created, every failure is retained in place.
 There is deliberately no cleanup, resume, retry, overwrite, or portable rename
@@ -38,6 +39,7 @@ _MODULE_PATH = "src/spirallens/qualification/confirmation_v1_private_publication
 _STAGE_MARKER = ".private-stage."
 _NativeRename = Callable[[int, str, str], None]
 _StatIdentity = tuple[int, int, int]
+_ANCHORED_EXTERNAL_FACTORY_TOKEN = object()
 
 
 class D7V1PrivatePublicationFailure(QualificationContractError):
@@ -136,6 +138,316 @@ class D7V1PrivatePublicationReceipt:
             raise QualificationContractError(
                 "publication receipt facts must retain their closed boundary"
             )
+
+
+@dataclass(frozen=True, slots=True)
+class _D7V1AnchoredExternalEvidence:
+    """Sealed held-descriptor evidence for the frozen external two-file tree."""
+
+    parent_fd: int
+    root_fd: int
+    store_path: Path
+    root_stat: tuple[int, int, int]
+    source_by_path: Mapping[Path, bytes]
+    directory_fd_by_path: Mapping[Path, int]
+    directory_identity_by_path: Mapping[Path, _StatIdentity]
+    directory_stat_by_path: Mapping[Path, tuple[int, int, int]]
+    file_fd_by_path: Mapping[Path, int]
+    file_identity_by_path: Mapping[Path, _StatIdentity]
+    file_stat_by_path: Mapping[Path, tuple[int, int]]
+    _factory_token: object
+
+    def __post_init__(self) -> None:
+        if self._factory_token is not _ANCHORED_EXTERNAL_FACTORY_TOKEN:
+            raise QualificationContractError(
+                "anchored external evidence must be factory-produced"
+            )
+        if type(self.parent_fd) is not int or type(self.root_fd) is not int:
+            raise TypeError("anchored external descriptors must be plain integers")
+        if not isinstance(self.store_path, Path) or not self.store_path.is_absolute():
+            raise TypeError("anchored external store_path must be absolute")
+        sources = dict(self.source_by_path)
+        directory_descriptors = dict(self.directory_fd_by_path)
+        directory_identities = dict(self.directory_identity_by_path)
+        directory_snapshots = dict(self.directory_stat_by_path)
+        descriptors = dict(self.file_fd_by_path)
+        identities = dict(self.file_identity_by_path)
+        snapshots = dict(self.file_stat_by_path)
+        if (
+            not sources
+            or set(sources) != set(descriptors)
+            or set(sources) != set(identities)
+            or set(sources) != set(snapshots)
+            or not directory_descriptors
+            or set(directory_descriptors) != set(directory_identities)
+            or set(directory_descriptors) != set(directory_snapshots)
+            or any(
+                not isinstance(path, Path)
+                or not path.is_absolute()
+                or type(source) is not bytes
+                or not source
+                or type(descriptors[path]) is not int
+                for path, source in sources.items()
+            )
+        ):
+            raise QualificationContractError(
+                "anchored external evidence path set is not closed"
+            )
+        object.__setattr__(self, "source_by_path", MappingProxyType(sources))
+        object.__setattr__(
+            self,
+            "directory_fd_by_path",
+            MappingProxyType(directory_descriptors),
+        )
+        object.__setattr__(
+            self,
+            "directory_identity_by_path",
+            MappingProxyType(directory_identities),
+        )
+        object.__setattr__(
+            self,
+            "directory_stat_by_path",
+            MappingProxyType(directory_snapshots),
+        )
+        object.__setattr__(self, "file_fd_by_path", MappingProxyType(descriptors))
+        object.__setattr__(self, "file_identity_by_path", MappingProxyType(identities))
+        object.__setattr__(self, "file_stat_by_path", MappingProxyType(snapshots))
+
+    def _open_live_parent(self) -> int:
+        flags = _directory_open_flags()
+        descriptor = os.open("/", flags)
+        try:
+            for part in self.store_path.parent.parts[1:]:
+                leaf = _leaf(part, label="external store parent component")
+                child = os.open(leaf, flags, dir_fd=descriptor)
+                os.close(descriptor)
+                descriptor = child
+            return descriptor
+        except BaseException:
+            _close_quietly(descriptor)
+            raise
+
+    def _require_live_store(self) -> None:
+        live_parent_fd = self._open_live_parent()
+        try:
+            if _stat_identity(os.fstat(live_parent_fd)) != _stat_identity(
+                os.fstat(self.parent_fd)
+            ):
+                raise QualificationContractError(
+                    "live external parent differs from anchored evidence"
+                )
+            store_entry = os.stat(
+                self.store_path.name,
+                dir_fd=live_parent_fd,
+                follow_symlinks=False,
+            )
+            if _stat_identity(store_entry) != _stat_identity(os.fstat(self.root_fd)):
+                raise QualificationContractError(
+                    "live external store differs from anchored evidence"
+                )
+            root_stat = os.fstat(self.root_fd)
+            if (
+                not stat.S_ISDIR(root_stat.st_mode)
+                or (
+                    stat.S_IMODE(root_stat.st_mode),
+                    root_stat.st_nlink,
+                    root_stat.st_mtime_ns,
+                )
+                != self.root_stat
+            ):
+                raise QualificationContractError(
+                    "anchored external store root mode differs"
+                )
+            expected_directories = {
+                path.relative_to(self.store_path).parts[0]
+                for path in self.source_by_path
+            }
+            expected_directory_paths = {
+                self.store_path / directory for directory in expected_directories
+            }
+            if set(self.directory_fd_by_path) != expected_directory_paths:
+                raise QualificationContractError(
+                    "anchored external directory descriptor set differs"
+                )
+            if set(os.listdir(self.root_fd)) != expected_directories:
+                raise QualificationContractError(
+                    "anchored external store root entries differ"
+                )
+            for path in self.source_by_path:
+                relative = path.relative_to(self.store_path)
+                if len(relative.parts) != 2:
+                    raise QualificationContractError(
+                        "anchored external evidence path depth differs"
+                    )
+                directory_leaf, file_leaf = relative.parts
+                directory_fd = os.open(
+                    directory_leaf,
+                    _directory_open_flags(),
+                    dir_fd=self.root_fd,
+                )
+                try:
+                    directory_stat = os.fstat(directory_fd)
+                    held_directory_fd = self.directory_fd_by_path[
+                        self.store_path / directory_leaf
+                    ]
+                    held_directory_stat = os.fstat(held_directory_fd)
+                    if (
+                        stat.S_IMODE(directory_stat.st_mode) != 0o700
+                        or _stat_identity(directory_stat)
+                        != self.directory_identity_by_path[
+                            self.store_path / directory_leaf
+                        ]
+                        or _stat_identity(held_directory_stat)
+                        != self.directory_identity_by_path[
+                            self.store_path / directory_leaf
+                        ]
+                        or (
+                            stat.S_IMODE(directory_stat.st_mode),
+                            directory_stat.st_nlink,
+                            directory_stat.st_mtime_ns,
+                        )
+                        != self.directory_stat_by_path[self.store_path / directory_leaf]
+                        or (
+                            stat.S_IMODE(held_directory_stat.st_mode),
+                            held_directory_stat.st_nlink,
+                            held_directory_stat.st_mtime_ns,
+                        )
+                        != self.directory_stat_by_path[self.store_path / directory_leaf]
+                        or set(os.listdir(directory_fd)) != {file_leaf}
+                    ):
+                        raise QualificationContractError(
+                            "anchored external evidence directory differs"
+                        )
+                    leaf_stat = os.stat(
+                        file_leaf,
+                        dir_fd=directory_fd,
+                        follow_symlinks=False,
+                    )
+                    descriptor_stat = os.fstat(self.file_fd_by_path[path])
+                    if (
+                        _stat_identity(leaf_stat) != self.file_identity_by_path[path]
+                        or _stat_identity(descriptor_stat)
+                        != self.file_identity_by_path[path]
+                        or not stat.S_ISREG(leaf_stat.st_mode)
+                        or stat.S_IMODE(leaf_stat.st_mode) != 0o600
+                        or leaf_stat.st_nlink != 1
+                        or (leaf_stat.st_size, leaf_stat.st_mtime_ns)
+                        != self.file_stat_by_path[path]
+                        or (descriptor_stat.st_size, descriptor_stat.st_mtime_ns)
+                        != self.file_stat_by_path[path]
+                    ):
+                        raise QualificationContractError(
+                            "live external evidence file differs from held descriptor"
+                        )
+                finally:
+                    _close_quietly(directory_fd)
+        finally:
+            _close_quietly(live_parent_fd)
+
+    def read(self, path: Path, maximum_bytes: int) -> bytes:
+        if type(maximum_bytes) is not int or maximum_bytes < 1:
+            raise QualificationContractError(
+                "anchored external evidence byte cap is invalid"
+            )
+        try:
+            expected = self.source_by_path[path]
+            descriptor = self.file_fd_by_path[path]
+            identity = self.file_identity_by_path[path]
+        except KeyError as error:
+            raise QualificationContractError(
+                "anchored external evidence received an undeclared path"
+            ) from error
+        self._require_live_store()
+        observed = os.fstat(descriptor)
+        if _stat_identity(observed) != identity:
+            raise QualificationContractError(
+                "anchored external evidence file identity differs"
+            )
+        source = _read_file_descriptor(
+            descriptor,
+            maximum_bytes=maximum_bytes,
+        )
+        if source != expected:
+            raise QualificationContractError(
+                "anchored external evidence file bytes differ"
+            )
+        self._require_live_store()
+        return source
+
+
+def _build_d7_v1_anchored_external_evidence(
+    repository: RepositoryContext,
+    *,
+    parent_fd: int,
+    root_fd: int,
+    directory_fd_by_path: Mapping[Path, int],
+    file_fd_by_path: Mapping[Path, int],
+    source_by_path: Mapping[Path, bytes],
+) -> _D7V1AnchoredExternalEvidence:
+    """Seal exact frozen external paths and already-owned file descriptors."""
+
+    if not isinstance(repository, RepositoryContext):
+        raise TypeError("repository must be RepositoryContext")
+    protocol = verification._load_d7_v1_materialization_protocol(repository)
+    claim_path, attempt_path = verification._expected_external_paths(protocol)
+    _route_source, route = verification._route_source(repository, protocol)
+    store_path, _staging, _runner, _callable = verification._expected_route_coordinates(
+        route
+    )
+    expected_paths = {claim_path, attempt_path}
+    sources = dict(source_by_path)
+    directory_descriptors = dict(directory_fd_by_path)
+    descriptors = dict(file_fd_by_path)
+    if set(sources) != expected_paths or set(descriptors) != expected_paths:
+        raise QualificationContractError(
+            "anchored external evidence differs from exact frozen paths"
+        )
+    expected_directory_paths = {path.parent for path in expected_paths}
+    if set(directory_descriptors) != expected_directory_paths:
+        raise QualificationContractError(
+            "anchored external directory descriptors differ from frozen paths"
+        )
+    directory_identities = {
+        path: _stat_identity(os.fstat(descriptor))
+        for path, descriptor in directory_descriptors.items()
+    }
+    directory_observed = {
+        path: os.fstat(descriptor) for path, descriptor in directory_descriptors.items()
+    }
+    directory_snapshots = {
+        path: (stat.S_IMODE(value.st_mode), value.st_nlink, value.st_mtime_ns)
+        for path, value in directory_observed.items()
+    }
+    root_observed = os.fstat(root_fd)
+    observed = {path: os.fstat(descriptors[path]) for path in expected_paths}
+    identities = {path: _stat_identity(value) for path, value in observed.items()}
+    snapshots = {
+        path: (value.st_size, value.st_mtime_ns) for path, value in observed.items()
+    }
+    result = _D7V1AnchoredExternalEvidence(
+        parent_fd=parent_fd,
+        root_fd=root_fd,
+        store_path=store_path,
+        root_stat=(
+            stat.S_IMODE(root_observed.st_mode),
+            root_observed.st_nlink,
+            root_observed.st_mtime_ns,
+        ),
+        source_by_path=sources,
+        directory_fd_by_path=directory_descriptors,
+        directory_identity_by_path=directory_identities,
+        directory_stat_by_path=directory_snapshots,
+        file_fd_by_path=descriptors,
+        file_identity_by_path=identities,
+        file_stat_by_path=snapshots,
+        _factory_token=_ANCHORED_EXTERNAL_FACTORY_TOKEN,
+    )
+    for path, source in sources.items():
+        if result.read(path, records.D7_V1_DEFAULT_MAX_RECORD_BYTES) != source:
+            raise QualificationContractError(
+                "anchored external evidence factory reload differs"
+            )
+    return result
 
 
 @dataclass(slots=True)
@@ -715,12 +1027,17 @@ def _publish_d7_v1_pre_item23_records_no_replace(
     sources_by_role: Mapping[str, bytes],
     *,
     expected_receipt_sha256: str,
+    _anchored_external_evidence: _D7V1AnchoredExternalEvidence | None = None,
 ) -> D7V1PrivatePublicationReceipt:
     """Own, validate, and exclusively publish the exact nine-record v1 tree.
 
-    This function has no caller-controlled stage or destination.  Any failure
-    after the private stage is created leaves that stage in place and rejects
-    retry and cleanup for the same identity.
+    This function has no caller-controlled stage or destination.  The private
+    sealed ``_anchored_external_evidence`` capability lets the closed
+    orchestration owner retain and reauthenticate its already-promoted external
+    file descriptors through this publisher's repeated joined gates; ordinary
+    callers use the default frozen-coordinate reader.  No arbitrary reader is
+    accepted.  Any failure after the private stage is created leaves that stage
+    in place and rejects retry and cleanup for the same identity.
     """
 
     if not isinstance(repository, RepositoryContext):
@@ -742,6 +1059,38 @@ def _publish_d7_v1_pre_item23_records_no_replace(
     frozen_sources = dict(MappingProxyType(frozen_sources))
 
     protocol = verification._load_d7_v1_materialization_protocol(repository)
+    if (
+        _anchored_external_evidence is not None
+        and type(_anchored_external_evidence) is not _D7V1AnchoredExternalEvidence
+    ):
+        raise TypeError("_anchored_external_evidence must be sealed publisher evidence")
+    if _anchored_external_evidence is not None:
+        claim_path, attempt_path = verification._expected_external_paths(protocol)
+        _route_source, route = verification._route_source(repository, protocol)
+        store_path, _staging, _runner, _callable = (
+            verification._expected_route_coordinates(route)
+        )
+        if _anchored_external_evidence.store_path != store_path or set(
+            _anchored_external_evidence.source_by_path
+        ) != {claim_path, attempt_path}:
+            raise QualificationContractError(
+                "anchored external evidence differs from publisher protocol"
+            )
+        for path, expected_source in _anchored_external_evidence.source_by_path.items():
+            if (
+                _anchored_external_evidence.read(
+                    path, records.D7_V1_DEFAULT_MAX_RECORD_BYTES
+                )
+                != expected_source
+            ):
+                raise QualificationContractError(
+                    "initial anchored external evidence reload differs"
+                )
+    external_reader: verification._ExternalReader = (
+        verification._default_external_reader
+        if _anchored_external_evidence is None
+        else _anchored_external_evidence.read
+    )
     parent_parts, destination_leaf, stage_leaf, destination = _publication_coordinates(
         repository, protocol, receipt_sha256
     )
@@ -761,7 +1110,7 @@ def _publish_d7_v1_pre_item23_records_no_replace(
             frozen_sources,
             expected_receipt_sha256=receipt_sha256,
             stage_root=None,
-            external_reader=verification._default_external_reader,
+            external_reader=external_reader,
         )
         _require_publisher_source_bound(repository, joined)
 
@@ -842,7 +1191,7 @@ def _publish_d7_v1_pre_item23_records_no_replace(
             staged_sources,
             expected_receipt_sha256=receipt_sha256,
             stage_root=stage_path,
-            external_reader=verification._default_external_reader,
+            external_reader=external_reader,
         )
         if staged_join.source_commit != joined.source_commit:
             raise QualificationContractError(
@@ -869,7 +1218,7 @@ def _publish_d7_v1_pre_item23_records_no_replace(
             final_sources,
             expected_receipt_sha256=receipt_sha256,
             stage_root=stage_path,
-            external_reader=verification._default_external_reader,
+            external_reader=external_reader,
         )
         if final_join.source_commit != joined.source_commit:
             raise QualificationContractError(
@@ -953,7 +1302,7 @@ def _publish_d7_v1_pre_item23_records_no_replace(
             published_sources,
             expected_receipt_sha256=receipt_sha256,
             stage_root=destination,
-            external_reader=verification._default_external_reader,
+            external_reader=external_reader,
         )
         if published_join.source_commit != joined.source_commit:
             raise QualificationContractError(
@@ -968,6 +1317,20 @@ def _publish_d7_v1_pre_item23_records_no_replace(
             joined.source_commit,
             allowed_untracked=expected_published_untracked,
         )
+        if _anchored_external_evidence is not None:
+            for (
+                path,
+                expected_source,
+            ) in _anchored_external_evidence.source_by_path.items():
+                if (
+                    _anchored_external_evidence.read(
+                        path, records.D7_V1_DEFAULT_MAX_RECORD_BYTES
+                    )
+                    != expected_source
+                ):
+                    raise QualificationContractError(
+                        "final anchored external evidence reload differs"
+                    )
         return D7V1PrivatePublicationReceipt(
             destination=destination,
             source_commit=joined.source_commit,
