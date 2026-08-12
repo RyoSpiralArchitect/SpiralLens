@@ -25,14 +25,13 @@ from .engineering_protocol import (
     _require_engineering_model_profile,
     validate_engineering_request_binding,
 )
-from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION
-
 from .store import ATLAS_SCHEMA_VERSION, load_manifest, token_ids_sha256
 
 PUBLIC_EXAMPLE_PLUMBING_RECEIPT_SCHEMA_VERSION = (
     "spirallens.public-example-plumbing-receipt.v0.1"
 )
 MAX_PUBLIC_EXAMPLE_PLUMBING_RECEIPT_BYTES = 1024 * 1024
+_PYTHIA70_V0_1_CAPTURE_IMPLEMENTATION_VERSION = "spirallens.pythia.residual_hooks.v1"
 
 _ARRAY_NAMES = (
     "logit_summary",
@@ -742,7 +741,7 @@ def _receipt_from_validated_atlas_manifest(
         implementation
         != {
             "name": "PythiaAdapter.observe_batch.residual_hooks",
-            "version": CAPTURE_IMPLEMENTATION_VERSION,
+            "version": _PYTHIA70_V0_1_CAPTURE_IMPLEMENTATION_VERSION,
             "accelerator_to_cpu_copy": "synchronous",
             "activation_dtype": "float32",
         }
