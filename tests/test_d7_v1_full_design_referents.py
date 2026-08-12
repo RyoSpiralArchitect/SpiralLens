@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from types import ModuleType, SimpleNamespace
+from types import MappingProxyType, ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -43,6 +43,12 @@ MODULE_REPOSITORY_PATH = (
 )
 MATERIALIZATION_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_materialization.py"
+)
+DOCUMENTS_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
+)
+DOCUMENTS_MODULE_NAME = (
+    "spirallens.qualification.confirmation_v1_design_referent_documents"
 )
 PROTOCOL_REPOSITORY_PATH = "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_REPOSITORY_PATH = "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
@@ -351,8 +357,20 @@ def _deterministic_helpers() -> ModuleType:
 
 @pytest.fixture(autouse=True)
 def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
-    yield
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    try:
+        yield
+    finally:
+        loaded = sys.modules.get(DOCUMENTS_MODULE_NAME)
+        authenticated = getattr(
+            referents,
+            "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+            None,
+        )
+        if loaded is not None and loaded is authenticated:
+            workspace_leaf = REPOSITORY.joinpath(*DOCUMENTS_REPOSITORY_PATH.split("/"))
+            loaded.__file__ = str(workspace_leaf)
+            loaded.__spec__.origin = str(workspace_leaf)
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _git(repository: Path, *arguments: str) -> bytes:
@@ -554,9 +572,10 @@ def _independent_five_parent_oracle(case: object) -> dict[str, object]:
     }
 
 
-def test_exact_six_referents_match_independent_five_parent_typed_oracle(
+def _assert_exact_six_referents_match_independent_five_parent_typed_oracle(
     tmp_path: Path,
 ) -> None:
+    assert DOCUMENTS_MODULE_NAME not in sys.modules
     approved = execution_design.build_seed_free_d7_confirmation_execution_design
     call_count = 0
 
@@ -573,7 +592,55 @@ def test_exact_six_referents_match_independent_five_parent_typed_oracle(
     ):
         case = _case(tmp_path)
     assert call_count == 1
+    assert DOCUMENTS_MODULE_NAME in sys.modules
+    document_kernel = sys.modules[DOCUMENTS_MODULE_NAME]
+    assert not hasattr(document_kernel, "_FACTORY_TOKEN")
+    assert not hasattr(
+        document_kernel,
+        "_build_d7_v1_design_referent_set_candidate",
+    )
+    assert document_kernel.__loader__ is None
+    assert document_kernel.__spec__.loader is None
+    assert document_kernel.__cached__ is None
+    authenticated_cache = referents._AUTHENTICATED_REFERENT_DOCUMENTS_CACHE
+    assert type(authenticated_cache) is tuple
+    assert len(authenticated_cache) == 4
+    cached_module, cached_sha256, cached_specification, cached_marker = (
+        authenticated_cache
+    )
+    assert referents._AUTHENTICATED_REFERENT_DOCUMENTS_MODULE is cached_module
+    assert cached_module is document_kernel
+    assert cached_sha256 == sha256_bytes(
+        REPOSITORY.joinpath(*DOCUMENTS_REPOSITORY_PATH.split("/")).read_bytes()
+    )
+    assert cached_specification is document_kernel.__spec__
+    assert cached_marker is cached_specification.loader_state
+    assert type(cached_marker) is MappingProxyType
+    assert dict(cached_marker) == {
+        "schema_version": "spirallens.authenticated-source-module.v0.1",
+        "source_sha256": cached_sha256,
+    }
+    with patch.object(referents, "_AUTHENTICATED_REFERENT_DOCUMENTS_CACHE", None):
+        with pytest.raises(QualificationContractError, match="cache binding differs"):
+            materialization._require_import_origins(case.context)
     candidate = case.full_design_referents
+    constructor_contracts = (
+        (
+            document_kernel.D7V1TypedScientificParentAdapter,
+            "closed five-parent adapter",
+        ),
+        (
+            document_kernel.D7V1CanonicalDesignReferent,
+            "closed derivation",
+        ),
+        (
+            document_kernel.D7V1FullDesignReferentSetCandidate,
+            "closed builder in the authenticated provenance facade",
+        ),
+    )
+    for constructor, message in constructor_contracts:
+        with pytest.raises(QualificationContractError, match=message):
+            constructor()
     oracle = _independent_five_parent_oracle(case)
     assert candidate.source_commit == case.source_commit
     assert tuple(candidate.referents_by_role) == tuple(ROLE_SPECS)
@@ -813,7 +880,7 @@ def test_exact_six_referents_match_independent_five_parent_typed_oracle(
 
     boolean_axes = {
         name: value
-        for name, value in vars(referents.D7V1FullDesignReferentSetCandidate).items()
+        for name, value in vars(type(candidate)).items()
         if type(value) is bool
     }
     assert boolean_axes == {name: False for name in FALSE_AXES}
@@ -825,6 +892,445 @@ def test_exact_six_referents_match_independent_five_parent_typed_oracle(
     assert candidate.parent_adapter.historical_plan_read is False
     assert candidate.parent_adapter.negative_or_predecessor_d7_read is False
     assert candidate.parent_adapter.launch_artifact_read is False
+
+
+def test_exact_six_referents_match_independent_five_parent_typed_oracle() -> None:
+    test_module_path = Path(__file__).resolve()
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(REPOSITORY / "src")
+    script = f"""
+import importlib.util
+from pathlib import Path
+import sys
+import tempfile
+
+test_path = Path({str(test_module_path)!r})
+specification = importlib.util.spec_from_file_location(
+    "_spirallens_pr55_fresh_exact_contract",
+    test_path,
+)
+assert specification is not None
+assert specification.loader is not None
+module = importlib.util.module_from_spec(specification)
+sys.modules[specification.name] = module
+specification.loader.exec_module(module)
+with tempfile.TemporaryDirectory() as directory:
+    module._assert_exact_six_referents_match_independent_five_parent_typed_oracle(
+        Path(directory)
+    )
+"""
+    completed = subprocess.run(
+        (sys.executable, "-c", script),
+        cwd=REPOSITORY,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_authenticated_document_kernel_ignores_timestamp_valid_hostile_pyc(
+    tmp_path: Path,
+) -> None:
+    test_module_path = Path(__file__).resolve()
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(REPOSITORY / "src")
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    environment["PYTHONPYCACHEPREFIX"] = str(tmp_path / "hostile-pyc-cache")
+    script = f"""
+import importlib.machinery
+import importlib.util
+import hashlib
+import marshal
+import os
+from pathlib import Path
+import py_compile
+import struct
+import sys
+import tempfile
+
+test_path = Path({str(test_module_path)!r})
+specification = importlib.util.spec_from_file_location(
+    "_spirallens_pr55_hostile_pyc_contract",
+    test_path,
+)
+assert specification is not None
+assert specification.loader is not None
+module = importlib.util.module_from_spec(specification)
+sys.modules[specification.name] = module
+specification.loader.exec_module(module)
+assert module.DOCUMENTS_MODULE_NAME not in sys.modules
+package = sys.modules["spirallens.qualification"]
+child_name = module.DOCUMENTS_MODULE_NAME.rpartition(".")[2]
+assert child_name not in vars(package)
+
+with tempfile.TemporaryDirectory() as directory:
+    temporary_root = Path(directory)
+    sentinel = temporary_root / "HOSTILE_CACHE_EXECUTED"
+    observations = {{}}
+    helpers = module._materialization_helpers()
+    original_derive = helpers.materialization._derive_full_design_referent_set_candidate
+
+    def derive_with_hostile_cache(
+        repository,
+        *,
+        protocol,
+        source_commit,
+        c1,
+        c2,
+    ):
+        assert not observations
+        target = repository.root.joinpath(
+            *module.DOCUMENTS_REPOSITORY_PATH.split("/")
+        )
+        authentic = target.read_bytes()
+        committed = module._show(
+            repository.root,
+            source_commit,
+            module.DOCUMENTS_REPOSITORY_PATH,
+        )
+        assert authentic == committed
+        c1_members = c1.to_dict()["payload"]["source_members"]
+        c1_member = next(
+            item
+            for item in c1_members
+            if item["repository_path"] == module.DOCUMENTS_REPOSITORY_PATH
+        )
+        assert c1_member["byte_count"] == len(committed)
+        assert c1_member["sha256"] == hashlib.sha256(committed).hexdigest()
+        target_stat = target.stat()
+        target_snapshot = (
+            authentic,
+            target_stat.st_mode,
+            target_stat.st_size,
+            target_stat.st_mtime_ns,
+        )
+        hostile_prefix = (
+            "from pathlib import Path\\n"
+            f"Path({{str(sentinel)!r}}).write_text('hostile', encoding='utf-8')\\n"
+            "raise RuntimeError('hostile cache executed')\\n"
+        ).encode("utf-8")
+        assert len(hostile_prefix) < len(authentic)
+        hostile = hostile_prefix + b"#" * (len(authentic) - len(hostile_prefix))
+        assert len(hostile) == len(authentic)
+
+        hostile_source = temporary_root / "hostile_leaf_source.py"
+        hostile_source.write_bytes(hostile)
+        os.utime(
+            hostile_source,
+            ns=(target_stat.st_atime_ns, target_stat.st_mtime_ns),
+        )
+        hostile_pyc = temporary_root / "hostile_leaf.pyc"
+        py_compile.compile(
+            str(hostile_source),
+            cfile=str(hostile_pyc),
+            dfile=str(target),
+            doraise=True,
+            invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP,
+        )
+        pyc_bytes = hostile_pyc.read_bytes()
+        magic, flags, timestamp, source_size = struct.unpack("<4sIII", pyc_bytes[:16])
+        assert magic == importlib.util.MAGIC_NUMBER
+        assert flags == 0
+        assert timestamp == int(target_stat.st_mtime) & 0xFFFFFFFF
+        assert source_size == len(authentic)
+
+        cache = Path(importlib.util.cache_from_source(str(target)))
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_bytes(pyc_bytes)
+        cache_bytes = cache.read_bytes()
+        selected = importlib.machinery.SourceFileLoader(
+            "_spirallens_pr55_hostile_timestamp_cache_probe",
+            str(target),
+        ).get_code("_spirallens_pr55_hostile_timestamp_cache_probe")
+        assert selected is not None
+        assert str(sentinel) in selected.co_consts
+        assert "hostile cache executed" in selected.co_consts
+        expected_code = compile(
+            committed,
+            str(target),
+            "exec",
+            dont_inherit=True,
+            optimize=0,
+        )
+        events = []
+        original_bootstrap = module.referents._bootstrap_referent_documents_source
+
+        def traced_bootstrap(*args, **kwargs):
+            authenticated_target, authenticated = original_bootstrap(*args, **kwargs)
+            if authenticated_target == target:
+                events.append(("authenticated", authenticated))
+            return authenticated_target, authenticated
+
+        def audit(event, arguments):
+            if event == "compile" and arguments[1] == str(target):
+                events.append(("compile", arguments[0]))
+            elif event == "exec" and arguments[0].co_filename == str(target):
+                events.append(("exec", marshal.dumps(arguments[0])))
+
+        module.referents._bootstrap_referent_documents_source = traced_bootstrap
+        sys.addaudithook(audit)
+        observations["target"] = target
+        observations["snapshot"] = target_snapshot
+        try:
+            candidate = original_derive(
+                repository,
+                protocol=protocol,
+                source_commit=source_commit,
+                c1=c1,
+                c2=c2,
+            )
+            assert not sentinel.exists()
+            kernel = sys.modules[module.DOCUMENTS_MODULE_NAME]
+            assert kernel.__loader__ is None
+            assert kernel.__spec__.loader is None
+            assert kernel.__cached__ is None
+            assert cache.read_bytes() == cache_bytes
+            assert events == [
+                ("authenticated", committed),
+                ("compile", committed),
+                ("exec", marshal.dumps(expected_code)),
+                ("authenticated", committed),
+            ]
+            return candidate
+        finally:
+            cache.unlink(missing_ok=True)
+
+    helpers.materialization._derive_full_design_referent_set_candidate = (
+        derive_with_hostile_cache
+    )
+    case = module._case(temporary_root / "case")
+    assert observations
+    assert not sentinel.exists()
+    target = observations["target"]
+    target_stat = observations["target"].stat()
+    assert (
+        target.read_bytes(),
+        target_stat.st_mode,
+        target_stat.st_size,
+        target_stat.st_mtime_ns,
+    ) == observations["snapshot"]
+    assert tuple(case.full_design_referents.referents_by_role) == tuple(
+        module.ROLE_SPECS
+    )
+"""
+    completed = subprocess.run(
+        (sys.executable, "-c", script),
+        cwd=REPOSITORY,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_cached_document_kernel_accepts_two_samefile_fixture_repositories(
+    tmp_path: Path,
+) -> None:
+    with patch.dict(
+        os.environ,
+        {
+            "GIT_AUTHOR_DATE": "2001-01-01T00:00:00+0000",
+            "GIT_COMMITTER_DATE": "2001-01-01T00:00:00+0000",
+        },
+    ):
+        first = _case(tmp_path / "first")
+    with patch.dict(
+        os.environ,
+        {
+            "GIT_AUTHOR_DATE": "2001-01-02T00:00:00+0000",
+            "GIT_COMMITTER_DATE": "2001-01-02T00:00:00+0000",
+        },
+    ):
+        second = _case(tmp_path / "second")
+    first_leaf = first.repository.joinpath(*DOCUMENTS_REPOSITORY_PATH.split("/"))
+    second_leaf = second.repository.joinpath(*DOCUMENTS_REPOSITORY_PATH.split("/"))
+    workspace_leaf = REPOSITORY.joinpath(*DOCUMENTS_REPOSITORY_PATH.split("/"))
+    assert first_leaf.samefile(workspace_leaf)
+    assert second_leaf.samefile(workspace_leaf)
+    assert first_leaf.samefile(second_leaf)
+    assert first.source_commit != second.source_commit
+    assert first.full_design_referents.source_commit == first.source_commit
+    assert second.full_design_referents.source_commit == second.source_commit
+    assert type(first.full_design_referents) is type(second.full_design_referents)
+    assert tuple(first.full_design_referents.referents_by_role) == tuple(ROLE_SPECS)
+    assert tuple(second.full_design_referents.referents_by_role) == tuple(ROLE_SPECS)
+
+
+def test_cached_document_kernel_rejects_changed_leaf_at_exact_s2_and_retains_s1(
+    tmp_path: Path,
+) -> None:
+    isolated = tmp_path / "isolated-source"
+    subprocess.run(
+        (
+            "git",
+            "clone",
+            "--quiet",
+            "--no-local",
+            str(REPOSITORY),
+            str(isolated),
+        ),
+        check=True,
+    )
+    production_paths = (
+        DOCUMENTS_REPOSITORY_PATH,
+        MODULE_REPOSITORY_PATH,
+        MATERIALIZATION_REPOSITORY_PATH,
+    )
+    for repository_path in production_paths:
+        source = REPOSITORY.joinpath(*repository_path.split("/"))
+        target = isolated.joinpath(*repository_path.split("/"))
+        if target.exists():
+            assert not target.samefile(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.unlink(missing_ok=True)
+        shutil.copy2(source, target)
+        assert not target.samefile(source)
+        assert target.read_bytes() == source.read_bytes()
+    _run(isolated, "config", "user.name", "SpiralLens test")
+    _run(isolated, "config", "user.email", "spirallens-test@example.invalid")
+    _run(isolated, "add", "--all")
+    commit_environment = os.environ.copy()
+    commit_environment.update(
+        {
+            "GIT_AUTHOR_DATE": "2001-02-01T00:00:00+0000",
+            "GIT_COMMITTER_DATE": "2001-02-01T00:00:00+0000",
+        }
+    )
+    subprocess.run(
+        ("git", "-C", str(isolated), "commit", "--quiet", "-m", "PR55 S1"),
+        check=True,
+        env=commit_environment,
+    )
+
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(isolated / "src")
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    script = f"""
+from hashlib import sha256
+from pathlib import Path
+import subprocess
+import sys
+from types import MappingProxyType
+
+from spirallens._repository_context import RepositoryContext
+from spirallens.qualification import confirmation_v1_full_design_referents as referents
+from spirallens.qualification import confirmation_v1_materialization as materialization
+from spirallens.qualification import confirmation_v1_source_closure as source_closure
+from spirallens.qualification.common import QualificationContractError
+
+root = Path({str(isolated)!r}).resolve()
+leaf_path = {DOCUMENTS_REPOSITORY_PATH!r}
+leaf = root.joinpath(*leaf_path.split("/"))
+assert Path(referents.__file__).is_relative_to(root)
+assert Path(materialization.__file__).is_relative_to(root)
+assert leaf.is_file()
+
+def git(*arguments):
+    return subprocess.run(
+        ("git", "-C", str(root), *arguments),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+s1 = git("rev-parse", "HEAD")
+closure1 = source_closure._build_d7_v1_source_closure_candidate(
+    RepositoryContext(root=root),
+    source_commit=s1,
+)
+context = RepositoryContext(root=root)
+protocol1 = materialization._protocol_at_commit(context, s1)
+candidate1 = referents._derive_d7_v1_full_design_referent_set_candidate(
+    context,
+    protocol=protocol1,
+    source_commit=s1,
+    c1=closure1.c1,
+    c2=closure1.c2,
+)
+cache1 = referents._AUTHENTICATED_REFERENT_DOCUMENTS_CACHE
+assert type(cache1) is tuple and len(cache1) == 4
+module1, digest1, specification1, marker1 = cache1
+assert referents._AUTHENTICATED_REFERENT_DOCUMENTS_MODULE is module1
+assert sys.modules[referents._DESIGN_REFERENT_DOCUMENTS_MODULE_NAME] is module1
+assert specification1 is module1.__spec__
+assert marker1 is specification1.loader_state
+assert type(marker1) is MappingProxyType
+assert digest1 == sha256(leaf.read_bytes()).hexdigest()
+
+referents._AUTHENTICATED_REFERENT_DOCUMENTS_CACHE = None
+try:
+    try:
+        materialization._require_import_origins(context)
+    except QualificationContractError as error:
+        assert "cache binding differs" in str(error)
+    else:
+        raise AssertionError("materialization accepted a missing authoritative cache")
+finally:
+    referents._AUTHENTICATED_REFERENT_DOCUMENTS_CACHE = cache1
+
+s1_source = leaf.read_bytes()
+leaf.unlink()
+leaf.write_bytes(s1_source + b"\\n# benign changed design-referent leaf at S2\\n")
+git("add", leaf_path)
+subprocess.run(
+    ("git", "-C", str(root), "commit", "--quiet", "-m", "changed leaf S2"),
+    check=True,
+    env={{
+        **dict(__import__("os").environ),
+        "GIT_AUTHOR_DATE": "2001-02-02T00:00:00+0000",
+        "GIT_COMMITTER_DATE": "2001-02-02T00:00:00+0000",
+    }},
+)
+s2 = git("rev-parse", "HEAD")
+assert s2 != s1
+assert git("status", "--porcelain=v1") == ""
+closure2 = source_closure._build_d7_v1_source_closure_candidate(
+    context,
+    source_commit=s2,
+)
+c1_leaf = next(
+    member
+    for member in closure2.source_members
+    if member.repository_path == leaf_path
+)
+assert c1_leaf.byte_count == len(leaf.read_bytes())
+assert c1_leaf.sha256 == sha256(leaf.read_bytes()).hexdigest()
+protocol2 = materialization._protocol_at_commit(context, s2)
+try:
+    referents._derive_d7_v1_full_design_referent_set_candidate(
+        context,
+        protocol=protocol2,
+        source_commit=s2,
+        c1=closure2.c1,
+        c2=closure2.c2,
+    )
+except QualificationContractError as error:
+    assert "cached design-referent document compiled source differs" in str(error)
+else:
+    raise AssertionError("changed S2 leaf reused the compiled S1 document kernel")
+
+assert referents._AUTHENTICATED_REFERENT_DOCUMENTS_CACHE is cache1
+assert referents._AUTHENTICATED_REFERENT_DOCUMENTS_MODULE is module1
+assert sys.modules[referents._DESIGN_REFERENT_DOCUMENTS_MODULE_NAME] is module1
+assert cache1[1] == digest1
+assert cache1[2] is specification1
+assert cache1[3] is marker1
+assert marker1["source_sha256"] == digest1
+assert candidate1.source_commit == s1
+assert len(candidate1.referents_by_role) == 6
+"""
+    completed = subprocess.run(
+        (sys.executable, "-c", script),
+        cwd=isolated,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_parent_reader_is_exact_five_and_rejects_wrong_shapes_or_bytes(
@@ -974,6 +1480,36 @@ def test_direct_derive_rejects_wrong_s_c1_c2_origin_and_live_drift(
             source_commit=case.source_commit,
             c1=forged_c1,
             c2=forged_c2,
+        )
+
+    leaf_omitted_c1 = records.D7V1C1SourceSetRecord.create(
+        record_id=str(c1_document["record_id"]),
+        repository_path=str(c1_payload["repository_path"]),
+        route_binding=records.D7V1ArtifactBinding.from_dict(
+            c1_payload["route_binding"]
+        ),
+        source_members=tuple(
+            records.D7V1SourceMember.from_dict(item)
+            for item in c1_payload["source_members"]
+            if item["repository_path"] != DOCUMENTS_REPOSITORY_PATH
+        ),
+    )
+    leaf_omitted_c2 = records.D7V1C2SourceClosureReceipt.create(
+        record_id="d7-v1-leaf-omitted-c2",
+        repository_path=str(c2.to_dict()["payload"]["repository_path"]),
+        c1=leaf_omitted_c1,
+        source_commit=case.source_commit,
+    )
+    with pytest.raises(
+        QualificationContractError,
+        match="C1 source members differ from the exact choice-free Git tree S inventory",
+    ):
+        referents._derive_d7_v1_full_design_referent_set_candidate(
+            case.context,
+            protocol=protocol,
+            source_commit=case.source_commit,
+            c1=leaf_omitted_c1,
+            c2=leaf_omitted_c2,
         )
 
     parent_commit = _run(case.repository, "rev-parse", f"{case.source_commit}^")
@@ -1175,7 +1711,7 @@ def test_clean_builder_does_not_import_or_enter_source_selected_supplier(
         case.context,
         deterministic_inputs=deterministic,
     )
-    assert isinstance(candidate, referents.D7V1FullDesignReferentSetCandidate)
+    assert type(candidate) is type(case.full_design_referents)
     assert supplier_called is False
     assert entropy_called is False
     assert _git(case.repository, "status", "--porcelain=v1", "-z") == b""
@@ -1269,3 +1805,155 @@ def test_private_surface_keeps_protocol_route_records_api_and_dependencies() -> 
         str(protocol["coordinate_and_member_layout"]["launch_intent"]),
     }
     assert not forbidden_coordinates.intersection(literals)
+
+
+def test_extracted_document_kernel_has_no_operational_capability() -> None:
+    source = (REPOSITORY / DOCUMENTS_REPOSITORY_PATH).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    imported: set[str] = set()
+    calls: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            imported.add(module)
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                calls.add(node.func.id)
+            elif isinstance(node.func, ast.Attribute):
+                calls.add(node.func.attr)
+
+    assert not any(
+        name.endswith(
+            (
+                "confirmation_v1_full_design_referents",
+                "confirmation_v1_materialization",
+                "confirmation_v1_source_selected_supplier",
+                "confirmation_v1_private_publication",
+                "confirmation_v1_result_publication",
+            )
+        )
+        for name in imported
+    )
+    forbidden_calls = {
+        "open",
+        "mkdir",
+        "read_bytes",
+        "read_text",
+        "write_bytes",
+        "write_text",
+        "unlink",
+        "rename",
+        "replace",
+        "run",
+        "Popen",
+        "randbits",
+        "_supply_d7_v1_official_seed_values",
+        "_publish_d7_v1_pre_item23_records_no_replace",
+        "_publish_d7_v1_descriptive_result_no_replace",
+        "produce_d7_v1_official_result",
+    }
+    assert forbidden_calls.isdisjoint(calls)
+    facade_source = (REPOSITORY / MODULE_REPOSITORY_PATH).read_text(encoding="utf-8")
+    facade_tree = ast.parse(facade_source)
+    authenticated_loader = next(
+        node
+        for node in facade_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == "_authenticated_referent_documents_module"
+    )
+    authenticated_loader_names = {
+        node.id for node in ast.walk(authenticated_loader) if isinstance(node, ast.Name)
+    } | {
+        node.attr
+        for node in ast.walk(authenticated_loader)
+        if isinstance(node, ast.Attribute)
+    }
+    assert "import_module" not in authenticated_loader_names
+    assert "SourceFileLoader" not in authenticated_loader_names
+    assert "get_code" not in authenticated_loader_names
+    assert "exec_module" not in authenticated_loader_names
+    assert {"compile", "exec"}.issubset(authenticated_loader_names)
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(REPOSITORY / "src")
+    completed = subprocess.run(
+        (
+            sys.executable,
+            "-c",
+            "import types; "
+            "from spirallens.qualification import "
+            "confirmation_v1_design_referent_documents as m; "
+            "assert m.__all__ == (); "
+            "assert not hasattr(m, 'advancement'); "
+            "assert not hasattr(m, '_FACTORY_TOKEN'); "
+            "assert not hasattr(m, '_build_d7_v1_design_referent_set_candidate'); "
+            "assert not hasattr(m, 'publish'); "
+            "assert not hasattr(m, 'materialize'); "
+            "assert not hasattr(m, 'verify_source_join'); "
+            "assert not any(isinstance(v, types.ModuleType) and "
+            "v.__name__ == 'spirallens.qualification.advancement' "
+            "for v in vars(m).values())",
+        ),
+        cwd=REPOSITORY,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_document_kernel_import_leaves_official_coordinates_unchanged() -> None:
+    protocol = json.loads(
+        (REPOSITORY / PROTOCOL_REPOSITORY_PATH).read_text(encoding="utf-8")
+    )
+    layout = protocol["coordinate_and_member_layout"]
+    roles = layout["v3_exact_pre_item23_file_coordinate_roles"]
+    external = protocol["external_durable_chronology_contract"]
+    route = external["route_future_external_coordinates"]
+    watched = {REPOSITORY.joinpath(*str(layout[key]).split("/")) for key in roles} | {
+        REPOSITORY.joinpath(*str(layout["descriptive_result"]).split("/")),
+        Path(str(route["external_staging_path"])),
+        Path(str(route["external_store_path"])),
+        Path(str(external["seed_supply_claim"]["external_store_path"])),
+        Path(str(external["attempt_reservation"]["external_store_path"])),
+    }
+
+    def state(path: Path) -> tuple[object, ...]:
+        try:
+            observed = path.lstat()
+        except FileNotFoundError:
+            return ("absent",)
+        return (
+            "present",
+            observed.st_dev,
+            observed.st_ino,
+            observed.st_mode,
+            observed.st_size,
+            observed.st_mtime_ns,
+        )
+
+    before = {path: state(path) for path in watched}
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(REPOSITORY / "src")
+    completed = subprocess.run(
+        (
+            sys.executable,
+            "-c",
+            "from spirallens.qualification import "
+            "confirmation_v1_design_referent_documents as m; "
+            "assert m.__all__ == (); "
+            "assert not hasattr(m, 'advancement'); "
+            "assert not hasattr(m, '_FACTORY_TOKEN'); "
+            "assert not hasattr(m, '_build_d7_v1_design_referent_set_candidate')",
+        ),
+        cwd=REPOSITORY,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert {path: state(path) for path in watched} == before

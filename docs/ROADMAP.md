@@ -257,6 +257,11 @@ result, scientific evidence, persisted/supported schema, protocol, route,
 record, public API, or dependency revision. S remains unreviewed and
 unselected; claim delta is `none`, VOY-V3 remains `frozen_not_run`, and D7/D8
 remain `not_run`.
+Before S selection, the 2,108-line referent module was further split into a
+721-line pure canonical-document kernel behind a 1,808-line provenance facade.
+The new leaf performs no Git or filesystem I/O and is itself joined to its
+repository import origin, live bytes, source-S blob, and C1 member. Referent
+semantics and every provenance and authority boundary are unchanged.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means

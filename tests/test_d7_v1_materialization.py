@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -110,6 +111,9 @@ SOURCE_SELECTED_SUPPLIER_MODULE_PATH = REPOSITORY.joinpath(
 FULL_DESIGN_REFERENTS_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_full_design_referents.py"
 )
+DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
+)
 REFERENT_RUNTIME_SOURCE_PATHS = {
     "src/spirallens/qualification/advancement.py": Path(advancement.__file__),
     "src/spirallens/qualification/contracts.py": Path(contracts.__file__),
@@ -121,6 +125,9 @@ REFERENT_RUNTIME_SOURCE_PATHS = {
     ),
     EXECUTION_DESIGN_REPOSITORY_PATH: Path(execution_design.__file__),
     "src/spirallens/qualification/confirmation_v1_materialization.py": MODULE_PATH,
+    DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH: REPOSITORY.joinpath(
+        *DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH.split("/")
+    ),
     FULL_DESIGN_REFERENTS_REPOSITORY_PATH: Path(full_design_referents.__file__),
     "src/spirallens/synthetic/spectral_moment_confirmation.py": Path(
         spectral_moment_confirmation.__file__
@@ -146,8 +153,24 @@ ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
 def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
     """Drop same-file test clones immediately after each isolated test."""
 
-    yield
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    try:
+        yield
+    finally:
+        loaded = sys.modules.get(
+            "spirallens.qualification.confirmation_v1_design_referent_documents"
+        )
+        authenticated = getattr(
+            full_design_referents,
+            "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+            None,
+        )
+        if loaded is not None and loaded is authenticated:
+            workspace_leaf = REPOSITORY.joinpath(
+                *DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH.split("/")
+            )
+            loaded.__file__ = str(workspace_leaf)
+            loaded.__spec__.origin = str(workspace_leaf)
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _run(repository: Path, *arguments: str) -> str:
@@ -1035,6 +1058,7 @@ def test_staged_loader_reenumerates_source_blob_and_mode(
         "src/spirallens/qualification/confirmation_v1_materialization.py",
         "src/spirallens/qualification/confirmation_v1_records.py",
         DESCRIPTIVE_REPOSITORY_PATH,
+        DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH,
     ),
 )
 def test_staged_loader_rejects_an_equivalent_but_different_import_origin(
@@ -1047,9 +1071,14 @@ def test_staged_loader_rejects_an_equivalent_but_different_import_origin(
     source = target.read_bytes()
     target.unlink()
     target.write_bytes(source)
-    with pytest.raises(QualificationContractError, match="import origin differs"):
+    expected_error = (
+        "import specification differs"
+        if repository_path == DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH
+        else "import origin differs"
+    )
+    with pytest.raises(QualificationContractError, match=expected_error):
         _load_stage(case)
-    with pytest.raises(QualificationContractError, match="import origin differs"):
+    with pytest.raises(QualificationContractError, match=expected_error):
         _verify_commit_a(case, commit_a)
 
 
@@ -1075,6 +1104,34 @@ def test_staged_loader_rejects_dirty_executing_source_bytes(
         if path == target:
             return source + b"\n"
         return source
+
+    monkeypatch.setattr(materialization, "_safe_read_file", dirty_read)
+    with pytest.raises(QualificationContractError, match="reviewed source S"):
+        _load_stage(case)
+
+
+def test_staged_loader_rejects_post_c1_document_kernel_live_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _build_case(tmp_path)
+    target = case.repository.joinpath(
+        *DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH.split("/")
+    )
+    original_read = materialization._safe_read_file
+
+    def dirty_read(
+        path: Path,
+        maximum_bytes: int,
+        *,
+        require_single_link: bool = True,
+    ) -> bytes:
+        source = original_read(
+            path,
+            maximum_bytes,
+            require_single_link=require_single_link,
+        )
+        return source + b"\n# post-C1 live drift\n" if path == target else source
 
     monkeypatch.setattr(materialization, "_safe_read_file", dirty_read)
     with pytest.raises(QualificationContractError, match="reviewed source S"):

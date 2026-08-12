@@ -4,6 +4,18 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-12 — D7 v1 private referent-document work-package split
+
+- Split the 2,108-line private full-design-referent module into a 721-line pure
+  canonical-document kernel and a 1,808-line provenance facade. The leaf owns
+  no Git or filesystem I/O and is joined to its import origin, live bytes,
+  source-S blob, and C1 member before use.
+- This internal refactor preserves referent semantics and provenance and
+  authority boundaries. It creates no chronology fact, record, schema,
+  protocol or route revision, public API, dependency, or library milestone.
+  Claim delta is `none`; S remains unreviewed and unselected, VOY-V3 remains
+  `frozen_not_run`, and D7/D8 remain `not_run`.
+
 ## 2026-08-12 — D7 v1 private virtual full-design referents
 
 - Added one internal, non-exported source-derived layer that reads exactly five

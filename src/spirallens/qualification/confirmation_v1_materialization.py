@@ -18,11 +18,13 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
+import importlib.util
 import os
 from pathlib import Path, PurePosixPath
 import shutil
 import stat
 import subprocess
+import sys
 from types import MappingProxyType
 from typing import TYPE_CHECKING, TypeAlias, cast
 
@@ -50,7 +52,7 @@ from . import confirmation_v1_post_d6_descriptive as descriptive
 from . import confirmation_v1_records as records
 
 if TYPE_CHECKING:
-    from .confirmation_v1_full_design_referents import (
+    from .confirmation_v1_design_referent_documents import (
         D7V1FullDesignReferentSetCandidate,
     )
     from .confirmation_v1_source_selected_supplier import (
@@ -81,6 +83,9 @@ _SOURCE_SELECTED_SUPPLIER_MODULE_PATH = (
 )
 _FULL_DESIGN_REFERENTS_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_v1_full_design_referents.py"
+)
+_DESIGN_REFERENT_DOCUMENTS_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
 )
 _EXECUTION_DESIGN_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_execution_design.py"
@@ -699,6 +704,61 @@ def _require_import_origins(repository: RepositoryContext) -> None:
         raise QualificationContractError(
             "full-design referent module import origin differs from repository"
         )
+    loaded_referent_documents = sys.modules.get(
+        "spirallens.qualification.confirmation_v1_design_referent_documents"
+    )
+    authenticated_referent_documents = getattr(
+        full_design_referents,
+        "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+        None,
+    )
+    authenticated_referent_documents_cache = getattr(
+        full_design_referents,
+        "_AUTHENTICATED_REFERENT_DOCUMENTS_CACHE",
+        None,
+    )
+    if authenticated_referent_documents_cache is None:
+        cached_referent_documents = None
+    elif (
+        type(authenticated_referent_documents_cache) is tuple
+        and len(authenticated_referent_documents_cache) == 4
+    ):
+        cached_referent_documents = authenticated_referent_documents_cache[0]
+    else:
+        raise QualificationContractError(
+            "authenticated design-referent document cache shape differs"
+        )
+    if authenticated_referent_documents is not cached_referent_documents:
+        raise QualificationContractError(
+            "authenticated design-referent document cache binding differs"
+        )
+    if loaded_referent_documents is not None and (
+        authenticated_referent_documents is None
+        or loaded_referent_documents is not authenticated_referent_documents
+    ):
+        raise QualificationContractError(
+            "design-referent document module was preloaded outside its "
+            "authenticated facade"
+        )
+    try:
+        design_referent_specification = importlib.util.find_spec(
+            "spirallens.qualification.confirmation_v1_design_referent_documents"
+        )
+        design_referent_origin = (
+            None
+            if design_referent_specification is None
+            else design_referent_specification.origin
+        )
+        design_referent_origin_matches = (
+            repository.root / _DESIGN_REFERENT_DOCUMENTS_MODULE_PATH
+        ).samefile(design_referent_origin)
+    except (ImportError, OSError, TypeError, ValueError):
+        design_referent_origin_matches = False
+    if not design_referent_origin_matches:
+        raise QualificationContractError(
+            "design-referent document module import specification differs from "
+            "repository"
+        )
     if not repository.matches_imported_file(
         imported_file=execution_design.__file__,
         repository_path=_EXECUTION_DESIGN_MODULE_PATH,
@@ -736,6 +796,7 @@ def _require_executing_sources_match_commit(
         _SOURCE_CLOSURE_MODULE_PATH,
         _SOURCE_SELECTED_SUPPLIER_MODULE_PATH,
         _FULL_DESIGN_REFERENTS_MODULE_PATH,
+        _DESIGN_REFERENT_DOCUMENTS_MODULE_PATH,
         _EXECUTION_DESIGN_MODULE_PATH,
         _CONFIRMATION_PROTOCOL_MODULE_PATH,
         _SPECTRAL_MOMENT_CONFIRMATION_MODULE_PATH,
