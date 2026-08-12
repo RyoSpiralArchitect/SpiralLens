@@ -106,6 +106,17 @@ two-seed cardinality, resolve any of the six non-inventory design bindings, or
 create a claim, inventory, design, store, or chronology. Those unresolved
 values require a later source-selected contract and independent verifier
 rederivation before any external chronology can begin.
+A private source-selected supplier candidate now closes only the supplier side
+of that gap. It binds one fresh zero-argument module-global OS-CSPRNG callable,
+its canonical identity bytes, and a combined exclusion registry containing the
+two predecessor seeds, two parent-selection seeds, and four permanently
+excluded development seeds. The joined-loader path independently rederives the
+same supplier ID and binding and accepts a future inventory only if it contains
+exactly two unique ascending values outside all eight exclusions. Neither path
+invokes the supplier or creates seed values, a claim, an inventory, or any
+durable chronology. The six non-inventory full-design bindings are still
+unresolved and unauthenticated, so materialization and execution authority
+remain false pending a separate source-closed derivation.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

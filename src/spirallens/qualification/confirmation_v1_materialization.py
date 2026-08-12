@@ -24,7 +24,7 @@ import shutil
 import stat
 import subprocess
 from types import MappingProxyType
-from typing import TypeAlias, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 
 from spirallens import _repository_context as repository_context_module
 from spirallens._repository_context import RepositoryContext
@@ -49,6 +49,11 @@ from . import confirmation_v1_descriptive_independence as descriptive_independen
 from . import confirmation_v1_post_d6_descriptive as descriptive
 from . import confirmation_v1_records as records
 
+if TYPE_CHECKING:
+    from .confirmation_v1_source_selected_supplier import (
+        D7V1SourceSelectedSeedSupplierCandidate,
+    )
+
 __all__: tuple[str, ...] = ()
 
 
@@ -67,6 +72,9 @@ _DESCRIPTIVE_MODULE_PATH = (
 )
 _SOURCE_CLOSURE_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_v1_source_closure.py"
+)
+_SOURCE_SELECTED_SUPPLIER_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_v1_source_selected_supplier.py"
 )
 _DESCRIPTIVE_HELPER_MODULES = (
     (
@@ -602,6 +610,10 @@ def _git_blob(
 
 
 def _require_import_origins(repository: RepositoryContext) -> None:
+    from . import (
+        confirmation_v1_source_selected_supplier as source_selected_supplier,
+    )
+
     for module, repository_path, label in (
         (
             repository_context_module,
@@ -648,6 +660,13 @@ def _require_import_origins(repository: RepositoryContext) -> None:
             raise QualificationContractError(
                 f"{label} import origin differs from repository"
             )
+    if not repository.matches_imported_file(
+        imported_file=source_selected_supplier.__file__,
+        repository_path=_SOURCE_SELECTED_SUPPLIER_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "source-selected supplier module import origin differs from repository"
+        )
 
 
 def _require_executing_sources_match_commit(
@@ -662,6 +681,7 @@ def _require_executing_sources_match_commit(
         _RECORDS_MODULE_PATH,
         _DESCRIPTIVE_MODULE_PATH,
         _SOURCE_CLOSURE_MODULE_PATH,
+        _SOURCE_SELECTED_SUPPLIER_MODULE_PATH,
         *_DESCRIPTIVE_HELPER_PATHS,
     ):
         _mode, committed = _git_blob(
@@ -1485,6 +1505,31 @@ def _protocol_binding(
     )
 
 
+def _derive_source_selected_seed_supplier_candidate(
+    repository: RepositoryContext,
+    *,
+    protocol: D7V1MaterializationProtocol,
+    source_commit: str,
+    c1: records.D7V1C1SourceSetRecord,
+    c2: records.D7V1C2SourceClosureReceipt,
+) -> D7V1SourceSelectedSeedSupplierCandidate:
+    """Rederive the supplier from a verifier-authenticated S/C1/C2 join."""
+
+    from . import (
+        confirmation_v1_source_selected_supplier as source_selected_supplier,
+    )
+
+    return (
+        source_selected_supplier._derive_d7_v1_source_selected_seed_supplier_candidate(
+            repository,
+            protocol=protocol,
+            source_commit=source_commit,
+            c1=c1,
+            c2=c2,
+        )
+    )
+
+
 def _verify_cross_record_joins(
     repository: RepositoryContext,
     protocol: D7V1MaterializationProtocol,
@@ -1528,6 +1573,13 @@ def _verify_cross_record_joins(
     )
 
     source_commit = _verify_source_join(repository, protocol, c1, c2)
+    expected_supplier = _derive_source_selected_seed_supplier_candidate(
+        repository,
+        protocol=protocol,
+        source_commit=source_commit,
+        c1=c1,
+        c2=c2,
+    )
     coordinates = _coordinates(protocol)
     for key, role in _COORDINATE_ROLES.items():
         if _record_repository_path(loaded[role]) != coordinates[key]:
@@ -1551,6 +1603,13 @@ def _verify_cross_record_joins(
     )
     if claim_derivation.get("source_tree_sha256") != c2_tree_sha:
         raise QualificationContractError("claim source-tree digest differs from C2")
+    _require_binding(
+        claim_payload.get("supplier_identity_binding"),
+        expected_supplier.supplier_identity_binding,
+        label="claim source-selected supplier identity",
+    )
+    if claim_derivation.get("supplier_id") != expected_supplier.supplier_id:
+        raise QualificationContractError("claim source-selected supplier id differs")
 
     _require_binding(
         inventory_payload.get("claim_binding"),
@@ -1567,6 +1626,10 @@ def _verify_cross_record_joins(
     )
     if inventory_payload.get("supplier_id") != claim_derivation.get("supplier_id"):
         raise QualificationContractError("inventory supplier id differs from claim")
+    if inventory_payload.get("supplier_id") != expected_supplier.supplier_id:
+        raise QualificationContractError(
+            "inventory source-selected supplier id differs"
+        )
 
     negative_binding, negative_values = _negative_seed_binding(repository, protocol)
     _require_binding(
@@ -1587,8 +1650,20 @@ def _verify_cross_record_joins(
         _plain_int(item, label="successor seed", minimum=0)
         for item in _sequence(inventory_payload.get("seeds"), label="successor seeds")
     )
+    if (
+        len(new_seeds) != expected_supplier.required_seed_count
+        or len(set(new_seeds)) != expected_supplier.required_seed_count
+        or new_seeds != tuple(sorted(new_seeds))
+    ):
+        raise QualificationContractError(
+            "successor seeds must be the exact two unique ascending slot values"
+        )
     if set(new_seeds) & set(negative_values):
         raise QualificationContractError("successor seeds overlap predecessor seeds")
+    if set(new_seeds) & set(expected_supplier.excluded_seed_values):
+        raise QualificationContractError(
+            "successor seeds overlap the complete source-selected exclusion registry"
+        )
 
     inventory_binding = _record_binding(inventory)
     _require_binding(

@@ -231,7 +231,16 @@ field-to-role entries. It returns no supplier identity, binding bytes, seed,
 claim, inventory, full design, or chronology. In particular, neither the
 two-seed cardinality nor any of the six non-inventory bindings is authorized
 for persistence until a later source-selected derivation and verifier close
-those currently unspecified values. VOY-V3 remains `frozen_not_run`.
+those currently unspecified values. The supplier portion is now source-fixed
+in a later private candidate: one exact zero-argument module-global OS-CSPRNG
+callable, canonical supplier identity, and a combined registry of two
+predecessor, two parent-selection, and four development exclusions. The
+joined-loader path independently rederives that identity and requires a future
+inventory to contain exactly two unique ascending values outside all eight
+exclusions. This is still pre-chronology source work: the supplier is not
+invoked, no seed or durable record is created, and the six non-inventory design
+bindings remain unresolved and unauthenticated. Materialization and execution
+authority therefore remain false, and VOY-V3 remains `frozen_not_run`.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means

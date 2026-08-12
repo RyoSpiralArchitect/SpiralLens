@@ -827,6 +827,43 @@ chronology, external store, publication, commit A/B, execution, result, or
 scientific evidence is created. S remains unreviewed and unselected, every
 authority axis remains false, and VOY-V3 remains `frozen_not_run`.
 
+### 3.24 D7 v1 source-selected supplier and complete exclusion policy
+
+**Decision source and timing**
+
+The deterministic-input candidate exposed two independent gaps: supplier
+identity and seed acceptance were not source-derived, while the six
+non-inventory full-design referents still lacked closed typed derivations.
+Trying to close both at once would require either an additional historical
+launch input outside the frozen six-input policy or a duplicate reconstruction
+of the approved seed-free design. The work was therefore split before any
+chronology or official coordinate was entered.
+
+**Implemented boundary**
+
+One private module now fixes a fresh zero-argument module-global supplier whose
+declared entropy surface is `secrets.randbits(63)`. Its canonical identity
+binds source S, C1/C2, the frozen protocol and route, its exact C1 source
+member, the approved design source member, and a canonical combined exclusion
+registry. That registry independently rejoins two predecessor seeds, two
+parent-selection seeds, and four source-selected development exclusions. A
+clean-S builder and an artifact-commit-safe pure derivation produce identical
+bytes without invoking the supplier. The internal joined-loader path
+independently rederives the supplier ID and identity binding and requires any
+future inventory values to be exactly two, unique, strictly ascending, and
+disjoint from all eight exclusions.
+
+**Current boundary and claim delta**
+
+`none`. Source selection of a callable and derivation of identity bytes are not
+supplier invocation, cryptographic proof, persistence, or authority. No seed
+value, claim, inventory, store, receipt, artifact, commit A/B, execution, or
+scientific evidence is created here. In particular, the six non-inventory
+full-design bindings remain unresolved and `external_bindings_authenticated`
+remains false; the joined materialization path is therefore still incomplete
+and cannot be connected to official execution. S remains unreviewed and
+unselected, and VOY-V3 remains `frozen_not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

@@ -359,10 +359,11 @@ def _declared_contract(
             "protocol and records full-design field-role maps differ"
         )
 
-    observed_slots = execution_design.D7_CONFIRMATION_SEED_SLOT_IDS
-    if type(observed_slots) is not tuple or observed_slots != _EXPECTED_SEED_SLOT_IDS:
-        raise QualificationContractError("approved execution-design seed slots differ")
-    return supplier_role, observed_slots, dict(sorted(joined_roles.items()))
+    return (
+        supplier_role,
+        _EXPECTED_SEED_SLOT_IDS,
+        dict(sorted(joined_roles.items())),
+    )
 
 
 def _require_same_source_closure(
