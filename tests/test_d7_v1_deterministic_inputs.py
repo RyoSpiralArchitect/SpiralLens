@@ -354,8 +354,8 @@ def test_private_surface_dependencies_exports_and_docs_retain_the_boundary() -> 
     )
     assert (
         "Observing count and slot order does not authorize their use in a persisted "
-        "record; the six non-inventory binding referents remain unresolved."
-        in documents["docs/SCHEMA_CHANGELOG.md"]
+        "record; at this increment the six non-inventory binding referents remained "
+        "unresolved." in documents["docs/SCHEMA_CHANGELOG.md"]
     )
 
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 from collections.abc import Iterator
 from dataclasses import fields
-import importlib
 import importlib.util
 import inspect
 import io
@@ -939,7 +938,19 @@ def test_private_surface_dependencies_and_docs_retain_the_candidate_boundary() -
             Path("/Users/ryohiga/SpiralReality/spirallens-d7-v1-store")
         ),
     }
-    importlib.reload(source_closure)
+    probe_name = "spirallens.qualification._source_closure_import_side_effect_probe"
+    probe_spec = importlib.util.spec_from_file_location(
+        probe_name,
+        REPOSITORY.joinpath(*MODULE_REPOSITORY_PATH.split("/")),
+    )
+    if probe_spec is None or probe_spec.loader is None:
+        raise AssertionError("cannot create source-closure import probe")
+    probe = importlib.util.module_from_spec(probe_spec)
+    sys.modules[probe_name] = probe
+    try:
+        probe_spec.loader.exec_module(probe)
+    finally:
+        sys.modules.pop(probe_name, None)
     assert {path: _path_state(path) for path in before} == before
 
     readme = (REPOSITORY / "README.md").read_text(encoding="utf-8")

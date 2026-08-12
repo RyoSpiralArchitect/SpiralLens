@@ -859,10 +859,55 @@ disjoint from all eight exclusions.
 supplier invocation, cryptographic proof, persistence, or authority. No seed
 value, claim, inventory, store, receipt, artifact, commit A/B, execution, or
 scientific evidence is created here. In particular, the six non-inventory
-full-design bindings remain unresolved and `external_bindings_authenticated`
-remains false; the joined materialization path is therefore still incomplete
-and cannot be connected to official execution. S remains unreviewed and
-unselected, and VOY-V3 remains `frozen_not_run`.
+full-design bindings remained unresolved at this increment and
+`external_bindings_authenticated` remained false; the joined materialization
+path was therefore still incomplete and could not be connected to official
+execution. S remained unreviewed and unselected, and VOY-V3 remained
+`frozen_not_run`.
+
+### 3.25 D7 v1 source-derived virtual full-design referents
+
+**Decision source and timing**
+
+The supplier candidate closed identity and exclusion policy but intentionally
+left six non-inventory full-design roles without typed referents. The frozen
+inputs already identify exactly five permitted historical scientific parents:
+protocol, result, terminal manifest, terminal consumption, and D6 advancement
+decision. Reusing any historical plan, predecessor D7 artifact, launch input,
+or caller-supplied binding would exceed that declared source surface.
+
+**Implemented boundary**
+
+One private module now reads those five parents only from their pinned Git
+objects, typed-parses them, rejoins their canonical identities and cross-record
+relations, and reconstructs the admitted D6 input without retaining parent
+result values. It then calls the approved
+`build_seed_free_d7_confirmation_execution_design` function exactly once and
+derives six canonical virtual referents: the exact confirmation-family
+proposal, non-issued family-admission candidate, unfrozen seed-free protocol
+draft, Git-declared source-member graph, graph/case/stress aggregation, and
+prospective lifecycle policy. The aggregation fixes 64 primary units, 192 core
+cells, 1,152 loop cells, and six strata while keeping event lanes as repeated
+measures rather than independent samples. The lifecycle embeds the protocol's
+exact 19 ordered stages and three-commit sequence. The joined materialization
+verifier independently repeats the source derivation and requires byte-exact
+equality for all six embedded bindings.
+
+These documents are private, in-memory, and nonpersisted. Their internal v0.1
+identifiers do not add a persisted or supported schema and do not revise the
+frozen protocol, route, structural records, public API, or dependencies.
+
+**Current boundary and claim delta**
+
+`none`. Six virtual bindings are resolved, but
+`external_bindings_authenticated=false`; the runtime environment and runtime
+dependency closure are unauthenticated. Confirmation-family admission,
+official embedded-full-design creation and freeze, aggregation rebinding review
+and application, and lifecycle instantiation all remain false. No external
+store, official coordinate, claim, supplier invocation, seed, publication,
+commit A/B, execution, result, or scientific evidence is created. S remains
+unreviewed and unselected, VOY-V3 remains `frozen_not_run`, and D7/D8 remain
+`not_run`.
 
 ## 4. Summary reclassification
 
