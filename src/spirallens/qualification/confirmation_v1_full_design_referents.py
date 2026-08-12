@@ -18,6 +18,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
+import importlib.machinery
+import importlib.util
 import inspect
 import json
 import os
@@ -25,8 +27,9 @@ from pathlib import Path, PurePosixPath
 import shutil
 import stat
 import subprocess
-from types import FunctionType, MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, cast
+import sys
+from types import FunctionType, MappingProxyType, ModuleType
+from typing import TYPE_CHECKING, cast
 
 from spirallens import _repository_context as repository_context_module
 from spirallens._repository_context import RepositoryContext
@@ -52,6 +55,10 @@ from . import common as common_module
 from .common import QualificationContractError, require_sha256
 
 if TYPE_CHECKING:
+    from .confirmation_v1_design_referent_documents import (
+        D7V1FullDesignReferentSetCandidate,
+        D7V1TypedScientificParentAdapter,
+    )
     from .confirmation_v1_deterministic_inputs import (
         D7V1DeterministicInputContractCandidate,
     )
@@ -69,6 +76,12 @@ _REPOSITORY_CONTEXT_PATH = "src/spirallens/_repository_context.py"
 _CANONICAL_PATH = "src/spirallens/core/canonical.py"
 _COMMON_PATH = "src/spirallens/qualification/common.py"
 _RECORDS_PATH = "src/spirallens/qualification/confirmation_v1_records.py"
+_DESIGN_REFERENT_DOCUMENTS_PATH = (
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
+)
+_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME = (
+    "spirallens.qualification.confirmation_v1_design_referent_documents"
+)
 _DETERMINISTIC_INPUTS_PATH = (
     "src/spirallens/qualification/confirmation_v1_deterministic_inputs.py"
 )
@@ -114,45 +127,6 @@ _CRITICAL_RUNTIME_MODULES = (
     (execution_design, _EXECUTION_DESIGN_PATH, "approved execution-design module"),
 )
 _SUCCESSOR_LINEAGE_ID = "d7-spectral-moment-confirmation-v1"
-_SEED_SLOT_IDS = (
-    "confirmation-seed-slot-00",
-    "confirmation-seed-slot-01",
-)
-_FUTURE_CHRONOLOGY_KEYS = (
-    "artifact_only_commit_a_file_set_reference",
-    "design_change_after_receipt_requires_new_version",
-    "git_commit_sequence",
-    "item23_values_may_select_contract",
-    "later_descriptor_may_cure_missing_binding",
-    "pre_item23_repository_publication_mode",
-    "receipt_generated_last_within_pre_item23_set",
-    "receipt_only_git_commit_used",
-    "result_only_commit_b_file_reference",
-    "same_identity_rescue_retry_allowed",
-    "source_change_after_c2_invalidates_current_identity",
-    "stages",
-)
-_FUTURE_CHRONOLOGY_STAGE_IDS = (
-    "reviewed-source-commit",
-    "stage-c1-seed-free-source-set-off-repository",
-    "stage-c2-source-closure-receipt-off-repository",
-    "open-external-staging-root-o-excl-and-fsync",
-    "persist-external-exclusive-seed-supply-claim-and-fsync",
-    "invoke-fresh-seed-supplier-exactly-once",
-    "build-official-seed-inventory-and-embedded-full-design",
-    "build-replay-target-and-full-design-freeze",
-    "build-launch-intent",
-    "persist-separate-domain-pre-start-attempt-reservation-and-fsync",
-    "promote-external-store-no-replace-and-reverify-durable-bytes",
-    "build-pre-item23-chronology-receipt-last",
-    "run-staged-authoritative-joined-loader-hard-gate",
-    "atomically-publish-exact-nine-file-repository-set-no-replace",
-    "commit-pre-item23-artifact-only-a",
-    "run-commit-a-verifier-and-authoritative-joined-loader-hard-gate",
-    "fresh-descriptive-result-no-replace-publication",
-    "commit-descriptive-result-only-b",
-    "run-commit-b-verifier-after-commit-b",
-)
 _PARENT_ROLES = (
     "parent-protocol",
     "parent-result",
@@ -160,79 +134,16 @@ _PARENT_ROLES = (
     "parent-consumption",
     "parent-d6-decision",
 )
-_ROOT_KEYS = frozenset(
-    {
-        "schema_version",
-        "contract_id",
-        "artifact_role",
-        "successor_lineage_id",
-        "derivation",
-        "payload",
-        "typestate",
-        "claim_boundary",
-    }
-)
-_ROLE_SPECS = MappingProxyType(
-    {
-        "confirmation-family": (
-            "spirallens.d7-v1-confirmation-family-descriptor.v0.1",
-            "d7-v1-confirmation-family-descriptor-v0-1",
-        ),
-        "family-admission": (
-            "spirallens.d7-v1-family-admission-candidate.v0.1",
-            "d7-v1-family-admission-candidate-v0-1",
-        ),
-        "confirmation-protocol": (
-            "spirallens.d7-v1-confirmation-protocol-candidate.v0.1",
-            "d7-v1-confirmation-protocol-candidate-v0-1",
-        ),
-        "source-graph": (
-            "spirallens.d7-v1-source-graph.v0.1",
-            "d7-v1-source-graph-v0-1",
-        ),
-        "graph-case-stress-aggregation": (
-            "spirallens.d7-v1-graph-case-stress-aggregation.v0.1",
-            "d7-v1-graph-case-stress-aggregation-v0-1",
-        ),
-        "lifecycle": (
-            "spirallens.d7-v1-lifecycle-policy.v0.1",
-            "d7-v1-lifecycle-policy-v0-1",
-        ),
-    }
-)
-_INVENTORY_FIELDS = MappingProxyType(
-    {
-        "family_binding": "confirmation-family",
-        "admission_binding": "family-admission",
-        "protocol_binding": "confirmation-protocol",
-        "source_graph_binding": "source-graph",
-        "graph_case_stress_aggregation_binding": ("graph-case-stress-aggregation"),
-        "lifecycle_binding": "lifecycle",
-    }
-)
-_CLAIM_BOUNDARY = MappingProxyType(
-    {
-        "claim_ceiling": "level_0",
-        "claim_delta": "none",
-        "authority_granted": False,
-        "execution_authorized": False,
-        "scientific_claim_eligible": False,
-    }
-)
-_TYPESTATE = MappingProxyType(
-    {
-        "virtual_referent_derived": True,
-        "binding_resolved": True,
-        "binding_authenticated": False,
-        "admitted": False,
-        "frozen": False,
-        "reviewed": False,
-        "applied": False,
-        "instantiated": False,
-        "persisted": False,
-    }
-)
-_FACTORY_TOKEN = object()
+_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE: ModuleType | None = None
+_AUTHENTICATED_REFERENT_DOCUMENTS_CACHE: (
+    tuple[
+        ModuleType,
+        str,
+        importlib.machinery.ModuleSpec,
+        Mapping[str, str],
+    ]
+    | None
+) = None
 
 
 def _mapping(value: object, *, label: str) -> dict[str, object]:
@@ -591,6 +502,264 @@ def _bootstrap_c1_members(c1: object) -> dict[str, tuple[str, int, str]]:
     return members
 
 
+def _bootstrap_referent_documents_source(
+    repository_root: Path,
+    *,
+    source_commit: str,
+    c1: object,
+) -> tuple[Path, bytes]:
+    """Verify the fixed leaf bytes without importing or executing the leaf."""
+
+    members = _bootstrap_c1_members(c1)
+    member = members.get(_DESIGN_REFERENT_DOCUMENTS_PATH)
+    if member is None:
+        raise QualificationContractError(
+            "bootstrap C1 omits D7 v1 design-referent document module"
+        )
+    target = repository_root.joinpath(
+        *PurePosixPath(_DESIGN_REFERENT_DOCUMENTS_PATH).parts
+    )
+    mode, committed = _bootstrap_git_source(
+        repository_root,
+        source_commit=source_commit,
+        repository_path=_DESIGN_REFERENT_DOCUMENTS_PATH,
+    )
+    live = _bootstrap_read_source(target)
+    if (
+        mode != member[0]
+        or len(committed) != member[1]
+        or hashlib.sha256(committed).hexdigest() != member[2]
+        or live != committed
+    ):
+        raise QualificationContractError(
+            "bootstrap design-referent document module differs from Git S and C1"
+        )
+    return target, committed
+
+
+def _authenticated_referent_documents_module(
+    repository: object,
+    *,
+    source_commit: str,
+    c1: object,
+) -> ModuleType:
+    """Execute the canonical leaf only after its raw trust-root verification."""
+
+    global _AUTHENTICATED_REFERENT_DOCUMENTS_CACHE
+    global _AUTHENTICATED_REFERENT_DOCUMENTS_MODULE
+
+    try:
+        repository_root = object.__getattribute__(repository, "root")
+    except (AttributeError, TypeError) as error:
+        raise QualificationContractError(
+            "bootstrap repository does not expose an exact root"
+        ) from error
+    if (
+        not isinstance(repository_root, Path)
+        or not repository_root.is_absolute()
+        or ".." in repository_root.parts
+    ):
+        raise QualificationContractError(
+            "bootstrap repository root must be an absolute normalized Path"
+        )
+    target, committed = _bootstrap_referent_documents_source(
+        repository_root,
+        source_commit=source_commit,
+        c1=c1,
+    )
+    committed_sha256 = hashlib.sha256(committed).hexdigest()
+    package_name, _, child_name = _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME.rpartition(".")
+    package = sys.modules.get(package_name)
+    if not isinstance(package, ModuleType):
+        raise QualificationContractError(
+            "design-referent document parent package is not loaded exactly"
+        )
+    existing = sys.modules.get(_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME)
+    cache = _AUTHENTICATED_REFERENT_DOCUMENTS_CACHE
+    if cache is None:
+        cached = None
+        cached_sha256 = None
+        cached_specification = None
+        cached_marker = None
+    elif type(cache) is tuple and len(cache) == 4:
+        cached, cached_sha256, cached_specification, cached_marker = cache
+    else:
+        raise QualificationContractError(
+            "authenticated design-referent document cache shape differs"
+        )
+    if _AUTHENTICATED_REFERENT_DOCUMENTS_MODULE is not cached:
+        raise QualificationContractError(
+            "authenticated design-referent document cache binding differs"
+        )
+    if existing is not None:
+        if cached is None or existing is not cached:
+            raise QualificationContractError(
+                "design-referent document module was preloaded outside its "
+                "authenticated facade"
+            )
+        if committed_sha256 != cached_sha256:
+            raise QualificationContractError(
+                "cached design-referent document compiled source differs from "
+                "current Git S/C1/live source"
+            )
+        try:
+            origin_matches = target.samefile(existing.__file__)
+            specification_origin_matches = target.samefile(existing.__spec__.origin)
+        except (AttributeError, OSError, TypeError, ValueError):
+            origin_matches = False
+            specification_origin_matches = False
+        if (
+            not origin_matches
+            or not specification_origin_matches
+            or getattr(existing, "__name__", None)
+            != _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME
+            or getattr(existing, "__package__", None) != package_name
+            or getattr(existing, "__loader__", object()) is not None
+            or getattr(getattr(existing, "__spec__", None), "name", None)
+            != _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME
+            or getattr(getattr(existing, "__spec__", None), "loader", object())
+            is not None
+            or getattr(existing, "__cached__", object()) is not None
+            or getattr(existing, "__spec__", None) is not cached_specification
+            or getattr(cached_specification, "loader_state", None) is not cached_marker
+            or getattr(cached_marker, "get", lambda _key: None)("schema_version")
+            != "spirallens.authenticated-source-module.v0.1"
+            or getattr(cached_marker, "get", lambda _key: None)("source_sha256")
+            != cached_sha256
+        ):
+            raise QualificationContractError(
+                "authenticated design-referent document module identity differs"
+            )
+        if vars(package).get(child_name) is not existing:
+            raise QualificationContractError(
+                "authenticated design-referent document package binding differs"
+            )
+        rechecked_target, rechecked_committed = _bootstrap_referent_documents_source(
+            repository_root,
+            source_commit=source_commit,
+            c1=c1,
+        )
+        try:
+            rechecked_target_matches = target.samefile(rechecked_target)
+        except (OSError, TypeError, ValueError):
+            rechecked_target_matches = False
+        if (
+            not rechecked_target_matches
+            or hashlib.sha256(rechecked_committed).hexdigest() != cached_sha256
+        ):
+            raise QualificationContractError(
+                "cached design-referent document source changed during reauthentication"
+            )
+        return existing
+    if cached is not None:
+        raise QualificationContractError(
+            "authenticated design-referent document module was removed from runtime"
+        )
+    if child_name in vars(package):
+        raise QualificationContractError(
+            "design-referent document package attribute was preloaded outside its "
+            "authenticated facade"
+        )
+    try:
+        specification = importlib.util.find_spec(_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME)
+        specification_origin = None if specification is None else specification.origin
+        specification_matches = target.samefile(specification_origin)
+    except (ImportError, OSError, TypeError, ValueError):
+        specification_matches = False
+    if not specification_matches:
+        raise QualificationContractError(
+            "design-referent document module import specification differs"
+        )
+    specification = importlib.machinery.ModuleSpec(
+        _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME,
+        loader=None,
+        origin=str(target),
+    )
+    specification.has_location = True
+    imported = ModuleType(_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME)
+    imported.__file__ = str(target)
+    imported.__package__ = _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME.rpartition(".")[0]
+    imported.__loader__ = None
+    imported.__spec__ = specification
+    imported.__cached__ = None
+    try:
+        code = compile(
+            committed,
+            str(target),
+            "exec",
+            dont_inherit=True,
+            optimize=0,
+        )
+        sys.modules[_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME] = imported
+        exec(code, imported.__dict__)
+        if sys.modules.get(_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME) is not imported:
+            raise QualificationContractError(
+                "design-referent document execution replaced its module identity"
+            )
+        try:
+            imported_origin_matches = target.samefile(imported.__file__)
+            imported_specification_origin_matches = target.samefile(
+                imported.__spec__.origin
+            )
+        except (AttributeError, OSError, TypeError, ValueError):
+            imported_origin_matches = False
+            imported_specification_origin_matches = False
+        if (
+            not imported_origin_matches
+            or not imported_specification_origin_matches
+            or getattr(imported, "__name__", None)
+            != _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME
+            or getattr(imported, "__package__", None) != package_name
+            or getattr(imported, "__loader__", object()) is not None
+            or getattr(getattr(imported, "__spec__", None), "name", None)
+            != _DESIGN_REFERENT_DOCUMENTS_MODULE_NAME
+            or getattr(getattr(imported, "__spec__", None), "loader", object())
+            is not None
+            or getattr(imported, "__cached__", object()) is not None
+        ):
+            raise QualificationContractError(
+                "design-referent document module execution identity differs"
+            )
+        rechecked_target, rechecked_committed = _bootstrap_referent_documents_source(
+            repository_root,
+            source_commit=source_commit,
+            c1=c1,
+        )
+        try:
+            rechecked_target_matches = target.samefile(rechecked_target)
+        except (OSError, TypeError, ValueError):
+            rechecked_target_matches = False
+        if (
+            not rechecked_target_matches
+            or hashlib.sha256(rechecked_committed).hexdigest() != committed_sha256
+        ):
+            raise QualificationContractError(
+                "design-referent document source changed during authenticated execution"
+            )
+        marker = MappingProxyType(
+            {
+                "schema_version": "spirallens.authenticated-source-module.v0.1",
+                "source_sha256": committed_sha256,
+            }
+        )
+        specification.loader_state = marker
+        setattr(package, child_name, imported)
+    except BaseException:
+        if vars(package).get(child_name) is imported:
+            delattr(package, child_name)
+        if sys.modules.get(_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME) is imported:
+            del sys.modules[_DESIGN_REFERENT_DOCUMENTS_MODULE_NAME]
+        raise
+    _AUTHENTICATED_REFERENT_DOCUMENTS_MODULE = imported
+    _AUTHENTICATED_REFERENT_DOCUMENTS_CACHE = (
+        imported,
+        committed_sha256,
+        specification,
+        marker,
+    )
+    return imported
+
+
 def _runtime_source_modules(
     materialization: object,
 ) -> tuple[tuple[object, str, str], ...]:
@@ -698,237 +867,6 @@ class _PinnedScientificParent:
             raise QualificationContractError(
                 f"{self.role} source identity differs from its binding"
             )
-
-
-@dataclass(frozen=True, slots=True, init=False)
-class D7V1TypedScientificParentAdapter:
-    """Value-free typed projection of exactly five joined scientific parents."""
-
-    parent_bindings: Mapping[str, records.D7V1ArtifactBinding]
-    confirmation_admission: Mapping[str, object]
-    execution_design: object
-    parent_join_sha256: str
-
-    exact_five_parent_read: ClassVar[bool] = True
-    parent_byte_identities_verified: ClassVar[bool] = True
-    parent_cross_joins_verified: ClassVar[bool] = True
-    parent_result_values_retained: ClassVar[bool] = False
-    historical_plan_read: ClassVar[bool] = False
-    negative_or_predecessor_d7_read: ClassVar[bool] = False
-    launch_artifact_read: ClassVar[bool] = False
-
-    def __init__(
-        self,
-        *,
-        _factory_token: object = None,
-        parent_bindings: Mapping[str, records.D7V1ArtifactBinding],
-        confirmation_admission: Mapping[str, object],
-        execution_design: object,
-        parent_join_sha256: str,
-    ) -> None:
-        if _factory_token is not _FACTORY_TOKEN:
-            raise QualificationContractError(
-                "D7V1TypedScientificParentAdapter requires the closed five-parent "
-                "adapter"
-            )
-        if tuple(parent_bindings) != _PARENT_ROLES:
-            raise QualificationContractError(
-                "typed scientific parent adapter requires exact ordered five roles"
-            )
-        admission_document = advancement.IndependentConfirmationAdmissionSpec.from_dict(
-            confirmation_admission
-        ).to_dict()
-        if admission_document != dict(confirmation_admission):
-            raise QualificationContractError(
-                "typed scientific parent adapter admission differs from canonical form"
-            )
-        if not hasattr(execution_design, "to_dict") or not hasattr(
-            execution_design, "canonical_sha256"
-        ):
-            raise TypeError("execution_design has the wrong closed return surface")
-        require_sha256(parent_join_sha256, label="parent_join_sha256")
-        object.__setattr__(
-            self,
-            "parent_bindings",
-            MappingProxyType(dict(parent_bindings)),
-        )
-        object.__setattr__(
-            self,
-            "confirmation_admission",
-            MappingProxyType(admission_document),
-        )
-        object.__setattr__(self, "execution_design", execution_design)
-        object.__setattr__(self, "parent_join_sha256", parent_join_sha256)
-
-
-@dataclass(frozen=True, slots=True, init=False)
-class D7V1CanonicalDesignReferent:
-    """One exact canonical, candidate-only virtual full-design referent."""
-
-    artifact_role: str
-    artifact_contract_id: str
-    canonical_bytes: bytes
-    canonical_sha256: str
-    byte_count: int
-
-    def __init__(
-        self,
-        *,
-        _factory_token: object = None,
-        artifact_role: str,
-        document: Mapping[str, object],
-    ) -> None:
-        if _factory_token is not _FACTORY_TOKEN:
-            raise QualificationContractError(
-                "D7V1CanonicalDesignReferent requires the closed derivation"
-            )
-        if artifact_role not in _ROLE_SPECS:
-            raise QualificationContractError("unknown full-design referent role")
-        canonical = canonical_json_bytes(dict(document))
-        parsed = _parse_exact_canonical(
-            canonical,
-            label=f"{artifact_role} canonical referent",
-        )
-        schema, contract_id = _ROLE_SPECS[artifact_role]
-        if set(parsed) != _ROOT_KEYS:
-            raise QualificationContractError(
-                f"{artifact_role} referent root keyset differs"
-            )
-        if (
-            parsed["schema_version"] != schema
-            or parsed["contract_id"] != contract_id
-            or parsed["artifact_role"] != artifact_role
-            or parsed["successor_lineage_id"] != _SUCCESSOR_LINEAGE_ID
-        ):
-            raise QualificationContractError(f"{artifact_role} referent header differs")
-        if parsed["typestate"] != dict(_TYPESTATE) or parsed["claim_boundary"] != dict(
-            _CLAIM_BOUNDARY
-        ):
-            raise QualificationContractError(
-                f"{artifact_role} referent non-authority boundary differs"
-            )
-        object.__setattr__(self, "artifact_role", artifact_role)
-        object.__setattr__(self, "artifact_contract_id", schema)
-        object.__setattr__(self, "canonical_bytes", canonical)
-        object.__setattr__(self, "canonical_sha256", sha256_bytes(canonical))
-        object.__setattr__(self, "byte_count", len(canonical))
-
-    @property
-    def document(self) -> dict[str, object]:
-        return _parse_exact_canonical(
-            self.canonical_bytes,
-            label=f"{self.artifact_role} canonical referent",
-        )
-
-    @property
-    def binding(self) -> records.D7V1ArtifactBinding:
-        return records.D7V1ArtifactBinding(
-            artifact_role=self.artifact_role,
-            artifact_contract_id=self.artifact_contract_id,
-            canonical_sha256=self.canonical_sha256,
-            byte_count=self.byte_count,
-        )
-
-
-@dataclass(frozen=True, slots=True, init=False)
-class D7V1FullDesignReferentSetCandidate:
-    """Closed six-referent candidate derived from one exact S/C1/C2 join."""
-
-    source_commit: str
-    parent_adapter: D7V1TypedScientificParentAdapter
-    referents_by_role: Mapping[str, D7V1CanonicalDesignReferent]
-    bindings_by_inventory_field: Mapping[str, records.D7V1ArtifactBinding]
-
-    source_reviewed: ClassVar[bool] = False
-    source_selected: ClassVar[bool] = False
-    source_closure_established: ClassVar[bool] = False
-    source_tree_authenticated: ClassVar[bool] = False
-    runtime_environment_authenticated: ClassVar[bool] = False
-    runtime_dependency_closure_verified: ClassVar[bool] = False
-    external_bindings_authenticated: ClassVar[bool] = False
-    confirmation_family_admitted: ClassVar[bool] = False
-    confirmation_protocol_frozen: ClassVar[bool] = False
-    aggregation_rebinding_reviewed: ClassVar[bool] = False
-    aggregation_rebinding_applied: ClassVar[bool] = False
-    lifecycle_instantiated: ClassVar[bool] = False
-    official_embedded_full_design_created: ClassVar[bool] = False
-    official_embedded_full_design_frozen: ClassVar[bool] = False
-    materialization_authorized: ClassVar[bool] = False
-    materialized: ClassVar[bool] = False
-    publication_authorized: ClassVar[bool] = False
-    artifacts_published: ClassVar[bool] = False
-    authority_granted: ClassVar[bool] = False
-    execution_authorized: ClassVar[bool] = False
-    execution_started: ClassVar[bool] = False
-    supplier_invoked: ClassVar[bool] = False
-    seed_values_present: ClassVar[bool] = False
-    official_callable_invoked: ClassVar[bool] = False
-    result_produced: ClassVar[bool] = False
-    chronology_orchestrated: ClassVar[bool] = False
-    chronology_receipt_created: ClassVar[bool] = False
-    chronology_receipt_persisted: ClassVar[bool] = False
-    scientific_claim_eligible: ClassVar[bool] = False
-
-    resolution_status: ClassVar[str] = "six-virtual-bindings-resolved"
-
-    def __init__(
-        self,
-        *,
-        _factory_token: object = None,
-        source_commit: str,
-        parent_adapter: D7V1TypedScientificParentAdapter,
-        referents_by_role: Mapping[str, D7V1CanonicalDesignReferent],
-    ) -> None:
-        if _factory_token is not _FACTORY_TOKEN:
-            raise QualificationContractError(
-                "D7V1FullDesignReferentSetCandidate requires the closed builder"
-            )
-        if tuple(referents_by_role) != tuple(_ROLE_SPECS):
-            raise QualificationContractError(
-                "full-design referent set requires exact ordered six roles"
-            )
-        bindings = {
-            field: referents_by_role[role].binding
-            for field, role in _INVENTORY_FIELDS.items()
-        }
-        object.__setattr__(self, "source_commit", source_commit)
-        object.__setattr__(self, "parent_adapter", parent_adapter)
-        object.__setattr__(
-            self,
-            "referents_by_role",
-            MappingProxyType(dict(referents_by_role)),
-        )
-        object.__setattr__(
-            self,
-            "bindings_by_inventory_field",
-            MappingProxyType(bindings),
-        )
-
-    @property
-    def family_binding(self) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["family_binding"]
-
-    @property
-    def admission_binding(self) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["admission_binding"]
-
-    @property
-    def protocol_binding(self) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["protocol_binding"]
-
-    @property
-    def source_graph_binding(self) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["source_graph_binding"]
-
-    @property
-    def graph_case_stress_aggregation_binding(
-        self,
-    ) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["graph_case_stress_aggregation_binding"]
-
-    @property
-    def lifecycle_binding(self) -> records.D7V1ArtifactBinding:
-        return self.bindings_by_inventory_field["lifecycle_binding"]
 
 
 def _require_runtime_origins(
@@ -1434,6 +1372,7 @@ def _typed_adapter(
     source_commit: str,
     c1: records.D7V1C1SourceSetRecord,
     parents: Sequence[_PinnedScientificParent],
+    referent_documents: ModuleType,
 ) -> D7V1TypedScientificParentAdapter:
     """Rebuild every typed historical companion before creating ephemeral D6."""
 
@@ -1649,301 +1588,31 @@ def _typed_adapter(
             }
         )
     )
-    return D7V1TypedScientificParentAdapter(
-        _factory_token=_FACTORY_TOKEN,
+    (
+        validated_parent_bindings,
+        validated_confirmation_admission,
+        validated_execution_design,
+        validated_parent_join_sha256,
+    ) = referent_documents._validated_parent_adapter_fields(
         parent_bindings=bindings,
         confirmation_admission=rebuilt_admission.to_dict(),
         execution_design=design,
         parent_join_sha256=join_sha,
     )
-
-
-def _derivation_document(
-    *,
-    source_commit: str,
-    c1: records.D7V1C1SourceSetRecord,
-    c2: records.D7V1C2SourceClosureReceipt,
-    adapter: D7V1TypedScientificParentAdapter,
-) -> dict[str, object]:
-    return {
-        "derivation_id": "d7-v1-five-parent-source-joined-referents-v0-1",
-        "source_commit": source_commit,
-        "c1_binding": _binding_document(_record_binding(c1)),
-        "c2_binding": _binding_document(_record_binding(c2)),
-        "scientific_parent_bindings": [
-            _binding_document(adapter.parent_bindings[role]) for role in _PARENT_ROLES
-        ],
-        "scientific_parent_join_sha256": adapter.parent_join_sha256,
-        "approved_callable": {
-            "module": execution_design.__name__,
-            "qualname": "build_seed_free_d7_confirmation_execution_design",
-            "repository_path": _EXECUTION_DESIGN_PATH,
-            "five_parent_seed_free_scientific_projection_only": True,
-            "authority_transfer_allowed": False,
-            "persistence_transfer_allowed": False,
-            "schema_transfer_allowed": False,
-        },
-        "read_contract": {
-            "exact_scientific_parent_count": 5,
-            "historical_plan_read": False,
-            "negative_or_predecessor_d7_read": False,
-            "launch_artifact_read": False,
-            "parent_result_values_retained": False,
-        },
-    }
-
-
-def _document(
-    role: str,
-    *,
-    derivation: Mapping[str, object],
-    payload: Mapping[str, object],
-) -> dict[str, object]:
-    schema, contract_id = _ROLE_SPECS[role]
-    return {
-        "schema_version": schema,
-        "contract_id": contract_id,
-        "artifact_role": role,
-        "successor_lineage_id": _SUCCESSOR_LINEAGE_ID,
-        "derivation": dict(derivation),
-        "payload": dict(payload),
-        "typestate": dict(_TYPESTATE),
-        "claim_boundary": dict(_CLAIM_BOUNDARY),
-    }
-
-
-def _referent_payloads(
-    *,
-    protocol: D7V1MaterializationProtocol,
-    source_commit: str,
-    c1: records.D7V1C1SourceSetRecord,
-    adapter: D7V1TypedScientificParentAdapter,
-) -> Mapping[str, Mapping[str, object]]:
-    design = adapter.execution_design
-    design_document = design.to_dict()
-    admission = _mapping(
-        design_document.get("parent_d6"),
-        label="execution design parent D6",
+    adapter = object.__new__(referent_documents.D7V1TypedScientificParentAdapter)
+    object.__setattr__(adapter, "parent_bindings", validated_parent_bindings)
+    object.__setattr__(
+        adapter,
+        "confirmation_admission",
+        validated_confirmation_admission,
     )
-    inventory = design.inventory.to_dict()
-    counts = _mapping(inventory.get("counts"), label="D7 inventory counts")
-    repeated = _mapping(
-        inventory.get("repeated_measures"),
-        label="D7 repeated-measures policy",
+    object.__setattr__(adapter, "execution_design", validated_execution_design)
+    object.__setattr__(
+        adapter,
+        "parent_join_sha256",
+        validated_parent_join_sha256,
     )
-    expected_counts = {
-        "seed_slots": 2,
-        "cases": 4,
-        "primary_units": 64,
-        "core_cells": 192,
-        "loop_cells": 1152,
-        "event_lanes": 1344,
-        "required_strata": 6,
-    }
-    observed_counts = {
-        "seed_slots": counts.get("seed_slots"),
-        "cases": counts.get("cases"),
-        "primary_units": len(design.inventory.primary_units),
-        "core_cells": len(design.inventory.core_cells),
-        "loop_cells": len(design.inventory.loop_cells),
-        "event_lanes": counts.get("event_lanes"),
-        "required_strata": len(design.inventory.expected_strata),
-    }
-    if observed_counts != expected_counts:
-        raise QualificationContractError(
-            "approved scientific inventory differs from 2/4/64/192/1152/1344/6"
-        )
-    c1_payload = _mapping(c1.to_dict().get("payload"), label="C1 payload")
-    source_members = _sequence(
-        c1_payload.get("source_members"),
-        label="C1 source members",
-    )
-    source_member_sha = sha256_bytes(
-        canonical_json_bytes(
-            {
-                "schema_version": "spirallens.d7-v1-source-member-set.v0.1",
-                "source_members": source_members,
-            }
-        )
-    )
-    confirmation_family = _mapping(
-        design_document.get("confirmation_family"),
-        label="confirmation family",
-    )
-    locked_parent_interface = _mapping(
-        design_document.get("locked_parent_interface"),
-        label="locked parent interface",
-    )
-    if (
-        confirmation_family.get("family_admitted") is not False
-        or confirmation_family.get("construction_diversity_reviewed") is not False
-        or confirmation_family.get("committed_source_closure_verified") is not False
-        or locked_parent_interface.get(
-            "parent_aggregation_application_rebinding_reviewed"
-        )
-        is not False
-    ):
-        raise QualificationContractError(
-            "approved design family or aggregation review boundary differs"
-        )
-    confirmation_admission = _mapping(
-        dict(adapter.confirmation_admission),
-        label="fresh confirmation admission spec",
-    )
-    source_derived_family_proposal = confirmation_protocol.D7ConfirmationFamilyProposal(
-        selection_generator_family_id=_string(
-            confirmation_admission.get("selection_generator_family_id"),
-            label="admission selection_generator_family_id",
-        ),
-        selection_construction_family_id=_string(
-            confirmation_admission.get("selection_construction_family_id"),
-            label="admission selection_construction_family_id",
-        ),
-    ).to_dict()
-    case_ids = sorted({unit.case_id for unit in design.inventory.primary_units})
-    observed_seed_slots = tuple(
-        sorted({unit.seed_slot_id for unit in design.inventory.primary_units})
-    )
-    if (
-        len(case_ids) != 4
-        or observed_seed_slots != _SEED_SLOT_IDS
-        or source_derived_family_proposal.get("confirmation_generator_family_id")
-        != confirmation_family.get("generator_family_id")
-        or source_derived_family_proposal.get("selection_generator_family_id")
-        != admission.get("selection_generator_family_id")
-        or source_derived_family_proposal.get("selection_construction_family_id")
-        != admission.get("selection_construction_family_id")
-        or source_derived_family_proposal.get("confirmation_generator_family_id")
-        == source_derived_family_proposal.get("selection_generator_family_id")
-        or source_derived_family_proposal.get("confirmation_construction_family_id")
-        == source_derived_family_proposal.get("selection_construction_family_id")
-    ):
-        raise QualificationContractError(
-            "approved design family cases, slots, or construction diversity differ"
-        )
-    family_payload = {
-        "descriptor_id": "d7-v1-spectral-moment-confirmation-family-candidate",
-        "generator_family_id": confirmation_family["generator_family_id"],
-        "case_ids": case_ids,
-        "case_count": len(case_ids),
-        "seed_slot_ids": list(_SEED_SLOT_IDS),
-        "identifier_difference_observed": True,
-        "identifier_difference_proves_construction_diversity": False,
-        "source_derived_family_proposal": source_derived_family_proposal,
-        "execution_design_confirmation_family": dict(confirmation_family),
-    }
-    admission_payload = {
-        "admission_candidate_id": "d7-v1-family-admission-candidate",
-        "status": "candidate-not-issued",
-        "parent_d6_binding": dict(admission),
-        "fresh_confirmation_admission_spec": dict(confirmation_admission),
-        "admission_issued": False,
-        "all_requirements_reviewed": False,
-        "policy_override_allowed": False,
-        "post_selection_exclusion_allowed": False,
-    }
-    protocol_payload = {
-        "protocol_candidate_id": "d7-v1-confirmation-protocol-candidate",
-        "status": "seed-free-execution-design-not-frozen",
-        "execution_design_schema_version": design.schema_version,
-        "execution_design_sha256": design.canonical_sha256,
-        "seed_policy": design.seed_policy.to_dict(),
-        "graph_axes": design.graph_axes.to_dict(),
-        "domain": design.domain.to_dict(),
-        "thresholds": design.thresholds.to_dict(),
-        "coverage_policy": design.coverage_policy.to_dict(),
-        "stress_translation": design.stress_translation.to_dict(),
-        "manifest_compatibility": design.manifest_compatibility.to_dict(),
-        "execution_design": design_document,
-        "protocol_frozen": False,
-    }
-    source_graph_payload = {
-        "source_graph_id": "d7-v1-source-graph-candidate",
-        "source_commit": source_commit,
-        "source_members": source_members,
-        "source_member_count": len(source_members),
-        "source_member_set_sha256": source_member_sha,
-        "git_declared_source_members_only": True,
-        "runtime_dependency_closure_verified": False,
-        "source_graph_authenticated": False,
-    }
-    aggregation_payload = {
-        "aggregation_id": "d7-v1-graph-case-stress-aggregation-candidate",
-        "inventory": inventory,
-        "locked_parent_interface": dict(locked_parent_interface),
-        "parent_locked_aggregation_sha256": admission["locked_aggregation_sha256"],
-        "scientific_inventory_counts": expected_counts,
-        "field_graph_count": len(design.graph_axes.field_estimation),
-        "cycle_graph_count": len(design.graph_axes.cycle_construction),
-        "loop_role_count": 2,
-        "core_cells_per_primary_unit": 3,
-        "loop_cells_per_primary_unit": 18,
-        "graph_case_stress_cells_are_repeated_measures": True,
-        "repeated_measures": repeated,
-        "event_lanes_are_independent_samples": False,
-        "aggregation_rebinding_reviewed": False,
-        "aggregation_rebinding_applied": False,
-    }
-    protocol_future_chronology = _mapping(
-        protocol.document.get("future_chronology"),
-        label="protocol future_chronology",
-    )
-    chronology_stages = tuple(
-        _mapping(item, label="protocol future chronology stage")
-        for item in _sequence(
-            protocol_future_chronology.get("stages"),
-            label="protocol future chronology stages",
-        )
-    )
-    observed_stages = tuple(
-        (
-            _plain_int(stage.get("sequence"), label="chronology stage sequence"),
-            _string(stage.get("stage_id"), label="chronology stage_id"),
-        )
-        for stage in chronology_stages
-    )
-    if (
-        tuple(protocol_future_chronology) != _FUTURE_CHRONOLOGY_KEYS
-        or any(set(stage) != {"sequence", "stage_id"} for stage in chronology_stages)
-        or observed_stages != tuple(enumerate(_FUTURE_CHRONOLOGY_STAGE_IDS, start=1))
-        or len(
-            _sequence(
-                protocol_future_chronology.get("git_commit_sequence"),
-                label="protocol future chronology git_commit_sequence",
-            )
-        )
-        != 3
-    ):
-        raise QualificationContractError(
-            "protocol future chronology differs from exact 19-stage policy"
-        )
-    lifecycle_payload = {
-        "lifecycle_id": "d7-v1-prospective-lifecycle-policy",
-        "status": "prospective-not-instantiated",
-        "protocol_future_chronology": dict(protocol_future_chronology),
-        "ordering_is_policy_only": True,
-        "external_store_observed": False,
-        "external_namespace_reserved": False,
-        "seed_claim_created": False,
-        "official_seed_inventory_created": False,
-        "official_embedded_full_design_created": False,
-        "official_embedded_full_design_frozen": False,
-        "launch_intent_created": False,
-        "attempt_reserved": False,
-        "chronology_receipt_created": False,
-        "official_execution_started": False,
-        "lifecycle_instantiated": False,
-    }
-    return MappingProxyType(
-        {
-            "confirmation-family": family_payload,
-            "family-admission": admission_payload,
-            "confirmation-protocol": protocol_payload,
-            "source-graph": source_graph_payload,
-            "graph-case-stress-aggregation": aggregation_payload,
-            "lifecycle": lifecycle_payload,
-        }
-    )
+    return adapter
 
 
 def _derive_d7_v1_full_design_referent_set_candidate(
@@ -1982,6 +1651,11 @@ def _derive_d7_v1_full_design_referent_set_candidate(
         raise QualificationContractError(
             "full-design referent source_commit differs from exact S/C1/C2 join"
         )
+    referent_documents = _authenticated_referent_documents_module(
+        repository,
+        source_commit=source_commit,
+        c1=c1,
+    )
     parents = _load_scientific_parents(
         repository,
         protocol,
@@ -1992,37 +1666,63 @@ def _derive_d7_v1_full_design_referent_set_candidate(
         source_commit=source_commit,
         c1=c1,
         parents=parents,
+        referent_documents=referent_documents,
     )
-    derivation = _derivation_document(
+    derivation = referent_documents._derivation_document(
         source_commit=source_commit,
         c1=c1,
         c2=c2,
         adapter=adapter,
     )
-    payloads = _referent_payloads(
+    payloads = referent_documents._referent_payloads(
         protocol=protocol,
         source_commit=source_commit,
         c1=c1,
         adapter=adapter,
     )
-    referents = {
-        role: D7V1CanonicalDesignReferent(
-            _factory_token=_FACTORY_TOKEN,
+    referents: dict[str, object] = {}
+    for role in referent_documents._ROLE_SPECS:
+        (
+            validated_role,
+            validated_contract_id,
+            validated_canonical_bytes,
+            validated_canonical_sha256,
+            validated_byte_count,
+        ) = referent_documents._validated_canonical_referent_fields(
             artifact_role=role,
-            document=_document(
+            document=referent_documents._document(
                 role,
                 derivation=derivation,
                 payload=payloads[role],
             ),
         )
-        for role in _ROLE_SPECS
-    }
-    return D7V1FullDesignReferentSetCandidate(
-        _factory_token=_FACTORY_TOKEN,
+        referent = object.__new__(referent_documents.D7V1CanonicalDesignReferent)
+        object.__setattr__(referent, "artifact_role", validated_role)
+        object.__setattr__(referent, "artifact_contract_id", validated_contract_id)
+        object.__setattr__(referent, "canonical_bytes", validated_canonical_bytes)
+        object.__setattr__(referent, "canonical_sha256", validated_canonical_sha256)
+        object.__setattr__(referent, "byte_count", validated_byte_count)
+        referents[role] = referent
+    (
+        validated_source_commit,
+        validated_parent_adapter,
+        validated_referents_by_role,
+        validated_bindings_by_inventory_field,
+    ) = referent_documents._validated_referent_set_fields(
         source_commit=source_commit,
         parent_adapter=adapter,
         referents_by_role=referents,
     )
+    candidate = object.__new__(referent_documents.D7V1FullDesignReferentSetCandidate)
+    object.__setattr__(candidate, "source_commit", validated_source_commit)
+    object.__setattr__(candidate, "parent_adapter", validated_parent_adapter)
+    object.__setattr__(candidate, "referents_by_role", validated_referents_by_role)
+    object.__setattr__(
+        candidate,
+        "bindings_by_inventory_field",
+        validated_bindings_by_inventory_field,
+    )
+    return candidate
 
 
 def _build_d7_v1_full_design_referent_set_candidate(

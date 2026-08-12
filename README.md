@@ -137,6 +137,12 @@ created. There is no persisted/supported schema, protocol, route, record,
 public-API, or dependency revision. Claim delta remains `none`; S remains
 unreviewed and unselected, VOY-V3 remains `frozen_not_run`, and D7/D8 remain
 `not_run`.
+Before S selection, the 2,108-line full-design-referent implementation was
+split into a 721-line pure document kernel and a 1,808-line provenance facade.
+The facade retains the S/C1/C2 and five-parent gates, while the kernel performs
+no Git or filesystem I/O; its own source is joined to its import origin, live
+bytes, Git S, and C1. This internal refactor changes no semantics, authority,
+public API, schema, protocol, route, dependency, or library milestone.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

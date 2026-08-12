@@ -35,6 +35,12 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 MODULE_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_source_closure.py"
 )
+DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
+)
+DESIGN_REFERENT_DOCUMENTS_MODULE_NAME = (
+    "spirallens.qualification.confirmation_v1_design_referent_documents"
+)
 ORIGIN_BOUND_MODULES = (
     (MODULE_REPOSITORY_PATH, source_closure),
     ("src/spirallens/_repository_context.py", repository_context_module),
@@ -135,8 +141,25 @@ def _load_materialization_test_helpers() -> ModuleType:
 
 @pytest.fixture(autouse=True)
 def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
-    yield
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    try:
+        yield
+    finally:
+        loaded = sys.modules.get(DESIGN_REFERENT_DOCUMENTS_MODULE_NAME)
+        referents = sys.modules.get(
+            "spirallens.qualification.confirmation_v1_full_design_referents"
+        )
+        authenticated = getattr(
+            referents,
+            "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+            None,
+        )
+        if loaded is not None and loaded is authenticated:
+            workspace_leaf = REPOSITORY.joinpath(
+                *DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH.split("/")
+            )
+            loaded.__file__ = str(workspace_leaf)
+            loaded.__spec__.origin = str(workspace_leaf)
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _case(tmp_path: Path, **options: object) -> object:
@@ -846,6 +869,30 @@ def test_candidate_rejects_same_bytes_from_an_adjacent_import_origin(
         == b""
     )
     with pytest.raises(QualificationContractError, match="import origin"):
+        _build(adjacent_case)
+
+
+def test_candidate_rejects_document_kernel_same_bytes_from_adjacent_spec_origin(
+    tmp_path: Path,
+) -> None:
+    loaded_before = DESIGN_REFERENT_DOCUMENTS_MODULE_NAME in sys.modules
+    specification = importlib.util.find_spec(DESIGN_REFERENT_DOCUMENTS_MODULE_NAME)
+    assert specification is not None
+    assert specification.origin is not None
+    assert (DESIGN_REFERENT_DOCUMENTS_MODULE_NAME in sys.modules) is loaded_before
+    specification_origin = Path(specification.origin)
+
+    adjacent_case = _case(tmp_path / "document-kernel-adjacent-origin")
+    target = adjacent_case.repository.joinpath(
+        *DESIGN_REFERENT_DOCUMENTS_REPOSITORY_PATH.split("/")
+    )
+    assert target.samefile(specification_origin)
+    source = target.read_bytes()
+    target.unlink()
+    target.write_bytes(source)
+    assert not target.samefile(specification_origin)
+    assert _git(adjacent_case.repository, "status", "--porcelain=v1", "-z") == b""
+    with pytest.raises(QualificationContractError, match="import specification"):
         _build(adjacent_case)
 
 

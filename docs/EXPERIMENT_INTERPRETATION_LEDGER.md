@@ -909,6 +909,31 @@ commit A/B, execution, result, or scientific evidence is created. S remains
 unreviewed and unselected, VOY-V3 remains `frozen_not_run`, and D7/D8 remain
 `not_run`.
 
+### 3.26 D7 v1 pure referent-document work-package split
+
+**Decision source and timing**
+
+Before reviewed source S was selected, the 2,108-line full-design-referent
+module was split so deterministic document construction no longer shares one
+work package with repository provenance and five-parent reconstruction.
+
+**Implemented boundary**
+
+A 721-line private leaf now owns the three candidate value types and exact six
+canonical referent documents. The 1,808-line facade retains bootstrap trust,
+S/C1/C2 verification, historical-parent joins, D6 reconstruction, and the
+single approved execution-design call. The leaf performs no Git or filesystem
+I/O, and its source is independently joined to its repository import origin,
+live bytes, Git blob at S, and C1 source-member tuple.
+
+**Current boundary and claim delta**
+
+`none`. Referent semantics, provenance requirements, and every all-false
+authority axis are unchanged. The split creates no chronology fact, record,
+persisted or supported schema, protocol or route revision, public API,
+dependency, or library milestone. S remains unreviewed and unselected;
+VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
