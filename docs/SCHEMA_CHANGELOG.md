@@ -4,6 +4,44 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private Pythia-160M identity-acquisition source
+
+- Added a private, framework-neutral receipt kernel and an unregistered,
+  zero-argument capture script for a later review of provider model metadata
+  and exact `config.json` bytes. The source contract resolves the provider's
+  default revision once, rejoins an exact-revision metadata response, records
+  a sorted provider-reported sibling manifest, and joins the retrieved config
+  bytes to the provider-reported non-LFS Git blob identity and byte count.
+- The future script is fail-closed on an exact clean HEAD equal to the local
+  `origin/main` tracking candidate, fixed repository and HTTPS routes, ambient
+  credentials and proxies, bounded strict JSON, and no-replace publication.
+  That local tracking equality does not prove that the remote is current or
+  that the commit has been independently reviewed. The script authenticates
+  and manually executes the committed private kernel bytes, retains both
+  default and exact provider responses, writes the receipt last in a private
+  stage, and atomically publishes the closed four-file directory. It durably
+  reserves that empty stage before the first provider request; every later
+  failure retains it and authorizes neither cleanup, resume, nor retry.
+- This PR adds source and synthetic tests only. Live acquisition has only been
+  exercised through blocked preflight; no provider request, network, Hugging
+  Face, config, cache, tokenizer, weight, model, forward, activation, subject,
+  or runtime-resource access occurs. Synthetic in-memory receipt candidates
+  are tested, but no provider-backed or persisted receipt and no output
+  directory is created. A later, separately reviewed operation must bind an
+  exact selected source commit before any metadata request.
+- The publication contract is honest and quiescent-local, not a security
+  boundary against a hostile same-user process racing the final native
+  directory rename. Held parent, stage, and file descriptors detect namespace
+  or content drift before and after publication; detected ambiguity remains a
+  terminal, non-retryable failure and grants no authority.
+- The private receipt remains `review_pending`. Provider sibling facts are
+  explicitly unrecomputed, config content does not establish a reviewed model
+  profile, and every model, subject, execution, capture, D0-D8, VOY, and
+  scientific authority remains false. Claim ceiling is `level_0`, claim delta
+  is `none`, `SCI-S1` remains in progress, and `SCI-S2` remains blocked. No
+  public API, CLI registration, dependency, model-profile registration, or
+  supported schema is added.
+
 ## 2026-08-13 — Offline Pythia adapter mechanism hardening
 
 - Hardened the current `PythiaAdapter.observe_batch` implementation so every

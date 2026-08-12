@@ -158,6 +158,24 @@ result. Its only status is `blocked_external_prerequisites`; it is neither the
 descriptor-only prepare view above nor a `SubjectProtocolManifest`, subject
 prepare-only decision, runtime preflight, or execution-readiness artifact.
 
+The separate private Pythia-160M identity-acquisition source is not a
+successor protocol. Its pure kernel can validate already-acquired provider
+metadata and `config.json` bytes, while its unregistered script describes a
+future metadata-only acquisition under a separately reviewed exact source
+commit. The script has only been exercised in preflight-blocked and synthetic
+tests; no live acquisition passed preflight and no receipt was persisted. Even
+a later valid receipt is
+only review-pending identity evidence: provider sibling metadata remains
+provider-reported, weights and tokenizer bytes remain unread, no profile or
+adapter compatibility is established, and it cannot feed descriptor-only
+prepare, subject preparation, model loading, or execution authority.
+Before its first provider request, the later one-shot operation durably reserves
+an empty private stage; any failure after successful reservation retains it and
+authorizes neither cleanup, resume, nor retry. Its filesystem guarantee assumes
+a quiescent, honest local checkout. Held directory and file identities detect
+ordinary drift, but the contract does not claim resistance to a hostile
+same-user process racing the final native directory rename.
+
 The access package does not create a trusted `SubjectProtocolManifest`, qualify
 D0-D8, grant project-level subject preparation or execution, or make the
 Pythia-70M engineering atlas scientifically eligible. It can authorize only
