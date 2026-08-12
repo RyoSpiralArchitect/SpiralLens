@@ -196,13 +196,15 @@ caller-owned-stage publisher: that shape cannot close the validate-to-rename
 race. A separate internal source-only primitive now owns a
 private stage, performs exact-tree and joined validation, fsyncs members and
 directories, and uses only a native no-replace directory rename. It remains
-uninvoked and its observation is structural-only; the remaining successor
-source, reviewed source commit S, C1/C2, external claims, artifact publication,
-result, and execution remain absent. Fresh source now implements the bounded
-six-read post-D6 descriptive derivation and the declared v1 preparation,
-runner, and official-callable coordinates. The entrypoints stop before
-dispatch because no closed external chronology or execution-start authority
-exists. A separate internal source-only stage-17 primitive now owns its result
+uninvoked and its observation is structural-only; reviewed source commit S,
+C1/C2, external claims, artifact publication, result, and execution remain
+absent. Fresh source now implements the bounded six-read post-D6 descriptive
+derivation and the declared v1 preparation, runner, and official-callable
+coordinates. The entrypoints stop before dispatch; a later private source
+closes the external chronology but remains unwired because independent S
+review and selection, runtime closure, invocation authority, and
+execution-start authority are absent. A separate internal source-only stage-17
+primitive now owns its result
 bytes by rejoining exact commit A and source S and rerunning the six-input
 derivation; it accepts no caller result, path, or stage and can publish only at
 the fixed coordinate with fsync plus native no-replace rename. It remains
@@ -262,6 +264,23 @@ Before S selection, the 2,108-line referent module was further split into a
 The new leaf performs no Git or filesystem I/O and is itself joined to its
 repository import origin, live bytes, source-S blob, and C1 member. Referent
 semantics and every provenance and authority boundary are unchanged.
+One private, non-exported source operation now implements the previously
+missing pre-item-23 chronology owner. It accepts only a repository and asserted
+exact source commit; derives all records and fixed coordinates internally;
+makes the external claim durable before entering the captured fixed supplier
+exactly once; makes the attempt durable; promotes the exact two-file external
+store without replacement; creates the chronology receipt last; rejoins all
+bytes; and delegates only the exact nine-file repository publication to the
+existing private publisher. A sealed publisher-owned descriptor capability
+keeps both external files and their full directory ancestry reauthenticated
+through all repository-publication gates. Composite failures preserve facts
+for both namespaces. Every failure is non-cleanable, non-resumable, and
+non-retryable. The operation is deliberately uninvoked and the preparation
+entrypoint remains unwired. Its commit argument does not prove independent
+source review or selection, installed-runtime closure, or invocation
+authority. No materialization artifact, commit A/B, execution, result, or
+scientific evidence is created; S remains unreviewed and unselected, claim
+delta is `none`, VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means

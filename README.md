@@ -78,8 +78,10 @@ A third internal source-only primitive now implements the prospective stage-17
 result publication boundary. It accepts no caller-supplied result, path, or
 stage; it must rejoin exact commit A and source S, freshly derive the result,
 and can publish only at the fixed coordinate through a private fsynced file and
-native no-replace rename. It remains uninvoked. There is still no closed
-external chronology orchestrator, so every execution coordinate fails closed.
+native no-replace rename. It remains uninvoked. The later private chronology
+source is also complete but deliberately unwired; every execution coordinate
+therefore still fails closed until independent S review and selection, runtime
+closure, and invocation authority exist.
 Before selecting S, the 4,699-line descriptive implementation was split behind
 a 287-line facade into eight private D1--D5, independence, and shared work
 packages. The 27-output canonical result is byte-identical to the pre-split
@@ -143,6 +145,25 @@ The facade retains the S/C1/C2 and five-parent gates, while the kernel performs
 no Git or filesystem I/O; its own source is joined to its import origin, live
 bytes, Git S, and C1. This internal refactor changes no semantics, authority,
 public API, schema, protocol, route, dependency, or library milestone.
+The complete pre-item-23 chronology is now implemented as one further private,
+non-exported source operation. From only a repository and an asserted exact
+source commit, it reconstructs C1/C2, the source-selected supplier and six
+virtual referents; durably reloads the exclusive claim before one fixed
+supplier entry; durably reloads the attempt; promotes the exact two-file
+external store with native no-replace semantics; forms the receipt last; and
+passes the joined hard gate before the existing exact nine-file private
+repository publisher. A publisher-owned sealed descriptor capability keeps the
+exact external parent, store, child directories, and two evidence files
+anchored through every repository-publication gate; no arbitrary reader is
+accepted. Cross-namespace failures retain both repository and external
+visibility/verification facts and never authorize cleanup, resume, or retry.
+This source has not been invoked. The preparation entrypoint deliberately does
+not import or call it: a raw commit argument is not proof of independent source
+review, source selection, runtime closure, or invocation authority. No C1/C2
+instance, claim, seed, store, receipt, repository publication, commit A/B,
+execution, result, or scientific evidence exists. Claim delta remains `none`;
+S remains unreviewed and unselected, VOY-V3 remains `frozen_not_run`, and
+D7/D8 remain `not_run`.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

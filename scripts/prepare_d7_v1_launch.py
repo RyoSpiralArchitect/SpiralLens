@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Inspect the frozen D7 v1 entrypoint coordinates, then fail closed.
 
-This source coordinate is intentionally not a materializer yet.  The frozen
-chronology requires a private external stage, a durable exclusive seed claim,
-one supplier entry, and several subsequently joined records before the
-already-qualified private repository publisher may be called.  No source
-currently closes that orchestration, so this script performs read-only
-coordinate checks and refuses to create either official or staging paths.
+This source coordinate is intentionally not a materializer.  A private source
+now closes the frozen external chronology, but its mere presence grants no
+review, source-selection, runtime-closure, invocation, or materialization
+authority.  This script remains deliberately unwired from that operation: it
+performs read-only coordinate checks and refuses to create either official or
+staging paths.
 
 Import and ``--help`` perform no supplier invocation, publication, execution,
 or mutation of the declared official and staging namespaces.
@@ -35,7 +35,9 @@ OFFICIAL_EXTERNAL_STAGING_PATH = Path(
 OFFICIAL_EXTERNAL_STORE_PATH = Path(
     "/Users/ryohiga/SpiralReality/spirallens-d7-v1-store"
 )
-PREPARATION_BLOCK_ID = "d7-v1-external-chronology-orchestrator-absent"
+PREPARATION_BLOCK_ID = (
+    "d7-v1-source-selection-runtime-closure-and-invocation-authority-absent"
+)
 
 _BOOTSTRAP_SYS_PATH = tuple(sys.path)
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
@@ -61,8 +63,8 @@ def _parser() -> argparse.ArgumentParser:
     return argparse.ArgumentParser(
         description=(
             "Validate the frozen D7 v1 source-only entrypoint coordinates. "
-            "Materialization remains blocked until the complete external "
-            "chronology orchestrator is reviewed."
+            "Materialization remains blocked until independent source review "
+            "and selection, runtime closure, and invocation authority exist."
         )
     )
 
@@ -154,10 +156,10 @@ def _require_frozen_coordinates(repository: RepositoryContext) -> None:
 
 def _raise_source_only_block() -> NoReturn:
     raise RuntimeError(
-        "D7 v1 preparation is source-only and blocked: no reviewed operation "
-        "currently owns the required durable external chronology, supplier "
-        "entry, record construction, and private publication in one closed "
-        f"flow ({PREPARATION_BLOCK_ID})"
+        "D7 v1 preparation is source-only and blocked: the private chronology "
+        "operation is intentionally unwired, and no independent reviewed "
+        "source selection, runtime closure, or invocation authority has been "
+        f"established ({PREPARATION_BLOCK_ID})"
     )
 
 

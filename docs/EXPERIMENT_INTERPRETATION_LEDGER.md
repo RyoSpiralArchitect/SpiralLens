@@ -934,6 +934,46 @@ persisted or supported schema, protocol or route revision, public API,
 dependency, or library milestone. S remains unreviewed and unselected;
 VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
 
+### 3.27 D7 v1 closed pre-item-23 chronology source
+
+**Decision source and timing**
+
+While reviewed source S remains unselected, the missing source-side owner for
+the frozen external and repository chronology was implemented. This decision
+completes an inert work package; it does not authorize or attest its invocation.
+
+**Implemented boundary**
+
+One private, non-exported operation accepts only a repository and an asserted
+exact source commit. It reconstructs the choice-free C1/C2 candidate,
+source-selected supplier identity and exclusions, six virtual design
+referents, protocol, route, record identifiers, and physical coordinates. It
+then owns this closed order: create a private external stage; construct,
+exclusively persist, fsync, reload, and revalidate the claim; enter the captured
+fixed supplier exactly once; validate two strictly ascending, unique,
+signed-int64, exclusion-clean values; construct the dependent records;
+exclusively persist, fsync, reload, and revalidate the attempt; rejoin clean S;
+promote and reverify the exact two-file external store by native no-replace
+rename; form the chronology receipt last; pass the joined-loader hard gate; and
+call the existing exact nine-file private repository publisher. Failures expose
+tri-state namespace observations and authorize no cleanup, resume, or retry. A
+sealed publisher-owned descriptor capability retains and reauthenticates the
+exact external parent, store, two child directories, and two evidence files
+through every repository-publication gate. Composite failures retain both the
+repository publisher's disposition and the external store's verification and
+visibility facts.
+
+**Current boundary and claim delta**
+
+`none`. The source is uninvoked and the preparation entrypoint neither imports
+nor calls it. `source_commit` is an operator assertion, not a machine proof of
+independent review or selection. Runtime and dependency closure and invocation
+authority remain absent. No C1/C2 instance, external claim, supplier entry,
+seed, attempt, store, receipt, repository artifact, commit A/B, execution,
+result, or scientific evidence was created. No schema, protocol, route, public
+API, dependency, or library milestone changes. S remains unreviewed and
+unselected; VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

@@ -2186,7 +2186,11 @@ def test_private_publication_negative_capability_and_official_paths_untouched() 
         "repository",
         "sources_by_role",
         "expected_receipt_sha256",
+        "_anchored_external_evidence",
     }
+    capability_parameter = signature.parameters["_anchored_external_evidence"]
+    assert capability_parameter.kind is inspect.Parameter.KEYWORD_ONLY
+    assert capability_parameter.default is None
     assert not {
         "stage_root",
         "destination",
