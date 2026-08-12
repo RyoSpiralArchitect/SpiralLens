@@ -4,6 +4,32 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private Pythia-160M pre-observation assessment source
+
+- Added one internal, non-exported, framework-neutral declaration validator and
+  static resource assessor for the historically intended Pythia-160M
+  workstream. It accepts only caller-declared, explicitly unverified model
+  identity, file, profile, capture, and resource-budget fields; this change
+  ships no declaration or assessment instance and verifies none of those
+  declarations against a model repository, cache, runtime, or host.
+- The assessor performs closed integer arithmetic over the declared sizes and
+  dimensions and can only return `blocked_external_prerequisites`. Physical
+  memory, free disk, OOM safety, model identity, file bytes, adapter parity,
+  independent context banks, instrument qualification, the terminal
+  `SCI-S1` transition, and an external witness all remain unobserved or
+  unverified. Every model, subject, execution, capture, and scientific
+  authority remains false; claim ceiling is `level_0` and claim delta is
+  `none`.
+- The internal identifiers
+  `spirallens.pythia160-preobservation-declaration.v0.1` and
+  `spirallens.pythia160-preobservation-assessment.v0.1` are private,
+  nonpersisted, and unsupported. They add no loader, writer, CLI, public API,
+  schema registry entry, dependency, protocol, receipt, model-profile
+  registration, or library/scientific milestone. No network, Hugging Face,
+  model-file, tokenizer, forward, activation, atlas, payload, output, or
+  receipt access occurs. `SCI-S1` remains in progress, `SCI-S2` remains
+  blocked, and no Pythia-160M run or subject preparation begins.
+
 ## 2026-08-13 — Private D7 v1 pre-item-23 chronology source
 
 - Added one internal, non-exported, uninvoked operation that accepts only a

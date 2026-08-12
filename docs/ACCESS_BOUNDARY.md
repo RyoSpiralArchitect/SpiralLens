@@ -149,6 +149,15 @@ The historical neighbor `--prepare-only` command is a retrieval binding
 preflight that reads an existing manifest and token array. It is not the
 subject prepare-only contract described here and must not be renamed as such.
 
+The private Pythia-160M pre-observation assessor is narrower still. It accepts
+an in-memory declaration and performs integer arithmetic over declared,
+unverified sizes and dimensions. It has no path, loader, writer, CLI, model
+profile registration, or persisted instance, and it reads no descriptor,
+manifest, payload, model file, cache, host resource, tokenizer, activation, or
+result. Its only status is `blocked_external_prerequisites`; it is neither the
+descriptor-only prepare view above nor a `SubjectProtocolManifest`, subject
+prepare-only decision, runtime preflight, or execution-readiness artifact.
+
 The access package does not create a trusted `SubjectProtocolManifest`, qualify
 D0-D8, grant project-level subject preparation or execution, or make the
 Pythia-70M engineering atlas scientifically eligible. It can authorize only

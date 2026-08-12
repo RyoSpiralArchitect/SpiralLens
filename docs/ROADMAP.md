@@ -651,6 +651,15 @@ criterion or authorize `SCI-S2`.
 
 **Status:** blocked on `SCI-S1` by design.
 
+A private, nonpersisted pre-observation declaration assessor may be developed
+in parallel as source-only preparation. It treats revision, architecture,
+files, dimensions, and counts as unverified declarations, performs static
+integer resource arithmetic only, and remains
+`blocked_external_prerequisites`. It does not observe a model, host resource,
+context bank, manifest, or payload; it cannot satisfy or transition `SCI-S1`,
+unblock `SCI-S2`, issue a `SubjectProtocolManifest`, authorize subject
+prepare-only or execution, or earn any VOY or D0-D8 credit.
+
 Before subject access, the protocol declares one primary endpoint and fixes an
 exactly-one terminal mapping. Required validity, control, or invariance failure
 takes precedence as `fail`; if none fails but required evaluability is missing,
@@ -1655,6 +1664,10 @@ The exact Pythia-70M identity and runtime layout are now centralized in one
 private model-profile seam. That seam remains closed to Pythia-160M and grants
 no model-access, subject-preparation, execution, or scientific authority;
 `SCI-S2` remains blocked on the terminal `SCI-S1` transition.
+The separate private Pythia-160M pre-observation assessor does not register a
+160M engineering profile or reuse the 70M lane. It ships no declaration
+instance, reads no subject or model value, and can report only a statically
+computed, externally blocked assessment with Level-0/no-delta boundaries.
 
 The successor-only fulfillment rule for the D6 v0.1 identity-bearing
 cells/stress manifests remains an unchanged historical proposal. C1 is now
