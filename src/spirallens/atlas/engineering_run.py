@@ -17,7 +17,9 @@ from spirallens.contexts import ContextRole, load_context_bank
 
 from .engineering_protocol import (
     PublicExamplePlumbingProtocolIntegrityError,
+    _UnsupportedEngineeringModelProfileError,
     _build_public_example_plumbing_protocol_binding,
+    _require_engineering_model_profile,
     load_public_example_plumbing_protocol,
     resolve_repository_relative_path,
     verify_implementation_source,
@@ -33,9 +35,11 @@ class PublicExamplePlumbingRunError(RuntimeError):
     """Raised when the frozen engineering cell cannot execute as declared."""
 
 
-_PYTHIA70_PARAMETER_COUNT = 70_426_624
 _DISK_RESERVE_BYTES = 64 * 1024 * 1024
 _RUNNER_REPOSITORY_PATH = "src/spirallens/atlas/engineering_run.py"
+_ENGINEERING_PROTOCOL_REPOSITORY_PATH = (
+    "src/spirallens/atlas/engineering_protocol.py"
+)
 
 
 def _require_imported_source_origin(
@@ -188,8 +192,16 @@ def _resource_preflight(
     output_parent: Path,
     context_length: int,
 ) -> dict[str, object]:
-    model_file_bytes = sum(path.stat().st_size for path in model_paths.values())
-    parameter_bytes = _PYTHIA70_PARAMETER_COUNT * 4
+    try:
+        profile = _require_engineering_model_profile(protocol.model.model_id)
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingRunError(
+            "model is not registered for public-example engineering"
+        ) from error
+    model_file_bytes = sum(
+        path.stat().st_size for path in model_paths.values()
+    )
+    parameter_bytes = profile.parameter_count * 4
     batch_working_bytes = protocol.capture.batch_size * (
         context_length * protocol.model.vocab_size * 4
         + 2 * protocol.model.num_layers * protocol.model.hidden_size * 4
@@ -203,8 +215,7 @@ def _resource_preflight(
     free_disk_bytes = shutil.disk_usage(output_parent).free
     physical_memory_bytes = _physical_memory_bytes()
     if (
-        minimum_peak_bytes
-        > protocol.resource_budget.estimated_peak_bytes
+        minimum_peak_bytes > protocol.resource_budget.estimated_peak_bytes
         or free_disk_bytes
         < protocol.resource_budget.max_estimated_output_bytes
         + _DISK_RESERVE_BYTES
@@ -324,6 +335,12 @@ def _verify_protocol_git_anchor(
 
 
 def _verify_model_metadata(adapter: PythiaAdapter, protocol: Any) -> None:
+    try:
+        profile = _require_engineering_model_profile(protocol.model.model_id)
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingProtocolIntegrityError(
+            "model is not registered for public-example engineering"
+        ) from error
     metadata = adapter.config_metadata()
     expected = {
         "model_id": protocol.model.model_id,
@@ -333,7 +350,7 @@ def _verify_model_metadata(adapter: PythiaAdapter, protocol: Any) -> None:
         "num_layers": protocol.model.num_layers,
         "hidden_size": protocol.model.hidden_size,
         "vocab_size": protocol.model.vocab_size,
-        "parameter_count": _PYTHIA70_PARAMETER_COUNT,
+        "parameter_count": profile.parameter_count,
         "parameter_devices": ["cpu"],
         "parameter_dtypes": ["float32"],
     }
@@ -365,14 +382,7 @@ def _verify_model_metadata(adapter: PythiaAdapter, protocol: Any) -> None:
             "activation_dtype": "float32",
         }
         or capture.get("effective_parameter_layout")
-        != [
-            {
-                "device": "cpu",
-                "dtype": "float32",
-                "parameter_tensors": 76,
-                "parameter_values": _PYTHIA70_PARAMETER_COUNT,
-            }
-        ]
+        != profile.effective_parameter_layout
     ):
         raise PublicExamplePlumbingProtocolIntegrityError(
             "loaded model does not satisfy the exact production capture layout"
@@ -398,6 +408,14 @@ def run_public_example_plumbing(
         imported_file=__file__,
         repository_path=_RUNNER_REPOSITORY_PATH,
         label="public-example runner",
+    )
+    _require_imported_source_origin(
+        context=context,
+        imported_file=inspect.getsourcefile(
+            _require_engineering_model_profile
+        ),
+        repository_path=_ENGINEERING_PROTOCOL_REPOSITORY_PATH,
+        label="engineering protocol",
     )
 
     import torch
@@ -438,7 +456,9 @@ def run_public_example_plumbing(
             "receipt output already exists; overwrite is forbidden"
         )
     _require_real_directory(output.parent, label="atlas output parent")
-    _require_real_directory(receipt_output.parent, label="receipt output parent")
+    _require_real_directory(
+        receipt_output.parent, label="receipt output parent"
+    )
     if receipt_output.is_relative_to(output):
         raise PublicExamplePlumbingRunError(
             "receipt must be published outside the activation atlas directory"
@@ -527,8 +547,7 @@ def run_public_example_plumbing(
         )
     if (
         context_path.read_bytes() != context_source_bytes
-        or loaded_bank.source_sha256
-        != protocol.context_bank.source_sha256
+        or loaded_bank.source_sha256 != protocol.context_bank.source_sha256
     ):
         raise PublicExamplePlumbingProtocolIntegrityError(
             "ContextBank changed during execution"

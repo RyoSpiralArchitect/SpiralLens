@@ -14,7 +14,8 @@ from pathlib import Path, PurePosixPath
 import re
 import struct
 import subprocess
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Final
 
 import yaml
 from yaml.events import AliasEvent
@@ -32,7 +33,6 @@ from spirallens.core.canonical import (
     canonical_json_sha256,
 )
 
-
 PUBLIC_EXAMPLE_PLUMBING_PROTOCOL_SCHEMA_VERSION = (
     "spirallens.public-example-plumbing-protocol.v0.1"
 )
@@ -43,17 +43,6 @@ MAX_PUBLIC_EXAMPLE_PLUMBING_PROTOCOL_BYTES = 1_048_576
 
 _REPOSITORY = "RyoSpiralArchitect/SpiralLens"
 _IMPLEMENTATION_REPOSITORY_PATH = "src/spirallens/adapters/pythia.py"
-_MODEL_ID = "EleutherAI/pythia-70m"
-_MODEL_ARCHITECTURE = "GPTNeoXForCausalLM"
-_MODEL_DIMENSIONS = {
-    "num_layers": 6,
-    "hidden_size": 512,
-    "vocab_size": 50304,
-    "num_attention_heads": 8,
-    "intermediate_size": 2048,
-    "max_position_embeddings": 2048,
-}
-_MODEL_FILE_NAMES = frozenset({"config.json", "model.safetensors"})
 _RESOURCE_ESTIMATOR = "pythia-atlas-conservative-static-estimate-v0.1"
 _RESOURCE_CLAIM_BOUNDARY = (
     "static-array-and-working-set-estimate-not-os-oom-guarantee"
@@ -65,6 +54,94 @@ _LEGACY_CONSUMER_ALIASES = {
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+
+
+class _UnsupportedEngineeringModelProfileError(ValueError):
+    """Raised when the engineering lane has no registered model profile."""
+
+
+@dataclass(frozen=True, slots=True)
+class _EngineeringModelProfile:
+    """Private runtime facts for one closed public-example model."""
+
+    model_id: str
+    display_name: str
+    architecture: str
+    num_layers: int
+    hidden_size: int
+    vocab_size: int
+    num_attention_heads: int
+    intermediate_size: int
+    max_position_embeddings: int
+    model_file_names: tuple[str, ...]
+    parameter_count: int
+    parameter_tensor_count: int
+
+    @property
+    def dimensions(self) -> dict[str, int]:
+        return {
+            "num_layers": self.num_layers,
+            "hidden_size": self.hidden_size,
+            "vocab_size": self.vocab_size,
+            "num_attention_heads": self.num_attention_heads,
+            "intermediate_size": self.intermediate_size,
+            "max_position_embeddings": self.max_position_embeddings,
+        }
+
+    @property
+    def effective_parameter_layout(self) -> list[dict[str, object]]:
+        return [
+            {
+                "device": "cpu",
+                "dtype": "float32",
+                "parameter_tensors": self.parameter_tensor_count,
+                "parameter_values": self.parameter_count,
+            }
+        ]
+
+
+_PYTHIA70_ENGINEERING_MODEL_PROFILE: Final = _EngineeringModelProfile(
+    model_id="EleutherAI/pythia-70m",
+    display_name="Pythia-70M",
+    architecture="GPTNeoXForCausalLM",
+    num_layers=6,
+    hidden_size=512,
+    vocab_size=50304,
+    num_attention_heads=8,
+    intermediate_size=2048,
+    max_position_embeddings=2048,
+    model_file_names=("config.json", "model.safetensors"),
+    parameter_count=70_426_624,
+    parameter_tensor_count=76,
+)
+
+_ENGINEERING_MODEL_PROFILES_BY_ID: Final = MappingProxyType(
+    {
+        _PYTHIA70_ENGINEERING_MODEL_PROFILE.model_id: (
+            _PYTHIA70_ENGINEERING_MODEL_PROFILE
+        )
+    }
+)
+
+
+def _require_engineering_model_profile(
+    model_id: object,
+) -> _EngineeringModelProfile:
+    if (
+        not isinstance(model_id, str)
+        or not model_id
+        or model_id != model_id.strip()
+    ):
+        raise _UnsupportedEngineeringModelProfileError(
+            "engineering model ID must be a non-empty trimmed string"
+        )
+    try:
+        return _ENGINEERING_MODEL_PROFILES_BY_ID[model_id]
+    except KeyError as error:
+        raise _UnsupportedEngineeringModelProfileError(
+            f"engineering model profile is not registered: {model_id!r}"
+        ) from error
+
 
 _ROOT_KEYS = frozenset(
     {
@@ -101,7 +178,7 @@ _MODEL_KEYS = frozenset(
         "id",
         "revision",
         "architecture",
-        *_MODEL_DIMENSIONS,
+        *_PYTHIA70_ENGINEERING_MODEL_PROFILE.dimensions,
         "files",
     }
 )
@@ -115,9 +192,7 @@ _CONTEXT_BANK_KEYS = frozenset(
         "claim_eligible",
     }
 )
-_TOKEN_SELECTION_KEYS = frozenset(
-    {"kind", "token_ids", "token_ids_sha256"}
-)
+_TOKEN_SELECTION_KEYS = frozenset({"kind", "token_ids", "token_ids_sha256"})
 _CAPTURE_KEYS = frozenset(
     {
         "device",
@@ -624,21 +699,27 @@ def _parse_source(value: object) -> EngineeringSource:
 def _parse_model(value: object) -> EngineeringModel:
     item = _mapping(value, label="model")
     _exact_keys(item, _MODEL_KEYS, label="model")
+    try:
+        profile = _require_engineering_model_profile(item["id"])
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingProtocolSchemaError(
+            "model.id is not registered for public-example engineering"
+        ) from error
     files = _mapping(item["files"], label="model.files")
-    _exact_keys(files, _MODEL_FILE_NAMES, label="model.files")
+    _exact_keys(files, profile.model_file_names, label="model.files")
     return EngineeringModel(
-        model_id=_constant(item["id"], _MODEL_ID, label="model.id"),
+        model_id=profile.model_id,
         revision=_commit(item["revision"], label="model.revision"),
         architecture=_constant(
             item["architecture"],
-            _MODEL_ARCHITECTURE,
+            profile.architecture,
             label="model.architecture",
         ),
         **{
             name: _integer_constant(
                 item[name], expected, label=f"model.{name}"
             )
-            for name, expected in _MODEL_DIMENSIONS.items()
+            for name, expected in profile.dimensions.items()
         },
         files=tuple(
             (name, _sha256(files[name], label=f"model.files[{name!r}]"))
@@ -660,9 +741,7 @@ def _parse_context_bank(value: object) -> EngineeringContextBank:
         canonical_sha256=_sha256(
             item["canonical_sha256"], label="context_bank.canonical_sha256"
         ),
-        context_id=_slug(
-            item["context_id"], label="context_bank.context_id"
-        ),
+        context_id=_slug(item["context_id"], label="context_bank.context_id"),
         role=_constant(item["role"], "example", label="context_bank.role"),
         claim_eligible=_boolean_constant(
             item["claim_eligible"],
@@ -844,17 +923,14 @@ def public_example_plumbing_protocol_from_dict(
     parsed_stages = tuple(
         (
             name,
-            _constant(
-                stages[name], "not_run", label=f"stage_status.{name}"
-            ),
+            _constant(stages[name], "not_run", label=f"stage_status.{name}"),
         )
         for name in _STAGE_NAMES
     )
     raw_consumers = document["allowed_consumers"]
     if raw_consumers != [_ALLOWED_CONSUMER]:
         raise PublicExamplePlumbingProtocolSchemaError(
-            "allowed_consumers must contain only "
-            f"{_ALLOWED_CONSUMER!r}"
+            f"allowed_consumers must contain only {_ALLOWED_CONSUMER!r}"
         )
     return PublicExamplePlumbingProtocol(
         schema_version=_constant(
@@ -984,9 +1060,17 @@ def _build_public_example_plumbing_protocol_binding(
         verified_model_files,
         label="verified_model_files",
     )
+    try:
+        profile = _require_engineering_model_profile(
+            loaded.protocol.model.model_id
+        )
+    except _UnsupportedEngineeringModelProfileError as error:
+        raise PublicExamplePlumbingProtocolSchemaError(
+            "model.id is not registered for public-example engineering"
+        ) from error
     _exact_keys(
         observed,
-        _MODEL_FILE_NAMES,
+        profile.model_file_names,
         label="verified_model_files",
     )
     parsed_observed = {
@@ -1063,10 +1147,8 @@ def _validate_execution_preflight(
     if (
         parsed["minimum_peak_bytes"] > budget.estimated_peak_bytes
         or parsed["free_disk_bytes"]
-        < budget.max_estimated_output_bytes
-        + parsed["disk_reserve_bytes"]
-        or parsed["physical_memory_bytes"]
-        < budget.max_estimated_peak_bytes
+        < budget.max_estimated_output_bytes + parsed["disk_reserve_bytes"]
+        or parsed["physical_memory_bytes"] < budget.max_estimated_peak_bytes
         or parsed["model_file_bytes"] > parsed["minimum_peak_bytes"]
     ):
         raise PublicExamplePlumbingProtocolIntegrityError(
@@ -1204,11 +1286,12 @@ def validate_engineering_request_binding(
     else:
         bank = context_binding.get("bank")
         selected = context_binding.get("selected_context")
-        bank_content = bank.get("content") if isinstance(bank, Mapping) else None
+        bank_content = (
+            bank.get("content") if isinstance(bank, Mapping) else None
+        )
         if (
             not isinstance(bank, Mapping)
-            or bank.get("source_sha256")
-            != protocol.context_bank.source_sha256
+            or bank.get("source_sha256") != protocol.context_bank.source_sha256
             or bank.get("canonical_sha256")
             != protocol.context_bank.canonical_sha256
             or not isinstance(bank_content, Mapping)

@@ -77,9 +77,7 @@ def _payload() -> dict[str, object]:
             "observation_contract": "all_residual_pre_post_layers",
         },
         "resource_budget": {
-            "estimator_id": (
-                "pythia-atlas-conservative-static-estimate-v0.1"
-            ),
+            "estimator_id": ("pythia-atlas-conservative-static-estimate-v0.1"),
             "safety_factor": 4,
             "estimated_output_bytes": 300_000,
             "max_estimated_output_bytes": 1_000_000,
@@ -157,9 +155,7 @@ def _request(loaded) -> dict[str, object]:
         "requested_model_revision": protocol.model.revision,
         "resolved_model_revision": protocol.model.revision,
         "config_blob_sha256": dict(protocol.model.files)["config.json"],
-        "model_blob_sha256": dict(protocol.model.files)[
-            "model.safetensors"
-        ],
+        "model_blob_sha256": dict(protocol.model.files)["model.safetensors"],
         "num_tokens": len(protocol.token_selection.token_ids),
         "token_ids_sha256": protocol.token_selection.token_ids_sha256,
         "selection": {
@@ -197,7 +193,9 @@ def test_load_binds_source_and_canonical_digests(tmp_path) -> None:
     path = _write(tmp_path, _payload())
     loaded = load_public_example_plumbing_protocol(path)
 
-    assert loaded.source_sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert (
+        loaded.source_sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+    )
     assert loaded.canonical_sha256 == loaded.protocol.canonical_sha256
     assert loaded.protocol.model.hidden_size == 512
     assert loaded.protocol.token_selection.token_ids == (0, 7, 42)
@@ -231,19 +229,25 @@ def test_root_constants_are_closed(path, value) -> None:
 def test_unknown_keys_aliases_and_duplicates_are_rejected(tmp_path) -> None:
     payload = _payload()
     payload["surprise"] = True
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="unknown"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="unknown"
+    ):
         public_example_plumbing_protocol_from_dict(payload)
 
     alias = tmp_path / "alias.yaml"
     alias.write_text("base: &base {x: 1}\ncopy: *base\n", encoding="utf-8")
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="aliases"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="aliases"
+    ):
         load_public_example_plumbing_protocol(alias)
 
     duplicate = tmp_path / "duplicate.yaml"
     duplicate.write_text(
         "schema_version: x\nschema_version: y\n", encoding="utf-8"
     )
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="duplicate"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="duplicate"
+    ):
         load_public_example_plumbing_protocol(duplicate)
 
 
@@ -259,23 +263,39 @@ def test_unknown_keys_aliases_and_duplicates_are_rejected(tmp_path) -> None:
 def test_context_bank_path_must_be_repository_relative(unsafe) -> None:
     payload = _payload()
     payload["context_bank"]["path"] = unsafe
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="relative"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="relative"
+    ):
         public_example_plumbing_protocol_from_dict(payload)
 
 
-def test_token_ids_are_explicit_sorted_unique_and_little_endian_bound() -> None:
+def test_token_ids_are_explicit_sorted_unique_and_little_endian_bound() -> (
+    None
+):
     payload = _payload()
     payload["token_selection"]["token_ids"] = [7, 0, 42]
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="sorted"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="sorted"
+    ):
         public_example_plumbing_protocol_from_dict(payload)
 
     payload = _payload()
     payload["token_selection"]["token_ids_sha256"] = "0" * 64
-    with pytest.raises(PublicExamplePlumbingProtocolIntegrityError, match="int64"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolIntegrityError, match="int64"
+    ):
         public_example_plumbing_protocol_from_dict(payload)
 
 
 def test_model_dimensions_files_and_resource_receipt_are_closed() -> None:
+    payload = _payload()
+    payload["model"]["id"] = "EleutherAI/pythia-160m"
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError,
+        match="not registered",
+    ):
+        public_example_plumbing_protocol_from_dict(payload)
+
     payload = _payload()
     payload["model"]["hidden_size"] = 513
     with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="512"):
@@ -283,7 +303,9 @@ def test_model_dimensions_files_and_resource_receipt_are_closed() -> None:
 
     payload = _payload()
     payload["model"]["files"]["weights.bin"] = "9" * 64
-    with pytest.raises(PublicExamplePlumbingProtocolSchemaError, match="unknown"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolSchemaError, match="unknown"
+    ):
         public_example_plumbing_protocol_from_dict(payload)
 
     payload = _payload()
@@ -311,7 +333,9 @@ def test_authorizations_stages_and_consumers_are_closed() -> None:
         public_example_plumbing_protocol_from_dict(payload)
 
 
-def test_binding_and_request_validation_are_pure_and_fail_closed(tmp_path) -> None:
+def test_binding_and_request_validation_are_pure_and_fail_closed(
+    tmp_path,
+) -> None:
     loaded = load_public_example_plumbing_protocol(
         _write(tmp_path, _payload())
     )
@@ -327,7 +351,9 @@ def test_binding_and_request_validation_are_pure_and_fail_closed(tmp_path) -> No
         "parameter_devices": ["cpu"],
         "parameter_dtypes": ["float32"],
     }
-    assert validate_engineering_request_binding(request, model) == loaded.protocol
+    assert (
+        validate_engineering_request_binding(request, model) == loaded.protocol
+    )
 
     changed = copy.deepcopy(request)
     changed["token_ids_sha256"] = "0" * 64
@@ -335,9 +361,9 @@ def test_binding_and_request_validation_are_pure_and_fail_closed(tmp_path) -> No
         validate_engineering_request_binding(changed, model)
 
     changed = copy.deepcopy(request)
-    changed["public_example_plumbing_protocol_binding"]["content"]["status"] = (
-        "draft"
-    )
+    changed["public_example_plumbing_protocol_binding"]["content"][
+        "status"
+    ] = "draft"
     with pytest.raises(PublicExamplePlumbingProtocolIntegrityError):
         validate_engineering_request_binding(changed, model)
 
@@ -455,9 +481,13 @@ def test_consumer_gate_allows_only_integrity_validation(tmp_path) -> None:
     )
 
 
-def test_expected_source_and_canonical_digest_mismatches_fail(tmp_path) -> None:
+def test_expected_source_and_canonical_digest_mismatches_fail(
+    tmp_path,
+) -> None:
     path = _write(tmp_path, _payload())
-    with pytest.raises(PublicExamplePlumbingProtocolIntegrityError, match="source"):
+    with pytest.raises(
+        PublicExamplePlumbingProtocolIntegrityError, match="source"
+    ):
         load_public_example_plumbing_protocol(
             path, expected_source_sha256="0" * 64
         )

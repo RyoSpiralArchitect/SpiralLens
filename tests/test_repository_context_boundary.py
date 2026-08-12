@@ -21,7 +21,9 @@ from spirallens.qualification.preparation import (
 REPOSITORY = Path(__file__).resolve().parents[1]
 
 
-def test_repository_context_is_absolute_and_authority_free(tmp_path: Path) -> None:
+def test_repository_context_is_absolute_and_authority_free(
+    tmp_path: Path,
+) -> None:
     context = RepositoryContext(root=tmp_path.resolve())
 
     assert context.root == tmp_path.resolve()
@@ -33,7 +35,9 @@ def test_repository_context_is_absolute_and_authority_free(tmp_path: Path) -> No
         RepositoryContext(root=tmp_path / "nested" / "..")
 
 
-def test_repository_context_compares_physical_import_identity(tmp_path: Path) -> None:
+def test_repository_context_compares_physical_import_identity(
+    tmp_path: Path,
+) -> None:
     root = tmp_path / "declared"
     expected = root / "src/spirallens/example.py"
     expected.parent.mkdir(parents=True)
@@ -67,7 +71,9 @@ def test_repository_context_compares_physical_import_identity(tmp_path: Path) ->
         run_public_example_plumbing,
     ),
 )
-def test_repository_bound_consumers_require_explicit_root(consumer: object) -> None:
+def test_repository_bound_consumers_require_explicit_root(
+    consumer: object,
+) -> None:
     parameter = inspect.signature(consumer).parameters["repository_root"]
 
     assert parameter.kind is inspect.Parameter.KEYWORD_ONLY
@@ -87,7 +93,9 @@ def _link_current_source(root: Path, repository_path: str) -> None:
     target.symlink_to(REPOSITORY / repository_path)
 
 
-def test_public_example_runner_rejects_an_adjacent_checkout(tmp_path: Path) -> None:
+def test_public_example_runner_rejects_an_adjacent_checkout(
+    tmp_path: Path,
+) -> None:
     adjacent = tmp_path / "adjacent"
     _write_adjacent_source_copy(
         adjacent,
@@ -115,6 +123,10 @@ def test_public_example_runner_rejects_adjacent_adapter_after_runner_join(
         adjacent,
         "src/spirallens/atlas/engineering_run.py",
     )
+    _link_current_source(
+        adjacent,
+        "src/spirallens/atlas/engineering_protocol.py",
+    )
     _write_adjacent_source_copy(adjacent, "src/spirallens/adapters/pythia.py")
     protocol_path = (
         REPOSITORY / "protocols/pythia70_public_example_plumbing_v0_1.yaml"
@@ -136,7 +148,36 @@ def test_public_example_runner_rejects_adjacent_adapter_after_runner_join(
         )
 
 
-def test_current_engine_binding_rejects_an_adjacent_checkout(tmp_path: Path) -> None:
+def test_public_example_runner_rejects_adjacent_protocol_after_runner_join(
+    tmp_path: Path,
+) -> None:
+    adjacent = tmp_path / "adjacent"
+    _link_current_source(
+        adjacent,
+        "src/spirallens/atlas/engineering_run.py",
+    )
+    _write_adjacent_source_copy(
+        adjacent,
+        "src/spirallens/atlas/engineering_protocol.py",
+    )
+
+    with pytest.raises(
+        PublicExamplePlumbingRunError,
+        match="engineering protocol import origin",
+    ):
+        run_public_example_plumbing(
+            repository_root=adjacent,
+            protocol_path=tmp_path / "unused-protocol.yaml",
+            output_dir=tmp_path / "unused-output",
+            receipt_path=tmp_path / "unused-receipt.json",
+            expected_protocol_source_sha256="a" * 64,
+            expected_protocol_canonical_sha256="b" * 64,
+        )
+
+
+def test_current_engine_binding_rejects_an_adjacent_checkout(
+    tmp_path: Path,
+) -> None:
     adjacent = tmp_path / "adjacent"
     _write_adjacent_source_copy(
         adjacent,

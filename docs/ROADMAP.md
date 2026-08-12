@@ -1632,6 +1632,10 @@ real model access and persisted activations, while candidate, neighbor,
 instrument, graph, field, core, loop, semantic, SAE, integer, and D0-D8 stages
 remain `not_run`. This lane cannot select any choice in steps 5-29 above and
 cannot be cited as subject preparation or evidence.
+The exact Pythia-70M identity and runtime layout are now centralized in one
+private model-profile seam. That seam remains closed to Pythia-160M and grants
+no model-access, subject-preparation, execution, or scientific authority;
+`SCI-S2` remains blocked on the terminal `SCI-S1` transition.
 
 The successor-only fulfillment rule for the D6 v0.1 identity-bearing
 cells/stress manifests remains an unchanged historical proposal. C1 is now
