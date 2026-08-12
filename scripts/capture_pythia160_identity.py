@@ -6,7 +6,8 @@ It fetches only provider model metadata and ``config.json``; it never imports a
 model framework, loads a tokenizer or model, consults a cache, or reads weights.
 """
 
-# The isolated-runtime gate intentionally precedes every non-built-in import.
+# The isolated-runtime and OpenSSL-environment gates intentionally precede
+# every import that can initialize TLS.
 # ruff: noqa: E402
 
 from __future__ import annotations
@@ -23,13 +24,34 @@ _ISOLATED_RUNTIME = bool(
 if __name__ == "__main__" and not _ISOLATED_RUNTIME:
     raise SystemExit("Pythia-160M identity capture requires isolated `python3 -I -S`")
 
-import hashlib
+# Python isolation does not suppress OpenSSL's own process environment.  On
+# the supported interpreter ``os`` is frozen, so this check cannot be shadowed
+# by the script directory and runs before importing ``ssl`` or ``urllib``.
+import os
+
+_FORBIDDEN_OPENSSL_ENVIRONMENT = frozenset(
+    {
+        "OPENSSL_CONF",
+        "OPENSSL_CONF_INCLUDE",
+        "OPENSSL_ENGINES",
+        "OPENSSL_MODULES",
+    }
+)
+if __name__ == "__main__" and any(
+    value and name.upper() in _FORBIDDEN_OPENSSL_ENVIRONMENT
+    for name, value in os.environ.items()
+):
+    raise SystemExit(
+        "Pythia-160M identity capture refuses ambient OpenSSL configuration"
+    )
+
 import ctypes
 from dataclasses import dataclass, field
 import errno
+import hashlib
 from importlib.machinery import ModuleSpec
-import os
 from pathlib import Path
+import ssl
 import stat
 import subprocess
 from types import ModuleType
@@ -37,6 +59,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, unquote, urlsplit
 from urllib.request import (
     HTTPRedirectHandler,
+    HTTPSHandler,
     ProxyHandler,
     Request,
     build_opener,
@@ -51,6 +74,8 @@ _MAX_MODEL_INFO_BYTES = 4 * 1024 * 1024
 _MAX_CONFIG_BYTES = 1024 * 1024
 _MAX_REDIRECTS = 1
 _TIMEOUT_SECONDS = 30
+_FIXED_CA_BUNDLE = Path("/private/etc/ssl/cert.pem")
+_MAX_CA_BUNDLE_BYTES = 4 * 1024 * 1024
 
 _REPOSITORY = Path(os.path.abspath(__file__)).parent.parent
 _SCRIPT_REPOSITORY_PATH = "scripts/capture_pythia160_identity.py"
@@ -95,6 +120,7 @@ _FORBIDDEN_ENVIRONMENT = frozenset(
         "HUGGING_FACE_HUB_TOKEN",
         "NETRC",
         "NO_PROXY",
+        *_FORBIDDEN_OPENSSL_ENVIRONMENT,
         "REQUESTS_CA_BUNDLE",
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
@@ -201,6 +227,159 @@ def _refuse_ambient_network_authority() -> None:
             "Pythia-160M identity capture refuses credential, proxy, and "
             f"ambient TLS environment variables: {present}"
         )
+
+
+def _safe_fixed_ca_metadata(metadata: os.stat_result) -> bool:
+    return bool(
+        stat.S_ISREG(metadata.st_mode)
+        and metadata.st_nlink == 1
+        and metadata.st_uid == 0
+        and stat.S_IMODE(metadata.st_mode) & 0o022 == 0
+        and 0 < metadata.st_size <= _MAX_CA_BUNDLE_BYTES
+    )
+
+
+def _fixed_ca_metadata_fingerprint(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def _read_fixed_ca_bundle() -> bytes:
+    """Read the root-owned fixed CA bundle through no-symlink path anchors."""
+
+    if not hasattr(os, "O_DIRECTORY") or not hasattr(os, "O_NOFOLLOW"):
+        raise _CaptureError("fixed TLS CA bundle requires no-symlink open support")
+    try:
+        parent_fd = _open_absolute_directory(_FIXED_CA_BUNDLE.parent)
+    except OSError as error:
+        raise _CaptureError("fixed TLS CA bundle parent is unavailable") from error
+    descriptor = -1
+    try:
+        _require_live_directory_anchor(_FIXED_CA_BUNDLE.parent, parent_fd)
+        try:
+            before = os.stat(
+                _FIXED_CA_BUNDLE.name,
+                dir_fd=parent_fd,
+                follow_symlinks=False,
+            )
+        except OSError as error:
+            raise _CaptureError("fixed TLS CA bundle is unavailable") from error
+        if not _safe_fixed_ca_metadata(before):
+            raise _CaptureError(
+                "fixed TLS CA bundle is not one bounded root-owned ordinary file"
+            )
+
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        try:
+            descriptor = os.open(
+                _FIXED_CA_BUNDLE.name,
+                flags,
+                dir_fd=parent_fd,
+            )
+        except OSError as error:
+            raise _CaptureError(
+                "fixed TLS CA bundle cannot be opened safely"
+            ) from error
+        held_before = os.fstat(descriptor)
+        if _fixed_ca_metadata_fingerprint(
+            held_before
+        ) != _fixed_ca_metadata_fingerprint(before) or not _safe_fixed_ca_metadata(
+            held_before
+        ):
+            raise _CaptureError("fixed TLS CA bundle changed before its read")
+        chunks: list[bytes] = []
+        remaining = _MAX_CA_BUNDLE_BYTES + 1
+        while remaining:
+            chunk = os.read(descriptor, min(1024 * 1024, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        source = b"".join(chunks)
+        held_after = os.fstat(descriptor)
+        try:
+            after = os.stat(
+                _FIXED_CA_BUNDLE.name,
+                dir_fd=parent_fd,
+                follow_symlinks=False,
+            )
+        except OSError as error:
+            raise _CaptureError(
+                "fixed TLS CA bundle disappeared after its read"
+            ) from error
+        _require_live_directory_anchor(_FIXED_CA_BUNDLE.parent, parent_fd)
+        if (
+            len(source) < 1
+            or len(source) > _MAX_CA_BUNDLE_BYTES
+            or len(source) != held_before.st_size
+            or not _safe_fixed_ca_metadata(held_after)
+            or _fixed_ca_metadata_fingerprint(held_after)
+            != _fixed_ca_metadata_fingerprint(held_before)
+            or not _safe_fixed_ca_metadata(after)
+            or _fixed_ca_metadata_fingerprint(after)
+            != _fixed_ca_metadata_fingerprint(held_after)
+        ):
+            raise _CaptureError("fixed TLS CA bundle changed during its bounded read")
+        return source
+    except OSError as error:
+        raise _CaptureError("fixed TLS CA bundle read failed") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        os.close(parent_fd)
+
+
+def _require_usable_tls_context(context: ssl.SSLContext) -> None:
+    try:
+        statistics = context.cert_store_stats()
+    except (AttributeError, ssl.SSLError) as error:
+        raise _CaptureError(
+            "fixed TLS context cannot report its trust store"
+        ) from error
+    if (
+        type(context) is not ssl.SSLContext
+        or context.protocol != ssl.PROTOCOL_TLS_CLIENT
+        or context.verify_mode != ssl.CERT_REQUIRED
+        or context.check_hostname is not True
+        or context.minimum_version < ssl.TLSVersion.TLSv1_2
+        or type(statistics) is not dict
+        or type(statistics.get("x509_ca")) is not int
+        or statistics["x509_ca"] < 1
+    ):
+        raise _CaptureError("fixed TLS context is not a usable verified client context")
+
+
+def _build_fixed_tls_context() -> ssl.SSLContext:
+    """Build the sole HTTPS trust context from the fixed local CA bundle."""
+
+    source = _read_fixed_ca_bundle()
+    try:
+        cadata = source.decode("ascii")
+    except UnicodeDecodeError as error:
+        raise _CaptureError("fixed TLS CA bundle is not ASCII PEM text") from error
+    try:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_verify_locations(cadata=cadata)
+    except (OSError, ssl.SSLError, ValueError) as error:
+        raise _CaptureError("fixed TLS CA bundle could not establish trust") from error
+    _require_usable_tls_context(context)
+    return context
 
 
 def _require_isolated_runtime() -> None:
@@ -461,9 +640,15 @@ def _fetch_bytes(
     *,
     allowed_urls: frozenset[str],
     maximum_bytes: int,
+    tls_context: ssl.SSLContext,
 ) -> bytes:
     _validate_https_url(url, allowed_urls)
-    opener = build_opener(ProxyHandler({}), _PinnedRedirectHandler(allowed_urls))
+    _require_usable_tls_context(tls_context)
+    opener = build_opener(
+        ProxyHandler({}),
+        HTTPSHandler(context=tls_context),
+        _PinnedRedirectHandler(allowed_urls),
+    )
     request = Request(
         url,
         headers={
@@ -814,6 +999,7 @@ def _main() -> int:
         source_commit, kernel_source, script_source = _verified_source()
         _require_output_namespace_absent()
         kernel = _kernel(kernel_source)
+        tls_context = _build_fixed_tls_context()
     except BaseException:
         preflight_failure = _capture_failure(phase="preflight")
     if preflight_failure is not None:
@@ -837,6 +1023,7 @@ def _main() -> int:
             _DEFAULT_INFO_URL,
             allowed_urls=frozenset({_DEFAULT_INFO_URL}),
             maximum_bytes=_MAX_MODEL_INFO_BYTES,
+            tls_context=tls_context,
         )
         revision = _provider_revision(kernel, default_source)
         exact_info_path = f"/api/models/{_MODEL_ID}/revision/{revision}"
@@ -845,12 +1032,14 @@ def _main() -> int:
             exact_info_url,
             allowed_urls=frozenset({exact_info_url}),
             maximum_bytes=_MAX_MODEL_INFO_BYTES,
+            tls_context=tls_context,
         )
         config_path = f"/{_MODEL_ID}/resolve/{revision}/config.json"
         config_source = _fetch_bytes(
             f"https://{_HF_HOST}{config_path}",
             allowed_urls=_allowed_config_urls(revision),
             maximum_bytes=_MAX_CONFIG_BYTES,
+            tls_context=tls_context,
         )
         source_binding = {
             "repository": _REPOSITORY_URL,
