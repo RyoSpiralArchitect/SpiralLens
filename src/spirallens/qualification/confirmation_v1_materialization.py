@@ -50,6 +50,9 @@ from . import confirmation_v1_post_d6_descriptive as descriptive
 from . import confirmation_v1_records as records
 
 if TYPE_CHECKING:
+    from .confirmation_v1_full_design_referents import (
+        D7V1FullDesignReferentSetCandidate,
+    )
     from .confirmation_v1_source_selected_supplier import (
         D7V1SourceSelectedSeedSupplierCandidate,
     )
@@ -75,6 +78,18 @@ _SOURCE_CLOSURE_MODULE_PATH = (
 )
 _SOURCE_SELECTED_SUPPLIER_MODULE_PATH = (
     "src/spirallens/qualification/confirmation_v1_source_selected_supplier.py"
+)
+_FULL_DESIGN_REFERENTS_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_v1_full_design_referents.py"
+)
+_EXECUTION_DESIGN_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_execution_design.py"
+)
+_CONFIRMATION_PROTOCOL_MODULE_PATH = (
+    "src/spirallens/qualification/confirmation_protocol.py"
+)
+_SPECTRAL_MOMENT_CONFIRMATION_MODULE_PATH = (
+    "src/spirallens/synthetic/spectral_moment_confirmation.py"
 )
 _DESCRIPTIVE_HELPER_MODULES = (
     (
@@ -611,7 +626,17 @@ def _git_blob(
 
 def _require_import_origins(repository: RepositoryContext) -> None:
     from . import (
+        confirmation_execution_design as execution_design,
+    )
+    from . import confirmation_protocol
+    from . import (
+        confirmation_v1_full_design_referents as full_design_referents,
+    )
+    from . import (
         confirmation_v1_source_selected_supplier as source_selected_supplier,
+    )
+    from spirallens.synthetic import (
+        spectral_moment_confirmation as spectral_moment_confirmation,
     )
 
     for module, repository_path, label in (
@@ -667,6 +692,34 @@ def _require_import_origins(repository: RepositoryContext) -> None:
         raise QualificationContractError(
             "source-selected supplier module import origin differs from repository"
         )
+    if not repository.matches_imported_file(
+        imported_file=full_design_referents.__file__,
+        repository_path=_FULL_DESIGN_REFERENTS_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "full-design referent module import origin differs from repository"
+        )
+    if not repository.matches_imported_file(
+        imported_file=execution_design.__file__,
+        repository_path=_EXECUTION_DESIGN_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "execution-design module import origin differs from repository"
+        )
+    if not repository.matches_imported_file(
+        imported_file=confirmation_protocol.__file__,
+        repository_path=_CONFIRMATION_PROTOCOL_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "confirmation-protocol module import origin differs from repository"
+        )
+    if not repository.matches_imported_file(
+        imported_file=spectral_moment_confirmation.__file__,
+        repository_path=_SPECTRAL_MOMENT_CONFIRMATION_MODULE_PATH,
+    ):
+        raise QualificationContractError(
+            "spectral-moment module import origin differs from repository"
+        )
 
 
 def _require_executing_sources_match_commit(
@@ -682,6 +735,10 @@ def _require_executing_sources_match_commit(
         _DESCRIPTIVE_MODULE_PATH,
         _SOURCE_CLOSURE_MODULE_PATH,
         _SOURCE_SELECTED_SUPPLIER_MODULE_PATH,
+        _FULL_DESIGN_REFERENTS_MODULE_PATH,
+        _EXECUTION_DESIGN_MODULE_PATH,
+        _CONFIRMATION_PROTOCOL_MODULE_PATH,
+        _SPECTRAL_MOMENT_CONFIRMATION_MODULE_PATH,
         *_DESCRIPTIVE_HELPER_PATHS,
     ):
         _mode, committed = _git_blob(
@@ -1530,6 +1587,29 @@ def _derive_source_selected_seed_supplier_candidate(
     )
 
 
+def _derive_full_design_referent_set_candidate(
+    repository: RepositoryContext,
+    *,
+    protocol: D7V1MaterializationProtocol,
+    source_commit: str,
+    c1: records.D7V1C1SourceSetRecord,
+    c2: records.D7V1C2SourceClosureReceipt,
+) -> D7V1FullDesignReferentSetCandidate:
+    """Rederive the six virtual referents from byte-rejoined S/C1/C2."""
+
+    from . import (
+        confirmation_v1_full_design_referents as full_design_referents,
+    )
+
+    return full_design_referents._derive_d7_v1_full_design_referent_set_candidate(
+        repository,
+        protocol=protocol,
+        source_commit=source_commit,
+        c1=c1,
+        c2=c2,
+    )
+
+
 def _verify_cross_record_joins(
     repository: RepositoryContext,
     protocol: D7V1MaterializationProtocol,
@@ -1573,6 +1653,13 @@ def _verify_cross_record_joins(
     )
 
     source_commit = _verify_source_join(repository, protocol, c1, c2)
+    expected_referents = _derive_full_design_referent_set_candidate(
+        repository,
+        protocol=protocol,
+        source_commit=source_commit,
+        c1=c1,
+        c2=c2,
+    )
     expected_supplier = _derive_source_selected_seed_supplier_candidate(
         repository,
         protocol=protocol,
@@ -1677,6 +1764,20 @@ def _verify_cross_record_joins(
     design_inventory = _mapping(
         full_design.get("inventory"), label="full design inventory"
     )
+    expected_design_keys = set(records._DESIGN_INVENTORY_ROLES) | {"schema_version"}
+    if set(design_inventory) != expected_design_keys:
+        raise QualificationContractError(
+            "embedded full-design inventory keyset differs"
+        )
+    for (
+        field,
+        expected_binding,
+    ) in expected_referents.bindings_by_inventory_field.items():
+        _require_binding(
+            design_inventory.get(field),
+            expected_binding,
+            label=f"embedded full-design {field} virtual referent",
+        )
     _require_binding(
         design_inventory.get("inventory_binding"),
         inventory_binding,

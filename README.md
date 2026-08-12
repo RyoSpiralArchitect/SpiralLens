@@ -103,9 +103,9 @@ embedded full-design field-to-role entries across the frozen v1 protocol,
 record implementation, and approved seed-free design source. It deliberately
 does not choose a supplier, define supplier identity bytes, authorize the
 two-seed cardinality, resolve any of the six non-inventory design bindings, or
-create a claim, inventory, design, store, or chronology. Those unresolved
-values require a later source-selected contract and independent verifier
-rederivation before any external chronology can begin.
+create a claim, inventory, design, store, or chronology. At that stage those
+values required a later source-selected contract and independent verifier
+rederivation before any external chronology could begin.
 A private source-selected supplier candidate now closes only the supplier side
 of that gap. It binds one fresh zero-argument module-global OS-CSPRNG callable,
 its canonical identity bytes, and a combined exclusion registry containing the
@@ -114,9 +114,29 @@ excluded development seeds. The joined-loader path independently rederives the
 same supplier ID and binding and accepts a future inventory only if it contains
 exactly two unique ascending values outside all eight exclusions. Neither path
 invokes the supplier or creates seed values, a claim, an inventory, or any
-durable chronology. The six non-inventory full-design bindings are still
-unresolved and unauthenticated, so materialization and execution authority
-remain false pending a separate source-closed derivation.
+durable chronology. At that increment the six non-inventory full-design
+bindings were still unresolved and unauthenticated pending a separate
+source-closed derivation.
+A subsequent private source-derived layer now resolves those six bindings only
+as canonical virtual referents. It reads exactly the five permitted pinned
+scientific parents, typed-rebuilds and cross-joins them, and calls the approved
+`build_seed_free_d7_confirmation_execution_design` entrypoint exactly once. It
+derives the exact family proposal and non-issued admission candidate, seed-free
+protocol draft, Git-declared source-member graph, 64-primary/192-core/1,152-loop
+cell aggregation over six strata, and the protocol's exact 19-stage,
+three-commit future chronology as a prospective lifecycle policy. All six
+documents are private, in-memory, and nonpersisted; the joined materialization
+verifier independently rederives and byte-exactly compares every binding.
+Resolution is not authentication or authority:
+`external_bindings_authenticated=false`, runtime-environment authentication
+and dependency-closure verification remain false, and family admission,
+official full-design creation/freeze, aggregation review/application, and
+lifecycle instantiation remain false. No store, official coordinate, claim,
+supplier invocation, seed, execution, result, or scientific evidence is
+created. There is no persisted/supported schema, protocol, route, record,
+public-API, or dependency revision. Claim delta remains `none`; S remains
+unreviewed and unselected, VOY-V3 remains `frozen_not_run`, and D7/D8 remain
+`not_run`.
 Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.

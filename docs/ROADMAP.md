@@ -230,17 +230,33 @@ surface already available without choosing values: supplier role
 field-to-role entries. It returns no supplier identity, binding bytes, seed,
 claim, inventory, full design, or chronology. In particular, neither the
 two-seed cardinality nor any of the six non-inventory bindings is authorized
-for persistence until a later source-selected derivation and verifier close
-those currently unspecified values. The supplier portion is now source-fixed
-in a later private candidate: one exact zero-argument module-global OS-CSPRNG
-callable, canonical supplier identity, and a combined registry of two
+for persistence; at that increment they remained unspecified pending a later
+source-selected derivation and verifier. The supplier portion is now
+source-fixed in a later private candidate: one exact zero-argument module-global
+OS-CSPRNG callable, canonical supplier identity, and a combined registry of two
 predecessor, two parent-selection, and four development exclusions. The
 joined-loader path independently rederives that identity and requires a future
 inventory to contain exactly two unique ascending values outside all eight
 exclusions. This is still pre-chronology source work: the supplier is not
-invoked, no seed or durable record is created, and the six non-inventory design
-bindings remain unresolved and unauthenticated. Materialization and execution
-authority therefore remain false, and VOY-V3 remains `frozen_not_run`.
+invoked and no seed or durable record is created. A subsequent private layer
+now resolves the six non-inventory design bindings only as source-derived
+virtual referents. From exactly five permitted pinned scientific parents it
+performs typed reconstruction and cross-joins, invokes the approved seed-free
+execution-design builder exactly once, and derives the family proposal and
+non-issued admission, unfrozen protocol draft, Git-declared source-member
+graph, exact 64/192/1,152/six-stratum aggregation, and the protocol's exact
+19-stage, three-commit future chronology policy. The documents remain private,
+in-memory, and nonpersisted. The joined materialization verifier independently
+rederives and exact-compares all six bindings.
+This closes a structural binding gap only. External-binding authentication,
+runtime-environment authentication, runtime dependency-closure verification,
+family admission, official embedded-full-design creation/freeze, aggregation
+review/application, and lifecycle instantiation all remain false. There is no
+store, official coordinate, claim, supplier invocation, seed, execution,
+result, scientific evidence, persisted/supported schema, protocol, route,
+record, public API, or dependency revision. S remains unreviewed and
+unselected; claim delta is `none`, VOY-V3 remains `frozen_not_run`, and D7/D8
+remain `not_run`.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
 ## 4. What “library” means

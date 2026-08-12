@@ -4,6 +4,29 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-12 — D7 v1 private virtual full-design referents
+
+- Added one internal, non-exported source-derived layer that reads exactly five
+  permitted pinned scientific parents, typed-rebuilds and cross-joins them,
+  calls the approved seed-free execution-design builder exactly once, and
+  derives six canonical virtual referents for confirmation family, non-issued
+  admission, unfrozen protocol, Git source-member graph, graph/case/stress
+  aggregation, and prospective lifecycle.
+- The aggregation fixes 64 primary units, 192 core cells, 1,152 loop cells,
+  and six strata. The lifecycle embeds the frozen protocol's exact 19-stage,
+  three-commit future chronology. The joined materialization verifier
+  independently rederives and exact-compares all six bindings.
+- The virtual documents are private, in-memory, and nonpersisted. Their
+  internal v0.1 identifiers add no persisted or supported schema and do not
+  revise the frozen protocol, route, structural records, public API, or
+  dependencies. External-binding and runtime authentication, runtime
+  dependency-closure verification, family admission, official full-design
+  creation/freeze, aggregation review/application, lifecycle instantiation,
+  official coordinates, claim, supplier invocation, seed, persistence,
+  execution, result, and scientific authority remain false. Claim delta is
+  `none`; S remains unselected, VOY-V3 remains `frozen_not_run`, and D7/D8
+  remain `not_run`.
+
 ## 2026-08-12 — D7 v1 source-selected supplier candidate
 
 - Added one internal, non-exported source-selected supplier candidate with a
@@ -15,11 +38,11 @@ promote a claim.
   unique ascending signed-int64 values outside all eight exclusions. The
   supplier is not invoked and no seed value or record is created by this
   change.
-- The six non-inventory full-design bindings remain unresolved and
-  unauthenticated. This adds no persisted or supported schema, protocol or
-  route revision, public API, dependency, console script, artifact, authority,
-  library maturity, or scientific claim. S remains unselected and VOY-V3
-  remains `frozen_not_run`.
+- At this increment the six non-inventory full-design bindings remained
+  unresolved and unauthenticated. It added no persisted or supported schema,
+  protocol or route revision, public API, dependency, console script,
+  artifact, authority, library maturity, or scientific claim. S remained
+  unselected and VOY-V3 remained `frozen_not_run`.
 
 ## 2026-08-10 — D7 v1 deterministic-input contract candidate
 
@@ -31,7 +54,8 @@ promote a claim.
 - The candidate intentionally contains no supplier identifier, callable,
   identity or binding bytes, seed values, claim, inventory, full design, or
   chronology. Observing count and slot order does not authorize their use in a
-  persisted record; the six non-inventory binding referents remain unresolved.
+  persisted record; at this increment the six non-inventory binding referents
+  remained unresolved.
 - This adds no persisted or supported schema, protocol or route revision,
   public API, dependency, console script, artifact, authority, library
   maturity, or scientific claim. S remains unselected and VOY-V3 remains
