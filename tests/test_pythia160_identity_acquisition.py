@@ -627,7 +627,10 @@ def test_openssl_environment_is_refused_before_tls_import_or_operation(
     stage = ROOT / "experiments/pythia/model_identity/.pythia160-v0.1.stage"
     output = ROOT / "experiments/pythia/model_identity/pythia160-v0.1"
     assert not stage.exists()
-    assert not output.exists()
+    before = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in output.iterdir()
+    }
     secret = "secret-openssl-route-and-module-path"
 
     completed = subprocess.run(
@@ -646,7 +649,10 @@ def test_openssl_environment_is_refused_before_tls_import_or_operation(
     )
     assert secret not in completed.stderr
     assert not stage.exists()
-    assert not output.exists()
+    assert {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in output.iterdir()
+    } == before
 
 
 @pytest.mark.parametrize(
@@ -1124,7 +1130,7 @@ def test_top_level_failure_stderr_is_closed_and_contains_no_injected_detail(
     assert completed.stdout == ""
     assert completed.stderr == (
         "Pythia-160M identity capture blocked: phase=preflight; "
-        "stage_retained=False; publication_visible=False; "
+        "stage_retained=False; publication_visible=True; "
         "cleanup_authorized=false; resume_authorized=false; "
         "retry_authorized=false\n"
     )
@@ -1955,7 +1961,105 @@ def test_private_inert_surface_and_no_model_or_cache_capability() -> None:
     assert "_pythia160_identity_acquisition" not in (
         ROOT / "src/spirallens/access/__init__.py"
     ).read_text(encoding="utf-8")
-    assert not (ROOT / "experiments/pythia/model_identity").exists()
+
+
+def test_persisted_identity_candidate_reloads_and_rebuilds_exactly() -> None:
+    output = ROOT / "experiments/pythia/model_identity/pythia160-v0.1"
+    stage = output.parent / ".pythia160-v0.1.stage"
+    expected = {
+        "config.json": "76eb275107220e450d31258f792a2efcbee109d8b62ae0088260057dec06362f",
+        "identity-receipt.json": (
+            "367867e45744f39ff285da84b4b2e619997d582b7c10a2df2cb91e40e75d5911"
+        ),
+        "provider-default-model-info.json": (
+            "3bf5a458a6c623c14e9c8c1626b94b7676f5eef034f4faedee65105c7e77dbc9"
+        ),
+        "provider-exact-model-info.json": (
+            "77c99cba3611d1758f6800ceb9f4af477a04a1662ebbc30b94e458ce7441e880"
+        ),
+    }
+    assert output.is_dir()
+    assert not stage.exists()
+    assert {path.name for path in output.iterdir()} == set(expected)
+    assert all(path.is_file() and not path.is_symlink() for path in output.iterdir())
+    sources = {name: (output / name).read_bytes() for name in expected}
+    assert {
+        name: hashlib.sha256(source).hexdigest() for name, source in sources.items()
+    } == expected
+
+    receipt = acquisition._Pythia160IdentityAcquisitionReceipt.from_canonical_bytes(
+        sources["identity-receipt.json"]
+    )
+    document = receipt.to_dict()
+    source_binding = {
+        "repository": "https://github.com/RyoSpiralArchitect/SpiralLens.git",
+        "source_commit": "fb640788d3c036cb86127ed9d32d28d27c1e2aa9",
+        "members": [
+            {
+                "repository_path": "scripts/capture_pythia160_identity.py",
+                "byte_count": len(SCRIPT.read_bytes()),
+                "sha256": hashlib.sha256(SCRIPT.read_bytes()).hexdigest(),
+            },
+            {
+                "repository_path": (
+                    "src/spirallens/access/_pythia160_identity_acquisition.py"
+                ),
+                "byte_count": len(KERNEL.read_bytes()),
+                "sha256": hashlib.sha256(KERNEL.read_bytes()).hexdigest(),
+            },
+        ],
+    }
+    rebuilt = acquisition._build_pythia160_identity_acquisition_receipt(
+        default_model_info_source=sources["provider-default-model-info.json"],
+        exact_model_info_source=sources["provider-exact-model-info.json"],
+        config_source=sources["config.json"],
+        source_binding=source_binding,
+    )
+    assert rebuilt.canonical_bytes == receipt.canonical_bytes
+    assert document["status"] == "review_pending"
+    assert document["model"] == {
+        "model_id": "EleutherAI/pythia-160m",
+        "selection_rule": "resolve-default-head-once-then-requery-exact-commit",
+        "resolved_revision": "50f5173d932e8e61f858120bcb800b97af589f46",
+        "review_status": "provider_resolved_unreviewed",
+    }
+    assert document["source_binding"] == {
+        **source_binding,
+        "review_status": "source_bound_review_pending",
+    }
+    assert document["evidence"]["config"] == {
+        "repository_path": "config.json",
+        "byte_count": 569,
+        "sha256": "76eb275107220e450d31258f792a2efcbee109d8b62ae0088260057dec06362f",
+        "git_blob_sha1": "b8368ff94f3bcf3088de5e9912251fc0208ae524",
+        "provider_git_blob_oid": "b8368ff94f3bcf3088de5e9912251fc0208ae524",
+        "content_status": "retrieved_bytes_joined_to_provider_git_blob",
+        "profile_status": "not_derived_or_reviewed",
+    }
+    assert len(document["evidence"]["siblings"]) == 8
+    assert all(
+        item["metadata_status"] == "provider_reported_unrecomputed"
+        for item in document["evidence"]["siblings"]
+    )
+    assert document["verification_facts"]["default_exact_revision_join_verified"]
+    assert document["verification_facts"]["config_git_blob_join_verified"]
+    assert document["verification_facts"]["external_witness_verified"] is False
+    assert document["verification_facts"]["model_identity_reviewed"] is False
+    assert all(value is False for value in document["authority_facts"].values())
+    assert document["claim_boundary"]["claim_ceiling"] == "level_0"
+    assert document["claim_boundary"]["claim_delta"] == "none"
+    assert document["claim_boundary"]["sci_s1_satisfied"] is False
+    assert document["claim_boundary"]["sci_s2_unblocked"] is False
+    for name in (
+        "weight_bytes_accessed",
+        "tokenizer_bytes_accessed",
+        "tokenizer_loaded",
+        "model_loaded",
+        "cache_read",
+        "forward_executed",
+        "activation_values_accessed",
+    ):
+        assert document["access_facts"][name] is False
 
 
 def test_pr58_and_frozen_70m_invariants_remain_exact() -> None:

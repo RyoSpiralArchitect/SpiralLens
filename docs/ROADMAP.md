@@ -1668,19 +1668,22 @@ The separate private Pythia-160M pre-observation assessor does not register a
 160M engineering profile or reuse the 70M lane. It ships no declaration
 instance, reads no subject or model value, and can report only a statically
 computed, externally blocked assessment with Level-0/no-delta boundaries.
-One later source-only increment now defines a private provider-metadata and
-`config.json` identity-acquisition contract. Its live acquisition never passes
-preflight in that increment: no provider request or persisted receipt exists.
-A separately reviewed follow-up may run the exact selected source commit to
-produce review-pending evidence, but it may not read
-weights, tokenizer bytes, cache entries, model values, or activations; register
-Pythia-160M; satisfy the pre-observation assessor; advance `SCI-S1`; unblock
-`SCI-S2`; or grant preparation, execution, capture, or scientific authority.
-That later operation must reserve its durable private stage before the first
-provider request and retain it on every failure after successful reservation,
-with cleanup, resume, and retry all unauthorized. Publication is an honest,
-quiescent-local guarantee: it does not claim security against a hostile
-same-user process racing the final native directory rename.
+One later source-only increment defined a private provider-metadata and
+`config.json` identity-acquisition contract without making a provider request.
+From exact merged source commit
+`fb640788d3c036cb86127ed9d32d28d27c1e2aa9`, a separately reviewed follow-up
+then invoked that operation exactly once and persisted the closed four-file
+`pythia160-v0.1` candidate. Its canonical `review_pending` receipt resolves
+revision `50f5173d932e8e61f858120bcb800b97af589f46`, rejoins the default and exact
+provider responses, and joins the retrieved config bytes to the provider's
+non-LFS Git blob. It neither read weights, tokenizer bytes, cache entries,
+model values, or activations nor registered Pythia-160M, satisfied the
+pre-observation assessor, advanced `SCI-S1`, unblocked `SCI-S2`, or granted
+preparation, execution, capture, or scientific authority.
+The operation reserved its durable private stage before the first provider
+request and completed without retry; the stage is absent after publication.
+Publication was an honest, quiescent-local guarantee and did not claim security
+against a hostile same-user process racing the final native directory rename.
 A subsequent source-only correction records that the exact isolated Python
 3.13 runtime exposed an unexpectedly empty default certificate store. The
 private script now constructs and validates one explicit TLS client context
@@ -1690,12 +1693,12 @@ read through no-symlink anchors as a bounded root-owned regular file with no
 group or world write bit; certificate verification, hostname checking, TLS
 1.2 or newer, and a nonempty CA store are mandatory. Ambient OpenSSL
 configuration, provider-module, and engine environment is rejected before TLS
-initialization. This increment does not
-run the live main, access the provider, persist evidence, or open any model,
-subject, execution, capture, `SCI-S1`, `SCI-S2`, or scientific authority. It
-does not add the operational CA-bundle digest to the v0.1 receipt, so that
-receipt does not attest exact transport-trust bytes. A future PR62 may attempt
-the first acquisition only from its separately reviewed merged source.
+initialization. That correction itself did not run the live main or persist
+evidence. The later acquisition used this explicit context, but did not add
+the operational CA-bundle digest to the v0.1 receipt, so the candidate does not
+attest exact transport-trust bytes. External-witness, identity-review, model,
+subject, execution, capture, `SCI-S1`, `SCI-S2`, VOY-credit, and scientific
+authority remain false.
 A separate deterministic offline fake-NeoX check now hardens selected-position
 snapshot ownership and exact per-module train/eval-flag restoration in the
 current `PythiaAdapter`. It verifies zero-intervention and hook mechanics only
