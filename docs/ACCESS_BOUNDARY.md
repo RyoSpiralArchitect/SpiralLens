@@ -176,6 +176,22 @@ a quiescent, honest local checkout. Held directory and file identities detect
 ordinary drift, but the contract does not claim resistance to a hostile
 same-user process racing the final native directory rename.
 
+A source-only correction now closes an earlier TLS preflight gap: the exact
+isolated Python 3.13 runtime had an empty default certificate store. The
+unregistered acquisition script constructs one verified client context from
+the bounded, root-owned, non-group/world-writable regular file at the fixed
+honest-local macOS path `/private/etc/ssl/cert.pem`, resolving the path without
+symlinks and rechecking held file identity around the read. It requires
+hostname verification, `CERT_REQUIRED`, TLS 1.2 or newer, and a nonempty CA
+store before any durable stage reservation. That same context is passed
+explicitly to all three HTTPS requests. Ambient OpenSSL configuration,
+provider-module, and engine environment is rejected before TLS initialization.
+This correction does not invoke the
+live main, contact a provider, produce a receipt, or change any access or
+authority fact. The v0.1 receipt does not persist the CA-bundle digest and
+therefore does not attest the exact transport-trust bytes. A future PR62 is the
+earliest separately reviewed increment that may attempt the acquisition.
+
 The access package does not create a trusted `SubjectProtocolManifest`, qualify
 D0-D8, grant project-level subject preparation or execution, or make the
 Pythia-70M engineering atlas scientifically eligible. It can authorize only

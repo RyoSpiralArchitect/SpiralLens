@@ -4,6 +4,34 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private Pythia-160M TLS trust preflight
+
+- Corrected the source-only identity-acquisition path after the exact isolated
+  Python 3.13 runtime was found to construct an empty default certificate
+  store. The unregistered script now builds one explicit TLS client context
+  from the fixed honest-local macOS bundle at `/private/etc/ssl/cert.pem`.
+- The preflight resolves every bundle path component without symlinks, accepts
+  only one bounded, root-owned regular file with no group or world write bit,
+  rechecks its held identity and metadata around the read, and loads its ASCII
+  PEM bytes as explicit `cadata`. It requires certificate verification,
+  hostname checking, TLS 1.2 or newer, and at least one CA certificate. The
+  resulting context is constructed before durable stage reservation and the
+  same object is supplied through an explicit HTTPS handler to all three
+  bounded provider requests; no implicit default HTTPS trust handler is used.
+  Ambient OpenSSL configuration, provider-module, and engine environment is
+  rejected before TLS initialization.
+- This is a source and synthetic-test correction only. The live capture main
+  is not invoked, no provider request or model/config acquisition occurs, and
+  no provider-backed/acquired or persisted receipt or output is created. It
+  adds no evidence, access fact, review completion, preparation, execution,
+  capture, D0-D8, VOY, `SCI-S1`, `SCI-S2`, or scientific authority.
+- The CA-bundle digest is deliberately not added to the v0.1 identity receipt:
+  the bundle is an operational transport-trust input, not model-identity or
+  content evidence, and the receipt therefore does not attest its exact bytes.
+  No receipt schema changes. A future PR62 may invoke only the separately
+  reviewed, merged source and must preserve that limitation when reviewing any
+  provider-backed candidate.
+
 ## 2026-08-13 — Private Pythia-160M identity-acquisition source
 
 - Added a private, framework-neutral receipt kernel and an unregistered,

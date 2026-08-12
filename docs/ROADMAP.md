@@ -1681,6 +1681,21 @@ provider request and retain it on every failure after successful reservation,
 with cleanup, resume, and retry all unauthorized. Publication is an honest,
 quiescent-local guarantee: it does not claim security against a hostile
 same-user process racing the final native directory rename.
+A subsequent source-only correction records that the exact isolated Python
+3.13 runtime exposed an unexpectedly empty default certificate store. The
+private script now constructs and validates one explicit TLS client context
+from the fixed honest-local macOS CA bundle before durable stage reservation,
+then supplies that same context to every bounded HTTPS request. The bundle is
+read through no-symlink anchors as a bounded root-owned regular file with no
+group or world write bit; certificate verification, hostname checking, TLS
+1.2 or newer, and a nonempty CA store are mandatory. Ambient OpenSSL
+configuration, provider-module, and engine environment is rejected before TLS
+initialization. This increment does not
+run the live main, access the provider, persist evidence, or open any model,
+subject, execution, capture, `SCI-S1`, `SCI-S2`, or scientific authority. It
+does not add the operational CA-bundle digest to the v0.1 receipt, so that
+receipt does not attest exact transport-trust bytes. A future PR62 may attempt
+the first acquisition only from its separately reviewed merged source.
 A separate deterministic offline fake-NeoX check now hardens selected-position
 snapshot ownership and exact per-module train/eval-flag restoration in the
 current `PythiaAdapter`. It verifies zero-intervention and hook mechanics only

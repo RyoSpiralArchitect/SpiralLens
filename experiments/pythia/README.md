@@ -26,6 +26,22 @@ and permits no cleanup, resume, or retry. Its no-replace publication assumes a
 quiescent, honest local checkout and does not claim resistance to a hostile
 same-user rename race.
 
+The exact isolated Python 3.13 runtime was subsequently found to have an empty
+default certificate store. A source-only correction makes TLS trust explicit:
+before durable stage reservation, the private script reads the fixed
+honest-local macOS bundle `/private/etc/ssl/cert.pem` through no-symlink path
+anchors, requires a bounded root-owned regular file with no group or world
+write bit, and builds one hostname-verifying `CERT_REQUIRED` client context
+with TLS 1.2 or newer and a nonempty CA store. The same context is passed to all
+three HTTPS requests through an explicit handler. Ambient OpenSSL
+configuration, provider-module, and engine environment is rejected before TLS
+initialization. The live main remains
+uninvoked in this correction; no provider-backed/acquired or persisted
+receipt, output, evidence, or authority is created. The v0.1 receipt does not
+record the CA-bundle digest and therefore cannot attest the exact
+transport-trust bytes. A future PR62 may make the first separately reviewed
+acquisition attempt from merged source.
+
 The current 70M public-example smoke validates only exact offline model-file
 resolution, bounded capture, storage, checksum, manifest reload, and receipt
 plumbing. Its frozen protocol allows only atlas integrity validation.

@@ -8,9 +8,11 @@ import os
 from pathlib import Path
 import py_compile
 import runpy
+import ssl
 import stat
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -584,6 +586,10 @@ def test_script_redirect_is_same_route_and_single_hop(
         "HUGGING_FACE_HUB_TOKEN",
         "HTTPS_PROXY",
         "NETRC",
+        "OPENSSL_CONF",
+        "OPENSSL_CONF_INCLUDE",
+        "OPENSSL_ENGINES",
+        "OPENSSL_MODULES",
         "SSL_CERT_FILE",
         "SSLKEYLOGFILE",
     ],
@@ -598,6 +604,408 @@ def test_script_refuses_credentials_proxy_and_ambient_tls(
     monkeypatch.setenv(environment_name, "secret-or-route")
     with pytest.raises(script_namespace["_CaptureError"], match="refuses"):
         script_namespace["_refuse_ambient_network_authority"]()
+
+
+@pytest.mark.parametrize(
+    "environment_name",
+    [
+        "OPENSSL_CONF",
+        "OPENSSL_CONF_INCLUDE",
+        "OPENSSL_ENGINES",
+        "OPENSSL_MODULES",
+    ],
+)
+def test_openssl_environment_is_refused_before_tls_import_or_operation(
+    tmp_path: Path,
+    environment_name: str,
+) -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert source.index("_FORBIDDEN_OPENSSL_ENVIRONMENT") < source.index("import ssl")
+    assert source.index("_FORBIDDEN_OPENSSL_ENVIRONMENT") < source.index(
+        "from urllib.error"
+    )
+    stage = ROOT / "experiments/pythia/model_identity/.pythia160-v0.1.stage"
+    output = ROOT / "experiments/pythia/model_identity/pythia160-v0.1"
+    assert not stage.exists()
+    assert not output.exists()
+    secret = "secret-openssl-route-and-module-path"
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-S", str(SCRIPT)],
+        cwd=tmp_path,
+        env={"PATH": "/usr/bin:/bin", environment_name: secret},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert completed.stdout == ""
+    assert completed.stderr == (
+        "Pythia-160M identity capture refuses ambient OpenSSL configuration\n"
+    )
+    assert secret not in completed.stderr
+    assert not stage.exists()
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"st_uid": 501},
+        {"st_nlink": 2},
+        {"st_mode": stat.S_IFREG | 0o664},
+        {"st_mode": stat.S_IFREG | 0o646},
+        {"st_mode": stat.S_IFDIR | 0o644},
+        {"st_size": 0},
+        {"st_size": 4 * 1024 * 1024 + 1},
+    ],
+)
+def test_fixed_ca_metadata_requires_exact_owner_mode_type_link_and_bound(
+    script_namespace: dict[str, object], mutation: dict[str, int]
+) -> None:
+    assert script_namespace["_FIXED_CA_BUNDLE"] == Path("/private/etc/ssl/cert.pem")
+    assert script_namespace["_MAX_CA_BUNDLE_BYTES"] == 4 * 1024 * 1024
+    metadata = {
+        "st_mode": stat.S_IFREG | 0o644,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_size": 1,
+    }
+    assert script_namespace["_safe_fixed_ca_metadata"](SimpleNamespace(**metadata))
+    metadata.update(mutation)
+    assert not script_namespace["_safe_fixed_ca_metadata"](SimpleNamespace(**metadata))
+
+
+def _configure_synthetic_ca_bundle(
+    namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    path: Path,
+    *,
+    maximum_bytes: int = 64,
+) -> None:
+    monkeypatch.setitem(namespace, "_FIXED_CA_BUNDLE", path)
+    monkeypatch.setitem(namespace, "_MAX_CA_BUNDLE_BYTES", maximum_bytes)
+
+    def safe_for_unprivileged_test(metadata: os.stat_result) -> bool:
+        return bool(
+            stat.S_ISREG(metadata.st_mode)
+            and metadata.st_nlink == 1
+            and stat.S_IMODE(metadata.st_mode) & 0o022 == 0
+            and 0 < metadata.st_size <= namespace["_MAX_CA_BUNDLE_BYTES"]
+        )
+
+    # Root ownership itself is covered by the pure metadata test above. This
+    # substitution lets the held-descriptor reader be exercised in tmp_path.
+    monkeypatch.setitem(
+        namespace, "_safe_fixed_ca_metadata", safe_for_unprivileged_test
+    )
+
+
+def test_fixed_ca_reader_returns_exact_bytes_from_held_bounded_descriptor(
+    script_namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source = b"synthetic-fixed-ca-pem"
+    bundle = tmp_path / "cert.pem"
+    bundle.write_bytes(source)
+    bundle.chmod(0o444)
+    _configure_synthetic_ca_bundle(script_namespace, monkeypatch, bundle)
+    real_read = os.read
+    requested: list[int] = []
+
+    def tracked_read(descriptor: int, maximum: int) -> bytes:
+        requested.append(maximum)
+        return real_read(descriptor, maximum)
+
+    monkeypatch.setattr(script_namespace["os"], "read", tracked_read)
+    assert script_namespace["_read_fixed_ca_bundle"]() == source
+    assert requested
+    assert max(requested) <= script_namespace["_MAX_CA_BUNDLE_BYTES"] + 1
+
+
+@pytest.mark.parametrize("kind", ["symlink", "directory", "empty", "oversize"])
+def test_fixed_ca_reader_rejects_symlink_nonregular_empty_and_oversize(
+    script_namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    kind: str,
+) -> None:
+    bundle = tmp_path / "cert.pem"
+    if kind == "symlink":
+        target = tmp_path / "target.pem"
+        target.write_bytes(b"certificate")
+        target.chmod(0o444)
+        bundle.symlink_to(target)
+    elif kind == "directory":
+        bundle.mkdir()
+    elif kind == "empty":
+        bundle.write_bytes(b"")
+        bundle.chmod(0o444)
+    else:
+        bundle.write_bytes(b"x" * 65)
+        bundle.chmod(0o444)
+    _configure_synthetic_ca_bundle(script_namespace, monkeypatch, bundle)
+
+    with pytest.raises(script_namespace["_CaptureError"], match="fixed TLS CA"):
+        script_namespace["_read_fixed_ca_bundle"]()
+
+
+def test_fixed_ca_reader_rejects_metadata_drift_during_held_read(
+    script_namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    bundle = tmp_path / "cert.pem"
+    bundle.write_bytes(b"stable-until-held-read")
+    bundle.chmod(0o444)
+    _configure_synthetic_ca_bundle(script_namespace, monkeypatch, bundle)
+    real_read = os.read
+    changed = False
+
+    def drifting_read(descriptor: int, maximum: int) -> bytes:
+        nonlocal changed
+        source = real_read(descriptor, maximum)
+        if source and not changed:
+            changed = True
+            metadata = bundle.stat()
+            os.utime(
+                bundle,
+                ns=(metadata.st_atime_ns, metadata.st_mtime_ns + 1_000_000_000),
+            )
+        return source
+
+    monkeypatch.setattr(script_namespace["os"], "read", drifting_read)
+    with pytest.raises(script_namespace["_CaptureError"], match="changed during"):
+        script_namespace["_read_fixed_ca_bundle"]()
+    assert changed
+
+
+def test_tls_builder_loads_only_supplied_fixed_ca_bytes(
+    script_namespace: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    script_source = SCRIPT.read_text(encoding="utf-8")
+    assert "create_default_context" not in script_source
+    assert "load_default_certs" not in script_source
+    assert "set_default_verify_paths" not in script_source
+    supplied = b"-----BEGIN CERTIFICATE-----\nsynthetic\n-----END CERTIFICATE-----\n"
+    protocol = object()
+
+    class FakeTLSVersion:
+        TLSv1_2 = 2
+
+    class FakeContext:
+        def __init__(self, selected_protocol: object) -> None:
+            assert selected_protocol is protocol
+            self.protocol = selected_protocol
+            self.verify_mode = None
+            self.check_hostname = False
+            self.minimum_version = 0
+            self.loaded: list[str] = []
+
+        def load_verify_locations(self, *, cadata: str) -> None:
+            self.loaded.append(cadata)
+
+        def cert_store_stats(self) -> dict[str, int]:
+            return {"x509_ca": len(self.loaded)}
+
+    fake_ssl = SimpleNamespace(
+        CERT_REQUIRED=2,
+        PROTOCOL_TLS_CLIENT=protocol,
+        SSLError=ssl.SSLError,
+        SSLContext=FakeContext,
+        TLSVersion=FakeTLSVersion,
+    )
+    monkeypatch.setitem(script_namespace, "ssl", fake_ssl)
+    monkeypatch.setitem(script_namespace, "_read_fixed_ca_bundle", lambda: supplied)
+
+    context = script_namespace["_build_fixed_tls_context"]()
+    assert type(context) is FakeContext
+    assert context.loaded == [supplied.decode("ascii")]
+    assert context.verify_mode == fake_ssl.CERT_REQUIRED
+    assert context.check_hostname is True
+    assert context.minimum_version == fake_ssl.TLSVersion.TLSv1_2
+
+
+def test_tls_builder_redacts_ca_parse_and_context_load_failures(
+    script_namespace: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    capture_error = script_namespace["_CaptureError"]
+    monkeypatch.setitem(
+        script_namespace, "_read_fixed_ca_bundle", lambda: b"secret-\xff-ca-path"
+    )
+    with pytest.raises(capture_error) as non_ascii:
+        script_namespace["_build_fixed_tls_context"]()
+    assert "secret" not in str(non_ascii.value)
+    assert "ASCII PEM" in str(non_ascii.value)
+
+    secret = "secret-provider-ca-body-and-local-path"
+    monkeypatch.setitem(
+        script_namespace, "_read_fixed_ca_bundle", lambda: secret.encode("ascii")
+    )
+    with pytest.raises(capture_error) as invalid_pem:
+        script_namespace["_build_fixed_tls_context"]()
+    assert secret not in str(invalid_pem.value)
+    assert "could not establish trust" in str(invalid_pem.value)
+
+
+def test_tls_context_rejects_zero_ca_wrong_verify_hostname_and_minimum_before_open(
+    script_namespace: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cadata = script_namespace["_read_fixed_ca_bundle"]().decode("ascii")
+
+    def populated_context() -> ssl.SSLContext:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.load_verify_locations(cadata=cadata)
+        return context
+
+    zero_ca = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    wrong_verify = populated_context()
+    wrong_verify.check_hostname = False
+    wrong_verify.verify_mode = ssl.CERT_NONE
+    wrong_hostname = populated_context()
+    wrong_hostname.check_hostname = False
+    wrong_minimum = populated_context()
+    wrong_minimum.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+    contexts = [zero_ca, wrong_verify, wrong_hostname, wrong_minimum]
+    opener_calls = 0
+
+    def forbidden_opener(*_handlers: object) -> object:
+        nonlocal opener_calls
+        opener_calls += 1
+        raise AssertionError("invalid TLS context must fail before an HTTPS opener")
+
+    monkeypatch.setitem(script_namespace, "build_opener", forbidden_opener)
+    url = script_namespace["_DEFAULT_INFO_URL"]
+    for context in contexts:
+        with pytest.raises(
+            script_namespace["_CaptureError"], match="usable verified client"
+        ):
+            script_namespace["_fetch_bytes"](
+                url,
+                allowed_urls=frozenset({url}),
+                maximum_bytes=128,
+                tls_context=context,
+            )
+    assert opener_calls == 0
+
+
+def test_fetch_uses_explicit_proxyless_https_handler_with_exact_context(
+    script_namespace: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tls_context = object()
+    handlers: list[object] = []
+    validations: list[object] = []
+    url = script_namespace["_DEFAULT_INFO_URL"]
+
+    class Response:
+        status = 200
+        headers = {"Content-Encoding": "identity", "Content-Length": "2"}
+
+        def __enter__(self) -> "Response":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def geturl(self) -> str:
+            return url
+
+        def read(self, _maximum: int) -> bytes:
+            return b"{}"
+
+    class Opener:
+        def open(self, _request: object, *, timeout: int) -> Response:
+            assert timeout == script_namespace["_TIMEOUT_SECONDS"]
+            return Response()
+
+    def build(*supplied_handlers: object) -> Opener:
+        handlers.extend(supplied_handlers)
+        return Opener()
+
+    monkeypatch.setitem(
+        script_namespace,
+        "_require_usable_tls_context",
+        lambda context: validations.append(context),
+    )
+    monkeypatch.setitem(script_namespace, "build_opener", build)
+
+    assert (
+        script_namespace["_fetch_bytes"](
+            url,
+            allowed_urls=frozenset({url}),
+            maximum_bytes=128,
+            tls_context=tls_context,
+        )
+        == b"{}"
+    )
+    assert validations == [tls_context]
+    assert len(handlers) == 3
+    assert type(handlers[0]) is script_namespace["ProxyHandler"]
+    assert handlers[0].proxies == {}
+    assert type(handlers[1]) is script_namespace["HTTPSHandler"]
+    assert handlers[1]._context is tls_context
+    assert type(handlers[2]) is script_namespace["_PinnedRedirectHandler"]
+
+
+def test_tls_load_failure_is_sanitized_preflight_before_stage_or_network(
+    script_namespace: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    events: list[str] = []
+    stage = tmp_path / ".pythia160-v0.1.stage"
+    output = tmp_path / "pythia160-v0.1"
+    secret = "secret-invalid-ca-body-and-local-path"
+
+    def ca_source() -> bytes:
+        events.append("tls")
+        return secret.encode("ascii")
+
+    def forbidden(name: str):
+        def operation(*_args: object, **_kwargs: object) -> object:
+            events.append(name)
+            raise AssertionError(f"{name} must not run after TLS preflight failure")
+
+        return operation
+
+    monkeypatch.setitem(script_namespace, "_STAGE_DIRECTORY", stage)
+    monkeypatch.setitem(script_namespace, "_OUTPUT_DIRECTORY", output)
+    monkeypatch.setitem(script_namespace, "_require_isolated_runtime", lambda: None)
+    monkeypatch.setitem(
+        script_namespace, "_refuse_ambient_network_authority", lambda: None
+    )
+    monkeypatch.setitem(
+        script_namespace,
+        "_verified_source",
+        lambda **_kwargs: (SOURCE_COMMIT, b"kernel", b"script"),
+    )
+    monkeypatch.setitem(
+        script_namespace, "_require_output_namespace_absent", lambda: None
+    )
+    monkeypatch.setitem(script_namespace, "_kernel", lambda _source: object())
+    monkeypatch.setitem(script_namespace, "_read_fixed_ca_bundle", ca_source)
+    monkeypatch.setitem(
+        script_namespace, "_reserve_output_directory", forbidden("reserve")
+    )
+    monkeypatch.setitem(script_namespace, "_fetch_bytes", forbidden("network"))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT)])
+
+    with pytest.raises(script_namespace["_CaptureError"]) as caught:
+        script_namespace["main"]()
+
+    error = caught.value
+    assert events == ["tls"]
+    assert str(error) == "Pythia-160M identity capture failed during preflight"
+    assert secret not in str(error)
+    assert error.phase == "preflight"
+    assert error.stage_retained is False
+    assert error.publication_visible is False
+    assert error.__cause__ is None
+    assert error.__context__ is None
+    assert not stage.exists()
+    assert not output.exists()
 
 
 def test_manual_authenticated_kernel_load_uses_supplied_head_bytes(
@@ -650,6 +1058,7 @@ def test_main_rejects_nonisolated_runtime_before_any_operational_helper(
         "_verified_source",
         "_require_output_namespace_absent",
         "_kernel",
+        "_build_fixed_tls_context",
         "_reserve_output_directory",
         "_fetch_bytes",
     ):
@@ -876,6 +1285,7 @@ def _configure_fake_main(
     kernel_source = KERNEL.read_bytes()
     script_source = SCRIPT.read_bytes()
     fetches: list[tuple[str, bool]] = []
+    tls_context = object()
     real_reserve = namespace["_reserve_output_directory"]
 
     def verified_source(*, allow_owned_stage: bool = False):
@@ -883,6 +1293,7 @@ def _configure_fake_main(
         return SOURCE_COMMIT, kernel_source, script_source
 
     def fetch(url: str, **_kwargs: object) -> bytes:
+        assert _kwargs["tls_context"] is tls_context
         assert stage.is_dir()
         assert list(stage.iterdir()) == []
         fetches.append((url, False))
@@ -896,6 +1307,10 @@ def _configure_fake_main(
         owned = real_reserve()
         fetches.append(("reserve", False))
         return owned
+
+    def build_tls_context() -> object:
+        fetches.append(("tls", False))
+        return tls_context
 
     monkeypatch.setitem(namespace, "_REPOSITORY", repository)
     monkeypatch.setitem(namespace, "_OUTPUT_PARENT", output_parent)
@@ -914,6 +1329,7 @@ def _configure_fake_main(
     monkeypatch.setitem(namespace, "_require_isolated_runtime", lambda: None)
     monkeypatch.setitem(namespace, "_refuse_ambient_network_authority", lambda: None)
     monkeypatch.setitem(namespace, "_verified_source", verified_source)
+    monkeypatch.setitem(namespace, "_build_fixed_tls_context", build_tls_context)
     monkeypatch.setitem(namespace, "_reserve_output_directory", reserve)
     monkeypatch.setitem(namespace, "_fetch_bytes", fetch)
     monkeypatch.setattr(sys, "argv", [str(SCRIPT)])
@@ -966,7 +1382,11 @@ def test_main_stages_and_atomically_publishes_exact_four_files(
         receipt_source
     )
     assert loaded.to_dict()["source_binding"]["source_commit"] == SOURCE_COMMIT
-    assert events[:2] == [("source", False), ("reserve", False)]
+    assert events[:3] == [
+        ("source", False),
+        ("tls", False),
+        ("reserve", False),
+    ]
     assert events[-2:] == [("source", False), ("source", True)]
     assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in output.iterdir())
 
@@ -1004,6 +1424,7 @@ def test_provider_failure_retains_durable_empty_stage_and_never_writes(
     error = caught.value
     assert events == [
         ("source", False),
+        ("tls", False),
         ("reserve", False),
         ("failed-provider-request", False),
     ]
