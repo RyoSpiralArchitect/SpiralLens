@@ -4,6 +4,23 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-12 — D7 v1 source-selected supplier candidate
+
+- Added one internal, non-exported source-selected supplier candidate with a
+  fixed zero-argument module-global OS-CSPRNG callable, canonical identity
+  bytes, and a canonical combined exclusion registry covering two predecessor,
+  two parent-selection, and four development seeds.
+- The joined-loader path now independently rederives the supplier ID and
+  identity binding and constrains a future seed inventory to exactly two
+  unique ascending signed-int64 values outside all eight exclusions. The
+  supplier is not invoked and no seed value or record is created by this
+  change.
+- The six non-inventory full-design bindings remain unresolved and
+  unauthenticated. This adds no persisted or supported schema, protocol or
+  route revision, public API, dependency, console script, artifact, authority,
+  library maturity, or scientific claim. S remains unselected and VOY-V3
+  remains `frozen_not_run`.
+
 ## 2026-08-10 — D7 v1 deterministic-input contract candidate
 
 - Added one internal, non-exported read-only candidate that rebuilds the

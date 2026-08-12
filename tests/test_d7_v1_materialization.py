@@ -26,6 +26,9 @@ from spirallens.qualification import (
     confirmation_v1_private_publication as private_publication,
 )
 from spirallens.qualification import confirmation_v1_records as records
+from spirallens.qualification import (
+    confirmation_v1_source_selected_supplier as source_selected_supplier,
+)
 from spirallens.qualification.common import QualificationContractError
 
 
@@ -39,6 +42,12 @@ MODULE_PATH = (
 )
 RECORDS_MODULE_PATH = (
     REPOSITORY / "src" / "spirallens" / "qualification" / "confirmation_v1_records.py"
+)
+EXECUTION_DESIGN_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_execution_design.py"
+)
+EXECUTION_DESIGN_MODULE_PATH = REPOSITORY.joinpath(
+    *EXECUTION_DESIGN_REPOSITORY_PATH.split("/")
 )
 DESCRIPTIVE_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py"
@@ -82,6 +91,12 @@ SOURCE_CLOSURE_REPOSITORY_PATH = (
 )
 SOURCE_CLOSURE_MODULE_PATH = REPOSITORY.joinpath(
     *SOURCE_CLOSURE_REPOSITORY_PATH.split("/")
+)
+SOURCE_SELECTED_SUPPLIER_REPOSITORY_PATH = (
+    "src/spirallens/qualification/confirmation_v1_source_selected_supplier.py"
+)
+SOURCE_SELECTED_SUPPLIER_MODULE_PATH = REPOSITORY.joinpath(
+    *SOURCE_SELECTED_SUPPLIER_REPOSITORY_PATH.split("/")
 )
 REPOSITORY_CONTEXT_REPOSITORY_PATH = "src/spirallens/_repository_context.py"
 CANONICAL_REPOSITORY_PATH = "src/spirallens/core/canonical.py"
@@ -168,11 +183,22 @@ def _stage_relative(protocol: Mapping[str, object], repository_path: str) -> str
 
 def _build_records(
     *,
+    repository: RepositoryContext,
+    materialization_protocol: materialization.D7V1MaterializationProtocol,
     protocol: Mapping[str, object],
     route: Mapping[str, object],
     source_commit: str,
     source_members: Sequence[records.D7V1SourceMember],
-) -> dict[str, records._D7V1CanonicalRecord]:
+    supplier_candidate: (
+        source_selected_supplier.D7V1SourceSelectedSeedSupplierCandidate | None
+    ) = None,
+    supplier_identity_override: records.D7V1ArtifactBinding | None = None,
+    supplier_id_override: str | None = None,
+    seed_values: Sequence[int] = (8_100_001, 8_100_002),
+) -> tuple[
+    dict[str, records._D7V1CanonicalRecord],
+    source_selected_supplier.D7V1SourceSelectedSeedSupplierCandidate,
+]:
     paths = _coordinate_paths(protocol)
     route_binding_data = protocol["route_binding"]
     assert isinstance(route_binding_data, dict)
@@ -194,6 +220,15 @@ def _build_records(
         c1=c1,
         source_commit=source_commit,
     )
+    expected_supplier = supplier_candidate or (
+        materialization._derive_source_selected_seed_supplier_candidate(
+            repository,
+            protocol=materialization_protocol,
+            source_commit=source_commit,
+            c1=c1,
+            c2=c2,
+        )
+    )
 
     external_contract = protocol["external_durable_chronology_contract"]
     assert isinstance(external_contract, dict)
@@ -203,13 +238,16 @@ def _build_records(
     assert isinstance(claim_contract, dict)
     assert isinstance(attempt_contract, dict)
     assert isinstance(route_external, dict)
-    supplier_identity = _external("supplier-identity", "5")
+    supplier_identity = (
+        supplier_identity_override or expected_supplier.supplier_identity_binding
+    )
+    supplier_id = supplier_id_override or expected_supplier.supplier_id
     claim = records.D7V1ExclusiveSeedSupplyClaim.create(
         record_id="d7-v1-test-seed-claim",
         repository_path=paths[records.D7V1ExclusiveSeedSupplyClaim.artifact_role],
         c2=c2,
         supplier_identity_binding=supplier_identity,
-        supplier_id="test-local-csprng",
+        supplier_id=supplier_id,
         external_claim_path=str(claim_contract["external_store_path"]),
     )
 
@@ -226,8 +264,8 @@ def _build_records(
         repository_path=paths[records.D7V1OfficialSeedInventory.artifact_role],
         claim=claim,
         supplier_identity_binding=supplier_identity,
-        supplier_id="test-local-csprng",
-        seeds=(8_100_001, 8_100_002),
+        supplier_id=supplier_id,
+        seeds=seed_values,
         predecessor_inventory_binding=_metadata_binding(predecessor),
         predecessor_seed_values=tuple(int(value) for value in predecessor_values),
     )
@@ -356,10 +394,13 @@ def _build_records(
         status="failed",
         outputs=(),
     )
-    return {
-        record.artifact_role: record
-        for record in (*predecessor_records, receipt, result)
-    }
+    return (
+        {
+            record.artifact_role: record
+            for record in (*predecessor_records, receipt, result)
+        },
+        expected_supplier,
+    )
 
 
 @dataclass(slots=True)
@@ -371,6 +412,7 @@ class _Case:
     protocol: dict[str, object]
     records_by_role: dict[str, records._D7V1CanonicalRecord]
     external_bytes: dict[Path, bytes]
+    supplier_candidate: source_selected_supplier.D7V1SourceSelectedSeedSupplierCandidate
 
     @property
     def receipt(self) -> records.D7V1PreItem23ChronologyReceipt:
@@ -408,7 +450,20 @@ def _build_case(
         tuple[records.D7V1SourceMember, ...],
     ]
     | None = None,
+    supplier_identity_override: records.D7V1ArtifactBinding | None = None,
+    supplier_id_override: str | None = None,
+    seed_values: Sequence[int] = (8_100_001, 8_100_002),
 ) -> _Case:
+    fixture_supplier_candidate = None
+    if result_present_at_source or source_base_commit is not None:
+        # Both options deliberately make the eventual source join invalid.  Use
+        # one independently valid fixture case to obtain an exact supplier
+        # candidate without consuming the loader rejection under test.
+        fixture_supplier_candidate = _build_case(
+            tmp_path / "supplier-fixture-baseline",
+            isolated_clone=isolated_clone,
+            sparse_checkout=sparse_checkout,
+        ).supplier_candidate
     repository = tmp_path / "repository"
     clone_storage = ("--no-local",) if isolated_clone else ("--shared",)
     subprocess.run(
@@ -482,10 +537,12 @@ def _build_case(
     source_closure_paths = [
         *map(str, required),
         *FOUNDATION_SOURCE_PATHS,
+        EXECUTION_DESIGN_REPOSITORY_PATH,
         *DESCRIPTIVE_HELPER_REPOSITORY_PATHS,
         PRIVATE_PUBLICATION_REPOSITORY_PATH,
         RESULT_PUBLICATION_REPOSITORY_PATH,
         SOURCE_CLOSURE_REPOSITORY_PATH,
+        SOURCE_SELECTED_SUPPLIER_REPOSITORY_PATH,
     ]
     for repository_path in source_closure_paths:
         target = repository.joinpath(*repository_path.split("/"))
@@ -493,6 +550,11 @@ def _build_case(
             target.parent.mkdir(parents=True, exist_ok=True)
             target.unlink(missing_ok=True)
             os.link(FOUNDATION_SOURCE_PATHS[repository_path], target)
+            continue
+        if repository_path == EXECUTION_DESIGN_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(EXECUTION_DESIGN_MODULE_PATH, target)
             continue
         if repository_path == (
             "src/spirallens/qualification/confirmation_v1_materialization.py"
@@ -533,6 +595,11 @@ def _build_case(
             target.unlink(missing_ok=True)
             os.link(SOURCE_CLOSURE_MODULE_PATH, target)
             continue
+        if repository_path == SOURCE_SELECTED_SUPPLIER_REPOSITORY_PATH:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.unlink(missing_ok=True)
+            os.link(SOURCE_SELECTED_SUPPLIER_MODULE_PATH, target)
+            continue
         if repository_path == ("protocols/d7_v1_pre_item23_materialization_v0_1.json"):
             _write(repository, repository_path, PROTOCOL_PATH.read_bytes())
             continue
@@ -564,14 +631,32 @@ def _build_case(
         loaded_protocol,
         source_commit,
     )
-    if mutate_source_member is not None:
-        members = mutate_source_member(members)
-    records_by_role = _build_records(
+    records_by_role, supplier_candidate = _build_records(
+        repository=context,
+        materialization_protocol=loaded_protocol,
         protocol=protocol,
         route=route,
         source_commit=source_commit,
         source_members=members,
+        supplier_candidate=fixture_supplier_candidate,
+        supplier_identity_override=supplier_identity_override,
+        supplier_id_override=supplier_id_override,
+        seed_values=seed_values,
     )
+    if mutate_source_member is not None:
+        members = mutate_source_member(members)
+        records_by_role, _supplier_candidate = _build_records(
+            repository=context,
+            materialization_protocol=loaded_protocol,
+            protocol=protocol,
+            route=route,
+            source_commit=source_commit,
+            source_members=members,
+            supplier_candidate=supplier_candidate,
+            supplier_identity_override=supplier_identity_override,
+            supplier_id_override=supplier_id_override,
+            seed_values=seed_values,
+        )
     stage_root = tmp_path / "stage"
     paths = _coordinate_paths(protocol)
     for role, repository_path in paths.items():
@@ -600,6 +685,7 @@ def _build_case(
         protocol=protocol,
         records_by_role=records_by_role,
         external_bytes=external_bytes,
+        supplier_candidate=supplier_candidate,
     )
 
 
