@@ -210,6 +210,12 @@ Pythia-70M is a plumbing smoke and cannot turn an unqualified instrument into
 scientific evidence. Pythia-160M remains the historically intended first
 scientific model family, but `SCI-S1` qualification must pass before its `SCI-S2`
 protocol can be frozen, and this frame does not authorize that run.
+A tracked
+[Pythia-160M identity candidate](experiments/pythia/model_identity/pythia160-v0.1/identity-receipt.json)
+now binds provider metadata and exact `config.json` bytes to one immutable
+revision. It remains `review_pending`: sibling metadata is provider-reported,
+weights and tokenizer bytes are unread, and no model profile, runtime, subject,
+execution, VOY, or scientific authority is established.
 SAE annotation, training-checkpoint trajectories, transfer operators, and
 natural-language interpretation are intentionally deferred.
 

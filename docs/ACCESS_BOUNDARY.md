@@ -159,22 +159,22 @@ descriptor-only prepare view above nor a `SubjectProtocolManifest`, subject
 prepare-only decision, runtime preflight, or execution-readiness artifact.
 
 The separate private Pythia-160M identity-acquisition source is not a
-successor protocol. Its pure kernel can validate already-acquired provider
-metadata and `config.json` bytes, while its unregistered script describes a
-future metadata-only acquisition under a separately reviewed exact source
-commit. The script has only been exercised in preflight-blocked and synthetic
-tests; no live acquisition passed preflight and no receipt was persisted. Even
-a later valid receipt is
-only review-pending identity evidence: provider sibling metadata remains
-provider-reported, weights and tokenizer bytes remain unread, no profile or
-adapter compatibility is established, and it cannot feed descriptor-only
-prepare, subject preparation, model loading, or execution authority.
-Before its first provider request, the later one-shot operation durably reserves
-an empty private stage; any failure after successful reservation retains it and
-authorizes neither cleanup, resume, nor retry. Its filesystem guarantee assumes
-a quiescent, honest local checkout. Held directory and file identities detect
-ordinary drift, but the contract does not claim resistance to a hostile
-same-user process racing the final native directory rename.
+successor protocol. From exact merged source commit
+`fb640788d3c036cb86127ed9d32d28d27c1e2aa9`, its zero-argument operation was
+invoked exactly once and atomically published the tracked four-file
+`pythia160-v0.1` candidate. The canonical receipt resolves immutable revision
+`50f5173d932e8e61f858120bcb800b97af589f46`, joins default and exact provider
+responses, and joins 569 retrieved `config.json` bytes to the provider's
+non-LFS Git blob. It is still only `review_pending` identity evidence:
+provider sibling metadata remains unrecomputed, weights and tokenizer bytes
+remain unread, no profile or adapter compatibility is established, and it
+cannot feed descriptor-only prepare, subject preparation, model loading, or
+execution authority. The operation durably reserved an empty private stage
+before its first provider request and completed without retry; the stage is
+absent after publication. Its filesystem guarantee assumed a quiescent,
+honest local checkout and did not claim resistance to a hostile same-user
+process racing the final native directory rename. Git preserves the exact
+file bytes, but not the 0600 file and 0700 directory modes observed at capture.
 
 A source-only correction now closes an earlier TLS preflight gap: the exact
 isolated Python 3.13 runtime had an empty default certificate store. The
@@ -186,11 +186,11 @@ hostname verification, `CERT_REQUIRED`, TLS 1.2 or newer, and a nonempty CA
 store before any durable stage reservation. That same context is passed
 explicitly to all three HTTPS requests. Ambient OpenSSL configuration,
 provider-module, and engine environment is rejected before TLS initialization.
-This correction does not invoke the
-live main, contact a provider, produce a receipt, or change any access or
-authority fact. The v0.1 receipt does not persist the CA-bundle digest and
-therefore does not attest the exact transport-trust bytes. A future PR62 is the
-earliest separately reviewed increment that may attempt the acquisition.
+That source correction itself invoked no live main or provider. The later
+one-shot acquisition used the explicit context and truthfully records network,
+Hugging Face, provider-metadata, and config-byte access. The v0.1 receipt does
+not persist the CA-bundle digest and therefore does not attest the exact
+transport-trust bytes; external-witness and identity-review facts remain false.
 
 The access package does not create a trusted `SubjectProtocolManifest`, qualify
 D0-D8, grant project-level subject preparation or execution, or make the

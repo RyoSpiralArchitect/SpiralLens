@@ -9,22 +9,21 @@ a separately versioned and reviewed `SubjectProtocolManifest` that follows the
 same capture discipline. Neither this 70M protocol nor the model-family intent
 authorizes that future preparation or run.
 
-A private source-only identity-acquisition contract now defines how a later
-review may record bounded provider model metadata and exact `config.json`
-bytes for Pythia-160M. The contract source itself performs no request and ships
-no receipt instance. Its unregistered script has only been exercised through
-blocked preflight and synthetic tests in the change that introduces it; a later
-invocation must use a separately reviewed exact source commit. Equality with a
-local `origin/main` tracking ref alone is not remote-current or review proof.
-Any resulting four-file directory remains `review_pending`,
-with provider sibling metadata unrecomputed, weights and tokenizer unread, and
-all preparation, model-access, execution, capture, scientific, `SCI-S1`, and
-`SCI-S2` authority closed.
-The later one-shot acquisition reserves and fsyncs an empty private stage before
-its first request; any failure after successful reservation retains the stage
-and permits no cleanup, resume, or retry. Its no-replace publication assumes a
-quiescent, honest local checkout and does not claim resistance to a hostile
-same-user rename race.
+A private identity-acquisition contract defines a bounded provider-metadata and
+exact-`config.json` candidate for Pythia-160M. From exact merged source commit
+`fb640788d3c036cb86127ed9d32d28d27c1e2aa9`, the unregistered one-shot script
+was invoked exactly once and published the tracked four-file
+[`pythia160-v0.1`](model_identity/pythia160-v0.1/) directory. Its receipt
+resolves revision `50f5173d932e8e61f858120bcb800b97af589f46`, rejoins the
+default and exact provider responses, and joins exact config bytes to the
+provider's non-LFS Git blob. It is still `review_pending`: provider sibling
+metadata is unrecomputed, weights and tokenizer bytes are unread, and every
+preparation, model-access, execution, capture, VOY, scientific, `SCI-S1`, and
+`SCI-S2` authority remains closed. The operation reserved and fsynced its empty
+private stage before the first request, completed without retry, and left no
+stage. Its no-replace publication assumed a quiescent, honest local checkout
+and did not claim resistance to a hostile same-user rename race. Capture-time
+0600 file and 0700 directory modes are not represented by Git.
 
 The exact isolated Python 3.13 runtime was subsequently found to have an empty
 default certificate store. A source-only correction makes TLS trust explicit:
@@ -35,12 +34,25 @@ write bit, and builds one hostname-verifying `CERT_REQUIRED` client context
 with TLS 1.2 or newer and a nonempty CA store. The same context is passed to all
 three HTTPS requests through an explicit handler. Ambient OpenSSL
 configuration, provider-module, and engine environment is rejected before TLS
-initialization. The live main remains
-uninvoked in this correction; no provider-backed/acquired or persisted
-receipt, output, evidence, or authority is created. The v0.1 receipt does not
-record the CA-bundle digest and therefore cannot attest the exact
-transport-trust bytes. A future PR62 may make the first separately reviewed
-acquisition attempt from merged source.
+initialization. That source correction itself invoked no live main. The later
+acquisition used the explicit context and records only network, Hugging Face,
+provider-metadata, and config-byte access. The v0.1 receipt does not record the
+CA-bundle digest and therefore cannot attest the exact transport-trust bytes.
+
+### Non-authoritative prerequisite projection
+
+This table is a navigation aid only; the canonical route, receipts, and
+roadmap control. None of these rows earns VOY completion credit.
+
+| Work item | Operation state | Persisted evidence | Review/authority state |
+| --- | --- | --- | --- |
+| PR58 pre-observation declaration | synthetic only | none | `blocked_external_prerequisites`; no authority |
+| PR59 adapter mechanism | offline fake only | tests only | no real-model parity or zero-intervention review |
+| PR60–PR62 identity acquisition | one metadata/config attempt complete | exact four-file candidate | `review_pending`; external witness false; no authority |
+
+Pythia-160M remains the VOY-V8 subject family and is still blocked by the
+canonical `SCI-S1`/`SCI-S2` gates. This prerequisite projection must not be
+read as progress through VOY-V1–V9.
 
 The current 70M public-example smoke validates only exact offline model-file
 resolution, bounded capture, storage, checksum, manifest reload, and receipt
