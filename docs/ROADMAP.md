@@ -1668,6 +1668,18 @@ The separate private Pythia-160M pre-observation assessor does not register a
 160M engineering profile or reuse the 70M lane. It ships no declaration
 instance, reads no subject or model value, and can report only a statically
 computed, externally blocked assessment with Level-0/no-delta boundaries.
+A separate deterministic offline fake-NeoX check now hardens selected-position
+snapshot ownership and exact per-module train/eval-flag restoration in the
+current `PythiaAdapter`. It verifies zero-intervention and hook mechanics only
+on that fake structural surface; it does not verify hook parity, zero
+intervention, resource fit, or compatibility on any real Pythia model,
+including Pythia-160M, and it changes none of the assessor's blocked or
+`not_run` facts. The current capture identifier advances from residual-hooks
+v1 to v2; partial v1 atlases cannot resume under v2 and receive no migration.
+Completed v1 artifacts and the byte-frozen Pythia-70M v0.1 receipt remain
+historical and readable, but the protocol binds its earlier adapter source.
+Any future model access therefore requires a separately reviewed successor
+protocol rather than reusing that cell.
 
 The successor-only fulfillment rule for the D6 v0.1 identity-bearing
 cells/stress manifests remains an unchanged historical proposal. C1 is now

@@ -19,7 +19,7 @@ from torch import Tensor, nn
 from spirallens import __version__ as SPIRALLENS_VERSION
 
 
-CAPTURE_IMPLEMENTATION_VERSION = "spirallens.pythia.residual_hooks.v1"
+CAPTURE_IMPLEMENTATION_VERSION = "spirallens.pythia.residual_hooks.v2"
 LOGIT_SUMMARY_COLUMNS: tuple[str, ...] = (
     "max_logit",
     "mean_logit",
@@ -409,9 +409,11 @@ class PythiaAdapter:
 
             return hook
 
-        was_training = self.model.training
-        self.model.eval()
+        training_modes = tuple(
+            (module, module.training) for module in self.model.modules()
+        )
         try:
+            self.model.eval()
             for layer_index, layer in enumerate(self.layers):
                 handles.append(
                     layer.register_forward_pre_hook(capture_pre(layer_index))
@@ -428,7 +430,12 @@ class PythiaAdapter:
         finally:
             for handle in handles:
                 handle.remove()
-            self.model.train(was_training)
+            # ``model.train(previous_root_mode)`` would flatten a deliberately
+            # mixed tree (for example, a frozen/eval submodule inside a
+            # training model).  Observation restores every exact pre-call
+            # module flag without recursively rewriting its descendants.
+            for module, training in training_modes:
+                module.training = training
 
         expected = set(range(self.num_layers))
         if set(pre_by_layer) != expected or set(post_by_layer) != expected:
@@ -522,7 +529,15 @@ class PythiaAdapter:
             # Keep the copy synchronous.  In particular, an asynchronous MPS
             # copy can outlive the hook while the accelerator reuses its
             # source buffer, producing intermittent non-finite atlas rows.
-            .to(device="cpu", dtype=torch.float32, non_blocking=False)
+            # ``copy=True`` also makes CPU/float32 capture an owned snapshot;
+            # without it, ``Tensor.to`` may return a detached view sharing the
+            # model's storage when device and dtype already match.
+            .to(
+                device="cpu",
+                dtype=torch.float32,
+                non_blocking=False,
+                copy=True,
+            )
         )
 
     @staticmethod

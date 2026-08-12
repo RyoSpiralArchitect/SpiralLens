@@ -276,6 +276,27 @@ def test_constructor_rejects_manifest_protocol_mismatch(
         )
 
 
+def test_historical_v1_receipt_builder_rejects_current_v2_capture() -> None:
+    manifest = _manifest()
+    capture = manifest["capture"]
+    capture["capture_implementation"]["version"] = "spirallens.pythia.residual_hooks.v2"
+    capture_fingerprint = _digest(
+        json.dumps(capture, sort_keys=True, separators=(",", ":"))
+    )
+    manifest["capture_fingerprint"] = capture_fingerprint
+    manifest["request"]["capture_fingerprint"] = capture_fingerprint
+
+    with pytest.raises(
+        PublicExamplePlumbingReceiptError,
+        match="production implementation",
+    ):
+        _receipt_from_validated_atlas_manifest(
+            manifest,
+            manifest_sha256=_digest("manifest"),
+            protocol_binding=_binding(),
+        )
+
+
 def test_receipt_has_exact_fields_and_relative_output_identity() -> None:
     payload = _receipt().to_dict()
     payload["unexpected"] = False

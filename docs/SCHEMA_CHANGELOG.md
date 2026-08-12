@@ -4,6 +4,38 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Offline Pythia adapter mechanism hardening
+
+- Hardened the current `PythiaAdapter.observe_batch` implementation so every
+  selected-position residual capture is an owned, synchronous CPU/float32
+  snapshot and every pre-existing per-module train/eval flag is restored
+  exactly after both successful and failed observation.
+- Added a deterministic offline fake-NeoX mechanism-conformance surface. It
+  checks bit-identical baseline logits; unchanged parameters, buffers, tensor
+  version counters, and absent gradients; inference/eval execution with
+  `use_cache=false`; exact selected-position pre/post captures; preservation of
+  pre-existing hooks; cleanup on success and failure; and fail-closed malformed
+  layer/output behavior. These checks exercise only the fake structural surface
+  and do not establish parity or compatibility with any real Pythia model.
+- Advanced the current capture implementation identifier from residual-hooks
+  v1 to v2. An incomplete v1 atlas cannot resume under v2 and no migration is
+  performed. Completed v1 artifacts and the tracked Pythia-70M v0.1 receipt
+  remain historical and readable under their frozen contract.
+- No real model, tokenizer, Hub, cache, network, or subject value is accessed,
+  and no persistent activation output, atlas, protocol instance, or receipt is
+  created. The private engineering profile registry remains Pythia-70M-only,
+  and the private Pythia-160M pre-observation declaration remains at its
+  unchanged v1/not-run
+  capture declaration; its assessment still records adapter parity and zero
+  intervention as unverified/not run. `SCI-S1` remains in progress, `SCI-S2`
+  remains blocked, and claim delta is `none`.
+- The frozen Pythia-70M v0.1 protocol and receipt bytes remain unchanged and
+  historical. Because that protocol binds its earlier adapter source, it does
+  not authenticate this hardened implementation and is not made rerunnable by
+  this change; any future model access requires a separately reviewed successor
+  protocol. No new public API symbol or signature, schema, CLI, dependency,
+  model-profile registration, or scientific/library milestone is introduced.
+
 ## 2026-08-13 — Private Pythia-160M pre-observation assessment source
 
 - Added one internal, non-exported, framework-neutral declaration validator and
