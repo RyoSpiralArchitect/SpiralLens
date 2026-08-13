@@ -1291,14 +1291,17 @@ portability, `LIB-L0`, science, authority, or VOY change. These later
 documentation bytes were not in the tested checkout and are not attested by
 the run or its wheel metadata.
 
-Repository `0.1.0` metadata activates no protection; historical `0.1.0`
-compatibility is unattested. `0.2.0` is only the earliest re-review before its
-genuine cut if both aliases gain real independent consumers and all gates pass;
-if it ships on HOLD, activation is earliest `0.3.0`. Neither coordinate is an
-approval, reservation, designation, or release promise. A future release needs
-equal version owners, a new final-byte matrix, and a published-install receipt.
-The historical D7 `spirallens==0.1.0` lock and receipts stay immutable; a
-successor uses new coordinates. This review changes no release or claim state.
+Repository `0.2.0` source/build metadata is an unreleased candidate and
+activates no protection; merge, build, or tag is not a publication receipt, and
+historical `0.1.0` compatibility is unattested. An actual policy-bearing `0.2`
+release would activate only the prospectively designated `spirallens.__version__`
+boundary. Core exact-seven remains on HOLD; if `0.2` ships on HOLD, its activation
+is earliest `0.3.0`. The historical D7 `spirallens==0.1.0` lock and receipts stay
+immutable. Their re-anchor was exact-current at issuance; this candidate changes
+fixed v0.1 execution-source members, so current live readiness is false and no
+successor re-anchor is created. Release still requires equal owners, a new
+final-byte matrix, and a published-install receipt. This review changes no
+release or claim state.
 
 The last declaration-only candidate, at clean baseline
 `65a567659200ac41c5a15329af1074239b525ac5`, covered exactly

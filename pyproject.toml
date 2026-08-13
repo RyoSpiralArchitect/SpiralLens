@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spirallens"
-version = "0.1.0"
+version = "0.2.0"
 description = "Auditable loop, transport, and winding-candidate instrumentation for transformer representations."
 readme = "README.md"
 requires-python = ">=3.11"

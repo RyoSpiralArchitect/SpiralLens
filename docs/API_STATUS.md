@@ -1,6 +1,6 @@
 # API Maturity and Compatibility Status
 
-- **Package version:** `0.1.x`
+- **Package version:** `0.2.0` repository candidate (unreleased)
 - **Software maturity:** experimental, pre-1.0
 - **Scientific maturity:** tracked separately by the claim ladder
 - **Roadmap lanes:** [canonical current-state table](ROADMAP.md#3-two-independent-maturity-axes)
@@ -156,7 +156,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 
 | Namespace or symbol | Status | Compatibility boundary |
 | --- | --- | --- |
-| `spirallens.__version__` | prospectively designated supported pre-1.0 coordinate | no policy-bearing release has occurred; repository `0.1.0` metadata activates no protection, historical `0.1.0` compatibility is unattested, and its string value reports the installed release |
+| `spirallens.__version__` | prospectively designated supported pre-1.0 coordinate | no policy-bearing release has occurred; repository `0.2.0` candidate metadata activates no protection, historical `0.1.0` compatibility is unattested, and its exact string equals the source/build and installed-distribution version owners |
 | `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
 | `spirallens.core.canonical` | stable candidate (promotion HOLD) | the coherent future promotion candidate is the current exact seven-name `spirallens.core` surface: four functions, `CanonicalJsonError`, `JsonScalar`, and `JsonValue`; shared-codec use is established at defining and legacy leaf paths, but exact root-coordinate production consumers remain zero and the compatibility preflight grants no support or stability |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
@@ -197,8 +197,10 @@ repository source set. They are absent from the sdist, direct-source wheel,
 sdist-derived wheel, and both fresh non-editable wheel installations; the
 ordered `spirallens.access` and `spirallens.qualification` `__all__` surfaces
 remain unchanged. This separation creates no public API and does not complete
-`LIB-L0`. The exact three files are members of the reviewed
-exact-current source/runtime re-anchor now tracked on this branch. The
+`LIB-L0`. The exact three files are members of the reviewed source/runtime
+re-anchor, which was exact-current at issuance. The `0.2.0` candidate changes
+frozen v0.1 execution-source members: historical reload remains valid, current
+live readiness is false, and no successor re-anchor is created. The
 historical plan bytes retain `status=frozen_not_run`,
 `runner_implemented=false`, and
 `writer_implemented=false`; those fields describe the plan when it was frozen

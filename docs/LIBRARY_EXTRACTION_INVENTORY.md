@@ -26,7 +26,8 @@ remain authoritative for those boundaries.
 - `LIB-L0`: `in progress`;
 - supported pre-1.0 surface: `spirallens.__version__` is the sole prospectively
   designated coordinate; no policy-bearing release has occurred, repository
-  `0.1.0` metadata activates no protection, and historical compatibility is unattested;
+  `0.2.0` candidate metadata activates no protection, and historical `0.1.0`
+  compatibility is unattested;
 - closed static ordered `__all__` declaration inventory: 559 namespace-scoped
   entries across 24 package initializers;
 - closed installed-module outcome inventory: 159 modules = 154 base-import
@@ -96,7 +97,7 @@ declaration for all 24 classified initializers, totaling 559
 namespace-scoped entries. The source tree, sdist, direct-source wheel,
 sdist-derived wheel, and both fresh installations have the same initializer
 byte digest
-`fcfef3724bb9902675052d88301c70422907eba60197c203925281fa45efd145`
+`6f4556d990e93b4b82b857a872c25f7efd0b40a9e2131ee818832946137a7efa`
 and ordered-export digest
 `e2c947c30f0323c54c1713274dac0117fd74dc86cd576279c44a040dfc0ae798`.
 The sdist carries a byte-identical copy of the manifest, whose SHA-256 is
