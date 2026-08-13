@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
 
@@ -35,180 +36,145 @@ def _set_project_root(
     monkeypatch.setattr(module, "_SOURCE_ROOT", root / "src")
 
 
-def _module_path(root: Path, module_name: str) -> Path:
-    return root / Path("src", *module_name.split(".")).with_suffix(".py")
-
-
-def _write_modules(root: Path, module_names: set[str] | frozenset[str]) -> None:
-    for module_name in module_names:
-        path = _module_path(root, module_name)
+def _write_paths(root: Path, paths: set[str] | frozenset[str]) -> None:
+    for member in paths:
+        path = root / "src" / member
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("# reviewed repository experiment\n", encoding="utf-8")
+        path.write_text("# classified Python member\n", encoding="utf-8")
 
 
-def _write_source_directories(root: Path) -> None:
-    (root / "src/spirallens/access").mkdir(parents=True)
-    (root / "src/spirallens/qualification").mkdir(parents=True)
+def _write_build_paths(root: Path, paths: set[str] | frozenset[str]) -> None:
+    for member in paths:
+        path = root / member
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# classified built member\n", encoding="utf-8")
 
 
-def test_setup_accepts_exact_reviewed_22_regular_source_files(
+def test_setup_accepts_exact_full_181_source_partition(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
+    _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
 
-    setup_module._require_repository_experiment_source_state()
+    setup_module._require_classified_source_state()
+    assert len(setup_module._SHIPPED_PYTHON_PATHS) == 159
+    assert len(setup_module._REPOSITORY_ONLY_PYTHON_PATHS) == 22
+    assert len(setup_module._ALL_PYTHON_PATHS) == 181
 
 
-def test_setup_accepts_empty_pkg_info_marked_no_git_source_tree(
+def test_setup_accepts_exact_159_pkg_info_no_git_sdist_source(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_source_directories(tmp_path)
+    _write_paths(tmp_path, setup_module._SHIPPED_PYTHON_PATHS)
     (tmp_path / "PKG-INFO").write_text("Metadata-Version: 2.4\n", encoding="utf-8")
 
-    setup_module._require_repository_experiment_source_state()
+    setup_module._require_classified_source_state()
 
 
-def test_setup_rejects_empty_tree_with_pkg_info_when_git_marker_exists(
+def test_setup_rejects_empty_or_partial_source_tree(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_source_directories(tmp_path)
-    (tmp_path / "PKG-INFO").write_text("Metadata-Version: 2.4\n", encoding="utf-8")
-    (tmp_path / ".git").mkdir()
+    selected = set(setup_module._ALL_PYTHON_PATHS)
+    selected.remove("spirallens/core/canonical.py")
+    _write_paths(tmp_path, selected)
 
-    with pytest.raises(SetupError, match="git_marker_absent=False"):
-        setup_module._require_repository_experiment_source_state()
+    with pytest.raises(SetupError, match="missing=.*canonical.py"):
+        setup_module._require_classified_source_state()
 
 
-def test_setup_rejects_empty_tree_without_extracted_sdist_marker(
+@pytest.mark.parametrize(
+    "rogue",
+    [
+        "spirallens/future.py",
+        "roguepkg/__init__.py",
+        "spirallens/core/__pycache__/rogue.py",
+    ],
+)
+def test_setup_rejects_every_unclassified_source_python_member(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    rogue: str,
+) -> None:
+    _set_project_root(setup_module, monkeypatch, tmp_path)
+    _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
+    path = tmp_path / "src" / rogue
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("# unclassified\n", encoding="utf-8")
+
+    with pytest.raises(SetupError, match="unexpected=.*rogue|unexpected=.*future"):
+        setup_module._require_classified_source_state()
+
+
+def test_setup_rejects_symlinked_pycache_directory(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
+    _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
+    outside = tmp_path / "outside-cache"
+    outside.mkdir()
+    (tmp_path / "src/spirallens/core/__pycache__").symlink_to(outside)
 
-    with pytest.raises(SetupError, match="empty PKG-INFO-marked no-Git source set"):
-        setup_module._require_repository_experiment_source_state()
-
-
-@pytest.mark.parametrize("subset", ["qualification_only", "access_only"])
-def test_setup_rejects_partial_20_plus_0_and_0_plus_2_source_sets(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    subset: str,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    if subset == "qualification_only":
-        selected = {
-            name
-            for name in setup_module._REPOSITORY_EXPERIMENT_MODULES
-            if name.startswith("spirallens.qualification.")
-        }
-        assert len(selected) == 20
-    else:
-        selected = {
-            name
-            for name in setup_module._REPOSITORY_EXPERIMENT_MODULES
-            if name.startswith("spirallens.access.")
-        }
-        assert len(selected) == 2
-    _write_modules(tmp_path, selected)
-
-    with pytest.raises(SetupError, match="exact reviewed set"):
-        setup_module._require_repository_experiment_source_state()
+    with pytest.raises(SetupError, match="nonordinary_entries=.*__pycache__"):
+        setup_module._require_classified_source_state()
 
 
-def test_setup_rejects_future_matching_prefix_even_with_exact_22(
+def test_manifest_rejects_partial_package_topology(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    future = tmp_path / "src/spirallens/qualification/confirmation_v1_future_module.py"
-    future.write_text("# not reviewed\n", encoding="utf-8")
-    (tmp_path / "MANIFEST.in").write_text(
-        "exclude src/spirallens/qualification/confirmation_v1_*.py\n",
-        encoding="utf-8",
-    )
+    manifest = json.loads(setup_module._CLASSIFICATION_PATH.read_text(encoding="utf-8"))
+    manifest["roles"]["shipped_runtime"].append("spirallens/newpkg/module.py")
+    manifest["roles"]["shipped_runtime"].sort()
+    path = tmp_path / "distribution/classification.json"
+    path.parent.mkdir()
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(setup_module, "_CLASSIFICATION_PATH", path)
 
-    with pytest.raises(SetupError, match="unexpected=.*future"):
-        setup_module._require_repository_experiment_source_state()
+    with pytest.raises(SetupError, match="package_initializer.*close"):
+        setup_module._load_distribution_classification()
 
 
-def test_setup_rejects_nonregular_reviewed_target(
+def test_manifest_rejects_missing_or_extra_initializer(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    manifest = json.loads(setup_module._CLASSIFICATION_PATH.read_text(encoding="utf-8"))
+    manifest["roles"]["package_initializer"].remove("spirallens/core/__init__.py")
+    path = tmp_path / "distribution/classification.json"
+    path.parent.mkdir()
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(setup_module, "_CLASSIFICATION_PATH", path)
+
+    with pytest.raises(SetupError, match="package_initializer.*close"):
+        setup_module._load_distribution_classification()
+
+
+def test_library_build_py_filters_repository_only_and_retains_exact_shipped(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
-    modules = sorted(setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    _write_modules(tmp_path, set(modules[1:]))
-    _module_path(tmp_path, modules[0]).mkdir(parents=True)
-
-    with pytest.raises(SetupError, match="non_regular=.*pythia160"):
-        setup_module._require_repository_experiment_source_state()
-
-
-def test_setup_rejects_symlinked_source_package_ancestor(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    outside = tmp_path / "outside-access"
-    modules = {
-        name
-        for name in setup_module._REPOSITORY_EXPERIMENT_MODULES
-        if name.startswith("spirallens.access.")
-    }
-    for module_name in modules:
-        path = outside / f"{module_name.rsplit('.', 1)[1]}.py"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("# outside source\n", encoding="utf-8")
-    (tmp_path / "src/spirallens").mkdir(parents=True)
-    (tmp_path / "src/spirallens/access").symlink_to(outside)
-    qualification = {
-        name
-        for name in setup_module._REPOSITORY_EXPERIMENT_MODULES
-        if name.startswith("spirallens.qualification.")
-    }
-    _write_modules(tmp_path, qualification)
-
-    with pytest.raises(SetupError, match="non_regular_directories=.*access"):
-        setup_module._require_repository_experiment_source_state()
-
-
-def test_library_build_py_filters_exact_closed_set_only(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    candidates = [
-        (*module_name.rsplit(".", 1), f"/{module_name}.py")
-        for module_name in sorted(setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    ]
-    candidates.extend(
-        [
-            ("spirallens.access", "contracts", "/spirallens/access/contracts.py"),
-            (
-                "spirallens.qualification",
-                "confirmation_attempt_records",
-                "/spirallens/qualification/confirmation_attempt_records.py",
-            ),
-        ]
-    )
+    _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
+    candidates = []
+    for member in sorted(setup_module._ALL_PYTHON_PATHS):
+        path = Path(member)
+        module_name = path.stem
+        package = ".".join(path.parts[:-1])
+        candidates.append((package, module_name, f"/{member}"))
     monkeypatch.setattr(
         build_py,
         "find_package_modules",
@@ -216,109 +182,65 @@ def test_library_build_py_filters_exact_closed_set_only(
     )
     command = object.__new__(setup_module.LibraryBuildPy)
 
-    assert command.find_package_modules("spirallens", "src/spirallens") == [
-        ("spirallens.access", "contracts", "/spirallens/access/contracts.py"),
-        (
-            "spirallens.qualification",
-            "confirmation_attempt_records",
-            "/spirallens/qualification/confirmation_attempt_records.py",
-        ),
-    ]
-
-
-def test_setup_rejects_stale_repository_experiment_build_outputs(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    stale = tmp_path / "build/lib/spirallens/qualification/confirmation_v1_records.py"
-    stale.parent.mkdir(parents=True)
-    stale.write_text("# stale build target\n", encoding="utf-8")
-
-    with pytest.raises(
-        SetupError,
-        match="repository-experiment build outputs must be absent",
-    ):
-        setup_module._require_repository_experiment_build_outputs_absent(
-            tmp_path / "build/lib"
-        )
-
-
-def test_setup_rejects_nonregular_stale_build_output(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    target = tmp_path / "ordinary-target.py"
-    target.write_text("# target\n", encoding="utf-8")
-    stale = tmp_path / "build/lib/spirallens/access/_pythia160_preobservation.py"
-    stale.parent.mkdir(parents=True)
-    stale.symlink_to(target)
-
-    with pytest.raises(
-        SetupError,
-        match="non_regular=.*_pythia160_preobservation.py",
-    ):
-        setup_module._require_repository_experiment_build_outputs_absent(
-            tmp_path / "build/lib"
-        )
-
-
-def test_setup_rejects_pep3147_stale_build_output(
-    setup_module: ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    _set_project_root(setup_module, monkeypatch, tmp_path)
-    stale = (
-        tmp_path
-        / "build/lib/spirallens/qualification/__pycache__/"
-        / "confirmation_v1_records.cpython-313.pyc"
+    observed = command.find_package_modules("spirallens", "src/spirallens")
+    assert len(observed) == 159
+    assert {f"{package}.{name}" for package, name, _path in observed}.isdisjoint(
+        setup_module._REPOSITORY_ONLY_MODULES
     )
-    stale.parent.mkdir(parents=True)
-    stale.write_bytes(b"stale bytecode")
 
-    with pytest.raises(
-        SetupError,
-        match="repository-experiment build outputs must be absent",
-    ):
-        setup_module._require_repository_experiment_build_outputs_absent(
-            tmp_path / "build/lib"
+
+@pytest.mark.parametrize(
+    "rogue",
+    [
+        "spirallens/qualification/confirmation_v1_records.py",
+        "spirallens/core/__pycache__/canonical.cpython-313.pyc",
+        "roguepkg/__init__.py",
+    ],
+)
+def test_prebuild_rejects_stale_missing_or_unclassified_tree(
+    setup_module: ModuleType,
+    tmp_path: Path,
+    rogue: str,
+) -> None:
+    root = tmp_path / "build/lib"
+    path = root / rogue
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("stale", encoding="utf-8")
+
+    with pytest.raises(SetupError, match="exact classified shipped Python tree"):
+        setup_module._require_built_package_state(
+            root,
+            allow_absent_or_empty=True,
+            label="pre-build package tree",
         )
 
 
-def test_install_lib_rejects_stale_build_output_even_when_build_is_skipped(
+def test_install_lib_rejects_bad_tree_before_super_install(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     _set_project_root(setup_module, monkeypatch, tmp_path)
-    _write_modules(tmp_path, setup_module._REPOSITORY_EXPERIMENT_MODULES)
-    stale = tmp_path / "build/lib/spirallens/qualification/confirmation_v1_records.py"
-    stale.parent.mkdir(parents=True)
-    stale.write_text("# stale skip-build target\n", encoding="utf-8")
-    install_called = False
+    _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
+    build_root = tmp_path / "build/lib"
+    _write_build_paths(build_root, setup_module._SHIPPED_PYTHON_PATHS)
+    (build_root / "roguepkg/__init__.py").parent.mkdir()
+    (build_root / "roguepkg/__init__.py").write_text("rogue", encoding="utf-8")
+    called = False
 
     def fake_install(_command: install_lib) -> list[str]:
-        nonlocal install_called
-        install_called = True
+        nonlocal called
+        called = True
         return []
 
     monkeypatch.setattr(install_lib, "install", fake_install)
     command = object.__new__(setup_module.LibraryInstallLib)
-    command.build_dir = str(tmp_path / "build/lib")
+    command.build_dir = str(build_root)
     command.install_dir = str(tmp_path / "wheel-root")
 
-    with pytest.raises(
-        SetupError,
-        match="repository-experiment build outputs must be absent",
-    ):
+    with pytest.raises(SetupError, match="unexpected=.*roguepkg"):
         command.install()
-    assert install_called is False
+    assert called is False
     assert setup_module._COMMAND_CLASSES == {
         "build_py": setup_module.LibraryBuildPy,
         "install_lib": setup_module.LibraryInstallLib,

@@ -10,6 +10,12 @@ remain authoritative for those boundaries.
 
 - baseline commit: `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`;
 - baseline Git tree: `d553fd83c37c5cb1490dd09e777f734e1192e580`;
+- current physical-placement manifest:
+  `distribution/spirallens_python_members_v0_1.json`, schema
+  `spirallens.python-distribution-members.v0.1`;
+- current `src/**/*.py` partition: 181 modules = 159 wheel-present modules
+  (24 package initializers + 2 console-entrypoint runtime + 133 shipped
+  runtime) + 22 repository-only modules;
 - `LIB-L0`: `in progress`;
 - public root surface: only `spirallens.__version__` is supported;
 - observed `__all__` baseline: 559 names across 24 package initializers;
@@ -56,18 +62,40 @@ proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
 are rejected before wheel
 publication and are not deleted by the build.
 
-The v0.5 repository-only distribution validator records zero matching members
-in the sdist, direct-source wheel, and sdist-derived wheel. Fresh non-editable
-installs of both wheels produce 22 exact requested-module
-`ModuleNotFoundError.name` receipts and retain the ordered
-`spirallens.access` and `spirallens.qualification` `__all__` surfaces. This is
-a bounded two-prefix separation result, not a general repository-file
-allowlist: `closed_library_allowlist_established` remains `false`, and every
-authority, library, public-API, and scientific grant remains `false`.
+The successor v0.6 diagnostic and the versioned manifest now establish a
+closed wheel Python-module inventory. They fail closed over every
+`src/**/*.py` path and require the exact 159-member shipped set in the sdist,
+direct-source wheel, sdist-derived wheel, and both fresh non-editable
+installations. The 159-member ordered-path SHA-256 is
+`8769ac8ffc92e5123a8bf802eb09cab24a5a3e28882ac38cf84f3deee25c31aa`;
+the source inventory is the exact 159 + 22 partition. The sdist also carries a
+byte-identical copy of the classification manifest. Unclassified additions,
+removals, renames, rogue top-level packages, unclassified package files, and
+stale build/install bytecode fail before a wheel is accepted. A role change is
+not inferred by the gate: it requires an explicit reviewed manifest delta and
+refreshed validation evidence.
+
+The four manifest roles describe physical placement only. A
+`package_initializer` role does not classify any `__all__` name, and the
+observed 559-name export baseline remains a separate API observation. The
+`models`, `ann`, `witness`, and `dev` extras classify dependency installation,
+not wheel membership. Portability is also independent: the shipped set still
+contains 46 qualification modules and legacy repository-inferred operations.
+Consequently the full wheel is not an experiment-free or library-grade
+subset. The report states
+`closed_wheel_python_module_inventory_established=true`, keeps
+`closed_library_allowlist_established=false`, and keeps its authority,
+`lib_l0`, library, portability, public-API, and scientific grants `false`.
+
 The sdist is a library source artifact, not the repository experiment replay
-or test bundle: experiment-facing tests that remain in it require the omitted
-repository source modules and are not an installed-distribution conformance
-surface.
+or test bundle. Its current 106 test files are not a self-contained suite for
+the 159 shipped modules: experiment-facing tests still require omitted
+repository-only source and other repository context. They are neither an
+installed-distribution conformance surface nor replay or maturity evidence.
+The v0.1 classification admits only ordinary Python modules. Shipping package
+data, extension modules, namespace/generated modules, or bytecode-only modules
+requires a reviewed, versioned manifest/schema successor rather than an
+implicit exception to the closed inventory.
 
 ## Candidate inventory
 
@@ -106,8 +134,9 @@ the affected implementation:
    an explicit versioned migration precedes consumption.
 5. No public export, mandatory dependency, implicit repository discovery, or
    framework type leaks into a framework-neutral boundary.
-6. A fresh non-editable wheel verifies both import origin and its complete
-   library/experiment member classification.
+6. Fresh non-editable installations verify import origin and the exact closed
+   wheel Python-module inventory. This placement receipt does not classify
+   library/experiment maturity, portability, or public exports.
 7. The change materially removes duplicated production plumbing. A review
    should normally stop a pure deduplication that removes fewer than 20 lines
    or less than 20 percent of the duplicated block; a boundary split may
@@ -117,28 +146,39 @@ the affected implementation:
 
 ## Next bounded decisions
 
-1. Preserve the fail-closed exact-set build gate and machine-readable proof
-   that the 22 repository-experiment modules remain in source but not in the
-   sdist, either wheel route, or either fresh non-editable installation.
-2. Keep the accepted bounded-file primitive private and preserve its audited
+1. Preserve the reviewed 181 = 159 + 22 manifest and its fail-closed parity
+   proof through source, sdist, both wheel routes, and both fresh installs.
+   Any intended Python-module addition, removal, rename, or role change
+   requires an explicit reviewed manifest delta and refreshed validation
+   evidence; the gate rejects only changes left unclassified against the
+   manifest it is given.
+2. Move a repository-only module into the shipped set only after its own
+   two-independent-consumer, exact-equivalence, and material-benefit review.
+   Public export requires a separate `__all__`, compatibility, documentation,
+   and release decision; an optional-extra change requires a separate
+   dependency decision.
+3. Introduce package data, extension modules, namespace/generated modules, or
+   bytecode-only distribution support only through a versioned
+   classification/schema successor and new artifact/install adversaries.
+4. Keep the accepted bounded-file primitive private and preserve its audited
    limits. It remains POSIX `dir_fd`-oriented, uses `O_NOFOLLOW` only when the
    host exposes it, may block while opening a FIFO before the regular-file
    check, and detects bounded before/after metadata drift without proving full
    hostile-race or TOCTOU safety. Any additional consumer requires a new
    equivalence audit.
-3. Continue `RepositoryContext` migrations only where the existing marker
+5. Continue `RepositoryContext` migrations only where the existing marker
    reduces duplicated origin plumbing without changing domain failures.
-4. Preserve the accepted Atlas reader/capture import boundary and its
+6. Preserve the accepted Atlas reader/capture import boundary and its
    fresh-wheel forbidden-prefix probe; any public promotion or added capture
    coupling requires a separate review.
-5. Keep the strict YAML factory private and limited to the four audited
+7. Keep the strict YAML factory private and limited to the four audited
    mapping-policy consumers. Adding the CLI, neighbor-receipt, or ordinary
    `safe_load` families requires a new equivalence decision because their
    alias, merge, key, and failure behavior differs.
-6. Preserve the array-fingerprint rejection. Reconsider only after a versioned
+8. Preserve the array-fingerprint rejection. Reconsider only after a versioned
    D7 trust-closure decision no longer requires the exact
    `qualification/common.py` bytes and a remaining independent consumer set
    demonstrates the material-reduction gate; never relax the historical
    verifier merely to enable deduplication.
-7. Keep VOY-V4 on hold. Returning to that lane requires a separate reviewed,
+9. Keep VOY-V4 on hold. Returning to that lane requires a separate reviewed,
    versioned readiness/authority decision and disjoint execution coordinates.

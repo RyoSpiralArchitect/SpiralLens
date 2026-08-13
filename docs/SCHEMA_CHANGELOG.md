@@ -4,6 +4,42 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Closed wheel Python-module inventory
+
+- Added the repository-owned physical-placement manifest
+  `distribution/spirallens_python_members_v0_1.json`, schema
+  `spirallens.python-distribution-members.v0.1`. It closes all 181 current
+  `src/**/*.py` module paths into 159 wheel-present modules (24 package
+  initializers, two console-entrypoint runtime modules, and 133 shipped runtime
+  modules) plus 22 repository-only modules. The roles grant no API, stability,
+  compatibility, authority, scientific claim, or library maturity.
+- The distribution diagnostic advances to
+  `spirallens.distribution-validation.v0.6`. It verifies the exact 159-member
+  set in the sdist, direct-source wheel, sdist-derived wheel, and both fresh
+  non-editable installations; the ordered-path SHA-256 is
+  `8769ac8ffc92e5123a8bf802eb09cab24a5a3e28882ac38cf84f3deee25c31aa`.
+  Whole-source scans reject unclassified top-level packages and missing or
+  extra Python modules; artifact/install scans additionally reject stale
+  bytecode, package data, and non-regular members. The sdist carries a
+  byte-identical manifest copy.
+- The report records
+  `closed_wheel_python_module_inventory_established=true` and
+  `closed_library_allowlist_established=false`. Its authority, `lib_l0`,
+  library, portability, public-API, and scientific grants remain `false`.
+  Package-initializer placement does not classify `__all__`; the optional
+  dependency extras do not classify module membership; and installed presence
+  does not establish portability or support.
+- The full 159-member wheel still contains 46 qualification modules and legacy
+  repository-inferred operations. It is not an experiment-free or
+  library-grade subset. The 106 test files in the sdist are not a
+  self-contained experiment replay, installed-wheel conformance suite, or
+  maturity receipt.
+- The v0.1 manifest admits ordinary Python modules only. Package data,
+  extension modules, namespace/generated modules, and bytecode-only support
+  require a reviewed versioned classification/schema successor. This change
+  adds no public persistence schema or API, advances neither `LIB-L0` nor any
+  scientific lane, grants no authority, and does not authorize VOY-V4.
+
 ## 2026-08-13 — Array-fingerprint extraction rejected
 
 - Audited the matching fingerprint framing in `graphs.common`,

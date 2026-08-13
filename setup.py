@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 import stat
-from pathlib import Path
+from collections.abc import Sequence
+from pathlib import Path, PurePosixPath
+from typing import Any
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
@@ -11,49 +14,28 @@ from setuptools.errors import SetupError
 
 _PROJECT_ROOT = Path(__file__).absolute().parent
 _SOURCE_ROOT = _PROJECT_ROOT / "src"
-_REPOSITORY_EXPERIMENT_MODULES = frozenset(
-    {
-        "spirallens.access._pythia160_identity_acquisition",
-        "spirallens.access._pythia160_preobservation",
-        "spirallens.qualification.confirmation_v1_descriptive_common",
-        "spirallens.qualification.confirmation_v1_descriptive_d1",
-        "spirallens.qualification.confirmation_v1_descriptive_d2",
-        "spirallens.qualification.confirmation_v1_descriptive_d3",
-        "spirallens.qualification.confirmation_v1_descriptive_d4",
-        "spirallens.qualification.confirmation_v1_descriptive_d5_inputs",
-        "spirallens.qualification.confirmation_v1_descriptive_d5_outputs",
-        "spirallens.qualification.confirmation_v1_descriptive_independence",
-        "spirallens.qualification.confirmation_v1_design_referent_documents",
-        "spirallens.qualification.confirmation_v1_deterministic_inputs",
-        "spirallens.qualification.confirmation_v1_full_design_referents",
-        "spirallens.qualification.confirmation_v1_materialization",
-        "spirallens.qualification.confirmation_v1_official_execution",
-        "spirallens.qualification.confirmation_v1_post_d6_descriptive",
-        "spirallens.qualification.confirmation_v1_pre_item23_orchestrator",
-        "spirallens.qualification.confirmation_v1_private_publication",
-        "spirallens.qualification.confirmation_v1_records",
-        "spirallens.qualification.confirmation_v1_result_publication",
-        "spirallens.qualification.confirmation_v1_source_closure",
-        "spirallens.qualification.confirmation_v1_source_selected_supplier",
-    }
+_PACKAGE_NAME = "spirallens"
+_CLASSIFICATION_PATH = (
+    _PROJECT_ROOT / "distribution/spirallens_python_members_v0_1.json"
 )
-_REPOSITORY_EXPERIMENT_PREFIXES = (
-    ("spirallens.access", "_pythia160_"),
-    ("spirallens.qualification", "confirmation_v1_"),
+_CLASSIFICATION_SCHEMA_VERSION = "spirallens.python-distribution-members.v0.1"
+_CLASSIFICATION_SCOPE = (
+    "physical Python member placement across repository source, sdist, and wheels"
 )
-_EXPECTED_REPOSITORY_EXPERIMENT_PATHS = frozenset(
-    Path("src", *module_name.split(".")).with_suffix(".py").as_posix()
-    for module_name in _REPOSITORY_EXPERIMENT_MODULES
+_CLASSIFICATION_CLAIM_BOUNDARY = (
+    "classification grants no public API, stability, compatibility, authority, "
+    "scientific claim, or library maturity"
 )
-_EXPECTED_REPOSITORY_EXPERIMENT_BUILD_PATHS = frozenset(
-    Path(*module_name.split(".")).with_suffix(".py").as_posix()
-    for module_name in _REPOSITORY_EXPERIMENT_MODULES
+_CLASSIFICATION_ROLES = (
+    "package_initializer",
+    "console_entrypoint_runtime",
+    "shipped_runtime",
+    "repository_only",
 )
-_REPOSITORY_EXPERIMENT_SOURCE_DIRECTORIES = (
-    "src",
-    "src/spirallens",
-    "src/spirallens/access",
-    "src/spirallens/qualification",
+_SHIPPED_ROLES = _CLASSIFICATION_ROLES[:3]
+_CONSOLE_ENTRYPOINT_PATHS = (
+    "spirallens/__main__.py",
+    "spirallens/cli.py",
 )
 
 
@@ -71,14 +53,6 @@ def _is_ordinary_directory(path: Path) -> bool:
         return False
 
 
-def _nonordinary_repository_experiment_source_directories() -> list[str]:
-    return [
-        relative_path
-        for relative_path in _REPOSITORY_EXPERIMENT_SOURCE_DIRECTORIES
-        if not _is_ordinary_directory(_PROJECT_ROOT / relative_path)
-    ]
-
-
 def _is_absent(path: Path) -> bool:
     try:
         path.lstat()
@@ -89,124 +63,367 @@ def _is_absent(path: Path) -> bool:
     return False
 
 
-def _observed_repository_experiment_paths() -> frozenset[str]:
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise SetupError(f"distribution classification has duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def _is_portable_python_member(value: str) -> bool:
+    path = PurePosixPath(value)
+    if (
+        not value
+        or "\\" in value
+        or path.is_absolute()
+        or path.as_posix() != value
+        or len(path.parts) < 2
+        or path.parts[0] != _PACKAGE_NAME
+        or path.suffix != ".py"
+        or any(part in {"", ".", ".."} for part in path.parts)
+        or "__pycache__" in path.parts
+    ):
+        return False
+    identifiers = (*path.parts[:-1], path.stem)
+    return all(
+        identifier.isascii() and identifier.isidentifier() for identifier in identifiers
+    )
+
+
+def _load_distribution_classification() -> dict[str, tuple[str, ...]]:
+    if not _is_ordinary_directory(_CLASSIFICATION_PATH.parent):
+        raise SetupError(
+            "distribution classification parent must be an ordinary directory"
+        )
+    if not _is_ordinary_file(_CLASSIFICATION_PATH):
+        raise SetupError("distribution classification must be an ordinary file")
+    try:
+        source = _CLASSIFICATION_PATH.read_bytes()
+    except OSError as error:
+        raise SetupError("cannot read distribution classification") from error
+    if len(source) > 1024 * 1024:
+        raise SetupError("distribution classification exceeds its size bound")
+    try:
+        document = json.loads(
+            source.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+        )
+    except SetupError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SetupError(
+            "distribution classification is not strict UTF-8 JSON"
+        ) from error
+    expected_top_level = {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "roles",
+    }
+    if not isinstance(document, dict) or set(document) != expected_top_level:
+        raise SetupError(
+            "distribution classification must have the exact top-level fields"
+        )
+    if document["schema_version"] != _CLASSIFICATION_SCHEMA_VERSION:
+        raise SetupError("distribution classification has the wrong schema version")
+    if document["classification_scope"] != _CLASSIFICATION_SCOPE:
+        raise SetupError("distribution classification has the wrong physical scope")
+    if document["claim_boundary"] != _CLASSIFICATION_CLAIM_BOUNDARY:
+        raise SetupError("distribution classification has the wrong claim boundary")
+    roles = document["roles"]
+    if not isinstance(roles, dict) or set(roles) != set(_CLASSIFICATION_ROLES):
+        raise SetupError("distribution classification must have the exact roles")
+
+    parsed: dict[str, tuple[str, ...]] = {}
+    owner: dict[str, str] = {}
+    for role in _CLASSIFICATION_ROLES:
+        members = roles[role]
+        if (
+            not isinstance(members, list)
+            or not members
+            or any(not isinstance(member, str) for member in members)
+            or members != sorted(members)
+            or len(set(members)) != len(members)
+            or any(not _is_portable_python_member(member) for member in members)
+        ):
+            raise SetupError(
+                f"distribution classification role {role!r} must be a non-empty, "
+                "sorted, unique list of portable spirallens Python members"
+            )
+        for member in members:
+            previous = owner.get(member)
+            if previous is not None:
+                raise SetupError(
+                    f"distribution classification member {member!r} appears in "
+                    f"both {previous!r} and {role!r}"
+                )
+            owner[member] = role
+        parsed[role] = tuple(members)
+
+    initializers = parsed["package_initializer"]
+    if any(PurePosixPath(member).name != "__init__.py" for member in initializers):
+        raise SetupError("package_initializer contains a non-initializer member")
+    if tuple(parsed["console_entrypoint_runtime"]) != _CONSOLE_ENTRYPOINT_PATHS:
+        raise SetupError("console_entrypoint_runtime differs from the reviewed paths")
+    non_initializers = tuple(
+        member for role in _CLASSIFICATION_ROLES[1:] for member in parsed[role]
+    )
+    if any(PurePosixPath(member).name == "__init__.py" for member in non_initializers):
+        raise SetupError("an initializer is classified outside package_initializer")
+    shipped_members = tuple(
+        member for role in _SHIPPED_ROLES for member in parsed[role]
+    )
+    required_initializers = {
+        (parent / "__init__.py").as_posix()
+        for member in shipped_members
+        for parent in PurePosixPath(member).parents
+        if parent.as_posix() != "."
+    }
+    if set(initializers) != required_initializers:
+        raise SetupError(
+            "package_initializer must exactly close every shipped package ancestor"
+        )
+    return parsed
+
+
+_PYTHON_MEMBER_CLASSIFICATION = _load_distribution_classification()
+_SHIPPED_PYTHON_PATHS = frozenset(
+    member for role in _SHIPPED_ROLES for member in _PYTHON_MEMBER_CLASSIFICATION[role]
+)
+_REPOSITORY_ONLY_PYTHON_PATHS = frozenset(
+    _PYTHON_MEMBER_CLASSIFICATION["repository_only"]
+)
+_ALL_PYTHON_PATHS = _SHIPPED_PYTHON_PATHS | _REPOSITORY_ONLY_PYTHON_PATHS
+_REPOSITORY_ONLY_MODULES = frozenset(
+    member.removesuffix(".py").replace("/", ".")
+    for member in _REPOSITORY_ONLY_PYTHON_PATHS
+)
+_EXPECTED_PACKAGE_DIRECTORIES = frozenset(
+    parent.as_posix()
+    for member in _SHIPPED_PYTHON_PATHS
+    for parent in PurePosixPath(member).parents
+    if parent.as_posix() != "."
+)
+
+
+def _require_ordinary_source_ancestors(expected_members: Sequence[str]) -> None:
+    expected_directories = {
+        "src",
+        *(
+            (PurePosixPath("src") / parent).as_posix()
+            for member in expected_members
+            for parent in PurePosixPath(member).parents
+            if parent.as_posix() != "."
+        ),
+    }
+    nonordinary = sorted(
+        relative
+        for relative in expected_directories
+        if not _is_ordinary_directory(_PROJECT_ROOT / relative)
+    )
+    if nonordinary:
+        raise SetupError(
+            "classified Python source has missing, non-directory, or symlinked "
+            f"ancestors: {nonordinary!r}"
+        )
+
+
+def _observed_source_python_paths() -> tuple[frozenset[str], tuple[str, ...]]:
     observed: set[str] = set()
-    for package_name, prefix in _REPOSITORY_EXPERIMENT_PREFIXES:
-        package_path = Path(*package_name.split("."))
-        directory = _SOURCE_ROOT / package_path
+    nonordinary_directories: list[str] = []
+
+    def visit(directory: Path) -> None:
         try:
             entries = tuple(directory.iterdir())
-        except FileNotFoundError:
-            continue
+        except OSError as error:
+            raise SetupError(
+                f"cannot enumerate classified Python source directory: {directory}"
+            ) from error
         for entry in entries:
-            if entry.name.startswith(prefix):
-                observed.add((Path("src") / package_path / entry.name).as_posix())
-    return frozenset(observed)
+            try:
+                mode = entry.lstat().st_mode
+            except OSError as error:
+                raise SetupError(
+                    f"cannot inspect classified Python source entry: {entry}"
+                ) from error
+            if stat.S_ISDIR(mode):
+                visit(entry)
+                continue
+            if entry.name.endswith(".py"):
+                relative = entry.relative_to(_SOURCE_ROOT).as_posix()
+                observed.add(relative)
+                if not stat.S_ISREG(mode):
+                    nonordinary_directories.append(relative)
+            elif stat.S_ISLNK(mode):
+                nonordinary_directories.append(
+                    entry.relative_to(_SOURCE_ROOT).as_posix()
+                )
+
+    if not _is_ordinary_directory(_SOURCE_ROOT):
+        return frozenset(), ("src/",)
+    visit(_SOURCE_ROOT)
+    return frozenset(observed), tuple(sorted(nonordinary_directories))
 
 
-def _observed_repository_experiment_build_paths(
-    build_root: Path,
-) -> frozenset[str]:
-    observed: set[str] = set()
-    for package_name, prefix in _REPOSITORY_EXPERIMENT_PREFIXES:
-        package_path = Path(*package_name.split("."))
-        directory = build_root / package_path
-        try:
-            entries = tuple(directory.rglob("*"))
-        except OSError:
-            continue
-        for entry in entries:
-            if entry.name.split(".", 1)[0].startswith(prefix):
-                observed.add((package_path / entry.relative_to(directory)).as_posix())
-    return frozenset(observed)
-
-
-def _require_repository_experiment_source_state() -> None:
-    non_regular_directories = _nonordinary_repository_experiment_source_directories()
-    observed = (
-        frozenset()
-        if non_regular_directories
-        else _observed_repository_experiment_paths()
+def _require_classified_source_state() -> None:
+    observed, nonordinary = _observed_source_python_paths()
+    sdist_marked = _is_ordinary_file(_PROJECT_ROOT / "PKG-INFO") and _is_absent(
+        _PROJECT_ROOT / ".git"
     )
-    non_regular = sorted(
-        relative_path
-        for relative_path in observed & _EXPECTED_REPOSITORY_EXPERIMENT_PATHS
-        if not _is_ordinary_file(_PROJECT_ROOT / relative_path)
+    full_source = observed == _ALL_PYTHON_PATHS
+    sdist_source = observed == _SHIPPED_PYTHON_PATHS and sdist_marked
+    expected = (
+        _SHIPPED_PYTHON_PATHS
+        if sdist_marked and not observed & _REPOSITORY_ONLY_PYTHON_PATHS
+        else _ALL_PYTHON_PATHS
     )
-    if (
-        not non_regular_directories
-        and observed == _EXPECTED_REPOSITORY_EXPERIMENT_PATHS
-        and not non_regular
-    ):
+    _require_ordinary_source_ancestors(tuple(expected))
+    nonregular = sorted(
+        member
+        for member in observed & expected
+        if not _is_ordinary_file(_SOURCE_ROOT / member)
+    )
+    if (full_source or sdist_source) and not nonordinary and not nonregular:
         return
-    if (
-        not non_regular_directories
-        and not observed
-        and _is_ordinary_file(_PROJECT_ROOT / "PKG-INFO")
-        and _is_absent(_PROJECT_ROOT / ".git")
-    ):
-        return
-    missing = sorted(_EXPECTED_REPOSITORY_EXPERIMENT_PATHS - observed)
-    unexpected = sorted(observed - _EXPECTED_REPOSITORY_EXPERIMENT_PATHS)
+    missing = sorted(expected - observed)
+    unexpected = sorted(observed - expected)
     raise SetupError(
-        "repository-experiment source set must be the exact reviewed set or "
-        "the empty PKG-INFO-marked no-Git source set; "
+        "Python source must match the exact classified full repository set or "
+        "the exact PKG-INFO-marked no-Git sdist set; "
         f"missing={missing!r}; unexpected={unexpected!r}; "
-        f"non_regular={non_regular!r}; "
-        f"non_regular_directories={non_regular_directories!r}; "
+        f"nonregular={nonregular!r}; nonordinary_entries={list(nonordinary)!r}; "
         f"pkg_info_regular={_is_ordinary_file(_PROJECT_ROOT / 'PKG-INFO')!r}; "
         f"git_marker_absent={_is_absent(_PROJECT_ROOT / '.git')!r}"
     )
 
 
-def _require_repository_experiment_build_outputs_absent(build_root: Path) -> None:
-    observed = _observed_repository_experiment_build_paths(build_root)
-    non_regular = sorted(
-        relative_path
-        for relative_path in observed
-        if not _is_ordinary_file(build_root / relative_path)
-    )
-    if observed:
+def _scan_built_package_tree(root: Path) -> tuple[frozenset[str], frozenset[str]]:
+    if _is_absent(root):
+        return frozenset(), frozenset()
+    if not _is_ordinary_directory(root):
         raise SetupError(
-            "repository-experiment build outputs must be absent before build; "
-            f"observed={sorted(observed)!r}; non_regular={non_regular!r}"
+            f"classified build package tree root must be an ordinary directory: {root}"
         )
+    files: set[str] = set()
+    directories: set[str] = set()
+
+    def visit(directory: Path) -> None:
+        try:
+            entries = tuple(directory.iterdir())
+        except OSError as error:
+            raise SetupError(
+                f"cannot enumerate classified build package tree: {directory}"
+            ) from error
+        for entry in entries:
+            relative = entry.relative_to(root).as_posix()
+            try:
+                mode = entry.lstat().st_mode
+            except OSError as error:
+                raise SetupError(
+                    f"cannot inspect classified build package entry: {entry}"
+                ) from error
+            if stat.S_ISDIR(mode):
+                directories.add(relative)
+                visit(entry)
+            elif stat.S_ISREG(mode):
+                files.add(relative)
+            else:
+                raise SetupError(
+                    "classified build package tree contains a symlink or "
+                    f"non-regular entry: {relative!r}"
+                )
+
+    visit(root)
+    return frozenset(files), frozenset(directories)
+
+
+def _require_built_package_state(
+    root: Path,
+    *,
+    allow_absent_or_empty: bool,
+    label: str,
+) -> None:
+    observed_files, observed_directories = _scan_built_package_tree(root)
+    if (
+        allow_absent_or_empty
+        and not observed_files
+        and observed_directories
+        in {
+            frozenset(),
+            frozenset({_PACKAGE_NAME}),
+        }
+    ):
+        return
+    missing = sorted(_SHIPPED_PYTHON_PATHS - observed_files)
+    unexpected = sorted(observed_files - _SHIPPED_PYTHON_PATHS)
+    unexpected_directories = sorted(
+        observed_directories - _EXPECTED_PACKAGE_DIRECTORIES
+    )
+    if not missing and not unexpected and not unexpected_directories:
+        return
+    raise SetupError(
+        f"{label} must contain the exact classified shipped Python tree; "
+        f"missing={missing!r}; unexpected={unexpected!r}; "
+        f"unexpected_directories={unexpected_directories!r}"
+    )
+
+
+def _absolute_command_path(value: str) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else _PROJECT_ROOT / path
 
 
 class LibraryBuildPy(build_py):
     def find_package_modules(
         self, package: str, package_dir: str
     ) -> list[tuple[str, str, str]]:
-        _require_repository_experiment_source_state()
+        _require_classified_source_state()
+        modules = super().find_package_modules(package, package_dir)
         return [
             item
-            for item in super().find_package_modules(package, package_dir)
-            if f"{item[0]}.{item[1]}" not in _REPOSITORY_EXPERIMENT_MODULES
+            for item in modules
+            if f"{item[0]}.{item[1]}" not in _REPOSITORY_ONLY_MODULES
         ]
 
     def run(self) -> None:
-        _require_repository_experiment_source_state()
-        build_root = Path(self.build_lib)
-        if not build_root.is_absolute():
-            build_root = _PROJECT_ROOT / build_root
-        _require_repository_experiment_build_outputs_absent(build_root)
+        _require_classified_source_state()
+        build_root = _absolute_command_path(self.build_lib)
+        _require_built_package_state(
+            build_root,
+            allow_absent_or_empty=True,
+            label="pre-build package tree",
+        )
         super().run()
-        _require_repository_experiment_build_outputs_absent(build_root)
+        _require_built_package_state(
+            build_root,
+            allow_absent_or_empty=False,
+            label="post-build package tree",
+        )
 
 
 class LibraryInstallLib(install_lib):
     def install(self) -> list[str] | None:
-        _require_repository_experiment_source_state()
-        build_root = Path(self.build_dir)
-        install_root = Path(self.install_dir)
-        if not build_root.is_absolute():
-            build_root = _PROJECT_ROOT / build_root
-        if not install_root.is_absolute():
-            install_root = _PROJECT_ROOT / install_root
-        _require_repository_experiment_build_outputs_absent(build_root)
-        _require_repository_experiment_build_outputs_absent(install_root)
+        _require_classified_source_state()
+        build_root = _absolute_command_path(self.build_dir)
+        install_root = _absolute_command_path(self.install_dir)
+        _require_built_package_state(
+            build_root,
+            allow_absent_or_empty=False,
+            label="install input package tree",
+        )
+        _require_built_package_state(
+            install_root,
+            allow_absent_or_empty=True,
+            label="pre-install package tree",
+        )
         outputs = super().install()
-        _require_repository_experiment_build_outputs_absent(install_root)
+        _require_built_package_state(
+            install_root,
+            allow_absent_or_empty=False,
+            label="post-install package tree",
+        )
         return outputs
 
 

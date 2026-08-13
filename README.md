@@ -21,6 +21,28 @@ aliases. Implementation summaries in this README are non-normative snapshots;
 if they drift, the Roadmap and canonical artifacts prevail until `LIB-L0`
 generated views replace them.
 
+The distribution gate now establishes one narrower fact: a closed wheel
+Python-module inventory. The versioned physical-placement manifest partitions
+all 181 `src/**/*.py` module paths into 159 wheel-present modules (24 package
+initializers, two console-entrypoint runtime modules, and 133 other shipped
+runtime modules) and 22 repository-only modules. The v0.6 distribution
+diagnostic verifies that exact 159-member set through the sdist, both wheel
+routes, and both fresh non-editable installations. It records
+`closed_wheel_python_module_inventory_established=true`, while
+`closed_library_allowlist_established=false` and the authority, `lib_l0`,
+library, portability, public-API, and scientific grants all remain `false`.
+
+Those roles classify physical distribution only. They do not classify or
+stabilize `__all__`, make optional dependency extras into module roles, or
+establish that an installed operation is portable. The full wheel still
+contains 46 qualification modules and legacy repository-inferred operations;
+it is therefore neither experiment-free nor library-grade. The current sdist
+also carries 106 test files, but they are not a self-contained experiment
+replay, installed-wheel conformance suite, or maturity receipt. The current
+manifest schema admits regular Python modules only; package data, extension or
+namespace modules, and generated-module support require an explicit versioned
+classification/schema change before they may ship.
+
 The project now separates two deliberately narrow questions:
 
 > Can we detect reproducible loop or relative-holonomy structure after
