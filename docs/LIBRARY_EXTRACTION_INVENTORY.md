@@ -311,9 +311,26 @@ legacy coordinate while expanding exports. Reviewed SHA-256 values are
 and `934695307a3b116805a7115a95b75dd411d61089697e31e3c3d0c94919bef4f2` for the CLI.
 The runner is a historical D7 C1/C2 source member, not a direct `_CRITICAL_RUNTIME_MODULES`
 trust root; historical receipt `3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76` remains frozen and unre-anchored. Faiss stays transitively inferred; counts stay 18 / 18
-with 160 unknown. Next is the phantom transitive-context audit. No code, test, schema,
-receipt, re-anchor, export, API, portability, network-free, `LIB-L0`, science,
-authority, or VOY state changes.
+with 160 unknown. At clean baseline `8cc2a594ceb25697f276d8c56bc0c718131dbcff`,
+the phantom audit also rejects every migration shape. The exact exported signature is
+`(protocol_path: Path, output_dir: Path) -> EmittedRepresentationPhantomBundle`; its
+sole production consumer is the CLI adapter. The reviewed 301-line cluster
+is the 21-line Git helper, 27-line revision verifier, two-line root helper,
+23-line registry resolver, and 228-line exported emitter. Replacing its one
+inferred-root expression is `1 / 301`, about `0.33%`, below both materiality
+gates. Required context breaks accepted Python/CLI inputs and inserts a new
+root/origin observation into the existing protocol load, generator-source/Git
+verification, registry resolution/digest, and staged/published-output validation
+order. Optional context retains inference; a wrapper retains the legacy
+coordinate and expands exports. The emitter is a historical D7 v0
+C1/item21/item22 and v1 C1/C2 source member, but not a direct
+`_CRITICAL_RUNTIME_MODULES` trust root. It is distinct from the frozen P1
+protocol and `representation_phantom.py` generator; neither frozen byte set nor
+historical receipt is rewritten or re-anchored. Phantom remains transitively
+inferred; counts stay 18 / 18 with 160 unknown. Repeated context-rejection
+reviews stop here; next is a core library-promotion audit. No production source,
+test, schema, artifact, report, receipt, re-anchor, runtime, export, dependency, API,
+portability, maturity, network-free, `LIB-L0`, science, authority, or VOY state changes.
 
 ## Candidate inventory
 
