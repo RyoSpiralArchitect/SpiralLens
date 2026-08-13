@@ -278,10 +278,25 @@ digests or a shared analyzer, and no test or declaration was adopted.
 The counters remain 18 classified coordinates / 18 audited identities and 160
 unknown coordinates = 157 never-audited identities + the three unaudited
 `spirallens.instrument_contracts` aliases. Mechanical declaration-only rollout
-stops here. The next lane is an exact equivalence audit of the advancement
-optional-fallback operations before any `RepositoryContext` migration. No
-production, schema, report, runtime, export, dependency, API, portability,
-maturity, `LIB-L0`, science, authority, or VOY state changes.
+stops here. At clean baseline
+`20409385eda0e0922772f08137f02ed8fc54d012`, production migration of
+`spirallens.qualification:{advancement_source_binding_sha256,build_current_advancement_source_binding,validate_advancement_decision_source}`
+was rejected. The first signature already requires the `repository_root`
+keyword but accepts `None`; the latter two also default it to `None`. Removing
+those forms changes accepted inputs and public signatures. Reviewed SHA-256
+values were `7001959db17fb2d6c44fcdca024cc6ffc22b4df74a0a20333e94e113e470cc0a`
+for `advancement.py`, `ce82f280348cbe4a5a21881c6dfea6d7a66d5a3e502e0ef00e27060350326f50`
+for `_repository_context.py`, and `e000cddd999a78af5911ca00325f0c6cb9da9e1a776311e66a629c8042d3b879`
+for `qualification/__init__.py`. Advancement is an exact D7 critical-runtime
+source/chronology member; its frozen bindings are not rewritten or re-anchored.
+A `samefile` gate would change repository acceptance, validation/error order,
+and the existing TOCTOU surface; a new wrapper would retain the fallback and
+expand the namespace. Both are rejected. Even deleting the 11-line resolver
+from the 217-line operation cluster yields at most `-5.1%` and fewer than 20
+lines, below the materiality gate. Counts remain 18 / 18 with 160 unknown. The
+next lane is the Faiss transitive-context equivalence audit. No source, production,
+test, artifact, schema, report, API, portability, `LIB-L0`, science, authority,
+or VOY state changes.
 
 ## Candidate inventory
 
