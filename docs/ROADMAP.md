@@ -1189,17 +1189,43 @@ infers a repository, while
 `spirallens.neighbors:run_faiss_hnsw_qualification` and
 `spirallens.synthetic:emit_representation_phantom_bundle` do so transitively.
 
-The remaining 164 operation entries / 161 unique functions stay
-`not_established`. No-observed repository dependency is not portability
+At that review the remaining 164 operation entries / 161 unique functions
+stayed `not_established`. No-observed repository dependency is not portability
 evidence, and `__all__` membership grants no support, API, compatibility, or
 maturity status. A normative 559-row manifest would duplicate the existing
 ordered-export inventory, while a compact default would launder those unknowns
 into repository independence. A new parser and diagnostic projection would add
 validation surface without satisfying the repository-context exit criterion
-above.
-Therefore no manifest, parser, report field, schema, production or test code is
-added. Runtime, exports, dependencies, public API, `LIB-L0`, science,
-authority, and VOY remain unchanged; VOY-V4 remains unauthorized.
+above. Therefore no manifest, parser, report field, schema, or production code
+was added.
+
+The first bounded follow-up at clean baseline
+`e55a05e812e6fefda8e5924e0ba483b35fc6840e` classifies only
+`spirallens.core:{canonical_json_bytes,canonical_json_sha256,parse_canonical_json,sha256_bytes}`
+as `implementation_repository_context_not_required`. Their defining
+`spirallens.core.canonical` functions are bound through the unchanged core
+initializer and canonical source SHA-256 values
+`3a1af1d86ac24e9796d5f0961180352c669e5dd37ed46e8fa2c0cea9dc31df1d`
+and
+`0a39f0b896e0ae1c2af8d1910dd37afae31ad563c20df785973a91ff4cadac5e`.
+The focused 6,101-byte AST source-policy test, SHA-256
+`f2e2580eb3c017a21508887b9d350f00bfb4e7fafb146a2b871a20bcdc7dc5d0`,
+passed once and fails closed over exact imports, top-level calls, defining
+targets, local call closure, call syntax, and forbidden repository, file,
+environment, process, network, and dynamic-import names.
+
+This is an implementation-owned repository-context declaration only. Receiver
+protocol methods, including custom `Mapping` methods, may execute caller code,
+so the audit does not establish purity, callback freedom, side-effect freedom,
+safety, or portability. It also grants no support, public API, compatibility,
+stability, or maturity. The audit now covers 18 namespace coordinates / 18 function
+identities. The 160 unknown coordinates are 157 never-audited identities plus
+the `spirallens.instrument_contracts` aliases `canonical_json_bytes`,
+`canonical_json_sha256`, and `parse_canonical_json`: those three reach the same
+audited targets, but their namespace import closure remains unaudited and they
+inherit no declaration. No runtime, export, dependency, schema, report, public
+API, `LIB-L0`, science, authority, or VOY state changes; VOY-V4 remains
+unauthorized.
 
 Reconsideration is limited to one bounded namespace or operation group with an
 exact direct-and-transitive source audit. Only after that audit may one

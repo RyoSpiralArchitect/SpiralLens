@@ -222,16 +222,49 @@ repository-context classification at this review coordinate:
 | direct repository inference | 1 | `spirallens.qualification:run_and_publish_calibration_selection` |
 | transitive repository inference | 2 | `spirallens.neighbors:run_faiss_hnsw_qualification`; `spirallens.synthetic:emit_representation_phantom_bundle` |
 
-The other 164 operation entries, representing 161 unique functions, remain
-`not_established`. Neither absence of a direct `__file__` expression nor lack
-of an observed repository access proves that a callable or its transitive
-callees are repository independent. A 559-row normative declaration would
-therefore either duplicate the existing ordered-export inventory or turn the
-164 unknowns into unsupported portability claims. Adding a parser and report
-projection would grow the experimental validation surface without closing a
-`LIB-L0` exit criterion. The manifest/parser/report proposal is rejected at
-this gate; no source, test, schema, report, runtime, export, dependency, API,
-library, scientific, authority, or VOY state changes.
+At that gate the other 164 operation entries, representing 161 unique
+functions, remained `not_established`. Neither absence of a direct `__file__`
+expression nor lack of an observed repository access proves that a callable or
+its transitive callees are repository independent. A 559-row normative
+declaration would therefore either duplicate the existing ordered-export
+inventory or turn those unknowns into unsupported portability claims. Adding a
+parser and report projection would grow the experimental validation surface
+without closing a `LIB-L0` exit criterion. The manifest/parser/report proposal
+was rejected at that gate; no source, test, schema, report, runtime, export,
+dependency, API, library, scientific, authority, or VOY state changed.
+
+One later bounded audit at clean baseline
+`e55a05e812e6fefda8e5924e0ba483b35fc6840e` classifies exactly four
+coordinates as `implementation_repository_context_not_required`:
+`spirallens.core:canonical_json_bytes`,
+`spirallens.core:canonical_json_sha256`,
+`spirallens.core:parse_canonical_json`, and
+`spirallens.core:sha256_bytes`. Their exact defining targets are the same names
+under `spirallens.core.canonical`. The reviewed source identities are
+`src/spirallens/core/__init__.py` SHA-256
+`3a1af1d86ac24e9796d5f0961180352c669e5dd37ed46e8fa2c0cea9dc31df1d`
+and `src/spirallens/core/canonical.py` SHA-256
+`0a39f0b896e0ae1c2af8d1910dd37afae31ad563c20df785973a91ff4cadac5e`.
+
+The 6,101-byte test
+`tests/test_core_repository_context_policy.py`, SHA-256
+`f2e2580eb3c017a21508887b9d350f00bfb4e7fafb146a2b871a20bcdc7dc5d0`,
+fails on source-identity, exact-import, namespace/defining-function join,
+module-top-level call, local-call-closure, exact-call-syntax, or forbidden-name
+drift. Its focused gate passed once. This establishes only that the current
+SpiralLens-owned implementation closure requires no repository context.
+Receiver and protocol calls, including custom `Mapping` methods, can execute
+caller-owned code; the test is not a purity, callback-freedom, side-effect
+freedom, safety, portability, compatibility, support, API, or stability proof.
+
+The counters are now 18 classified namespace coordinates and 18 audited
+function identities. The remaining 160 `not_established` coordinates comprise
+157 never-audited function identities plus the three
+`spirallens.instrument_contracts` root aliases `canonical_json_bytes`,
+`canonical_json_sha256`, and `parse_canonical_json`. Those aliases reach
+already-audited targets, but their namespace import closure has not been
+audited, so they inherit no declaration. `LIB-L0`, science, authority, and VOY
+remain unchanged.
 
 Reconsider only one bounded namespace or operation group at a time. Its review
 must close direct and transitive repository access before assigning a policy;
