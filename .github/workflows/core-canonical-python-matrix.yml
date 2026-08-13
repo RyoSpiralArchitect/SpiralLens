@@ -1,0 +1,139 @@
+name: Core canonical clean-wheel matrix
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-canonical-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-wheel:
+    name: Python ${{ matrix.python }} / Ubuntu 24.04 x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.11.16"
+          - "3.12.14"
+          - "3.13.15"
+
+    steps:
+      - name: Check out the exact tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Install exact Python
+        id: setup-python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+          check-latest: false
+          update-environment: false
+
+      - name: Record tested coordinates
+        env:
+          EXPECTED_PYTHON: ${{ matrix.python }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PYTHON_BIN: ${{ steps.setup-python.outputs.python-path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${PR_HEAD_SHA:-$GITHUB_SHA}"
+          test "$("$PYTHON_BIN" -I -B -c 'import platform; print(platform.python_implementation(), platform.python_version())')" = "CPython $EXPECTED_PYTHON"
+          test "$(uname -m)" = "x86_64"
+          source /etc/os-release
+          test "$ID" = "ubuntu"
+          test "$VERSION_ID" = "24.04"
+          echo "tested_sha=$(git rev-parse HEAD)"
+          echo "github_sha=$GITHUB_SHA"
+          echo "pr_head_sha=${PR_HEAD_SHA:-not-a-pull-request}"
+          echo "pr_base_sha=${PR_BASE_SHA:-not-a-pull-request}"
+          echo "runner_image_os=${ImageOS:-not-reported}"
+          echo "runner_image_version=${ImageVersion:-not-reported}"
+          uname -a
+          cat /etc/os-release
+          "$PYTHON_BIN" -I -B -c 'import platform,sys; print(sys.version); print(platform.platform()); print(platform.machine())'
+
+      - name: Build and inspect the direct wheel
+        env:
+          EXPECTED_PYTHON: ${{ matrix.python }}
+          PYTHON_BIN: ${{ steps.setup-python.outputs.python-path }}
+          TESTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock="$GITHUB_WORKSPACE/.github/requirements/core-canonical-python-matrix.txt"
+          build_venv="$RUNNER_TEMP/core-build-venv"
+          test_venv="$RUNNER_TEMP/core-test-venv"
+          wheel_dir="$RUNNER_TEMP/core-direct-wheel"
+          neutral="$RUNNER_TEMP/core-neutral"
+          "$PYTHON_BIN" -I -B -m venv "$build_venv"
+          "$build_venv/bin/python" -I -B -m pip install \
+            --isolated --disable-pip-version-check --no-input \
+            --require-hashes --only-binary=:all: \
+            --index-url https://pypi.org/simple \
+            -r "$lock"
+          "$build_venv/bin/python" -I -B -m pip check
+          mkdir -p "$wheel_dir"
+          "$build_venv/bin/python" -I -B -m build \
+            --wheel --no-isolation --outdir "$wheel_dir" .
+          mapfile -t wheels < <(find "$wheel_dir" -maxdepth 1 -type f -name '*.whl' -print | sort)
+          test "${#wheels[@]}" -eq 1
+          wheel="${wheels[0]}"
+          test "$(basename "$wheel")" = "spirallens-0.1.0-py3-none-any.whl"
+          sha256sum "$wheel"
+
+          "$PYTHON_BIN" -I -B -m venv "$test_venv"
+          "$test_venv/bin/python" -I -B -m pip install \
+            --isolated --disable-pip-version-check --no-input \
+            --require-hashes --only-binary=:all: \
+            --index-url https://pypi.org/simple \
+            -r "$lock"
+          "$test_venv/bin/python" -I -B -m pip install \
+            --isolated --disable-pip-version-check --no-input \
+            --no-index --no-deps --no-compile --force-reinstall "$wheel"
+          "$test_venv/bin/python" -I -B -m pip check
+
+          mkdir -p "$neutral/home" "$neutral/pytest-temp"
+          expected_test_sha="30d5088bfaf76639208c56b0201589b99a28c7656f382d431ddfb9c8f307ec1f"
+          observed_test_sha="$(sha256sum tests/test_core_canonical_compatibility.py | cut -d' ' -f1)"
+          test "$observed_test_sha" = "$expected_test_sha"
+          cp .github/scripts/core_canonical_wheel_probe.py "$neutral/probe.py"
+          cp tests/test_core_canonical_compatibility.py "$neutral/test_core_canonical_compatibility.py"
+          site_packages="$("$test_venv/bin/python" -I -B -c 'import site; print(site.getsitepackages()[0])')"
+
+          (
+            cd "$neutral"
+            env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              "$test_venv/bin/python" -I -B probe.py \
+              --site-packages "$site_packages" \
+              --wheel "$wheel" \
+              --workspace "$GITHUB_WORKSPACE" \
+              --expected-python "$EXPECTED_PYTHON" \
+              --tested-sha "$TESTED_SHA" \
+              --runner-image "${ImageOS:-unknown}/${ImageVersion:-unknown}"
+            env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+              "$test_venv/bin/python" -I -B -m pytest \
+              -c /dev/null \
+              --rootdir "$neutral" \
+              --import-mode=importlib \
+              -p no:cacheprovider \
+              --basetemp "$neutral/pytest-temp" \
+              "$neutral/test_core_canonical_compatibility.py"
+          )
