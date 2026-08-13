@@ -15,11 +15,9 @@ import re
 import struct
 import subprocess
 from types import MappingProxyType
-from typing import Any, Final
+from typing import Final
 
 import yaml
-from yaml.events import AliasEvent
-from yaml.nodes import MappingNode
 
 from spirallens.access import (
     AtlasAccessPolicy,
@@ -28,6 +26,7 @@ from spirallens.access import (
     ProvenanceTaint,
     require_atlas_consumer,
 )
+from spirallens.core._strict_yaml import make_strict_safe_loader
 from spirallens.core.canonical import (
     canonical_json_bytes,
     canonical_json_sha256,
@@ -311,46 +310,8 @@ class EngineeringConsumerAuthorizationError(PermissionError):
     """Raised when a bound engineering atlas reaches a forbidden consumer."""
 
 
-class _StrictSafeLoader(yaml.SafeLoader):
-    def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(AliasEvent):
-            raise PublicExamplePlumbingProtocolSchemaError(
-                "YAML aliases are not allowed"
-            )
-        return super().compose_node(parent, index)
-
-
-def _construct_mapping(
-    loader: _StrictSafeLoader,
-    node: MappingNode,
-    deep: bool = False,
-) -> dict[str, Any]:
-    if not isinstance(node, MappingNode):
-        raise PublicExamplePlumbingProtocolSchemaError(
-            "expected a YAML mapping"
-        )
-    result: dict[str, Any] = {}
-    for key_node, value_node in node.value:
-        if key_node.tag == "tag:yaml.org,2002:merge":
-            raise PublicExamplePlumbingProtocolSchemaError(
-                "YAML merge keys are not allowed"
-            )
-        key = loader.construct_object(key_node, deep=deep)
-        if not isinstance(key, str):
-            raise PublicExamplePlumbingProtocolSchemaError(
-                "all YAML mapping keys must be strings"
-            )
-        if key in result:
-            raise PublicExamplePlumbingProtocolSchemaError(
-                f"duplicate YAML key {key!r}"
-            )
-        result[key] = loader.construct_object(value_node, deep=deep)
-    return result
-
-
-_StrictSafeLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    _construct_mapping,
+_StrictSafeLoader = make_strict_safe_loader(
+    PublicExamplePlumbingProtocolSchemaError
 )
 
 

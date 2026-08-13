@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Mapping
 
 import yaml
-from yaml.events import AliasEvent
-from yaml.nodes import MappingNode
+
+from spirallens.core._strict_yaml import make_strict_safe_loader
 
 from .canonical import sha256_bytes
 from .common import (
@@ -48,39 +48,7 @@ class HypothesisRegistryIntegrityError(HypothesisRegistryError):
     """Raised when source or canonical content has an unexpected digest."""
 
 
-class _StrictSafeLoader(yaml.SafeLoader):
-    """Safe YAML loader that rejects aliases before construction."""
-
-    def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(AliasEvent):
-            raise HypothesisRegistrySchemaError("YAML aliases are not allowed")
-        return super().compose_node(parent, index)
-
-
-def _construct_mapping(
-    loader: _StrictSafeLoader,
-    node: MappingNode,
-    deep: bool = False,
-) -> dict[str, Any]:
-    if not isinstance(node, MappingNode):
-        raise HypothesisRegistrySchemaError("expected a YAML mapping")
-    mapping: dict[str, Any] = {}
-    for key_node, value_node in node.value:
-        if key_node.tag == "tag:yaml.org,2002:merge":
-            raise HypothesisRegistrySchemaError("YAML merge keys are not allowed")
-        key = loader.construct_object(key_node, deep=deep)
-        if not isinstance(key, str):
-            raise HypothesisRegistrySchemaError("all YAML mapping keys must be strings")
-        if key in mapping:
-            raise HypothesisRegistrySchemaError(f"duplicate YAML key {key!r}")
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-_StrictSafeLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    _construct_mapping,
-)
+_StrictSafeLoader = make_strict_safe_loader(HypothesisRegistrySchemaError)
 
 
 @dataclass(frozen=True, slots=True)

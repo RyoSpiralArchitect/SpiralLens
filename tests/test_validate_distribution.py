@@ -64,6 +64,7 @@ CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = tuple(
 PRIVATE_HELD_FILE_WHEEL_MEMBER = "spirallens/_held_file.py"
 PRIVATE_HELD_FILE_IMPORT = "spirallens._held_file"
 PRIVATE_ATLAS_CAPTURE_STORE_WHEEL_MEMBER = "spirallens/atlas/_capture_store.py"
+PRIVATE_STRICT_YAML_WHEEL_MEMBER = "spirallens/core/_strict_yaml.py"
 
 
 def test_sha256_file_streams_exact_bytes(tmp_path: Path) -> None:
@@ -264,6 +265,14 @@ def test_private_held_file_is_an_explicit_non_experiment_wheel_import() -> None:
     assert PRIVATE_HELD_FILE_IMPORT in DEFAULT_IMPORTS
     assert not any(
         PRIVATE_HELD_FILE_WHEEL_MEMBER.startswith(prefix)
+        for prefix in REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
+    )
+
+
+def test_private_strict_yaml_factory_is_an_explicit_wheel_member() -> None:
+    assert PRIVATE_STRICT_YAML_WHEEL_MEMBER in REQUIRED_WHEEL_MEMBERS
+    assert not any(
+        PRIVATE_STRICT_YAML_WHEEL_MEMBER.startswith(prefix)
         for prefix in REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
     )
 

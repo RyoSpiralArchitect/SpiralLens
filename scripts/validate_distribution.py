@@ -118,6 +118,7 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/atlas/_capture_store.py",
     "spirallens/atlas/engineering_receipt.py",
     "spirallens/atlas/store.py",
+    "spirallens/core/_strict_yaml.py",
     "spirallens/graphs/__init__.py",
     "spirallens/graphs/common.py",
     "spirallens/graphs/constructors.py",
