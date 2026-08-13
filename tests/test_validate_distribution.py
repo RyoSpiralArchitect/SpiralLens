@@ -5,6 +5,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -25,9 +26,41 @@ DEFAULT_IMPORTS = _VALIDATOR.DEFAULT_IMPORTS
 DEFAULT_SCIENTIFIC_IMPORTS = _VALIDATOR.DEFAULT_SCIENTIFIC_IMPORTS
 DistributionValidationError = _VALIDATOR.DistributionValidationError
 REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
+REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
+    _VALIDATOR.REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
+)
 REQUIRED_WHEEL_MEMBERS = _VALIDATOR.REQUIRED_WHEEL_MEMBERS
+_classify_repository_experiment_members = (
+    _VALIDATOR._classify_repository_experiment_members
+)
+_library_separation_report = _VALIDATOR._library_separation_report
 _parse_probe_output = _VALIDATOR._parse_probe_output
 _sha256_file = _VALIDATOR._sha256_file
+
+CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = (
+    "spirallens/access/_pythia160_identity_acquisition.py",
+    "spirallens/access/_pythia160_preobservation.py",
+    "spirallens/qualification/confirmation_v1_descriptive_common.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d1.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d2.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d3.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d4.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d5_inputs.py",
+    "spirallens/qualification/confirmation_v1_descriptive_d5_outputs.py",
+    "spirallens/qualification/confirmation_v1_descriptive_independence.py",
+    "spirallens/qualification/confirmation_v1_design_referent_documents.py",
+    "spirallens/qualification/confirmation_v1_deterministic_inputs.py",
+    "spirallens/qualification/confirmation_v1_full_design_referents.py",
+    "spirallens/qualification/confirmation_v1_materialization.py",
+    "spirallens/qualification/confirmation_v1_official_execution.py",
+    "spirallens/qualification/confirmation_v1_post_d6_descriptive.py",
+    "spirallens/qualification/confirmation_v1_pre_item23_orchestrator.py",
+    "spirallens/qualification/confirmation_v1_private_publication.py",
+    "spirallens/qualification/confirmation_v1_records.py",
+    "spirallens/qualification/confirmation_v1_result_publication.py",
+    "spirallens/qualification/confirmation_v1_source_closure.py",
+    "spirallens/qualification/confirmation_v1_source_selected_supplier.py",
+)
 
 
 def test_sha256_file_streams_exact_bytes(tmp_path: Path) -> None:
@@ -36,6 +69,74 @@ def test_sha256_file_streams_exact_bytes(tmp_path: Path) -> None:
     artifact.write_bytes(payload)
 
     assert _sha256_file(artifact) == hashlib.sha256(payload).hexdigest()
+
+
+def _write_synthetic_wheel(wheel: Path, members: tuple[str, ...]) -> None:
+    with zipfile.ZipFile(wheel, mode="w") as archive:
+        for member in members:
+            archive.writestr(member, "")
+
+
+def test_repository_experiment_members_are_classified_from_wheel_paths(
+    tmp_path: Path,
+) -> None:
+    wheel = tmp_path / "synthetic.whl"
+    matching_members = (
+        "spirallens/access/_pythia160_preobservation.py",
+        "spirallens/qualification/confirmation_v1_records.py",
+    )
+    _write_synthetic_wheel(
+        wheel,
+        (
+            "spirallens/qualification/public_surface.py",
+            matching_members[1],
+            "spirallens/access/pythia.py",
+            matching_members[0],
+        ),
+    )
+
+    assert _classify_repository_experiment_members(wheel) == tuple(
+        sorted(matching_members)
+    )
+
+
+def test_new_matching_wheel_member_is_classified_without_an_allowlist(
+    tmp_path: Path,
+) -> None:
+    wheel = tmp_path / "synthetic.whl"
+    new_member = "spirallens/qualification/confirmation_v1_future_module.py"
+    _write_synthetic_wheel(wheel, (new_member,))
+
+    assert _classify_repository_experiment_members(wheel) == (new_member,)
+
+
+def test_zero_matching_members_is_bounded_absence_not_library_readiness(
+    tmp_path: Path,
+) -> None:
+    wheel = tmp_path / "synthetic.whl"
+    _write_synthetic_wheel(
+        wheel,
+        (
+            "spirallens/__init__.py",
+            "spirallens/core/canonical.py",
+        ),
+    )
+
+    assert _library_separation_report(wheel) == {
+        "repository_experiment_wheel_membership": {
+            "observation": "absent",
+            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
+            "count": 0,
+            "members": [],
+        },
+        "closed_library_allowlist_established": False,
+        "grants": {
+            "authority": False,
+            "library": False,
+            "public_api": False,
+            "scientific": False,
+        },
+    }
 
 
 def _probe(
@@ -134,6 +235,21 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     report = json.loads(completed.stdout)
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
+    assert report["library_separation"] == {
+        "repository_experiment_wheel_membership": {
+            "observation": "present",
+            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
+            "count": 22,
+            "members": list(CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS),
+        },
+        "closed_library_allowlist_established": False,
+        "grants": {
+            "authority": False,
+            "library": False,
+            "public_api": False,
+            "scientific": False,
+        },
+    }
     assert report["required_imports"] == list(DEFAULT_IMPORTS)
     assert report["required_scientific_imports"] == list(DEFAULT_SCIENTIFIC_IMPORTS)
     assert report["required_wheel_members"] == list(REQUIRED_WHEEL_MEMBERS)

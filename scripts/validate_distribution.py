@@ -23,7 +23,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.2"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.3"
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens.core",
@@ -114,6 +114,10 @@ REQUIRED_WHEEL_MEMBERS = (
     "spirallens/synthetic/cartesian_fourier_estimator.py",
     "spirallens/synthetic/representation_estimator.py",
     "spirallens/synthetic/spectral_moment_confirmation.py",
+)
+REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
+    "spirallens/access/_pythia160_",
+    "spirallens/qualification/confirmation_v1_",
 )
 _COPY_IGNORE = (
     ".git",
@@ -253,6 +257,39 @@ def _require_wheel_members(
             f"wheel is missing required package members: {missing}"
         )
     return tuple(sorted(required_members))
+
+
+def _classify_repository_experiment_members(wheel: Path) -> tuple[str, ...]:
+    """Return repository-experiment members currently shipped in ``wheel``."""
+
+    with zipfile.ZipFile(wheel) as archive:
+        members = archive.namelist()
+    return tuple(
+        sorted(
+            member
+            for member in members
+            if member.startswith(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES)
+        )
+    )
+
+
+def _library_separation_report(wheel: Path) -> dict[str, object]:
+    repository_experiment_members = _classify_repository_experiment_members(wheel)
+    return {
+        "repository_experiment_wheel_membership": {
+            "observation": ("present" if repository_experiment_members else "absent"),
+            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
+            "count": len(repository_experiment_members),
+            "members": list(repository_experiment_members),
+        },
+        "closed_library_allowlist_established": False,
+        "grants": {
+            "authority": False,
+            "library": False,
+            "public_api": False,
+            "scientific": False,
+        },
+    }
 
 
 def _venv_executable(environment: Path, name: str) -> Path:
@@ -544,6 +581,7 @@ def validate_distribution(
             wheel,
             required_members=REQUIRED_WHEEL_MEMBERS,
         )
+        library_separation = _library_separation_report(wheel)
 
         venv.EnvBuilder(
             with_pip=True,
@@ -685,6 +723,7 @@ def validate_distribution(
                 "wheel_filename": wheel.name,
             },
             "inspection": inspection,
+            "library_separation": library_separation,
             "scientific_surface_inspection": scientific_inspection,
             "required_wheel_members": list(verified_wheel_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),

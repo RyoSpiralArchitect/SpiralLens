@@ -1,0 +1,116 @@
+# LIB-L0 Extraction Inventory
+
+This document is a non-authoritative review view for deciding whether an
+internal mechanism is ready to move toward a reusable SpiralLens contract. It
+does not change the canonical library milestone, promote a Python API, grant
+experiment authority, or alter a scientific claim. The Roadmap and API Status
+remain authoritative for those boundaries.
+
+## Audited coordinate and claim boundary
+
+- baseline commit: `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`;
+- baseline Git tree: `d553fd83c37c5cb1490dd09e777f734e1192e580`;
+- `LIB-L0`: `in progress`;
+- public root surface: only `spirallens.__version__` is supported;
+- observed `__all__` baseline: 559 names across 24 package initializers;
+- scientific and VOY deltas: none;
+- D7 verified-B interpretation: `insufficient`, Level 0, claim delta `none`,
+  and VOY-V3 purpose evidence only; VOY-V4 dispatch remains unauthorized.
+
+Artifact records, documentation projections, tests, CLI wrappers, and members
+of one experiment chronology do not count as independent library consumers.
+A physically installed module is not thereby a public or stable API.
+
+## Distribution-boundary observation
+
+One wheel built from a clean `git archive` of the audited coordinate with
+`uv 0.11.6` and `setuptools 81.0.0` contained 184 members. The observed wheel
+was 1,103,723 bytes with SHA-256
+`39603d812080c65ab7d723ad7625ec6d7f5872e04f4a7532c00798649f72462b`.
+That wheel digest is an environment-specific audit observation, not a frozen
+release identity.
+
+The wheel physically contained both repository-experiment groups below:
+
+| Group | Members | Physical LOC | Public/export status | Separation status |
+| --- | ---: | ---: | --- | --- |
+| `spirallens/qualification/confirmation_v1_*.py` | 20 | 17,312 | internal; no `confirmation_v1` export | blocked: present in wheel |
+| `spirallens/access/_pythia160_*.py` | 2 | 1,878 | private; no access/root export | blocked: present in wheel |
+
+The same 22 modules were present in the observed sdist. The distinct three
+v0.1 `post_d6_code` files, four audited D7 operational scripts (the two v1
+coordinates and the two predecessor item-24 coordinates), frozen v1 protocol,
+and ten tracked v1 artifacts were absent from both that sdist and wheel. This
+is a bounded membership observation, not a claim that repository files are
+generally excluded: the sdist also includes test sources.
+
+The previously documented wheel exclusion applies to the distinct three v0.1
+files under `experiments/.../post_d6_code`; those files remain absent from the
+wheel. Setuptools discovers the enclosing `spirallens` packages and includes
+the v1 and Pythia-160M modules listed above. Moving or excluding them is
+deferred because their exact paths participate in reviewed source and
+historical verification contracts; a packaging change must not silently
+invalidate those contracts. Until a separately reviewed separation preserves
+the required history and verification behavior, physical wheel separation is
+an explicit `LIB-L0` blocker.
+
+The repository-only distribution validator reports this condition separately
+from build/install validity: a wheel can be validly built and installed while
+library separation remains blocked. Neither status is experiment evidence.
+
+## Candidate inventory
+
+`input equivalence` includes accepted values, bounds, and observation order.
+`failure equivalence` includes exception type, stable code/message boundary,
+and retained state. `Unknown` or `not established` stops extraction.
+
+| Surface group | Current maturity | Wheel/dependencies | I/O and claim boundary | Existing production consumers | Consumer independence | Input equivalence | Failure equivalence | Current production/export delta | Disposition and blocker |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `spirallens.core.canonical` | stable candidate | present; standard library | in-memory canonical bytes/digests; no claim or authority meaning | many modules across independent namespaces | established for the shared byte codec, not for every domain reconstruction | established for the codec | domain errors remain local | already shared; 7 `core` exports | keep; stable promotion still needs the full compatibility and release gates |
+| private `RepositoryContext` | internal | present; standard library | construction performs no I/O; consumers perform repository/import-origin checks; no Git, claim, chronology, or authority proof | `build_current_qualification_engine_binding()` and `run_public_example_plumbing()`; D7 internals are one chronology family | candidate pair only; not yet an accepted two-consumer decision | each consumer retains its own policy | deliberately domain-local | foothold baseline `+109` production LOC, `+0` exports | hold private; reuse this one marker for reviewed migrations and create no parallel context family |
+| bounded held-file snapshot | provisional duplicated mechanism | present in `access` and `referents`; standard library | bounded regular-file bytes through no-follow directory/file descriptors; parsing and authority remain in wrappers | `access.descriptor` and `referents.loader` | two distinct domains | close mechanically; exact matrix not yet frozen | domain exception types/messages differ | about 190 duplicated physical LOC; no extraction delta yet | next equivalence audit candidate; extract only a private neutral byte primitive if wrappers remain exact |
+| Atlas manifest reader/capture boundary | provisional/model extra | present; current module mixes NumPy/Torch capture and reading | manifest/file I/O; reader must add no capture or model authority | metrics candidate-pair loading and Atlas engineering-receipt verification | plausible independent readers | not yet audited | not yet audited | unknown; no proposed export | split review only; prove a wheel reader imports no Torch, Transformers, HF, adapter, or capture path |
+| strict YAML loading | provisional duplicated mechanism | present; PyYAML | supplied YAML parsing; domain schemas and errors stay local | contexts, instrument registry, synthetic protocol, Atlas engineering protocol | distinct domains | not established | not established | duplicated local loaders; no extraction delta yet | hold until an exact policy/failure matrix shows material reduction |
+| immutable-array/fingerprint helpers | provisional local mechanisms | present; NumPy | in-memory numeric identity; scientific interpretation stays local | graphs, qualification, synthetic | multiple domains but compatibility unproved | not established | not established | small scattered duplication | hold; do not merge distinct hash framing or scientific units for cosmetic deduplication |
+| `PythiaAdapter` | provisional/model extra | present; optional model stack | model observation/capture; fake-surface mechanics are not real-model parity | one Pythia-family adapter | fewer than two adapter families | not applicable | not applicable | existing provisional exports unchanged | hold; a second adapter and conformance evidence are required for `LIB-L2` portability |
+| D7 v1 `confirmation_v1_*` | internal experiment implementation | physically present in wheel; qualification dependency set | fixed source/history, chronology, authority, no-replace publication, and result joins | callers inside one D7 v1 chronology | not independent library consumers | intentionally experiment-specific | intentionally experiment-specific | 20 modules / 17,312 LOC; no exports | reject extraction; separately solve physical wheel separation without changing frozen identities |
+| Pythia-160M private kernels | internal repository experiment | physically present in wheel; standard-library validation kernels | declaration/provider-metadata evidence only; no model load, subject run, or science authority | acquisition script and tests | scripts/tests are not two production consumers | experiment-specific | experiment-specific | 2 modules / 1,878 LOC; no exports | hold outside library promotion; separately solve physical wheel separation |
+| audited D7/Pythia protocols, scripts, and artifacts | repository evidence/data | not package modules; the audited v1 sets were absent from the observed sdist/wheel | frozen declarations, one-shot operations, and persisted evidence | experiment tooling only | not library consumers | not applicable | not applicable | no library export | keep experiment-bound; never count the artifact chain as a consumer |
+
+## Extraction decision gate
+
+Extraction stops unless all of the following are demonstrated before editing
+the affected implementation:
+
+1. At least two independent production consumers exist; one may not merely
+   wrap or replay the other. Tests, docs, scripts, and artifacts do not count.
+2. An exact matrix shows equivalent accepted inputs, output-byte behavior,
+   validation and observation order, and failure semantics.
+3. Domain wrappers retain claim, authority, chronology, typestate,
+   publication, and repository-history meaning. A shared primitive receives
+   none of those facts.
+4. Frozen canonical bytes, historical pins, artifact schemas, and
+   `pass`/`fail`/`insufficient`/`not_run` distinctions remain unchanged unless
+   an explicit versioned migration precedes consumption.
+5. No public export, mandatory dependency, implicit repository discovery, or
+   framework type leaks into a framework-neutral boundary.
+6. A fresh non-editable wheel verifies both import origin and its complete
+   library/experiment member classification.
+7. The change materially removes duplicated production plumbing. A review
+   should normally stop a pure deduplication that removes fewer than 20 lines
+   or less than 20 percent of the duplicated block; a boundary split may
+   substitute proof that its forbidden dependency/member set becomes empty.
+8. If a proposed common scaffold is net-positive or fails equivalence review
+   twice, retain only the rejection record rather than the scaffold.
+
+## Next bounded decisions
+
+1. Keep distribution validation honest and machine-readable while the 22
+   repository-experiment modules remain physically installed.
+2. Audit the two bounded-file readers before writing a shared helper. This is
+   an equivalence decision, not pre-approval to extract.
+3. Continue `RepositoryContext` migrations only where the existing marker
+   reduces duplicated origin plumbing without changing domain failures.
+4. Review an Atlas reader/capture split independently from any API promotion.
+5. Keep VOY-V4 on hold. Returning to that lane requires a separate reviewed,
+   versioned readiness/authority decision and disjoint execution coordinates.

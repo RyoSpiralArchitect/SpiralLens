@@ -4,6 +4,27 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — LIB-L0 distribution-boundary inventory
+
+- `spirallens.distribution-validation.v0.3` extends the repository-only,
+  ephemeral wheel diagnostic with a bounded two-prefix wheel-membership
+  observation.
+  Valid build/install status remains distinct from the blocked fact that the
+  current wheel contains repository-experiment modules. The report adds no
+  public persistence schema or Python API and grants no scientific,
+  experiment, VOY, or library authority.
+- Recorded the previously implicit v1 packaging fact: current setuptools
+  discovery physically includes all 20 D7 v1 `confirmation_v1_*` modules and
+  both private Pythia-160M kernels. They remain internal/non-exported, but
+  physical wheel separation is an open `LIB-L0` blocker. The distinct three
+  v0.1 `experiments/.../post_d6_code` files remain correctly excluded.
+- Added a non-authoritative extraction inventory with actual consumer pairs,
+  input/failure-equivalence stop conditions, production/export deltas, and the
+  explicit rule that artifacts, docs, tests, scripts, and one experiment
+  chronology do not count as independent library consumers.
+- No package export, dependency, artifact byte, protocol, route, D7/Pythia
+  operation, claim, or authority field changes in this entry.
+
 ## 2026-08-13 — D7 v1 structural materialization and descriptive-result observation
 
 - Recorded the already-persisted exact S → A → B chronology: source

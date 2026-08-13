@@ -956,6 +956,16 @@ repository-context migrations must reuse this single private marker and report
 the running production balance; they must not introduce a parallel context or
 import-origin plumbing family.
 
+The current extraction baseline and decision gates are recorded in the
+[LIB-L0 extraction inventory](LIBRARY_EXTRACTION_INVENTORY.md), audited at
+commit `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`. The inventory corrects a
+physical packaging misconception: setuptools currently includes 20 D7 v1
+`confirmation_v1_*` modules and two private Pythia-160M kernels in the wheel,
+although none is promoted as a public API or independent library consumer.
+Machine-readable distribution reporting now treats valid wheel construction
+and blocked experiment/library separation as distinct facts. This observation
+does not advance `LIB-L0`, VOY, D7/D8, or either scientific claim axis.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 
