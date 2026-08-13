@@ -352,7 +352,7 @@ The target is:
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
 | `graphs` and future order-parameter boundaries | Provisional exact graph/domain fingerprints now; later field artifacts, core diagnostics, and qualification gates | NumPy-only in-memory foundation; persistence and scientific promotion remain future work |
-| `qualification` | Experimental D0-D5 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, scope-limited D6 admission, and internal D7 design/prediction/rebinding/replay-contract foundations | NumPy/PyYAML plus project contract foundations; C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence lane, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor, Level-0 `D7-OPS-22` transaction/freeze receipt, operationally complete/scientifically insufficient but chronology-deviated item-23 result, later all-false nine-member descriptor/intent, and canonical non-retroactive disposition are persisted; strict observation now reports the post-descriptor presence state `launch-intent-present`, while v0.1 official entry is blocked; `freeze_verified=false`, every receipt binding retains `authoritative_source_loaded=false` and `identity_authenticated=false`, and official run, replay, and D7/D8 authority remain absent |
+| `qualification` | The installed boundary is the exact 19-module model-free D0-D6 protocol, source/evidence roots, separate core and continuous sampled-loop kernels, crossed aggregation, one-attempt terminal chronology, and scope-limited D6 admission. All 47 `confirmation_*` D7 design/prediction/rebinding/replay implementation modules remain under the same repository source namespace but are repository-only experiment internals, not wheel members or root exports. | The installed closure uses NumPy/PyYAML plus project contract foundations and retains all 115 ordered root exports. Repository-only C1 records the atomic Level-0 seed-free design, static-bounded declared diversity review, registry/aggregation application, review contract, and declared source set; committed C2 verifies that historical Git source set only; canonical D7 replay-target and append-only attempt-envelope specifications define separate contracts; deep-internal record, payload, structural-join, caller-prefix evidence lane, authority-prerequisite, atomic structural terminal, signed external-witness, typed post-start runner, and same-call fused-start mechanics complete `D7-OPS-19` and `D7-OPS-20` without an official run; the corrected `D7-OPS-21` receipt-only chain is complete; the reviewed exact-current re-anchor, Level-0 `D7-OPS-22` transaction/freeze receipt, operationally complete/scientifically insufficient but chronology-deviated item-23 result, later all-false nine-member descriptor/intent, and canonical non-retroactive disposition are persisted; strict observation now reports the post-descriptor presence state `launch-intent-present`, while v0.1 official entry is blocked; `freeze_verified=false`, every receipt binding retains `authoritative_source_loaded=false` and `identity_authenticated=false`, and official run, replay, and D7/D8 authority remain absent. |
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
@@ -958,13 +958,16 @@ import-origin plumbing family.
 
 The current extraction baseline and decision gates are recorded in the
 [LIB-L0 extraction inventory](LIBRARY_EXTRACTION_INVENTORY.md), audited at
-commit `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`. The exact 20 D7 v1
-`confirmation_v1_*` modules and two private Pythia-160M kernels remain in the
-repository source tree: 22 modules and 19,190 physical lines. A fail-closed
-versioned manifest now partitions all 181 `src/**/*.py` module paths into 159
-wheel-present modules (24 package initializers, two console-entrypoint runtime
-modules, and 133 other shipped runtime modules) and those 22 repository-only
-modules. The v0.9 diagnostic proves the exact 159-member set through the
+commit `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`. At that historical audit
+coordinate the repository-only set was the exact 20 D7 v1
+`confirmation_v1_*` modules plus two private Pythia-160M kernels: 22 modules
+and 19,190 physical lines. The current fail-closed versioned manifest retains
+those files and additionally classifies the 27 formerly shipped
+`qualification/confirmation_*.py` modules as repository-only. It now
+partitions all 181 `src/**/*.py` module paths into 132 wheel-present modules
+(24 package initializers, two console-entrypoint runtime modules, and 106 other
+shipped runtime modules) and 49 repository-only modules. The v0.9 diagnostic
+proves the exact 132-member set through the
 source tree, sdist, both wheel routes, and both fresh non-editable
 installations and records
 `closed_wheel_python_module_inventory_established=true`.
@@ -982,7 +985,7 @@ and both fresh installs, parsing installed initializer bytes without importing
 A third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, closes the expected installed
-import outcomes for those exact 159 modules under one bounded host-projected
+import outcomes for those exact 132 modules under one bounded host-projected
 environment contract. The v0.9 diagnostic applies that contract separately to
 the direct-source and sdist-derived non-editable wheels. This is a
 single-current-host observation, not a portability matrix. It uses one fresh
@@ -996,16 +999,16 @@ outside those declared bases. The repository-only validator parent uses
 isolated children do not import it. The base runtime dependencies are
 unchanged, and installed metadata has the exact 13 normalized `Requires-Dist`
 records: three base and ten optional-extra requirements. The two routes have
-equal normalized startup receipts. Each route observes 154 base-import
+equal normalized startup receipts. Each route observes 127 base-import
 successes and five exact blocked-Torch model-extra outcomes. The sole blocked
 undeclared attempt is `charset_normalizer`, which remains unloaded; the aggregate loaded
 third-party distributions remain the exact declared base three. Runtime
 list-valued `__all__` equals the static declaration for the 23 successfully
 imported initializers and 554 entries; `spirallens.adapters` and its five
-entries remain unavailable at the blocked Torch boundary. Both routes have
-outcome-manifest SHA-256
+entries remain unavailable at the blocked Torch boundary. The historical
+pre-boundary 159-member routes had outcome-manifest SHA-256
 `8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
-The adopted pre-projection live validation receipt has SHA-256
+Their adopted pre-projection live validation receipt has SHA-256
 `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
 The separately retained preA/preB/post invariants bind that receipt to
 validator SHA-256
@@ -1041,11 +1044,17 @@ dependencies are neither freshly installed nor an isolated closure.
 `closed_public_api_contract_established`, and
 `closed_library_allowlist_established` remain `false`; optional dependency
 extras, portability, authority, and scientific meaning remain orthogonal. In
-particular, the full wheel still contains 46 qualification modules and legacy
-repository-inferred operations and is not an experiment-free or library-grade
-subset. The report's authority, `lib_l0`, library, portability, public-API, and
-scientific grants all remain `false`, so `LIB-L0` does not advance and VOY-V4
-remains unauthorized. The repository tracks 116 Python files under `tests/`.
+particular, the wheel now retains exactly 19 model-free D0-D6 qualification
+modules and all 115 ordered `spirallens.qualification` exports, while all 47
+`qualification/confirmation_*.py` D7 implementation modules remain in source
+as repository-only members. This closes that physical D7 distribution
+boundary without changing D7 source or history. Legacy repository-inferred
+operations and other open allowlist, compatibility, portability, and release
+gates keep the wheel from being library-grade. The report's authority,
+`lib_l0`, library, portability, public-API, and
+scientific grants all remain `false`, so `LIB-L0` remains in progress and
+VOY-V4 remains unauthorized. The repository tracks 116 Python files under
+`tests/`.
 The former sdist's 106-file test surface was an implicit partial subset: it
 omitted 10 tracked test/helper files while some carried tests still depended on
 omitted helpers or deliberately repository-only experiment modules. It was not

@@ -12,17 +12,18 @@ remain authoritative for those boundaries.
 - baseline Git tree: `d553fd83c37c5cb1490dd09e777f734e1192e580`;
 - current physical-placement manifest:
   `distribution/spirallens_python_members_v0_1.json`, schema
-  `spirallens.python-distribution-members.v0.1`;
+  `spirallens.python-distribution-members.v0.1`, 9,811 bytes, SHA-256
+  `81c7efba9d3084aafe3c49783ef5c338bc80ea303ab12ac730d99f1316e854d1`;
 - current ordered-export declaration manifest:
   `distribution/spirallens_ordered_exports_v0_1.json`, schema
   `spirallens.ordered-package-exports.v0.1`;
 - current installed-import outcome manifest:
   `distribution/spirallens_installed_imports_v0_1.json`, schema
-  `spirallens.installed-import-conformance.v0.1`, 8,214 bytes, SHA-256
-  `d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`;
-- current `src/**/*.py` partition: 181 modules = 159 wheel-present modules
-  (24 package initializers + 2 console-entrypoint runtime + 133 shipped
-  runtime) + 22 repository-only modules;
+  `spirallens.installed-import-conformance.v0.1`, 6,461 bytes, SHA-256
+  `eebf61d097db980fd9d239f002729386e9890ce3495022ddc453bf14bc63fa9d`;
+- current `src/**/*.py` partition: 181 modules = 132 wheel-present modules
+  (24 package initializers + 2 console-entrypoint runtime + 106 shipped
+  runtime) + 49 repository-only modules;
 - `LIB-L0`: `in progress`;
 - supported pre-1.0 surface: `spirallens.__version__` is the sole prospectively
   designated coordinate; no policy-bearing release has occurred, repository
@@ -30,7 +31,7 @@ remain authoritative for those boundaries.
   compatibility is unattested;
 - closed static ordered `__all__` declaration inventory: 559 namespace-scoped
   entries across 24 package initializers;
-- closed installed-module outcome inventory: 159 modules = 154 base-import
+- closed installed-module outcome inventory: 132 modules = 127 base-import
   successes + 5 exact blocked-Torch model-extra outcomes; scoped runtime
   `__all__` observation: 23 initializers and 554 entries succeeded, while one
   initializer and five entries were unavailable;
@@ -55,20 +56,30 @@ artifacts. This historical observation established the separation defect; it
 is not a frozen release identity or a claim that repository files are
 generally excluded.
 
-The bounded source inventory is unchanged:
+The historical pre-boundary repository-only inventory was:
 
-| Group | Source members | Physical LOC | Public/export status | Current distribution status |
+| Group | Source members | Physical LOC | Public/export status | Historical distribution status |
 | --- | ---: | ---: | --- | --- |
 | `spirallens/qualification/confirmation_v1_*.py` | 20 | 17,312 | internal; no `confirmation_v1` export | absent from sdist and wheels |
 | `spirallens/access/_pythia160_*.py` | 2 | 1,878 | private; no access/root export | absent from sdist and wheels |
 
-All 22 ordinary source files and their 19,190 physical lines remain at their
-reviewed repository paths. A source-origin probe imports all 22 from those
-exact paths without loading `torch`, `transformers`, `huggingface_hub`, or
-`safetensors`. No source or historical S → A → B byte is moved or rewritten.
+The current repository-only inventory extends that same source-preserving
+boundary:
+
+| Group | Source members | Physical LOC | Public/export status | Current distribution status |
+| --- | ---: | ---: | --- | --- |
+| `spirallens/qualification/confirmation_*.py` | 47 | 54,034 | internal; none is a qualification/root export | absent from sdist and wheels |
+| `spirallens/access/_pythia160_*.py` | 2 | 1,878 | private; no access/root export | absent from sdist and wheels |
+
+All 49 ordinary source files and their 55,912 physical lines remain at their
+reviewed repository paths. The 27 newly separated confirmation modules account
+for 36,722 of those lines; their source bytes and the historical S → A → B
+source, artifact, and result bytes are not moved or rewritten. The installed
+qualification closure retains exactly 19 model-free D0-D6 modules, 38,377
+physical lines, and all 115 ordered qualification-root exports.
 
 `MANIFEST.in` excludes the two reviewed prefixes from the sdist, while the
-custom `LibraryBuildPy` command filters the exact 22-module set from wheels.
+custom `LibraryBuildPy` command filters the exact 49-module set from wheels.
 The build fails closed if the full source tree contains a partial set, a new
 prefix-matching file, or a non-regular reviewed path. Only a sdist-shaped
 source tree with an ordinary root `PKG-INFO` and no `.git` marker may contain
@@ -79,11 +90,11 @@ publication and are not deleted by the build.
 
 The successor v0.9 diagnostic retains the versioned physical manifest and
 closed wheel Python-module inventory. They fail closed over every
-`src/**/*.py` path and require the exact 159-member shipped set in the sdist,
+`src/**/*.py` path and require the exact 132-member shipped set in the sdist,
 direct-source wheel, sdist-derived wheel, and both fresh non-editable
-installations. The 159-member ordered-path SHA-256 is
-`8769ac8ffc92e5123a8bf802eb09cab24a5a3e28882ac38cf84f3deee25c31aa`;
-the source inventory is the exact 159 + 22 partition. The sdist also carries a
+installations. The 132-member ordered-path SHA-256 is
+`c8ddc9f9ae4c79e2b814f1da77faf61586ac75541c39b675bcc1c7ccc8e4b09a`;
+the source inventory is the exact 132 + 49 partition. The sdist also carries a
 byte-identical copy of the classification manifest. Unclassified additions,
 removals, renames, rogue top-level packages, unclassified package files, and
 stale build/install bytecode fail before a wheel is accepted. A role change is
@@ -134,7 +145,7 @@ established; these later docs are outside the tested checkout.
 
 The installed-import manifest adds a distinct dynamic observation without
 changing those physical or static roles. For both the direct-source and
-sdist-derived wheels, the v0.9 diagnostic imports each of the exact 159 modules
+sdist-derived wheels, the v0.9 diagnostic imports each of the exact 132 modules
 in its own fresh `-I -S -B`, 30-second process from a neutral working
 directory and without `PYTHONPATH`. Site initialization is disabled and `.pth`
 startup is not executed. This is a single-current-host observation, not a
@@ -151,15 +162,15 @@ optional-extra requirements. The six
 `transformers` prefixes are blocked. A separate generic blocker rejects
 distribution-backed imports outside the three declared bases; the exact
 observed blocked attempt is `charset_normalizer`, and it is not loaded. Each
-route observes 154 base-import successes, five exact blocked-Torch model-extra
+route observes 127 base-import successes, five exact blocked-Torch model-extra
 outcomes, no loaded optional prefix, and the exact three declared bases as its
 aggregate loaded third-party distributions. Of the 24 initializers, 23
 reproduce their exact runtime list-valued `__all__`, totaling 554 entries; the
 five `spirallens.adapters` entries are unavailable with that initializer at the
-blocked Torch boundary. Their normalized startup receipts are equal. Both
-routes have outcome-manifest SHA-256
+blocked Torch boundary. Their normalized startup receipts are equal. The
+historical pre-boundary 159-member routes had outcome-manifest SHA-256
 `8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
-The adopted pre-projection live validation receipt has SHA-256
+Their adopted pre-projection live validation receipt has SHA-256
 `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
 The separately retained preA/preB/post invariants bind that receipt to
 validator SHA-256
@@ -192,10 +203,11 @@ establish symbol importability, identity, signature or behavior, star-import
 behavior, alias absence, dynamic-mutation absence, operation safety, or
 portability. The `models`, `ann`, `witness`, and `dev` extras
 classify dependency installation, not wheel membership or export-declaration
-roles. Portability is also independent: the shipped set still contains 46
-qualification modules and legacy repository-inferred operations.
-Consequently the full wheel is not an experiment-free or library-grade
-subset. The report states
+roles. Portability is also independent: the shipped set retains exactly 19
+model-free D0-D6 qualification modules and all 115 ordered qualification-root
+exports, while the 47 D7 `confirmation_*` implementation modules are
+repository-only. Legacy repository-inferred operations and other open gates
+mean that the full wheel is still not library-grade. The report states
 `closed_wheel_python_module_inventory_established=true` and
 `closed_ordered_package_export_inventory_established=true`, plus
 `closed_installed_module_import_outcome_inventory_established=true` and the
@@ -382,7 +394,7 @@ and retained state. `Unknown` or `not established` stops extraction.
 | exact array-fingerprint framing | rejected at current gate | present; NumPy | in-memory `dtype.str` + shape + NUL + C-order byte identity only; no scientific interpretation | `graphs.common`, `qualification.common`, and `synthetic.representation_estimator` | three candidate domains, but qualification is a frozen D7 trust root and the graph/synthetic pair is coupled | established only for stable ndarray metadata across 21 audited case families; unrestricted duck-typed inputs differ in metadata observation order | native ndarray failures are aligned, but callable-level failure/observation equivalence is not established for changing duck-typed metadata | no production/export delta; the three local function groups total 49 lines, while the only trust-root-free pair totals 33 lines and has no reviewed design demonstrating the required 20-line net reduction | reject extraction: changing `qualification/common.py` adds a direct reviewed-S execution-source violation; do not weaken that verifier, and do not add a sub-threshold two-consumer helper |
 | immutable-array helpers | provisional local mechanisms | present; NumPy | in-memory numeric ownership and immutability; scientific interpretation stays local | graphs, qualification, referents, instrument contracts, and synthetic variants | multiple domains but policies differ | not established across rank, dtype, range, nonfinite, negative-zero, and copy behavior | not established across domain exception types and native failures | small scattered duplication | hold; do not merge distinct validation or representation policies for cosmetic deduplication |
 | `PythiaAdapter` | provisional/model extra | present; optional model stack | model observation/capture; fake-surface mechanics are not real-model parity | one Pythia-family adapter | fewer than two adapter families | not applicable | not applicable | existing provisional exports unchanged | hold; a second adapter and conformance evidence are required for `LIB-L2` portability |
-| D7 v1 `confirmation_v1_*` | internal experiment implementation | repository source only; absent from sdist and wheels; qualification dependency set | fixed source/history, chronology, authority, no-replace publication, and result joins | callers inside one D7 v1 chronology | not independent library consumers | intentionally experiment-specific | intentionally experiment-specific | 20 modules / 17,312 LOC retained in source; no exports | reject extraction; preserve the verified distribution separation and frozen identities |
+| D7 `confirmation_*` family | internal experiment implementation | repository source only; absent from sdist and wheels; qualification dependency set | fixed source/history, chronology, authority, no-replace publication, and result joins | callers inside one D7 chronology family | not independent library consumers | intentionally experiment-specific | intentionally experiment-specific | 47 modules / 54,034 LOC retained in source; no qualification/root exports | reject extraction; preserve the verified distribution separation and frozen identities |
 | Pythia-160M private kernels | internal repository experiment | repository source only; absent from sdist and wheels; standard-library validation kernels | declaration/provider-metadata evidence only; no model load, subject run, or science authority | acquisition script and tests | scripts/tests are not two production consumers | experiment-specific | experiment-specific | 2 modules / 1,878 LOC retained in source; no exports | hold outside library promotion; preserve the verified distribution separation |
 | audited D7/Pythia protocols, scripts, and artifacts | repository evidence/data | not package modules; the audited v1 sets were absent from the observed sdist/wheel | frozen declarations, one-shot operations, and persisted evidence | experiment tooling only | not library consumers | not applicable | not applicable | no library export | keep experiment-bound; never count the artifact chain as a consumer |
 
@@ -415,7 +427,7 @@ the affected implementation:
 
 ## Next bounded decisions
 
-1. Preserve both reviewed inventories: the 181 = 159 + 22 Python-member
+1. Preserve both reviewed inventories: the 181 = 132 + 49 Python-member
    partition and the exact 24-initializer, 559-entry static ordered-export
    declarations. Keep their fail-closed parity proofs through source, sdist,
    both wheel routes, and both fresh installs. Any intended module, role,

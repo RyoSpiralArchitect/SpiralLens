@@ -333,16 +333,16 @@ def test_validator_policy_load_fails_closed(
         runpy.run_path(str(validator_path))
 
 
-def test_installed_import_manifest_freezes_exact_159_outcomes() -> None:
+def test_installed_import_manifest_freezes_exact_132_outcomes() -> None:
     classification = _installed_import_classification()
 
     assert classification["schema_version"] == (
         INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION
     )
     assert classification["manifest_sha256"] == (
-        "d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795"
+        "eebf61d097db980fd9d239f002729386e9890ce3495022ddc453bf14bc63fa9d"
     )
-    assert len(classification["outcomes"]["base_import_success"]) == 154
+    assert len(classification["outcomes"]["base_import_success"]) == 127
     assert classification["outcomes"]["models_extra_missing_torch"] == (
         "spirallens.adapters",
         "spirallens.adapters.pythia",
@@ -445,7 +445,7 @@ def test_installed_import_manifest_accepts_pyproject_dependency_reordering(
     )
 
     assert classification["manifest_sha256"] == (
-        "d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795"
+        "eebf61d097db980fd9d239f002729386e9890ce3495022ddc453bf14bc63fa9d"
     )
 
 
@@ -1365,17 +1365,52 @@ def test_python_member_manifest_freezes_exact_roles_and_partition() -> None:
     assert {name: len(members) for name, members in roles.items()} == {
         "package_initializer": 24,
         "console_entrypoint_runtime": 2,
-        "shipped_runtime": 133,
-        "repository_only": 22,
+        "shipped_runtime": 106,
+        "repository_only": 49,
     }
-    assert len(classification["shipped_members"]) == 159
+    assert len(classification["shipped_members"]) == 132
     assert len(classification["source_members"]) == 181
     assert classification["manifest_sha256"] == (
-        "e0bd46587dc53ccbb660c66ec01fabcb1e5fcae0a4fda104388632c88f4cf17e"
+        "81c7efba9d3084aafe3c49783ef5c338bc80ea303ab12ac730d99f1316e854d1"
     )
 
 
-def test_source_python_inventory_is_exact_181_partition() -> None:
+def test_exact_27_confirmation_modules_remain_source_but_not_artifacts() -> None:
+    classification = _classification()
+    all_confirmation_members = {
+        member
+        for member in classification["source_members"]
+        if member.startswith("spirallens/qualification/confirmation_")
+    }
+    newly_repository_only_members = {
+        member
+        for member in all_confirmation_members
+        if not member.startswith("spirallens/qualification/confirmation_v1_")
+    }
+
+    assert len(all_confirmation_members) == 47
+    assert len(newly_repository_only_members) == 27
+    assert all_confirmation_members <= set(classification["repository_only_members"])
+    assert all_confirmation_members.isdisjoint(classification["shipped_members"])
+    assert "spirallens/qualification/__init__.py" in classification["shipped_members"]
+
+    repository = Path(__file__).resolve().parents[1]
+    assert all(
+        (repository / "src" / member).is_file()
+        for member in newly_repository_only_members
+    )
+
+    installable_modules = set().union(
+        *_installed_import_classification()["outcomes"].values()
+    )
+    newly_repository_only_modules = {
+        member.removesuffix(".py").replace("/", ".")
+        for member in newly_repository_only_members
+    }
+    assert newly_repository_only_modules.isdisjoint(installable_modules)
+
+
+def test_source_python_inventory_is_exact_181_equals_132_plus_49_partition() -> None:
     repository = Path(__file__).resolve().parents[1]
     classification = _classification()
 
@@ -1385,13 +1420,13 @@ def test_source_python_inventory_is_exact_181_partition() -> None:
     )
 
     assert receipt["count"] == 181
-    assert receipt["shipped_count"] == 159
-    assert receipt["repository_only_count"] == 22
+    assert receipt["shipped_count"] == 132
+    assert receipt["repository_only_count"] == 49
     assert receipt["manifest_sha256"] == (
         "2a5e9db9541bb500829f555afd9ecc9307b6141f9fa49b9e9cf4b01b567d8e9a"
     )
     assert receipt["shipped_manifest_sha256"] == (
-        "8769ac8ffc92e5123a8bf802eb09cab24a5a3e28882ac38cf84f3deee25c31aa"
+        "c8ddc9f9ae4c79e2b814f1da77faf61586ac75541c39b675bcc1c7ccc8e4b09a"
     )
 
 
@@ -1488,7 +1523,7 @@ def test_exact_wheel_classifier_ignores_dist_info_but_rejects_extra_python(
         (*members, "spirallens-0.1.0.dist-info/METADATA"),
     )
     receipt = _classify_wheel_python_members(wheel, expected_members=members)
-    assert receipt["count"] == 159
+    assert receipt["count"] == 132
 
     rogue = tmp_path / "rogue.whl"
     _write_synthetic_wheel(rogue, (*members, "roguepkg/__init__.py"))
@@ -1615,7 +1650,7 @@ def test_exact_sdist_classifier_ignores_egg_info_and_rejects_partial_package(
             sdist,
             expected_members=members,
         )["count"]
-        == 159
+        == 132
     )
 
     partial = tmp_path / "partial.tar.gz"
@@ -1807,7 +1842,7 @@ def test_installed_member_probe_excludes_metadata_and_rejects_pyc() -> None:
             expected_members=members,
             artifact_kind="fixture install",
         )["count"]
-        == 159
+        == 132
     )
 
     bad = json.dumps(
@@ -1838,12 +1873,14 @@ def test_repository_experiment_members_are_classified_from_wheel_paths(
     wheel = tmp_path / "synthetic.whl"
     matching_members = (
         "spirallens/access/_pythia160_preobservation.py",
+        "spirallens/qualification/confirmation_attempt_records.py",
         "spirallens/qualification/confirmation_v1_records.py",
     )
     _write_synthetic_wheel(
         wheel,
         (
             "spirallens/qualification/public_surface.py",
+            matching_members[2],
             matching_members[1],
             "spirallens/access/pythia.py",
             matching_members[0],
@@ -1859,7 +1896,7 @@ def test_new_matching_wheel_member_is_classified_without_an_allowlist(
     tmp_path: Path,
 ) -> None:
     wheel = tmp_path / "synthetic.whl"
-    new_member = "spirallens/qualification/confirmation_v1_future_module.py"
+    new_member = "spirallens/qualification/confirmation_future_module.py"
     _write_synthetic_wheel(wheel, (new_member,))
 
     assert _classify_repository_experiment_members(wheel) == (new_member,)
@@ -1867,9 +1904,7 @@ def test_new_matching_wheel_member_is_classified_without_an_allowlist(
 
 def test_pep3147_matching_wheel_member_is_classified(tmp_path: Path) -> None:
     wheel = tmp_path / "synthetic.whl"
-    member = (
-        "spirallens/qualification/__pycache__/confirmation_v1_records.cpython-313.pyc"
-    )
+    member = "spirallens/qualification/__pycache__/confirmation_attempt_records.cpython-313.pyc"
     _write_synthetic_wheel(wheel, (member,))
 
     assert _classify_repository_experiment_members(wheel) == (member,)
@@ -1881,12 +1916,14 @@ def test_repository_experiment_members_are_classified_from_sdist_paths(
     sdist = tmp_path / "synthetic.tar.gz"
     matching = (
         "spirallens-0.1.0/src/spirallens/access/_pythia160_preobservation.py",
+        "spirallens-0.1.0/src/spirallens/qualification/confirmation_attempt_records.py",
         "spirallens-0.1.0/src/spirallens/qualification/confirmation_v1_records.py",
     )
     _write_synthetic_sdist(
         sdist,
         (
             "spirallens-0.1.0/src/spirallens/access/contracts.py",
+            matching[2],
             matching[1],
             matching[0],
         ),
@@ -1897,23 +1934,23 @@ def test_repository_experiment_members_are_classified_from_sdist_paths(
     )
 
 
-def test_source_inventory_requires_the_exact_reviewed_regular_22_paths(
+def test_source_inventory_requires_the_exact_reviewed_regular_49_paths(
     tmp_path: Path,
 ) -> None:
     _write_source_inventory(tmp_path, REPOSITORY_EXPERIMENT_SOURCE_PATHS)
 
     assert _repository_experiment_source_report(tmp_path) == {
         "observation": "reviewed-exact-set-present",
-        "count": 22,
+        "count": 49,
         "all_regular_files": True,
-        "total_lines": 22,
+        "total_lines": 49,
         "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
     }
 
 
 def test_source_inventory_rejects_a_future_matching_prefix(tmp_path: Path) -> None:
     _write_source_inventory(tmp_path, REPOSITORY_EXPERIMENT_SOURCE_PATHS)
-    future = tmp_path / "src/spirallens/qualification/confirmation_v1_future_module.py"
+    future = tmp_path / "src/spirallens/qualification/confirmation_future_module.py"
     future.write_text("# unreviewed\n", encoding="utf-8")
 
     with pytest.raises(DistributionValidationError, match="unexpected=.*future"):
@@ -1962,9 +1999,9 @@ def test_source_inventory_rejects_a_symlinked_package_ancestor(
 def test_zero_artifact_members_is_bounded_absence_not_library_readiness() -> None:
     source_tree = {
         "observation": "reviewed-exact-set-present",
-        "count": 22,
+        "count": 49,
         "all_regular_files": True,
-        "total_lines": 19190,
+        "total_lines": 55912,
         "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
     }
     absent = _require_zero_repository_experiment_members((), artifact_kind="fixture")
@@ -1984,7 +2021,7 @@ def test_zero_artifact_members_is_bounded_absence_not_library_readiness() -> Non
             "sdist_derived_wheel": absent,
             "source_prefixes": [
                 "src/spirallens/access/_pythia160_",
-                "src/spirallens/qualification/confirmation_v1_",
+                "src/spirallens/qualification/confirmation_",
             ],
             "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
@@ -2238,7 +2275,7 @@ def _experiment_absence_probe(
     )
 
 
-def test_repository_experiment_absence_probe_accepts_exact_22_receipts(
+def test_repository_experiment_absence_probe_accepts_exact_49_receipts(
     tmp_path: Path,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
@@ -2253,7 +2290,7 @@ def test_repository_experiment_absence_probe_accepts_exact_22_receipts(
     )
 
     assert parsed["direct_url_editable"] is False
-    assert parsed["exact_module_not_found_receipt_count"] == 22
+    assert parsed["exact_module_not_found_receipt_count"] == 49
     assert list(parsed["module_origins"]) == [
         "spirallens.access",
         "spirallens.qualification",
@@ -2383,9 +2420,9 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert separation["repository_experiment_separation"] == {
         "source_tree": {
             "observation": "reviewed-exact-set-present",
-            "count": 22,
+            "count": 49,
             "all_regular_files": True,
-            "total_lines": 19190,
+            "total_lines": 55912,
             "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
         },
         "sdist": absent,
@@ -2393,7 +2430,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         "sdist_derived_wheel": absent,
         "source_prefixes": [
             "src/spirallens/access/_pythia160_",
-            "src/spirallens/qualification/confirmation_v1_",
+            "src/spirallens/qualification/confirmation_",
         ],
         "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
     }
@@ -2415,10 +2452,17 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert python_inventory["classification"]["role_counts"] == {
         "package_initializer": 24,
         "console_entrypoint_runtime": 2,
-        "shipped_runtime": 133,
-        "repository_only": 22,
+        "shipped_runtime": 106,
+        "repository_only": 49,
     }
     assert python_inventory["source_tree"]["count"] == 181
+    newly_repository_only_confirmation_members = {
+        member
+        for member in python_inventory["source_tree"]["members"]
+        if member.startswith("spirallens/qualification/confirmation_")
+        and not member.startswith("spirallens/qualification/confirmation_v1_")
+    }
+    assert len(newly_repository_only_confirmation_members) == 27
     for artifact_kind in (
         "sdist",
         "direct_source_wheel",
@@ -2426,9 +2470,12 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         "direct_source_install",
         "sdist_derived_install",
     ):
-        assert python_inventory[artifact_kind]["count"] == 159
+        assert python_inventory[artifact_kind]["count"] == 132
+        assert newly_repository_only_confirmation_members.isdisjoint(
+            python_inventory[artifact_kind]["members"]
+        )
         assert python_inventory[artifact_kind]["manifest_sha256"] == (
-            "8769ac8ffc92e5123a8bf802eb09cab24a5a3e28882ac38cf84f3deee25c31aa"
+            "c8ddc9f9ae4c79e2b814f1da77faf61586ac75541c39b675bcc1c7ccc8e4b09a"
         )
     assert all(python_inventory["equality"].values())
     export_inventory = separation["ordered_package_export_inventory"]
@@ -2520,7 +2567,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     }
     source_import = report["repository_experiment_source_import_inspection"]
     assert source_import["forbidden_model_imports_loaded"] == []
-    assert source_import["imported_module_count"] == 22
+    assert source_import["imported_module_count"] == 49
     assert source_import["module_origins"] == dict(
         zip(
             REPOSITORY_EXPERIMENT_MODULES,
@@ -2536,7 +2583,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         "repository_experiment_install_inspections"
     ].values():
         assert install_inspection["direct_url_editable"] is False
-        assert install_inspection["exact_module_not_found_receipt_count"] == 22
+        assert install_inspection["exact_module_not_found_receipt_count"] == 49
         assert set(install_inspection["module_origins"]) == {
             "spirallens.access",
             "spirallens.qualification",
