@@ -1227,6 +1227,28 @@ inherit no declaration. No runtime, export, dependency, schema, report, public
 API, `LIB-L0`, science, authority, or VOY state changes; VOY-V4 remains
 unauthorized.
 
+The bounded core-promotion preflight at clean baseline
+`973f617add33817de279286baee39a608ea5fe54` freezes the 171-line,
+7,420-byte `tests/test_core_canonical_compatibility.py`, SHA-256
+`30d5088bfaf76639208c56b0201589b99a28c7656f382d431ddfb9c8f307ec1f`.
+Its focused gate collected and passed six tests, fixing the exact ordered
+seven-name `spirallens.core` surface, defining and legacy-module identities,
+four callable signatures and annotations, type aliases, representative success
+values, selected exact failures, and validation order. Existing policy evidence
+establishes independent shared-codec use at defining or legacy leaf paths; the
+four functions have 7 / 7 / 5 / 2 wheel-present top-level namespace families,
+while exact `spirallens.core` root-coordinate production consumers remain zero.
+A coherent eventual promotion would cover all seven names rather than only the
+four functions. Promotion remains on HOLD pending clean-wheel Python 3.11–3.13
+parity, a deterministic user example, an explicit pre-1.0 compatibility and
+legacy/deprecation policy, and a separate reviewed promotion decision.
+
+This test-and-documentation preflight changes no production source, API, export,
+dependency, schema, artifact, receipt, D7 re-anchor, `LIB-L0`, scientific,
+authority, or VOY state. It proves no cross-version or cross-host portability,
+installed-distribution behavior, resource boundedness, safety, purity,
+exhaustive failure surface, or custom-`Mapping` callback behavior.
+
 The last declaration-only candidate, at clean baseline
 `65a567659200ac41c5a15329af1074239b525ac5`, covered exactly
 `spirallens.gauge:{orthonormal_frame,principal_angles,procrustes_connection,track_subspaces}`
