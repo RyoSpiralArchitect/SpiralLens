@@ -1694,9 +1694,12 @@ immediate next plan live in the single
   `D7-OPS-23` descriptive derivation and no-replace publisher. Its required
   item-22 freeze and one committed Level-0 descriptive result now exist; that
   result is `insufficient`, has no claim delta, and is not an official D7
-  result, launch, or promotion. The lane is excluded from the installed wheel,
-  and none of these surfaces is exported from `spirallens.qualification` or
-  the package root. No public admission,
+  result, launch, or promotion. The three v0.1 repository-only implementation
+  files remain excluded from the installed wheel, and none of their surfaces
+  is exported from `spirallens.qualification` or the package root. The separate
+  v1 `confirmation_v1_*` internal modules are currently wheel-present but
+  non-exported; their physical separation remains an explicit `LIB-L0` blocker
+  rather than a public-API promotion. No public admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   The versioned-successor lane additionally contains an internal read-only

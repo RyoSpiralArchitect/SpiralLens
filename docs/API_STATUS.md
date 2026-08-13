@@ -58,11 +58,14 @@ The PR #11 post-D6 descriptive plan and value-blind D7 gap matrix are canonical
 research artifacts, not Python APIs. Their historical bytes intentionally add
 no runner, writer, family-admission helper, or promotion surface. Later
 repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
-derivation and repository-bound no-replace lifecycle. They are outside the
-installed wheel and export nothing from the package or qualification
-namespace. The exact three files are members of the reviewed exact-current
-source/runtime re-anchor now tracked on this branch. The historical plan bytes
-retain `status=frozen_not_run`, `runner_implemented=false`, and
+derivation and repository-bound no-replace lifecycle. Those exact three v0.1
+files remain outside the installed wheel and export nothing from the package
+or qualification namespace. The separate v1 `confirmation_v1_*` internal
+modules are wheel-present but non-exported; their physical separation remains
+an explicit `LIB-L0` blocker. The exact three files are members of the reviewed
+exact-current source/runtime re-anchor now tracked on this branch. The
+historical plan bytes retain `status=frozen_not_run`,
+`runner_implemented=false`, and
 `writer_implemented=false`; those fields describe the plan when it was frozen
 and are not rewritten as living execution metadata. Commit
 `83ed5f419ff27af0935aa84c363df64f04926cac` now introduces the sole item-23
