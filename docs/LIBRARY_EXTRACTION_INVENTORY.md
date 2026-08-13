@@ -74,7 +74,7 @@ proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
 are rejected before wheel
 publication and are not deleted by the build.
 
-The successor v0.8 diagnostic retains the versioned physical manifest and
+The successor v0.9 diagnostic retains the versioned physical manifest and
 closed wheel Python-module inventory. They fail closed over every
 `src/**/*.py` path and require the exact 159-member shipped set in the sdist,
 direct-source wheel, sdist-derived wheel, and both fresh non-editable
@@ -104,7 +104,7 @@ importing a `spirallens` module.
 
 The installed-import manifest adds a distinct dynamic observation without
 changing those physical or static roles. For both the direct-source and
-sdist-derived wheels, the v0.8 diagnostic imports each of the exact 159 modules
+sdist-derived wheels, the v0.9 diagnostic imports each of the exact 159 modules
 in its own fresh `-I -S -B`, 30-second process from a neutral working
 directory and without `PYTHONPATH`. Site initialization is disabled and `.pth`
 startup is not executed. This is a single-current-host observation, not a
@@ -183,10 +183,16 @@ The installation report separately records
 `isolated_base_dependency_environment_established=false`.
 
 The sdist is a library source artifact, not the repository experiment replay
-or test bundle. Its current 106 test files are not a self-contained suite for
-the 159 shipped modules: experiment-facing tests still require omitted
-repository-only source and other repository context. They are neither an
-installed-distribution conformance surface nor replay or maturity evidence.
+or test bundle. The repository tracks 116 Python files under `tests/`; the
+former sdist carried only an implicit 106-file subset, omitting 10 tracked
+test/helper files while retaining tests that can depend on omitted helpers or
+the deliberately repository-only experiment modules. That subset was neither
+self-contained nor an installed-distribution conformance, replay, or maturity
+surface. The v0.9 diagnostic now requires exact absence of the top-level
+sdist `tests` path and records `observation="absent"`, `count=0`, and
+`members=[]`. This is explicit distribution-role separation, not a closed
+inventory of every sdist member, an installed test contract, experiment replay,
+or library evidence.
 The v0.1 classification admits only ordinary Python modules. Shipping package
 data, extension modules, namespace/generated modules, or bytecode-only modules
 requires a reviewed, versioned manifest/schema successor rather than an

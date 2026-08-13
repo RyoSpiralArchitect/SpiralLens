@@ -32,7 +32,7 @@ Physical distribution membership is a separate axis from these API labels.
 `src/**/*.py` module paths into 159 wheel-present modules and 22
 repository-only modules. The 159 comprise 24 package initializers, two
 console-entrypoint runtime modules, and 133 other shipped runtime modules; the
-v0.8 distribution diagnostic verifies the same exact set in the source tree,
+v0.9 distribution diagnostic verifies the same exact set in the source tree,
 sdist, both wheel routes, and both fresh non-editable installations. This
 establishes `closed_wheel_python_module_inventory_established=true`.
 
@@ -40,7 +40,7 @@ A separate manifest,
 `distribution/spirallens_ordered_exports_v0_1.json`, schema
 `spirallens.ordered-package-exports.v0.1`, closes only the static literal
 ordered `__all__` declarations: exact 24 classified package initializers and
-559 namespace-scoped entries. The v0.8 diagnostic observes the same ordered
+559 namespace-scoped entries. The v0.9 diagnostic observes the same ordered
 declarations in the source tree, sdist, both wheels, and both fresh installs;
 the install probes parse initializer bytes without importing `spirallens`.
 This establishes
@@ -50,7 +50,7 @@ API.
 A third manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, classifies the expected import
-outcome of all 159 installed modules. The v0.8 diagnostic exercises the
+outcome of all 159 installed modules. The v0.9 diagnostic exercises the
 direct-source and sdist-derived non-editable wheels separately. It is a
 single-current-host observation, not a portability matrix. Every module
 receives its own fresh `-I -S -B` process, neutral working directory, empty
@@ -117,8 +117,17 @@ installed nor an isolated dependency environment. The report records
 repository-inferred operations, so it is not an experiment-free or
 library-grade subset. The `models`, `ann`, `witness`, and `dev` extras classify
 dependency installation, not Python-module or export-declaration membership.
-Likewise, the 106 test files carried by the sdist are neither an installed-wheel
-conformance surface nor replay or maturity evidence.
+The repository tracks 116 Python files under `tests/`, whereas the former
+sdist's 106-file test surface was an implicit partial subset that omitted 10
+tracked test/helper files. Some carried tests also depended on omitted helpers
+or deliberately repository-only experiment modules, so that subset was never
+an installed-wheel conformance surface, self-contained replay, or maturity
+evidence. The v0.9 diagnostic requires exact absence of the sdist's top-level
+`tests` path and emits
+`sdist_test_surface={"observation":"absent","count":0,"members":[]}`.
+This bounded placement receipt establishes no complete sdist inventory,
+compatibility, portability, supported API, library or `LIB-L0` status,
+scientific claim, or authority fact.
 
 The diagnostic remains a bounded fail-closed ratchet. Its repeated immutable
 metadata now has one private repository/build-only owner,

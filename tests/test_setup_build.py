@@ -471,7 +471,7 @@ def test_setup_pyproject_dependency_gate_rejects_non_strict_file(
         setup_module._load_installed_import_classification()
 
 
-def test_setup_artifacts_place_installed_import_policy_only_in_sdist(
+def test_setup_artifacts_omit_tests_and_place_policy_only_in_sdist(
     tmp_path: Path,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
@@ -487,6 +487,20 @@ def test_setup_artifacts_place_installed_import_policy_only_in_sdist(
         shutil.copy2(repository / relative, source / relative)
     shutil.copytree(repository / "distribution", source / "distribution")
     shutil.copytree(repository / "src", source / "src")
+    tracked_tests = subprocess.run(
+        ["git", "ls-files", "-z", "--", "tests"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split("\0")
+    tracked_tests = [relative for relative in tracked_tests if relative]
+    assert tracked_tests
+    for relative in tracked_tests:
+        target = source / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(repository / relative, target)
+    assert not (source / ".git").exists()
     artifact_dir = tmp_path / "dist"
     environment = dict(os.environ)
     environment.update(
@@ -527,6 +541,11 @@ def test_setup_artifacts_place_installed_import_policy_only_in_sdist(
         "distribution/_installed_import_policy.py",
     )
     with tarfile.open(archives[0], mode="r:gz") as archive:
+        relative_members = {
+            "/".join(Path(member.name).parts[1:]) for member in archive.getmembers()
+        }
+        assert "tests" not in relative_members
+        assert not any(relative.startswith("tests/") for relative in relative_members)
         for relative in expected_sdist_members:
             matches = [
                 member

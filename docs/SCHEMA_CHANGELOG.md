@@ -4,6 +4,41 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Explicit sdist test-surface separation
+
+- The repository contains exactly 116 tracked Python files under `tests/`.
+  The former sdist's 106-file test surface was an implicit packaging-discovery
+  subset, not the repository test inventory: it omitted 10 tracked test/helper
+  files while some included tests depended on omitted helpers or deliberately
+  repository-only experiment modules. It was therefore neither a
+  self-contained experiment replay nor an installed-distribution conformance
+  surface.
+- `MANIFEST.in` now prunes the top-level `tests` subtree. The repository-only
+  diagnostic advances to `spirallens.distribution-validation.v0.9`; after its
+  regular-file-only safe extraction, it fails closed if any directory, file,
+  symlink, or other path remains at the extracted sdist's top-level `tests`
+  coordinate. Its report adds the exact bounded receipt
+  `sdist_test_surface={"observation":"absent","count":0,"members":[]}`.
+  Actual-build coverage starts from a no-`.git` source copy populated with all
+  tracked test paths and requires the resulting sdist to contain neither a
+  `tests` member nor any `tests/` descendant.
+- The frozen implementation hashes are `MANIFEST.in`
+  `1a5a2b0273ffd8cda6d851e5311c026e9f9ab44542c476c4dd56da0e08aadd24`
+  and validator
+  `b928c365253115a6c433a8762f12c40cb105cb9d77a5bbf29fb9547f6d601b48`;
+  the setup-build and validator-test hashes are
+  `7a1fc6ecce04c59644ab1073cb60350bdfa889ae04d8602b0a48e457ffcc0216`
+  and
+  `d14abab0f6778dce58cfa57c3ef65ae4f4675d26cd29b77f245f932e20bc081b`.
+  The focused static gate was seven passed; Ruff format/check, `py_compile`,
+  and diff checking also passed.
+- This change makes the sdist's source-artifact role explicit; it is not a
+  production-line reduction or a complete inventory of every sdist member. It
+  changes no wheel member, `src/spirallens` runtime, export, dependency,
+  supported API, installed-import schema or outcome, experiment replay,
+  portability, library or `LIB-L0` status, scientific claim, or authority
+  record. VOY-V4 remains unauthorized.
+
 ## 2026-08-13 — Private installed-import policy consolidation
 
 - Added the private repository/build-only

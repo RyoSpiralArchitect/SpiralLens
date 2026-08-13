@@ -35,7 +35,7 @@ from pathlib import Path, PurePosixPath
 from packaging.markers import Marker
 from packaging.requirements import InvalidRequirement, Requirement
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.8"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.9"
 PYTHON_MEMBER_CLASSIFICATION_PATH = "distribution/spirallens_python_members_v0_1.json"
 PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION = (
     "spirallens.python-distribution-members.v0.1"
@@ -1403,6 +1403,23 @@ def _extract_sdist(source: Path, destination: Path) -> Path:
             "extracted sdist has no top-level pyproject.toml"
         )
     return extracted
+
+
+def _require_absent_sdist_test_surface(
+    extracted_source: Path,
+) -> dict[str, object]:
+    """Require the extracted sdist to omit its top-level ``tests`` path."""
+
+    tests_path = extracted_source / "tests"
+    try:
+        tests_path.lstat()
+    except FileNotFoundError:
+        return {"observation": "absent", "count": 0, "members": []}
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot inspect extracted sdist top-level tests path"
+        ) from error
+    raise DistributionValidationError("extracted sdist contains top-level tests path")
 
 
 def _require_safe_archive_member_path(member: str, *, artifact_kind: str) -> None:
@@ -4437,6 +4454,7 @@ def validate_distribution(
             artifact_kind="sdist",
         )
         extracted_source = _extract_sdist(sdist, extracted_dir)
+        sdist_test_surface = _require_absent_sdist_test_surface(extracted_source)
         _run(
             (
                 sys.executable,
@@ -4971,6 +4989,7 @@ def validate_distribution(
                 "sdist_derived_wheel": sdist_absence_inspection,
             },
             "scientific_surface_inspection": scientific_inspection,
+            "sdist_test_surface": sdist_test_surface,
             "required_wheel_members": list(shipped_python_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),
             "required_imports": list(imports),

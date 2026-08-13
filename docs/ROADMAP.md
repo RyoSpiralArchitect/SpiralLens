@@ -964,7 +964,7 @@ repository source tree: 22 modules and 19,190 physical lines. A fail-closed
 versioned manifest now partitions all 181 `src/**/*.py` module paths into 159
 wheel-present modules (24 package initializers, two console-entrypoint runtime
 modules, and 133 other shipped runtime modules) and those 22 repository-only
-modules. The v0.8 diagnostic proves the exact 159-member set through the
+modules. The v0.9 diagnostic proves the exact 159-member set through the
 source tree, sdist, both wheel routes, and both fresh non-editable
 installations and records
 `closed_wheel_python_module_inventory_established=true`.
@@ -973,7 +973,7 @@ A second versioned manifest,
 `distribution/spirallens_ordered_exports_v0_1.json`, schema
 `spirallens.ordered-package-exports.v0.1`, closes only the static literal
 ordered `__all__` declarations for all 24 classified package initializers: 559
-namespace-scoped entries. The v0.8 diagnostic proves the same initializer
+namespace-scoped entries. The v0.9 diagnostic proves the same initializer
 bytes and ordered declarations in the source tree, sdist, both wheel routes,
 and both fresh installs, parsing installed initializer bytes without importing
 `spirallens`. It records
@@ -983,7 +983,7 @@ A third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, closes the expected installed
 import outcomes for those exact 159 modules under one bounded host-projected
-environment contract. The v0.8 diagnostic applies that contract separately to
+environment contract. The v0.9 diagnostic applies that contract separately to
 the direct-source and sdist-derived non-editable wheels. This is a
 single-current-host observation, not a portability matrix. It uses one fresh
 `-I -S -B`, 30-second process per module, a neutral working directory, and no
@@ -1045,8 +1045,16 @@ particular, the full wheel still contains 46 qualification modules and legacy
 repository-inferred operations and is not an experiment-free or library-grade
 subset. The report's authority, `lib_l0`, library, portability, public-API, and
 scientific grants all remain `false`, so `LIB-L0` does not advance and VOY-V4
-remains unauthorized. The current sdist's 106 test files are not a
-self-contained replay, installed-wheel conformance suite, or maturity receipt.
+remains unauthorized. The repository tracks 116 Python files under `tests/`.
+The former sdist's 106-file test surface was an implicit partial subset: it
+omitted 10 tracked test/helper files while some carried tests still depended on
+omitted helpers or deliberately repository-only experiment modules. It was not
+a self-contained replay, installed-wheel conformance suite, or maturity
+receipt. The v0.9 diagnostic now requires the sdist's top-level `tests` path to
+be absent and records `sdist_test_surface` as exact `absent / 0 / []`. This is a
+distribution-role boundary, not a full sdist inventory, replay result,
+compatibility or portability grant, API promotion, library milestone,
+scientific claim, or authority record.
 Future package data, extension modules, namespace/generated modules, or
 bytecode-only distribution support requires a reviewed versioned
 classification/schema successor.
