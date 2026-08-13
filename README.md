@@ -1,7 +1,7 @@
 # SpiralLens
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB.svg)](pyproject.toml)
+[![Requires Python >=3.11](https://img.shields.io/badge/Requires_Python-%3E%3D3.11-3776AB.svg)](pyproject.toml)
 
 SpiralLens is an auditable instrument for asking whether transformer
 representations contain geometric transport structure or a substrate-bound
@@ -1099,6 +1099,58 @@ Recorded-lineage tests fail closed and require the C1/C2 ancestry they verify
 to be present locally. `D7-OPS-21` verification rejects every shallow repository
 rather than inferring that its visible ancestry is complete; deepen or
 unshallow the clone before running the full suite.
+
+### Canonical JSON stable-candidate example
+
+`spirallens.core` remains a stable candidate with promotion on HOLD. This
+current-source, in-memory example requires no model, network, or private data.
+
+<!-- spirallens-core-canonical-example:start -->
+```python
+from spirallens.core import (
+    CanonicalJsonError,
+    JsonScalar,
+    JsonValue,
+    canonical_json_bytes,
+    canonical_json_sha256,
+    parse_canonical_json,
+    sha256_bytes,
+)
+
+label: JsonScalar = "渦"
+document: JsonValue = {"z": [label, 3, 1.25], "a": {"enabled": True, "value": None}}
+encoded = canonical_json_bytes(document)
+digest = canonical_json_sha256(document)
+assert digest == sha256_bytes(encoded)
+assert parse_canonical_json(encoded) == document
+print(encoded.decode("utf-8"))
+print(digest)
+try:
+    parse_canonical_json(b'{"z":1,"a":2}', label="example input")
+except CanonicalJsonError as error:
+    print(error)
+else:
+    raise AssertionError("non-canonical input was accepted")
+```
+<!-- spirallens-core-canonical-example:end -->
+
+<!-- spirallens-core-canonical-example-output:start -->
+Expected output:
+
+```text
+{"a":{"enabled":true,"value":null},"z":["渦",3,1.25]}
+d57de96e612330ca53d03d5fdcbd75974fa99899684ab20f86cb5f614f545d01
+example input is not canonical JSON
+```
+<!-- spirallens-core-canonical-example-output:end -->
+
+The example establishes only the shown current-source behavior, not an
+independent production consumer, supported or stable API grant, clean-wheel or
+portability result, `LIB-L0` completion, or scientific or execution authority.
+
+Because README content is a distribution-metadata input, this edit changes
+future sdist `PKG-INFO` and wheel `METADATA`; older artifact hashes do not
+attest artifacts rebuilt from this README.
 
 ## First end-to-end run
 
