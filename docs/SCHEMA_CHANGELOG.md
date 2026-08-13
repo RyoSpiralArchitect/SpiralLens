@@ -4,6 +4,35 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Repository-experiment distribution separation
+
+- The exact 20 D7 v1 `confirmation_v1_*` modules and two private Pythia-160M
+  kernels remain ordinary files at their reviewed repository paths: 22 modules
+  and 19,190 physical lines. All 22 import from those exact source paths in the
+  source probe without loading the four blocked model-stack prefixes.
+- `MANIFEST.in` and the custom `LibraryBuildPy` command omit the exact reviewed
+  set from the sdist and wheel routes. Partial, extra prefix-matching, or
+  non-regular source states fail closed. An empty set is accepted only in a
+  sdist-shaped source tree with ordinary root `PKG-INFO` and no `.git` marker;
+  this marker pair is not an independent provenance proof. Matching stale
+  `build/lib` source or nested PEP-3147 bytecode outputs fail before publication
+  and are not removed.
+- The repository-only diagnostic advances to
+  `spirallens.distribution-validation.v0.5`. It records zero matching members
+  in the sdist, direct-source wheel, and sdist-derived wheel. Both fresh
+  non-editable installations produce exact `ModuleNotFoundError.name` receipts
+  for all 22 requested modules and preserve the ordered `spirallens.access` and
+  `spirallens.qualification` `__all__` surfaces.
+- The sdist is a library source artifact, not the repository experiment replay
+  or test bundle. Any experiment-facing tests it carries still require the
+  omitted repository source modules and are not an installed-distribution
+  conformance surface.
+- This is a bounded two-prefix distribution separation, not a closed library
+  allowlist or `LIB-L0` completion. It changes no public API, dependency,
+  artifact/protocol schema, authority, scientific claim, D7/D8/SCI status, or
+  VOY-V4 authorization. The historical S → A → B source, artifact, and
+  result bytes and commits remain unchanged.
+
 ## 2026-08-13 — Atlas reader/capture import-boundary split
 
 - Moved mutable Atlas capture storage into private `_capture_store.py`; the
@@ -59,12 +88,12 @@ promote a claim.
 - `spirallens.distribution-validation.v0.3` extends the repository-only,
   ephemeral wheel diagnostic with a bounded two-prefix wheel-membership
   observation.
-  Valid build/install status remains distinct from the blocked fact that the
-  current wheel contains repository-experiment modules. The report adds no
+  Valid build/install status remains distinct from the then-blocked fact that
+  the then-current wheel contained repository-experiment modules. The report adds no
   public persistence schema or Python API and grants no scientific,
   experiment, VOY, or library authority.
-- Recorded the previously implicit v1 packaging fact: current setuptools
-  discovery physically includes all 20 D7 v1 `confirmation_v1_*` modules and
+- Recorded the previously implicit v1 packaging fact: then-current setuptools
+  discovery physically included all 20 D7 v1 `confirmation_v1_*` modules and
   both private Pythia-160M kernels. They remain internal/non-exported, but
   physical wheel separation is an open `LIB-L0` blocker. The distinct three
   v0.1 `experiments/.../post_d6_code` files remain correctly excluded.

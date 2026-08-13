@@ -60,9 +60,13 @@ no runner, writer, family-admission helper, or promotion surface. Later
 repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
 derivation and repository-bound no-replace lifecycle. Those exact three v0.1
 files remain outside the installed wheel and export nothing from the package
-or qualification namespace. The separate v1 `confirmation_v1_*` internal
-modules are wheel-present but non-exported; their physical separation remains
-an explicit `LIB-L0` blocker. The exact three files are members of the reviewed
+or qualification namespace. The separate 20 v1 `confirmation_v1_*` modules
+and two private Pythia-160M kernels remain an exact 22-module, 19,190-line
+repository source set. They are absent from the sdist, direct-source wheel,
+sdist-derived wheel, and both fresh non-editable wheel installations; the
+ordered `spirallens.access` and `spirallens.qualification` `__all__` surfaces
+remain unchanged. This separation creates no public API and does not complete
+`LIB-L0`. The exact three files are members of the reviewed
 exact-current source/runtime re-anchor now tracked on this branch. The
 historical plan bytes retain `status=frozen_not_run`,
 `runner_implemented=false`, and

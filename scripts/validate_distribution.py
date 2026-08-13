@@ -10,10 +10,12 @@ environment rather than an editable checkout.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -23,7 +25,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.4"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.5"
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens._held_file",
@@ -170,6 +172,42 @@ REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
     "spirallens/access/_pythia160_",
     "spirallens/qualification/confirmation_v1_",
 )
+REPOSITORY_EXPERIMENT_SOURCE_PATHS = (
+    "src/spirallens/access/_pythia160_identity_acquisition.py",
+    "src/spirallens/access/_pythia160_preobservation.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_common.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d1.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d2.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d3.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d4.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d5_inputs.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_d5_outputs.py",
+    "src/spirallens/qualification/confirmation_v1_descriptive_independence.py",
+    "src/spirallens/qualification/confirmation_v1_design_referent_documents.py",
+    "src/spirallens/qualification/confirmation_v1_deterministic_inputs.py",
+    "src/spirallens/qualification/confirmation_v1_full_design_referents.py",
+    "src/spirallens/qualification/confirmation_v1_materialization.py",
+    "src/spirallens/qualification/confirmation_v1_official_execution.py",
+    "src/spirallens/qualification/confirmation_v1_post_d6_descriptive.py",
+    "src/spirallens/qualification/confirmation_v1_pre_item23_orchestrator.py",
+    "src/spirallens/qualification/confirmation_v1_private_publication.py",
+    "src/spirallens/qualification/confirmation_v1_records.py",
+    "src/spirallens/qualification/confirmation_v1_result_publication.py",
+    "src/spirallens/qualification/confirmation_v1_source_closure.py",
+    "src/spirallens/qualification/confirmation_v1_source_selected_supplier.py",
+)
+REPOSITORY_EXPERIMENT_MODULES = tuple(
+    path.removeprefix("src/").removesuffix(".py").replace("/", ".")
+    for path in REPOSITORY_EXPERIMENT_SOURCE_PATHS
+)
+_REPOSITORY_EXPERIMENT_SOURCE_PREFIXES = (
+    ("src/spirallens/access", "_pythia160_"),
+    ("src/spirallens/qualification", "confirmation_v1_"),
+)
+_PUBLIC_PACKAGE_INIT_PATHS = {
+    "spirallens.access": "src/spirallens/access/__init__.py",
+    "spirallens.qualification": "src/spirallens/qualification/__init__.py",
+}
 _COPY_IGNORE = (
     ".git",
     ".pytest_cache",
@@ -231,6 +269,74 @@ def _copy_source(source_root: Path, destination: Path) -> None:
         destination,
         ignore=shutil.ignore_patterns(*_COPY_IGNORE),
     )
+
+
+def _seed_stale_repository_experiment_build_outputs(source_root: Path) -> int:
+    """Seed the exact forbidden set under build/lib for a stale-build adversary."""
+
+    build_lib = source_root / "build" / "lib"
+    source = source_root / "src/spirallens/qualification/confirmation_v1_records.py"
+    destination = (
+        build_lib
+        / "spirallens/qualification/__pycache__/"
+        / f"confirmation_v1_records.cpython-{sys.version_info.major}{sys.version_info.minor}.pyc"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    import py_compile
+
+    py_compile.compile(str(source), cfile=str(destination), doraise=True)
+    return 1
+
+
+def _require_stale_build_rejected(
+    staged_source: Path,
+    artifact_dir: Path,
+) -> dict[str, object]:
+    """Prove a stale build/lib experiment set fails closed before publication."""
+
+    seeded_count = _seed_stale_repository_experiment_build_outputs(staged_source)
+    completed = subprocess.run(
+        [
+            str(sys.executable),
+            "setup.py",
+            "bdist_wheel",
+            "--skip-build",
+            "--dist-dir",
+            str(artifact_dir),
+        ],
+        cwd=staged_source,
+        env=_clean_subprocess_environment(
+            exclude_user_site=False,
+            no_package_index=False,
+        ),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    detail = completed.stderr + completed.stdout
+    if completed.returncode == 0:
+        raise DistributionValidationError(
+            "direct wheel build unexpectedly accepted stale repository-experiment "
+            "build outputs"
+        )
+    if "repository-experiment build outputs must be absent" not in detail:
+        raise DistributionValidationError(
+            "stale repository-experiment build failed for an unrelated reason"
+        )
+    artifacts = sorted(artifact_dir.glob("*.whl"))
+    if artifacts:
+        raise DistributionValidationError(
+            "stale repository-experiment build failure still published a wheel"
+        )
+    build_dir = staged_source / "build"
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    return {
+        "observation": "rejected-before-wheel-publication",
+        "seeded_target_count": seeded_count,
+        "skip_build": True,
+        "wheel_artifact_count": 0,
+    }
 
 
 def _single_artifact(directory: Path, pattern: str, *, label: str) -> Path:
@@ -315,23 +421,204 @@ def _classify_repository_experiment_members(wheel: Path) -> tuple[str, ...]:
 
     with zipfile.ZipFile(wheel) as archive:
         members = archive.namelist()
-    return tuple(
-        sorted(
-            member
-            for member in members
-            if member.startswith(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES)
-        )
+    return tuple(sorted(member for member in members if _is_experiment_member(member)))
+
+
+def _is_experiment_member(member: str) -> bool:
+    for prefix in REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES:
+        package, filename_prefix = prefix.rsplit("/", 1)
+        if not member.startswith(f"{package}/"):
+            continue
+        if PurePosixPath(member).name.split(".", 1)[0].startswith(filename_prefix):
+            return True
+    return False
+
+
+def _classify_repository_experiment_sdist_members(sdist: Path) -> tuple[str, ...]:
+    """Return matching members from an sdist's single top-level directory."""
+
+    with tarfile.open(sdist, mode="r:gz") as archive:
+        members = archive.getnames()
+    matching: list[str] = []
+    for member in members:
+        parts = PurePosixPath(member).parts
+        if not parts:
+            continue
+        relative = "/".join(parts[1:])
+        if _is_experiment_member(relative.removeprefix("src/")):
+            matching.append(member)
+    return tuple(sorted(matching))
+
+
+def _repository_experiment_source_report(source_root: Path) -> dict[str, object]:
+    """Require the reviewed experiment set to be exact and regular in source."""
+
+    source_directories = (
+        "src",
+        "src/spirallens",
+        "src/spirallens/access",
+        "src/spirallens/qualification",
     )
+    nonregular_directories: list[str] = []
+    for relative in source_directories:
+        try:
+            mode = (source_root / relative).lstat().st_mode
+        except OSError:
+            nonregular_directories.append(relative)
+            continue
+        if not stat.S_ISDIR(mode):
+            nonregular_directories.append(relative)
+    if nonregular_directories:
+        raise DistributionValidationError(
+            "repository-experiment source inventory contains missing, "
+            "non-directory, or symlinked ancestors: "
+            f"{nonregular_directories}"
+        )
 
-
-def _library_separation_report(wheel: Path) -> dict[str, object]:
-    repository_experiment_members = _classify_repository_experiment_members(wheel)
+    observed: list[str] = []
+    nonregular: list[str] = []
+    for parent_name, filename_prefix in _REPOSITORY_EXPERIMENT_SOURCE_PREFIXES:
+        parent = source_root / parent_name
+        if not parent.is_dir():
+            continue
+        for candidate in parent.iterdir():
+            if not candidate.name.startswith(filename_prefix):
+                continue
+            relative = candidate.relative_to(source_root).as_posix()
+            observed.append(relative)
+            try:
+                mode = candidate.lstat().st_mode
+            except OSError:
+                nonregular.append(relative)
+                continue
+            if not stat.S_ISREG(mode):
+                nonregular.append(relative)
+    observed_paths = tuple(sorted(observed))
+    if observed_paths != REPOSITORY_EXPERIMENT_SOURCE_PATHS:
+        missing = sorted(set(REPOSITORY_EXPERIMENT_SOURCE_PATHS) - set(observed_paths))
+        unexpected = sorted(
+            set(observed_paths) - set(REPOSITORY_EXPERIMENT_SOURCE_PATHS)
+        )
+        raise DistributionValidationError(
+            "repository-experiment source inventory differs from the reviewed "
+            f"22 paths: missing={missing}, unexpected={unexpected}"
+        )
+    if nonregular:
+        raise DistributionValidationError(
+            "repository-experiment source inventory contains non-regular paths: "
+            f"{sorted(nonregular)}"
+        )
+    total_lines = 0
+    try:
+        for relative in observed_paths:
+            with (source_root / relative).open("rb") as handle:
+                total_lines += sum(1 for _line in handle)
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot read the reviewed repository-experiment source inventory"
+        ) from error
     return {
-        "repository_experiment_wheel_membership": {
-            "observation": ("present" if repository_experiment_members else "absent"),
-            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
-            "count": len(repository_experiment_members),
-            "members": list(repository_experiment_members),
+        "observation": "reviewed-exact-set-present",
+        "count": len(observed_paths),
+        "all_regular_files": True,
+        "total_lines": total_lines,
+        "paths": list(observed_paths),
+    }
+
+
+def _require_zero_repository_experiment_members(
+    members: Sequence[str],
+    *,
+    artifact_kind: str,
+) -> dict[str, object]:
+    checked = tuple(members)
+    if checked:
+        raise DistributionValidationError(
+            f"{artifact_kind} contains repository-experiment members: {list(checked)}"
+        )
+    return {
+        "observation": "absent",
+        "count": 0,
+        "members": [],
+    }
+
+
+def _load_literal_all(path: Path) -> tuple[str, ...]:
+    """Read one package's literal ordered ``__all__`` without importing it."""
+
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (OSError, SyntaxError) as error:
+        raise DistributionValidationError(
+            f"cannot parse public package exports from {path}"
+        ) from error
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        and (
+            (
+                isinstance(node, ast.Assign)
+                and any(
+                    isinstance(target, ast.Name) and target.id == "__all__"
+                    for target in node.targets
+                )
+            )
+            or (
+                isinstance(node, ast.AnnAssign)
+                and isinstance(node.target, ast.Name)
+                and node.target.id == "__all__"
+            )
+        )
+    ]
+    if len(assignments) != 1:
+        raise DistributionValidationError(
+            f"expected one literal __all__ assignment in {path}"
+        )
+    value_node = assignments[0].value
+    try:
+        value = ast.literal_eval(value_node)
+    except (TypeError, ValueError) as error:
+        raise DistributionValidationError(
+            f"public package __all__ is not literal in {path}"
+        ) from error
+    if (
+        not isinstance(value, (list, tuple))
+        or not value
+        or any(not isinstance(name, str) or not name for name in value)
+        or len(set(value)) != len(value)
+    ):
+        raise DistributionValidationError(
+            f"public package __all__ is not a non-empty ordered unique string set: {path}"
+        )
+    return tuple(value)
+
+
+def _load_public_package_exports(source_root: Path) -> dict[str, tuple[str, ...]]:
+    return {
+        module: _load_literal_all(source_root / relative)
+        for module, relative in _PUBLIC_PACKAGE_INIT_PATHS.items()
+    }
+
+
+def _library_separation_report(
+    *,
+    source_tree: dict[str, object],
+    sdist: dict[str, object],
+    direct_source_wheel: dict[str, object],
+    sdist_derived_wheel: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "repository_experiment_separation": {
+            "source_tree": source_tree,
+            "sdist": sdist,
+            "direct_source_wheel": direct_source_wheel,
+            "sdist_derived_wheel": sdist_derived_wheel,
+            "source_prefixes": [
+                f"{parent}/{prefix}"
+                for parent, prefix in _REPOSITORY_EXPERIMENT_SOURCE_PREFIXES
+            ],
+            "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
         "closed_library_allowlist_established": False,
         "grants": {
@@ -555,6 +842,176 @@ print(
 """
 
 
+_REPOSITORY_EXPERIMENT_ABSENCE_PROBE = r"""
+import importlib
+import importlib.metadata
+import json
+from pathlib import Path
+import sys
+
+experiment_modules = json.loads(sys.argv[1])
+expected_public_exports = json.loads(sys.argv[2])
+
+module_origins = {}
+observed_public_exports = {}
+for name, expected in expected_public_exports.items():
+    module = importlib.import_module(name)
+    origin = getattr(module, "__file__", None)
+    if not isinstance(origin, str):
+        raise RuntimeError(f"{name} has no concrete module origin")
+    module_origins[name] = str(Path(origin).resolve())
+    observed = list(module.__all__)
+    if observed != expected:
+        raise RuntimeError(f"{name} ordered __all__ changed in installed wheel")
+    observed_public_exports[name] = observed
+
+absence_receipts = []
+for name in experiment_modules:
+    try:
+        importlib.import_module(name)
+    except ModuleNotFoundError as error:
+        if error.name != name:
+            raise RuntimeError(
+                f"{name} failed through a transitive missing module: {error.name}"
+            ) from error
+        absence_receipts.append(
+            {
+                "exception_type": type(error).__name__,
+                "module": name,
+                "name": error.name,
+            }
+        )
+    else:
+        raise RuntimeError(f"repository-experiment module remained importable: {name}")
+
+distribution = importlib.metadata.distribution("spirallens")
+direct_url_text = distribution.read_text("direct_url.json")
+direct_url = None if direct_url_text is None else json.loads(direct_url_text)
+print(
+    json.dumps(
+        {
+            "absence_receipts": absence_receipts,
+            "distribution_root": str(
+                Path(distribution.locate_file("")).resolve()
+            ),
+            "direct_url": direct_url,
+            "module_origins": module_origins,
+            "package_version": distribution.version,
+            "public_exports": observed_public_exports,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
+_REPOSITORY_EXPERIMENT_SOURCE_IMPORT_PROBE = r"""
+import importlib
+import importlib.abc
+import json
+from pathlib import Path
+import sys
+
+source_root = Path(sys.argv[1]).resolve()
+experiment_modules = json.loads(sys.argv[2])
+forbidden_imports = tuple(json.loads(sys.argv[3]))
+
+
+def matches(name, prefix):
+    return name == prefix or name.startswith(prefix + ".")
+
+
+class Blocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(matches(fullname, prefix) for prefix in forbidden_imports):
+            raise ModuleNotFoundError(
+                f"blocked model dependency in source import probe: {fullname}",
+                name=fullname,
+            )
+        return None
+
+
+sys.meta_path.insert(0, Blocker())
+sys.path.insert(0, str(source_root / "src"))
+module_origins = {}
+for name in experiment_modules:
+    module = importlib.import_module(name)
+    origin = getattr(module, "__file__", None)
+    if not isinstance(origin, str):
+        raise RuntimeError(f"{name} has no concrete source origin")
+    module_origins[name] = str(Path(origin).resolve())
+
+loaded_forbidden = sorted(
+    prefix
+    for prefix in forbidden_imports
+    if any(matches(name, prefix) for name in sys.modules)
+)
+print(
+    json.dumps(
+        {
+            "forbidden_imports_loaded": loaded_forbidden,
+            "module_origins": module_origins,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
+def _parse_repository_experiment_source_import_probe_output(
+    output: str,
+    *,
+    source_root: Path,
+) -> dict[str, object]:
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            "repository-experiment source import probe did not emit valid JSON"
+        ) from error
+    if not isinstance(value, dict):
+        raise DistributionValidationError(
+            "repository-experiment source import probe must emit a JSON object"
+        )
+    if value.get("forbidden_imports_loaded") != []:
+        raise DistributionValidationError(
+            "repository-experiment source imports loaded model dependencies"
+        )
+    origins = value.get("module_origins")
+    if not isinstance(origins, dict) or sorted(origins) != sorted(
+        REPOSITORY_EXPERIMENT_MODULES
+    ):
+        raise DistributionValidationError(
+            "repository-experiment source import probe returned incomplete origins"
+        )
+    source_root = source_root.resolve()
+    checked_origins: dict[str, str] = {}
+    for name, relative in zip(
+        REPOSITORY_EXPERIMENT_MODULES,
+        REPOSITORY_EXPERIMENT_SOURCE_PATHS,
+        strict=True,
+    ):
+        origin_value = origins.get(name)
+        if not isinstance(origin_value, str):
+            raise DistributionValidationError(
+                f"repository-experiment source import omitted origin for {name}"
+            )
+        origin = Path(origin_value).resolve()
+        expected = (source_root / relative).resolve()
+        if origin != expected:
+            raise DistributionValidationError(
+                f"{name} imported from {origin}, expected exact source path {expected}"
+            )
+        checked_origins[name] = relative
+    return {
+        "forbidden_model_imports_loaded": [],
+        "imported_module_count": len(checked_origins),
+        "module_origins": checked_origins,
+    }
+
+
 def _parse_probe_output(
     output: str,
     *,
@@ -650,6 +1107,123 @@ def _parse_probe_output(
         "forbidden_imports_loaded": [],
         "module_origins": checked_origins,
         "package_version": package_version,
+    }
+
+
+def _parse_repository_experiment_absence_probe_output(
+    output: str,
+    *,
+    environment_root: Path,
+    expected_modules: Sequence[str],
+    expected_public_exports: dict[str, tuple[str, ...]],
+) -> dict[str, object]:
+    """Validate exact import absence and surviving package surfaces."""
+
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            "repository-experiment absence probe did not emit valid JSON"
+        ) from error
+    if not isinstance(value, dict):
+        raise DistributionValidationError(
+            "repository-experiment absence probe output must be a JSON object"
+        )
+
+    environment_root = environment_root.resolve()
+    origins = value.get("module_origins")
+    expected_packages = list(expected_public_exports)
+    if (
+        not isinstance(origins, dict)
+        or list(origins) != expected_packages
+        or any(not isinstance(origin, str) for origin in origins.values())
+    ):
+        raise DistributionValidationError(
+            "repository-experiment absence probe returned invalid package origins"
+        )
+    checked_origins: dict[str, str] = {}
+    for name in expected_packages:
+        origin = Path(origins[name]).resolve()
+        if not origin.is_relative_to(environment_root):
+            raise DistributionValidationError(
+                f"{name} imported outside the fresh separated-wheel environment: "
+                f"{origin}"
+            )
+        checked_origins[name] = origin.relative_to(environment_root).as_posix()
+
+    distribution_root_value = value.get("distribution_root")
+    if not isinstance(distribution_root_value, str):
+        raise DistributionValidationError(
+            "repository-experiment absence probe omitted distribution_root"
+        )
+    distribution_root = Path(distribution_root_value).resolve()
+    if not distribution_root.is_relative_to(environment_root):
+        raise DistributionValidationError(
+            "SpiralLens distribution metadata resolved outside the fresh "
+            f"separated-wheel environment: {distribution_root}"
+        )
+
+    direct_url = value.get("direct_url")
+    if direct_url is not None and not isinstance(direct_url, dict):
+        raise DistributionValidationError(
+            "separated-wheel direct_url metadata is malformed"
+        )
+    if (
+        isinstance(direct_url, dict)
+        and isinstance(direct_url.get("dir_info"), dict)
+        and direct_url["dir_info"].get("editable") is True
+    ):
+        raise DistributionValidationError(
+            "fresh separated-wheel environment contains an editable install"
+        )
+
+    expected_receipts = [
+        {
+            "exception_type": "ModuleNotFoundError",
+            "module": name,
+            "name": name,
+        }
+        for name in expected_modules
+    ]
+    if value.get("absence_receipts") != expected_receipts:
+        raise DistributionValidationError(
+            "repository-experiment imports did not fail with exact requested "
+            "ModuleNotFoundError.name receipts"
+        )
+
+    expected_exports_json = {
+        name: list(exports) for name, exports in expected_public_exports.items()
+    }
+    if value.get("public_exports") != expected_exports_json:
+        raise DistributionValidationError(
+            "installed access/qualification ordered __all__ differs from source"
+        )
+    package_version = value.get("package_version")
+    if not isinstance(package_version, str) or not package_version:
+        raise DistributionValidationError(
+            "repository-experiment absence probe omitted package version"
+        )
+
+    export_receipts = {
+        name: {
+            "count": len(exports),
+            "ordered_sha256": hashlib.sha256(
+                json.dumps(
+                    list(exports),
+                    ensure_ascii=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest(),
+        }
+        for name, exports in expected_public_exports.items()
+    }
+    return {
+        "direct_url_editable": False,
+        "distribution_root": distribution_root.relative_to(environment_root).as_posix(),
+        "exact_module_not_found_receipt_count": len(expected_receipts),
+        "module_origins": checked_origins,
+        "package_version": package_version,
+        "public_package_exports": export_receipts,
     }
 
 
@@ -776,6 +1350,8 @@ def validate_distribution(
     imports = tuple(required_imports)
     scientific_imports = tuple(required_scientific_imports)
     atlas_reader_imports = tuple(ATLAS_READER_IMPORTS)
+    source_inventory = _repository_experiment_source_report(source_root)
+    public_package_exports = _load_public_package_exports(source_root)
     if not imports or any(not isinstance(name, str) or not name for name in imports):
         raise DistributionValidationError(
             "required_imports must contain non-empty module names"
@@ -802,14 +1378,74 @@ def validate_distribution(
         staged_source = temporary / "source"
         artifact_dir = temporary / "artifacts"
         extracted_dir = temporary / "extracted"
+        direct_wheel_artifact_dir = temporary / "direct-wheel-artifacts"
+        stale_wheel_artifact_dir = temporary / "stale-wheel-artifacts"
         wheel_artifact_dir = temporary / "wheel-artifacts"
         environment_root = temporary / "venv"
+        direct_scientific_environment_root = temporary / "direct-scientific-venv"
         scientific_environment_root = temporary / "scientific-venv"
         neutral_cwd = temporary / "neutral"
         artifact_dir.mkdir()
+        direct_wheel_artifact_dir.mkdir()
+        stale_wheel_artifact_dir.mkdir()
         wheel_artifact_dir.mkdir()
         neutral_cwd.mkdir()
         _copy_source(source_root, staged_source)
+        source_import_probe = _run(
+            (
+                sys.executable,
+                "-P",
+                "-c",
+                _REPOSITORY_EXPERIMENT_SOURCE_IMPORT_PROBE,
+                str(staged_source),
+                json.dumps(REPOSITORY_EXPERIMENT_MODULES),
+                json.dumps(("torch", "transformers", "huggingface_hub", "safetensors")),
+            ),
+            cwd=neutral_cwd,
+            env=_clean_subprocess_environment(
+                exclude_user_site=False,
+                no_package_index=True,
+            ),
+        )
+        source_import_inspection = (
+            _parse_repository_experiment_source_import_probe_output(
+                source_import_probe.stdout,
+                source_root=staged_source,
+            )
+        )
+        stale_build_rejection = _require_stale_build_rejected(
+            staged_source,
+            stale_wheel_artifact_dir,
+        )
+
+        _run(
+            (
+                sys.executable,
+                "-m",
+                "build",
+                "--wheel",
+                "--outdir",
+                str(direct_wheel_artifact_dir),
+            ),
+            cwd=staged_source,
+            env=_clean_subprocess_environment(
+                exclude_user_site=False,
+                no_package_index=False,
+            ),
+        )
+        direct_wheel = _single_artifact(
+            direct_wheel_artifact_dir,
+            "*.whl",
+            label="direct-source wheel",
+        )
+        direct_verified_wheel_members = _require_wheel_members(
+            direct_wheel,
+            required_members=REQUIRED_WHEEL_MEMBERS,
+        )
+        direct_wheel_separation = _require_zero_repository_experiment_members(
+            _classify_repository_experiment_members(direct_wheel),
+            artifact_kind="direct-source wheel",
+        )
 
         _run(
             (
@@ -827,6 +1463,10 @@ def validate_distribution(
             ),
         )
         sdist = _single_artifact(artifact_dir, "*.tar.gz", label="sdist")
+        sdist_separation = _require_zero_repository_experiment_members(
+            _classify_repository_experiment_sdist_members(sdist),
+            artifact_kind="sdist",
+        )
         extracted_source = _extract_sdist(sdist, extracted_dir)
         _run(
             (
@@ -852,7 +1492,20 @@ def validate_distribution(
             wheel,
             required_members=REQUIRED_WHEEL_MEMBERS,
         )
-        library_separation = _library_separation_report(wheel)
+        if direct_verified_wheel_members != verified_wheel_members:
+            raise DistributionValidationError(
+                "direct-source and sdist-derived wheels differ in required members"
+            )
+        sdist_wheel_separation = _require_zero_repository_experiment_members(
+            _classify_repository_experiment_members(wheel),
+            artifact_kind="sdist-derived wheel",
+        )
+        library_separation = _library_separation_report(
+            source_tree=source_inventory,
+            sdist=sdist_separation,
+            direct_source_wheel=direct_wheel_separation,
+            sdist_derived_wheel=sdist_wheel_separation,
+        )
 
         venv.EnvBuilder(
             with_pip=True,
@@ -895,10 +1548,55 @@ def validate_distribution(
         )
 
         # Qualification is a scientific surface and intentionally imports its
-        # declared numerical dependencies.  A second fresh environment uses
-        # the host's already-installed system/user dependencies while still
-        # requiring the SpiralLens module itself to originate from this exact
+        # declared numerical dependencies.  Two distinct fresh environments
+        # use the host's already-installed system/user dependencies while
+        # requiring SpiralLens itself to originate from each exact
         # non-editable wheel installation.
+        venv.EnvBuilder(
+            with_pip=True,
+            system_site_packages=True,
+            clear=False,
+            symlinks=True,
+        ).create(direct_scientific_environment_root)
+        direct_scientific_environment = _clean_subprocess_environment(
+            exclude_user_site=False
+        )
+        direct_scientific_python = _venv_executable(
+            direct_scientific_environment_root,
+            "python",
+        )
+        _run(
+            (
+                str(direct_scientific_python),
+                "-m",
+                "pip",
+                "install",
+                "--no-deps",
+                "--force-reinstall",
+                str(direct_wheel),
+            ),
+            cwd=neutral_cwd,
+            env=direct_scientific_environment,
+        )
+        direct_absence_probe = _run(
+            (
+                str(direct_scientific_python),
+                "-P",
+                "-c",
+                _REPOSITORY_EXPERIMENT_ABSENCE_PROBE,
+                json.dumps(REPOSITORY_EXPERIMENT_MODULES),
+                json.dumps(public_package_exports),
+            ),
+            cwd=neutral_cwd,
+            env=direct_scientific_environment,
+        )
+        direct_absence_inspection = _parse_repository_experiment_absence_probe_output(
+            direct_absence_probe.stdout,
+            environment_root=direct_scientific_environment_root,
+            expected_modules=REPOSITORY_EXPERIMENT_MODULES,
+            expected_public_exports=public_package_exports,
+        )
+
         venv.EnvBuilder(
             with_pip=True,
             system_site_packages=True,
@@ -922,6 +1620,24 @@ def validate_distribution(
             ),
             cwd=neutral_cwd,
             env=scientific_environment,
+        )
+        sdist_absence_probe = _run(
+            (
+                str(scientific_python),
+                "-P",
+                "-c",
+                _REPOSITORY_EXPERIMENT_ABSENCE_PROBE,
+                json.dumps(REPOSITORY_EXPERIMENT_MODULES),
+                json.dumps(public_package_exports),
+            ),
+            cwd=neutral_cwd,
+            env=scientific_environment,
+        )
+        sdist_absence_inspection = _parse_repository_experiment_absence_probe_output(
+            sdist_absence_probe.stdout,
+            environment_root=scientific_environment_root,
+            expected_modules=REPOSITORY_EXPERIMENT_MODULES,
+            expected_public_exports=public_package_exports,
         )
         scientific_probe = _run(
             (
@@ -992,8 +1708,14 @@ def validate_distribution(
                     "size_bytes": sdist.stat().st_size,
                 },
                 {
+                    "filename": direct_wheel.name,
+                    "kind": "direct-source-wheel",
+                    "sha256": _sha256_file(direct_wheel),
+                    "size_bytes": direct_wheel.stat().st_size,
+                },
+                {
                     "filename": wheel.name,
-                    "kind": "wheel",
+                    "kind": "sdist-derived-wheel",
                     "sha256": _sha256_file(wheel),
                     "size_bytes": wheel.stat().st_size,
                 },
@@ -1002,6 +1724,8 @@ def validate_distribution(
                 "frontend": "python-build",
                 "isolation": True,
                 "source_copy": True,
+                "direct_source_wheel_built": True,
+                "stale_build_outputs_fail_closed": True,
                 "wheel_built_from_sdist": True,
             },
             "installation": {
@@ -1009,6 +1733,8 @@ def validate_distribution(
                 "atlas_reader_user_site_packages": True,
                 "no_dependencies": True,
                 "system_site_packages": False,
+                "direct_source_wheel_filename": direct_wheel.name,
+                "repository_experiment_fresh_environment_count": 2,
                 "scientific_surface_system_site_packages": True,
                 "scientific_surface_user_site_packages": True,
                 "wheel_filename": wheel.name,
@@ -1017,6 +1743,14 @@ def validate_distribution(
             "atlas_reader_forbidden_imports": list(ATLAS_READER_FORBIDDEN_IMPORTS),
             "inspection": inspection,
             "library_separation": library_separation,
+            "repository_experiment_source_import_inspection": (
+                source_import_inspection
+            ),
+            "repository_experiment_stale_build_rejection": stale_build_rejection,
+            "repository_experiment_install_inspections": {
+                "direct_source_wheel": direct_absence_inspection,
+                "sdist_derived_wheel": sdist_absence_inspection,
+            },
             "scientific_surface_inspection": scientific_inspection,
             "required_wheel_members": list(verified_wheel_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),

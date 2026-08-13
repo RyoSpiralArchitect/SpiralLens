@@ -1697,9 +1697,12 @@ immediate next plan live in the single
   result, launch, or promotion. The three v0.1 repository-only implementation
   files remain excluded from the installed wheel, and none of their surfaces
   is exported from `spirallens.qualification` or the package root. The separate
-  v1 `confirmation_v1_*` internal modules are currently wheel-present but
-  non-exported; their physical separation remains an explicit `LIB-L0` blocker
-  rather than a public-API promotion. No public admission,
+  20 v1 `confirmation_v1_*` modules remain byte-for-byte in the repository
+  source tree as part of an exact 22-module, 19,190-line experiment set. That
+  set is absent from the sdist, direct-source wheel, sdist-derived wheel, and
+  their fresh non-editable installations. This is physical distribution
+  separation only, not public-API promotion or `LIB-L0` completion. No public
+  admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.
   The versioned-successor lane additionally contains an internal read-only

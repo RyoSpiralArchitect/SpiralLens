@@ -23,40 +23,51 @@ A physically installed module is not thereby a public or stable API.
 
 ## Distribution-boundary observation
 
-One wheel built from a clean `git archive` of the audited coordinate with
-`uv 0.11.6` and `setuptools 81.0.0` contained 184 members. The observed wheel
-was 1,103,723 bytes with SHA-256
+At the inventory baseline, a wheel built from a clean `git archive` with
+`uv 0.11.6` and `setuptools 81.0.0` contained 184 members, including all 22
+repository-experiment modules; the same 22 were present in the sdist. That
+wheel was 1,103,723 bytes with environment-specific SHA-256
 `39603d812080c65ab7d723ad7625ec6d7f5872e04f4a7532c00798649f72462b`.
-That wheel digest is an environment-specific audit observation, not a frozen
-release identity.
+The distinct three v0.1 `post_d6_code` files, four audited D7 operational
+scripts, frozen v1 protocol, and ten tracked v1 artifacts were absent from both
+artifacts. This historical observation established the separation defect; it
+is not a frozen release identity or a claim that repository files are
+generally excluded.
 
-The wheel physically contained both repository-experiment groups below:
+The bounded source inventory is unchanged:
 
-| Group | Members | Physical LOC | Public/export status | Separation status |
+| Group | Source members | Physical LOC | Public/export status | Current distribution status |
 | --- | ---: | ---: | --- | --- |
-| `spirallens/qualification/confirmation_v1_*.py` | 20 | 17,312 | internal; no `confirmation_v1` export | blocked: present in wheel |
-| `spirallens/access/_pythia160_*.py` | 2 | 1,878 | private; no access/root export | blocked: present in wheel |
+| `spirallens/qualification/confirmation_v1_*.py` | 20 | 17,312 | internal; no `confirmation_v1` export | absent from sdist and wheels |
+| `spirallens/access/_pythia160_*.py` | 2 | 1,878 | private; no access/root export | absent from sdist and wheels |
 
-The same 22 modules were present in the observed sdist. The distinct three
-v0.1 `post_d6_code` files, four audited D7 operational scripts (the two v1
-coordinates and the two predecessor item-24 coordinates), frozen v1 protocol,
-and ten tracked v1 artifacts were absent from both that sdist and wheel. This
-is a bounded membership observation, not a claim that repository files are
-generally excluded: the sdist also includes test sources.
+All 22 ordinary source files and their 19,190 physical lines remain at their
+reviewed repository paths. A source-origin probe imports all 22 from those
+exact paths without loading `torch`, `transformers`, `huggingface_hub`, or
+`safetensors`. No source or historical S → A → B byte is moved or rewritten.
 
-The previously documented wheel exclusion applies to the distinct three v0.1
-files under `experiments/.../post_d6_code`; those files remain absent from the
-wheel. Setuptools discovers the enclosing `spirallens` packages and includes
-the v1 and Pythia-160M modules listed above. Moving or excluding them is
-deferred because their exact paths participate in reviewed source and
-historical verification contracts; a packaging change must not silently
-invalidate those contracts. Until a separately reviewed separation preserves
-the required history and verification behavior, physical wheel separation is
-an explicit `LIB-L0` blocker.
+`MANIFEST.in` excludes the two reviewed prefixes from the sdist, while the
+custom `LibraryBuildPy` command filters the exact 22-module set from wheels.
+The build fails closed if the full source tree contains a partial set, a new
+prefix-matching file, or a non-regular reviewed path. Only a sdist-shaped
+source tree with an ordinary root `PKG-INFO` and no `.git` marker may contain
+the empty source set; this marker combination is not an independent provenance
+proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
+are rejected before wheel
+publication and are not deleted by the build.
 
-The repository-only distribution validator reports this condition separately
-from build/install validity: a wheel can be validly built and installed while
-library separation remains blocked. Neither status is experiment evidence.
+The v0.5 repository-only distribution validator records zero matching members
+in the sdist, direct-source wheel, and sdist-derived wheel. Fresh non-editable
+installs of both wheels produce 22 exact requested-module
+`ModuleNotFoundError.name` receipts and retain the ordered
+`spirallens.access` and `spirallens.qualification` `__all__` surfaces. This is
+a bounded two-prefix separation result, not a general repository-file
+allowlist: `closed_library_allowlist_established` remains `false`, and every
+authority, library, public-API, and scientific grant remains `false`.
+The sdist is a library source artifact, not the repository experiment replay
+or test bundle: experiment-facing tests that remain in it require the omitted
+repository source modules and are not an installed-distribution conformance
+surface.
 
 ## Candidate inventory
 
@@ -73,8 +84,8 @@ and retained state. `Unknown` or `not established` stops extraction.
 | strict YAML loading | provisional duplicated mechanism | present; PyYAML | supplied YAML parsing; domain schemas and errors stay local | contexts, instrument registry, synthetic protocol, Atlas engineering protocol | distinct domains | not established | not established | duplicated local loaders; no extraction delta yet | hold until an exact policy/failure matrix shows material reduction |
 | immutable-array/fingerprint helpers | provisional local mechanisms | present; NumPy | in-memory numeric identity; scientific interpretation stays local | graphs, qualification, synthetic | multiple domains but compatibility unproved | not established | not established | small scattered duplication | hold; do not merge distinct hash framing or scientific units for cosmetic deduplication |
 | `PythiaAdapter` | provisional/model extra | present; optional model stack | model observation/capture; fake-surface mechanics are not real-model parity | one Pythia-family adapter | fewer than two adapter families | not applicable | not applicable | existing provisional exports unchanged | hold; a second adapter and conformance evidence are required for `LIB-L2` portability |
-| D7 v1 `confirmation_v1_*` | internal experiment implementation | physically present in wheel; qualification dependency set | fixed source/history, chronology, authority, no-replace publication, and result joins | callers inside one D7 v1 chronology | not independent library consumers | intentionally experiment-specific | intentionally experiment-specific | 20 modules / 17,312 LOC; no exports | reject extraction; separately solve physical wheel separation without changing frozen identities |
-| Pythia-160M private kernels | internal repository experiment | physically present in wheel; standard-library validation kernels | declaration/provider-metadata evidence only; no model load, subject run, or science authority | acquisition script and tests | scripts/tests are not two production consumers | experiment-specific | experiment-specific | 2 modules / 1,878 LOC; no exports | hold outside library promotion; separately solve physical wheel separation |
+| D7 v1 `confirmation_v1_*` | internal experiment implementation | repository source only; absent from sdist and wheels; qualification dependency set | fixed source/history, chronology, authority, no-replace publication, and result joins | callers inside one D7 v1 chronology | not independent library consumers | intentionally experiment-specific | intentionally experiment-specific | 20 modules / 17,312 LOC retained in source; no exports | reject extraction; preserve the verified distribution separation and frozen identities |
+| Pythia-160M private kernels | internal repository experiment | repository source only; absent from sdist and wheels; standard-library validation kernels | declaration/provider-metadata evidence only; no model load, subject run, or science authority | acquisition script and tests | scripts/tests are not two production consumers | experiment-specific | experiment-specific | 2 modules / 1,878 LOC retained in source; no exports | hold outside library promotion; preserve the verified distribution separation |
 | audited D7/Pythia protocols, scripts, and artifacts | repository evidence/data | not package modules; the audited v1 sets were absent from the observed sdist/wheel | frozen declarations, one-shot operations, and persisted evidence | experiment tooling only | not library consumers | not applicable | not applicable | no library export | keep experiment-bound; never count the artifact chain as a consumer |
 
 ## Extraction decision gate
@@ -105,8 +116,9 @@ the affected implementation:
 
 ## Next bounded decisions
 
-1. Keep distribution validation honest and machine-readable while the 22
-   repository-experiment modules remain physically installed.
+1. Preserve the fail-closed exact-set build gate and machine-readable proof
+   that the 22 repository-experiment modules remain in source but not in the
+   sdist, either wheel route, or either fresh non-editable installation.
 2. Keep the accepted bounded-file primitive private and preserve its audited
    limits. It remains POSIX `dir_fd`-oriented, uses `O_NOFOLLOW` only when the
    host exposes it, may block while opening a FIFO before the regular-file
