@@ -974,6 +974,93 @@ result, or scientific evidence was created. No schema, protocol, route, public
 API, dependency, or library milestone changes. S remains unreviewed and
 unselected; VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
 
+### 3.28 D7 v1 structural materialization and descriptive-result observation
+
+**Decision source and timing**
+
+After the source-only chronology work was merged, independent review selected
+exact source S `a9b9da21954478e42982e27f9e6b02cbeba5a08d` before seed or result
+access. The one-shot materializer's nine-file publication was recorded in
+direct-child commit A `be4462c3eee666aff620292b1494cc4209a0c6a6`, whose sole
+parent is S. The separately invoked result publisher's one-file publication
+was recorded in direct-child commit B
+`9735ae8b231f5b6e967a4b7dbaed0fb2eca78061`, whose sole parent is A.
+Fresh verification rejoined the full history and byte-exactly rederived the
+result from its six frozen inputs. This entry observes those persisted facts;
+it does not rewrite the earlier source-era entries.
+
+**Persisted chronology observation**
+
+The chronology receipt at
+`experiments/qualification/d7_spectral_moment_confirmation_v1/pre-item23-chronology-receipt.json`
+is 7,423 bytes with SHA-256
+`12d6bc5cc05fe48b07dc706b52b896ebb17b971b57aa9dc65cdbce870071c5d6`.
+On the originating host,
+`/Users/ryohiga/SpiralReality/spirallens-d7-v1-store` contained exactly the
+2,353-byte claim
+`d7-v1-prefix-evidence-only/exclusive-seed-supply-claim.json` with SHA-256
+`a952916fcfe57f872200ab9da4a18c5d82dd1d491859446900fc28323589808e`
+and the 2,830-byte attempt
+`d7-v1-attempt-evidence/official-execution-attempt-reservation.json` with
+SHA-256
+`5a54c0063578e379e663ec22b2e7c0cc75471e9e4704151db6ad9470afd828fe`.
+They were byte-identical respectively to
+`seed-supply/exclusive-seed-supply-claim.json` and
+`pre-item23/official-execution-attempt-envelope.json` under the v1 repository
+root. The directories were mode `0700`; both regular files were mode `0600`
+with link count one. The external stage
+`/Users/ryohiga/SpiralReality/.spirallens-d7-v1-store.staging` was absent. This
+is a host-local materialization-time observation, not portable physical
+identity, actor authentication, or execution authority.
+The attempt state is `reserved_not_started`; retry, resume, and cleanup remain
+unauthorized.
+
+**Descriptive outcome**
+
+The result record at
+`experiments/qualification/d7_spectral_moment_confirmation_v1/post-d6-descriptive-analysis-result.json`,
+`d7-v1-post-d6-descriptive-e329e2d56f48f8d3c5bc564a` is 5,308,075 bytes
+with SHA-256
+`409d211fac2db52a88facaa79a526903379545af7b1619a8c50ee4820358d109`.
+Its status is `insufficient`. Twenty-six outputs are available; only
+`amplitude-identifiability-support-separation` is blocked, because
+`historical-main-d2-amplitude-identifiability-support-values-not-persisted`.
+That missing persisted evidence is not an F2/F4 failure, selection signal, or
+permission to reconstruct or rerun it. The record states
+`postselection_record_formed=true`, `scientific_result_issued=false`, and
+`d7_result_produced=false`.
+
+**Navigation adjudication**
+
+Verified B has the evidence shape named by the VOY-V3 purpose,
+`prospective-receipt-and-conforming-descriptive-artifact`. The frozen route is
+navigation-only and supplies no live status or completion authority, so the
+adjudication is limited to **VOY-V3 purpose evidence observed**. It does not
+grant VOY-V3 completion credit, `D7-OPS-22` or `D7-OPS-23` credit, VOY-V4
+authorization, or D7/D8/SCI progress. The protocol's `frozen_not_run` value is
+retained as an issue-time field, not interpreted as the current live state.
+This descriptive `insufficient` is not a D7 terminal and is not reused as the
+VOY-V9 branch result.
+
+**Next-route and library boundary**
+
+The current decision is to hold at the V3/V4 boundary for a separate route
+decision. A strict-route continuation needs a separately reviewed V4 readiness
+and authority decision. Any bend must use a new route version plus review and
+a dated Ledger entry before affected inputs are consumed. The library lane is
+independent: neither this documentation projection nor the artifact chain
+counts as either independent library consumer. No library-owned contract was
+promoted; the two-independent-consumer rule is unmet, and no public API,
+supported schema, dependency, maturity, or library milestone changes.
+
+**Claim delta**
+
+`none`. Every authority fact remains false, claim ceiling remains Level 0,
+scientific eligibility remains false, and no reconstruction, rerun, model,
+subject, execution, topology, integer, or semantic authority is added.
+The legacy summary below uses “terminal outcome” for the pre-existing ledger
+scope; it does not reclassify verified B as a D7 terminal.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
