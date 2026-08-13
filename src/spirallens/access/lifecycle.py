@@ -19,6 +19,10 @@ from .contracts import (
     AtlasConsumer,
     AttemptPolicy,
     ProvenanceTaint,
+    _enum_value,
+    _exact_keys,
+    _mapping,
+    _sha256,
     restrict_atlas_access,
 )
 
@@ -26,7 +30,6 @@ from .contracts import (
 ATTEMPT_TERMINAL_RECORD_SCHEMA_VERSION = "spirallens.execution-attempt-terminal.v0.1"
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,255}$")
-_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 class AttemptLifecycleError(RuntimeError):
@@ -63,53 +66,10 @@ def _identifier(value: object, *, label: str) -> str:
     return value
 
 
-def _sha256(value: object, *, label: str) -> str:
-    if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
-        raise AtlasAccessContractError(f"{label} must be a lowercase SHA-256 digest")
-    return value
-
-
 def _fact(value: object, *, label: str) -> bool | None:
     if value is not None and type(value) is not bool:
         raise AtlasAccessContractError(f"{label} must be boolean or null")
     return value
-
-
-def _mapping(value: object, *, label: str) -> Mapping[str, object]:
-    if not isinstance(value, Mapping) or any(not isinstance(key, str) for key in value):
-        raise AtlasAccessContractError(f"{label} must be a string-keyed mapping")
-    return value
-
-
-def _exact_keys(
-    value: Mapping[str, object],
-    expected: set[str],
-    *,
-    label: str,
-) -> None:
-    actual = set(value)
-    if actual != expected:
-        raise AtlasAccessContractError(
-            f"{label} fields differ from the contract: "
-            f"missing={sorted(expected - actual)}, "
-            f"unknown={sorted(actual - expected)}"
-        )
-
-
-def _enum_value(
-    value: object,
-    enum_type: type[Enum],
-    *,
-    label: str,
-) -> Enum:
-    if not isinstance(value, str):
-        raise AtlasAccessContractError(f"{label} must be a string")
-    try:
-        return enum_type(value)
-    except ValueError as error:
-        raise AtlasAccessContractError(
-            f"{label} is not a supported {enum_type.__name__}"
-        ) from error
 
 
 @dataclass(frozen=True, slots=True)

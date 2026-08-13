@@ -7,7 +7,6 @@ re-verifying a persisted value-access lineage.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
@@ -22,25 +21,18 @@ from .contracts import (
     AtlasAccessPolicy,
     AtlasConsumer,
     ProvenanceTaint,
+    _sha256,
     require_atlas_consumer,
     restrict_atlas_access,
 )
 
 VALUE_ACCESS_LINEAGE_SCHEMA_VERSION = "spirallens.value-access-lineage.v0.1"
 
-_SHA256 = re.compile(r"^[0-9a-f]{64}$")
-
 
 class ValueAccessTransition(str, Enum):
     """Closed transition kinds that expose persisted numerical values."""
 
     VALUE_DECODE = "value_decode"
-
-
-def _sha256(value: object, *, label: str) -> str:
-    if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
-        raise AtlasAccessContractError(f"{label} must be a lowercase SHA-256 digest")
-    return value
 
 
 def _expected_derived_policy(
