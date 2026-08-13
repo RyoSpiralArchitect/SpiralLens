@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import stat
 
+from spirallens._held_file import _read_bounded_regular_file as _read_held_file
 from spirallens.core.canonical import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -293,81 +294,20 @@ def _open_directory_chain(directory: Path) -> int:
 
 
 def _read_bounded_regular_file(path: Path) -> bytes:
-    """Read one held, single-link regular file under a strict byte bound."""
-
-    try:
-        parent_descriptor = _open_directory_chain(path.parent)
-    except OSError as error:
-        raise AtlasAccessContractError(
-            f"cannot safely open descriptor parent: {path.parent}"
-        ) from error
-    flags = os.O_RDONLY
-    if hasattr(os, "O_CLOEXEC"):
-        flags |= os.O_CLOEXEC
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    file_descriptor = -1
-    try:
-        file_descriptor = os.open(
-            path.name,
-            flags,
-            dir_fd=parent_descriptor,
-        )
-        before = os.fstat(file_descriptor)
-        if not stat.S_ISREG(before.st_mode):
-            raise AtlasAccessContractError(
-                "atlas preparation descriptor must be a regular file"
-            )
-        if before.st_nlink != 1:
-            raise AtlasAccessContractError(
-                "atlas preparation descriptor must have exactly one link"
-            )
-        if before.st_size > MAX_ATLAS_PREPARATION_DESCRIPTOR_BYTES:
-            raise AtlasAccessContractError(
-                "atlas preparation descriptor exceeds the size limit"
-            )
-        chunks: list[bytes] = []
-        total = 0
-        while True:
-            chunk = os.read(file_descriptor, 64 * 1024)
-            if not chunk:
-                break
-            total += len(chunk)
-            if total > MAX_ATLAS_PREPARATION_DESCRIPTOR_BYTES:
-                raise AtlasAccessContractError(
-                    "atlas preparation descriptor exceeds the size limit"
-                )
-            chunks.append(chunk)
-        after = os.fstat(file_descriptor)
-        before_identity = (
-            before.st_dev,
-            before.st_ino,
-            before.st_size,
-            before.st_mtime_ns,
-            before.st_ctime_ns,
-            before.st_nlink,
-        )
-        after_identity = (
-            after.st_dev,
-            after.st_ino,
-            after.st_size,
-            after.st_mtime_ns,
-            after.st_ctime_ns,
-            after.st_nlink,
-        )
-        if before_identity != after_identity or total != after.st_size:
-            raise AtlasAccessContractError(
-                "atlas preparation descriptor changed during read"
-            )
-        return b"".join(chunks)
-    except OSError as error:
-        raise AtlasAccessContractError(
-            f"cannot safely read atlas preparation descriptor: {path}"
-        ) from error
-    finally:
-        if file_descriptor >= 0:
-            os.close(file_descriptor)
-        os.close(parent_descriptor)
+    messages = (
+        f"cannot safely open descriptor parent: {path.parent}",
+        f"cannot safely read atlas preparation descriptor: {path}",
+        "atlas preparation descriptor must be a regular file",
+        "atlas preparation descriptor must have exactly one link",
+        "atlas preparation descriptor exceeds the size limit",
+        "atlas preparation descriptor changed during read",
+    )
+    return _read_held_file(
+        path,
+        maximum_bytes=MAX_ATLAS_PREPARATION_DESCRIPTOR_BYTES,
+        error_type=AtlasAccessContractError,
+        messages=messages,
+    )
 
 
 def load_atlas_preparation_descriptor(

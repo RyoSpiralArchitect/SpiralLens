@@ -26,6 +26,7 @@ from pathlib import Path, PurePosixPath
 REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.3"
 DEFAULT_IMPORTS = (
     "spirallens",
+    "spirallens._held_file",
     "spirallens.core",
     "spirallens.core.canonical",
     "spirallens.access",
@@ -65,6 +66,7 @@ FORBIDDEN_IMPORTS = (
     "yaml",
 )
 REQUIRED_WHEEL_MEMBERS = (
+    "spirallens/_held_file.py",
     "spirallens/graphs/__init__.py",
     "spirallens/graphs/common.py",
     "spirallens/graphs/constructors.py",

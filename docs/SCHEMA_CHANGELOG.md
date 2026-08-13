@@ -4,6 +4,31 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private bounded held-file reader extraction
+
+- Replaced the duplicated held-file byte-reading bodies in
+  `access.descriptor` and `referents.loader` with one private,
+  standard-library-only primitive. Against baseline commit
+  `be274333e77d7518cb21ddb6afda3d62222e4b6c`, the three-file production scope
+  changes from `0/517/179` to `85/457/105` physical lines, or `696 → 647`
+  (`-49`, 25.8 percent of the audited 190 duplicated lines), with no added
+  export or dependency.
+- The distribution validator now requires that private module as a wheel
+  member and directly verifies its import origin from the non-editable wheel.
+  The bounded two-prefix repository-experiment classification is unchanged.
+- Exact wrapper-level equivalence remains frozen: path/digest preprocessing
+  order, returned bytes, domain exception type/message, direct OS
+  cause/context, policy no-cause/context, and held-descriptor cleanup order are
+  unchanged. Parsing, digest validation, read traces, and domain meaning stay
+  outside the primitive.
+- The extraction preserves rather than removes the existing limits: it is
+  POSIX `dir_fd`-oriented, uses `O_NOFOLLOW` only when available, can block on
+  a FIFO before rejecting it as non-regular, and does not turn bounded
+  before/after metadata checks into a complete hostile-race or TOCTOU proof.
+  No public API, persistence schema, artifact, protocol, D7/Pythia operation,
+  claim, authority, library-maturity, or VOY-V4 authorization changes in this
+  entry.
+
 ## 2026-08-13 — LIB-L0 distribution-boundary inventory
 
 - `spirallens.distribution-validation.v0.3` extends the repository-only,

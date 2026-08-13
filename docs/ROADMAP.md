@@ -966,6 +966,25 @@ Machine-readable distribution reporting now treats valid wheel construction
 and blocked experiment/library separation as distinct facts. This observation
 does not advance `LIB-L0`, VOY, D7/D8, or either scientific claim axis.
 
+The next bounded consolidation, measured against baseline commit
+`be274333e77d7518cb21ddb6afda3d62222e4b6c`, shares one standard-library-only
+held-file byte primitive between exactly two production domains:
+`access.descriptor` and `referents.loader`. With physical lines counted by
+Python `str.splitlines()`, `_held_file.py`, `access/descriptor.py`, and
+`referents/loader.py` change from `0/517/179` to `85/457/105`; the total changes
+from `696` to `647`, a net `-49` and 25.8 percent of the audited 190-line
+duplicated block, with no added export or dependency. The frozen equivalence
+surface preserves each wrapper's path/digest preprocessing order, returned
+bytes, domain exception type and message, direct OS cause/context, policy
+no-cause/context, and descriptor cleanup order. The primitive remains private
+and POSIX `dir_fd`-oriented: `O_NOFOLLOW` is conditional on host support, a
+FIFO can block at open before the regular-file check, and the held-descriptor
+plus before/after metadata checks are not a proof against every hostile race or
+TOCTOU condition. Parsing, digest validation, read traces, claim and authority
+meaning remain domain-local. This pay-down changes no public API, schema,
+artifact, protocol, scientific or VOY authority, does not authorize VOY-V4,
+and does not complete or advance `LIB-L0`.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 
