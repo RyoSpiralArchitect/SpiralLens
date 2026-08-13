@@ -58,6 +58,7 @@ _classify_source_python_members = _VALIDATOR._classify_source_python_members
 _classify_sdist_python_members = _VALIDATOR._classify_sdist_python_members
 _classify_wheel_python_members = _VALIDATOR._classify_wheel_python_members
 _extract_sdist = _VALIDATOR._extract_sdist
+_require_absent_sdist_test_surface = _VALIDATOR._require_absent_sdist_test_surface
 _load_python_member_classification = _VALIDATOR._load_python_member_classification
 _load_literal_ordered_exports = _VALIDATOR._load_literal_ordered_exports
 _load_ordered_export_classification = _VALIDATOR._load_ordered_export_classification
@@ -1737,6 +1738,66 @@ def test_sdist_extractor_independently_rejects_noncanonical_regular_files(
         _extract_sdist(sdist, tmp_path / "extracted")
 
 
+def test_sdist_test_surface_absence_receipt_ignores_similar_path(
+    tmp_path: Path,
+) -> None:
+    extracted_source = tmp_path / "spirallens-0.1.0"
+    extracted_source.mkdir()
+    (extracted_source / "tests_backup").mkdir()
+    (extracted_source / "tests_backup" / "retained.py").write_text(
+        "# not the top-level tests path\n",
+        encoding="utf-8",
+    )
+
+    assert _require_absent_sdist_test_surface(extracted_source) == {
+        "observation": "absent",
+        "count": 0,
+        "members": [],
+    }
+
+
+@pytest.mark.parametrize("observed_kind", ["directory", "file", "symlink"])
+def test_sdist_test_surface_rejects_every_observed_top_level_tests_path(
+    tmp_path: Path,
+    observed_kind: str,
+) -> None:
+    extracted_source = tmp_path / "spirallens-0.1.0"
+    extracted_source.mkdir()
+    tests_path = extracted_source / "tests"
+    if observed_kind == "directory":
+        tests_path.mkdir()
+    elif observed_kind == "file":
+        tests_path.write_text("# misplaced test surface\n", encoding="utf-8")
+    else:
+        tests_path.symlink_to(tmp_path / "missing-tests-target")
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="extracted sdist contains top-level tests path",
+    ):
+        _require_absent_sdist_test_surface(extracted_source)
+
+
+def test_sdist_test_surface_gate_rejects_tests_extracted_from_archive(
+    tmp_path: Path,
+) -> None:
+    sdist = tmp_path / "synthetic.tar.gz"
+    _write_synthetic_sdist(
+        sdist,
+        (
+            "spirallens-0.1.0/pyproject.toml",
+            "spirallens-0.1.0/tests/test_publication.py",
+        ),
+    )
+
+    extracted_source = _extract_sdist(sdist, tmp_path / "extracted")
+    with pytest.raises(
+        DistributionValidationError,
+        match="extracted sdist contains top-level tests path",
+    ):
+        _require_absent_sdist_test_surface(extracted_source)
+
+
 def test_installed_member_probe_excludes_metadata_and_rejects_pyc() -> None:
     members = _classification()["shipped_members"]
     output = json.dumps({"package_members": list(members)})
@@ -1970,7 +2031,7 @@ def test_private_strict_yaml_factory_is_an_explicit_wheel_member() -> None:
 
 
 def test_atlas_reader_probe_is_separate_from_dependency_free_imports() -> None:
-    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.8"
+    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.9"
     assert set(ATLAS_READER_IMPORTS).isdisjoint(DEFAULT_IMPORTS)
     assert ATLAS_READER_IMPORTS == (
         "spirallens.atlas",
@@ -2317,6 +2378,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
     absent = {"observation": "absent", "count": 0, "members": []}
+    assert report["sdist_test_surface"] == absent
     separation = report["library_separation"]
     assert separation["repository_experiment_separation"] == {
         "source_tree": {

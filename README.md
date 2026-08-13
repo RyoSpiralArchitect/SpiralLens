@@ -28,7 +28,7 @@ physical-placement manifest partitions all 181 `src/**/*.py` module paths into
 runtime modules, and 133 other shipped runtime modules) and 22 repository-only
 modules. A separate versioned ordered-export manifest records the exact
 literal ordered `__all__` declaration in each of those 24 package initializers,
-for 559 namespace-scoped entries. The v0.8 distribution diagnostic verifies
+for 559 namespace-scoped entries. The v0.9 distribution diagnostic verifies
 both exact inventories through the source tree, sdist, both wheel routes, and
 both fresh non-editable installations; the installed-artifact export probe
 does so without importing `spirallens` modules. It records
@@ -99,12 +99,20 @@ dependency environment. Accordingly
 dependency extras are not module roles, and installed presence does not make
 an operation portable. The full wheel still contains 46 qualification modules
 and legacy repository-inferred operations; it is therefore neither
-experiment-free nor library-grade. The current sdist also carries 106 test
-files, but they are not a self-contained experiment replay, installed-wheel
-conformance suite, or maturity receipt. The Python-member manifest schema
-admits regular Python modules only; package data, extension or namespace
-modules, and generated-module support require an explicit versioned
-classification/schema change before they may ship.
+experiment-free nor library-grade. The repository tracks 116 Python files
+under `tests/`. The former sdist carried an implicit partial 106-file subset:
+10 tracked test/helper files were omitted, while some carried tests depended
+on omitted helpers or deliberately repository-only experiment modules. That
+subset was never a self-contained experiment replay, installed-wheel
+conformance suite, or maturity receipt. The v0.9 diagnostic now requires the
+sdist to omit the top-level `tests` path entirely and records the bounded
+`sdist_test_surface` receipt as `observation="absent"`, `count=0`, and
+`members=[]`. This is distribution-role separation only, not a complete sdist
+inventory or evidence of replay, compatibility, portability, API, library, or
+scientific maturity. The Python-member manifest schema admits regular Python
+modules only; package data, extension or namespace modules, and
+generated-module support require an explicit versioned classification/schema
+change before they may ship.
 
 The required anti-bloat consolidation is now complete in the private,
 repository/build-only `distribution/_installed_import_policy.py` seam. It owns
