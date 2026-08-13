@@ -1,4 +1,4 @@
-"""Private held-file reading mechanics shared by bounded loaders."""
+"""Private held-file and directory traversal mechanics shared by bounded I/O."""
 
 from __future__ import annotations
 

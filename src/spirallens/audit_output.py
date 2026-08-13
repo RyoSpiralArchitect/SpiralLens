@@ -7,6 +7,8 @@ from pathlib import Path
 import secrets
 import stat
 
+from spirallens._held_file import _open_directory_chain as _open_held_directory_chain
+
 
 _RESERVATION_TOKEN = object()
 _MARKER_VERSION = "spirallens-neighbor-audit-reservation-v0.3"
@@ -185,28 +187,7 @@ class AuditOutputReservation:
 def _open_directory_chain(directory: Path) -> int:
     if not directory.is_absolute():
         raise ValueError("audit output parent must be absolute")
-    flags = os.O_RDONLY
-    if hasattr(os, "O_DIRECTORY"):
-        flags |= os.O_DIRECTORY
-    if hasattr(os, "O_CLOEXEC"):
-        flags |= os.O_CLOEXEC
-    descriptor = os.open("/", flags)
-    try:
-        for component in directory.parts[1:]:
-            component_flags = flags
-            if hasattr(os, "O_NOFOLLOW"):
-                component_flags |= os.O_NOFOLLOW
-            next_descriptor = os.open(
-                component,
-                component_flags,
-                dir_fd=descriptor,
-            )
-            os.close(descriptor)
-            descriptor = next_descriptor
-    except BaseException:
-        os.close(descriptor)
-        raise
-    return descriptor
+    return _open_held_directory_chain(directory)
 
 
 def _write_all(descriptor: int, payload: bytes) -> None:
