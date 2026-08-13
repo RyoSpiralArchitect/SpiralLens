@@ -97,7 +97,7 @@ INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ("witness", ("cryptography>=42",)),
 )
 INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = _POLICY["BLOCKED"]
-INSTALLED_IMPORT_SUCCESS_COUNT = 154
+INSTALLED_IMPORT_SUCCESS_COUNT = 127
 INSTALLED_IMPORT_MISSING_TORCH_COUNT = 5
 INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
 INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
@@ -118,26 +118,24 @@ DEFAULT_IMPORTS = (
 )
 DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification",
-    "spirallens.qualification.confirmation_attempt_authority",
-    "spirallens.qualification.confirmation_attempt_evidence",
-    "spirallens.qualification.confirmation_attempt_evidence_validation",
-    "spirallens.qualification.confirmation_attempt_persistence",
-    "spirallens.qualification.confirmation_attempt_records",
-    "spirallens.qualification.confirmation_attempt_terminal_persistence",
-    "spirallens.qualification.confirmation_attempt_validation",
-    "spirallens.qualification.confirmation_c1",
-    "spirallens.qualification.confirmation_crossed_development",
-    "spirallens.qualification.confirmation_execution_design",
-    "spirallens.qualification.confirmation_execution_kernel",
-    "spirallens.qualification.confirmation_protocol",
-    "spirallens.qualification.confirmation_rebinding",
-    "spirallens.qualification.confirmation_replay_contracts",
-    "spirallens.qualification.confirmation_result_component_validation",
-    "spirallens.qualification.confirmation_result_components",
-    "spirallens.qualification.confirmation_external_witness",
-    "spirallens.qualification.confirmation_runner",
-    "spirallens.qualification.confirmation_source_closure",
-    "spirallens.qualification.confirmation_terminal_operations",
+    "spirallens.qualification.advancement",
+    "spirallens.qualification.aggregation",
+    "spirallens.qualification.blind",
+    "spirallens.qualification.common",
+    "spirallens.qualification.contracts",
+    "spirallens.qualification.crossed",
+    "spirallens.qualification.evidence_bundle",
+    "spirallens.qualification.freeze",
+    "spirallens.qualification.launch",
+    "spirallens.qualification.metamorphic",
+    "spirallens.qualification.persistence",
+    "spirallens.qualification.pipeline_metamorphic",
+    "spirallens.qualification.preparation",
+    "spirallens.qualification.prerequisites",
+    "spirallens.qualification.protocol",
+    "spirallens.qualification.runner",
+    "spirallens.qualification.source_binding",
+    "spirallens.qualification.winding",
     "spirallens.synthetic.spectral_moment_confirmation",
 )
 ATLAS_READER_IMPORTS = (
@@ -197,11 +195,38 @@ FORBIDDEN_IMPORTS = (
 )
 REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
     "spirallens/access/_pythia160_",
-    "spirallens/qualification/confirmation_v1_",
+    "spirallens/qualification/confirmation_",
 )
 REPOSITORY_EXPERIMENT_SOURCE_PATHS = (
     "src/spirallens/access/_pythia160_identity_acquisition.py",
     "src/spirallens/access/_pythia160_preobservation.py",
+    "src/spirallens/qualification/confirmation_attempt_authority.py",
+    "src/spirallens/qualification/confirmation_attempt_evidence.py",
+    "src/spirallens/qualification/confirmation_attempt_evidence_validation.py",
+    "src/spirallens/qualification/confirmation_attempt_persistence.py",
+    "src/spirallens/qualification/confirmation_attempt_records.py",
+    "src/spirallens/qualification/confirmation_attempt_terminal_persistence.py",
+    "src/spirallens/qualification/confirmation_attempt_validation.py",
+    "src/spirallens/qualification/confirmation_authoritative_start_persistence.py",
+    "src/spirallens/qualification/confirmation_c1.py",
+    "src/spirallens/qualification/confirmation_crossed_development.py",
+    "src/spirallens/qualification/confirmation_execution_design.py",
+    "src/spirallens/qualification/confirmation_execution_kernel.py",
+    "src/spirallens/qualification/confirmation_external_witness.py",
+    "src/spirallens/qualification/confirmation_fused_authority.py",
+    "src/spirallens/qualification/confirmation_fused_start.py",
+    "src/spirallens/qualification/confirmation_official_execution.py",
+    "src/spirallens/qualification/confirmation_preseed_authority.py",
+    "src/spirallens/qualification/confirmation_protocol.py",
+    "src/spirallens/qualification/confirmation_rebinding.py",
+    "src/spirallens/qualification/confirmation_replay_contracts.py",
+    "src/spirallens/qualification/confirmation_result_component_validation.py",
+    "src/spirallens/qualification/confirmation_result_components.py",
+    "src/spirallens/qualification/confirmation_runner.py",
+    "src/spirallens/qualification/confirmation_runtime_observation.py",
+    "src/spirallens/qualification/confirmation_seed_supply_contracts.py",
+    "src/spirallens/qualification/confirmation_source_closure.py",
+    "src/spirallens/qualification/confirmation_terminal_operations.py",
     "src/spirallens/qualification/confirmation_v1_descriptive_common.py",
     "src/spirallens/qualification/confirmation_v1_descriptive_d1.py",
     "src/spirallens/qualification/confirmation_v1_descriptive_d2.py",
@@ -229,7 +254,7 @@ REPOSITORY_EXPERIMENT_MODULES = tuple(
 )
 _REPOSITORY_EXPERIMENT_SOURCE_PREFIXES = (
     ("src/spirallens/access", "_pythia160_"),
-    ("src/spirallens/qualification", "confirmation_v1_"),
+    ("src/spirallens/qualification", "confirmation_"),
 )
 _PUBLIC_PACKAGE_INIT_PATHS = {
     "spirallens.access": "src/spirallens/access/__init__.py",
@@ -797,7 +822,7 @@ def _load_installed_import_classification(
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
     ):
         raise DistributionValidationError(
-            "installed import outcomes differ from the exact 154/5 inventory"
+            "installed import outcomes differ from the exact 127/5 inventory"
         )
     packages = ordered_export_classification.get("packages")
     if not isinstance(packages, tuple):
@@ -1255,11 +1280,13 @@ def _seed_stale_repository_experiment_build_outputs(source_root: Path) -> int:
     """Seed the exact forbidden set under build/lib for a stale-build adversary."""
 
     build_lib = source_root / "build" / "lib"
-    source = source_root / "src/spirallens/qualification/confirmation_v1_records.py"
+    source = (
+        source_root / "src/spirallens/qualification/confirmation_attempt_records.py"
+    )
     destination = (
         build_lib
         / "spirallens/qualification/__pycache__/"
-        / f"confirmation_v1_records.cpython-{sys.version_info.major}{sys.version_info.minor}.pyc"
+        / f"confirmation_attempt_records.cpython-{sys.version_info.major}{sys.version_info.minor}.pyc"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     import py_compile
@@ -1325,7 +1352,7 @@ def _require_stale_build_rejected(
         "install input package tree must contain the exact classified shipped "
         "Python tree"
         not in detail
-        or "confirmation_v1_records" not in detail
+        or "confirmation_attempt_records" not in detail
     ):
         raise DistributionValidationError(
             "stale repository-experiment build failed for an unrelated reason"
@@ -1809,7 +1836,7 @@ def _repository_experiment_source_report(source_root: Path) -> dict[str, object]
         )
         raise DistributionValidationError(
             "repository-experiment source inventory differs from the reviewed "
-            f"22 paths: missing={missing}, unexpected={unexpected}"
+            f"49 paths: missing={missing}, unexpected={unexpected}"
         )
     if nonregular:
         raise DistributionValidationError(
@@ -3359,7 +3386,7 @@ def _probe_installed_import_outcomes(
         len(observation["runtime_exports"]) for observation in runtime_packages
     )
     if (
-        len(observations) != 159
+        len(observations) != 132
         or len(successes) != INSTALLED_IMPORT_SUCCESS_COUNT
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
         or len(runtime_packages) != INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT

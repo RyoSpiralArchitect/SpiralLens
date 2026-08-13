@@ -531,9 +531,9 @@ def _load_installed_import_classification() -> dict[str, tuple[str, ...]]:
         raise SetupError(
             "base_import_success differs from the reviewed exact module complement"
         )
-    if len(parsed["base_import_success"]) != 154:
+    if len(parsed["base_import_success"]) != 127:
         raise SetupError(
-            "base_import_success differs from the exact 154-module inventory"
+            "base_import_success differs from the exact 127-module inventory"
         )
 
     initializer_modules = {

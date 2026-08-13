@@ -30,9 +30,9 @@ and cannot change experiment status or authority.
 
 Physical distribution membership is a separate axis from these API labels.
 `distribution/spirallens_python_members_v0_1.json` closes the current 181
-`src/**/*.py` module paths into 159 wheel-present modules and 22
-repository-only modules. The 159 comprise 24 package initializers, two
-console-entrypoint runtime modules, and 133 other shipped runtime modules; the
+`src/**/*.py` module paths into 132 wheel-present modules and 49
+repository-only modules. The 132 comprise 24 package initializers, two
+console-entrypoint runtime modules, and 106 other shipped runtime modules; the
 v0.9 distribution diagnostic verifies the same exact set in the source tree,
 sdist, both wheel routes, and both fresh non-editable installations. This
 establishes `closed_wheel_python_module_inventory_established=true`.
@@ -51,7 +51,7 @@ API.
 A third manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, classifies the expected import
-outcome of all 159 installed modules. The v0.9 diagnostic exercises the
+outcome of all 132 installed modules. The v0.9 diagnostic exercises the
 direct-source and sdist-derived non-editable wheels separately. It is a
 single-current-host observation, not a portability matrix. Every module
 receives its own fresh `-I -S -B` process, neutral working directory, empty
@@ -64,7 +64,7 @@ outside those three declared bases. The repository-only validator parent uses
 children do not import it. No base runtime dependency changes, and the full
 installed `Requires-Dist` contract remains the exact 13 records: three base
 plus ten optional-extra requirements. The two routes have equal normalized
-startup receipts. Each wheel route yields 154 successful imports and five
+startup receipts. Each wheel route yields 127 successful imports and five
 model-extra failures solely at exact
 `ModuleNotFoundError.name == "torch"`. Among the 24 package initializers, 23
 successful imports reproduce exact runtime list-valued `__all__` declarations
@@ -72,9 +72,10 @@ containing 554 entries. `spirallens.adapters` cannot be imported at the blocked
 Torch boundary, so its five declared entries remain runtime-unavailable. The
 sole blocked undeclared attempt is `charset_normalizer`, which is not loaded;
 the loaded third-party distributions remain the exact three declared bases.
-Both routes have the same outcome-manifest SHA-256,
+The historical pre-boundary 159-member routes had the same
+outcome-manifest SHA-256,
 `8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
-The adopted pre-projection live validation receipt has SHA-256
+Their adopted pre-projection live validation receipt has SHA-256
 `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
 The separately retained preA/preB/post invariants bind that receipt to
 validator SHA-256
@@ -114,9 +115,12 @@ installed nor an isolated dependency environment. The report records
 `closed_public_api_contract_established`, and
 `closed_library_allowlist_established` remain `false`; authority,
 `lib_l0`, library, portability, public-API, and scientific grants also remain
-`false`. The full wheel still includes 46 qualification modules and legacy
-repository-inferred operations, so it is not an experiment-free or
-library-grade subset. The `models`, `ann`, `witness`, and `dev` extras classify
+`false`. The wheel now retains exactly 19 model-free D0-D6 qualification
+modules and all 115 ordered `spirallens.qualification` exports; all 47
+`qualification/confirmation_*.py` D7 implementation modules are
+repository-only. Legacy repository-inferred operations and other open gates
+still prevent a library-grade subset. The `models`, `ann`, `witness`, and
+`dev` extras classify
 dependency installation, not Python-module or export-declaration membership.
 The repository tracks 116 Python files under `tests/`, whereas the former
 sdist's 106-file test surface was an implicit partial subset that omitted 10
@@ -164,7 +168,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 | `spirallens.instrument_contracts` | provisional | versioned v0.x artifacts plus an explicit lineage-gated numeric payload session |
 | `spirallens.contracts`, `loops`, `holonomy`, `topology` | provisional | framework-neutral mathematics; scientific meaning remains artifact-bound |
 | `spirallens.synthetic`, `spirallens.graphs` | provisional | model-free generator-family controls plus exact graph/domain fingerprints; `CartesianFourierEstimatorInputs.from_observable_arrays()` is the owner boundary for deriving label-free content IDs; scientific qualification remains artifact-bound |
-| `spirallens.qualification` | provisional | frozen model-free D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision; deep internal surfaces now also include C1/C2, replay-target/attempt-envelope specifications, D7 record/evidence/result joins, a caller-prefix evidence lane, non-authorizing launch-prerequisite inputs, atomic structural terminal persistence, runtime-pin-relative signed external-witness verification, a typed post-start runner handoff, closed-descriptor reopening, a dedicated structural start transaction, same-call fused verify/start/callback/terminal-attempt mechanics, the exact D7 runtime lock, fixed producer/builders, the corrected `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction/freeze receipt, one operationally complete/scientifically insufficient but chronology-deviated item-23 result, one all-false nine-member descriptor/intent, and a canonical v0.1 disposition; structural observation is `launch-intent-present`, but every official v0.1 execution entry is blocked, none is a public export or caller-configurable supplier surface, and no official start/run, trusted pin root, independent confirmation, or D7/D8 authority exists |
+| `spirallens.qualification` | provisional | the installed namespace retains exactly 19 model-free D0-D6 modules and all 115 ordered root exports: frozen D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision. The 47 deep-internal `confirmation_*` D7 implementation modules remain at their reviewed repository source paths but are absent from sdist and wheels. They include C1/C2, replay-target/attempt-envelope specifications, D7 record/evidence/result joins, launch/persistence/runner mechanics, the corrected `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction/freeze receipt, one operationally complete/scientifically insufficient but chronology-deviated item-23 result, one all-false descriptor/intent, and a canonical v0.1 disposition; every official v0.1 execution entry is blocked, none is a public export or caller-configurable supplier surface, and no official start/run, trusted pin root, independent confirmation, or D7/D8 authority exists |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.atlas` | provisional/model extra | manifest-reader imports retain NumPy/PyYAML but load no model framework, adapter, or capture runtime; capture and runner symbols are lazy while the ordered public `__all__`, symbol identities, reader signatures/defining modules, exception identities, and failure behavior remain compatible; the repository-bound public-example runner still requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files; this reader boundary does not make the whole namespace framework-neutral |
 | `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
@@ -191,13 +195,15 @@ no runner, writer, family-admission helper, or promotion surface. Later
 repository-only `D7-OPS-23` modules now implement the plan's fixed 27-output
 derivation and repository-bound no-replace lifecycle. Those exact three v0.1
 files remain outside the installed wheel and export nothing from the package
-or qualification namespace. The separate 20 v1 `confirmation_v1_*` modules
-and two private Pythia-160M kernels remain an exact 22-module, 19,190-line
-repository source set. They are absent from the sdist, direct-source wheel,
+or qualification namespace. All 47 `qualification/confirmation_*.py` modules
+and two private Pythia-160M kernels remain an exact 49-module repository-only
+source set. They are absent from the sdist, direct-source wheel,
 sdist-derived wheel, and both fresh non-editable wheel installations; the
 ordered `spirallens.access` and `spirallens.qualification` `__all__` surfaces
-remain unchanged. This separation creates no public API and does not complete
-`LIB-L0`. The exact three files are members of the reviewed source/runtime
+remain unchanged; the latter still exposes its exact 115 names from the 19
+retained model-free D0-D6 modules. This separation creates no public API and
+does not complete `LIB-L0`. The exact three files are members of the reviewed
+source/runtime
 re-anchor, which was exact-current at issuance. The `0.2.0` candidate changes
 frozen v0.1 execution-source members: historical reload remains valid, current
 live readiness is false, and no successor re-anchor is created. The

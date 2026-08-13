@@ -27,8 +27,8 @@ generated views replace them.
 The distribution gate now establishes two narrow static facts and one bounded
 installed-import observation. The versioned
 physical-placement manifest partitions all 181 `src/**/*.py` module paths into
-159 wheel-present modules (24 package initializers, two console-entrypoint
-runtime modules, and 133 other shipped runtime modules) and 22 repository-only
+132 wheel-present modules (24 package initializers, two console-entrypoint
+runtime modules, and 106 other shipped runtime modules) and 49 repository-only
 modules. A separate versioned ordered-export manifest records the exact
 literal ordered `__all__` declaration in each of those 24 package initializers,
 for 559 namespace-scoped entries. The v0.9 distribution diagnostic verifies
@@ -41,7 +41,7 @@ does so without importing `spirallens` modules. It records
 The third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, classifies the expected fresh
-non-editable-wheel import outcome for the same exact 159 modules. This is a
+non-editable-wheel import outcome for the same exact 132 modules. This is a
 single-current-host observation, not a portability matrix. Each child
 starts with `-I -S -B`: site initialization is disabled, `.pth` startup is not
 executed, and only the fresh-wheel root plus the exact NumPy, SciPy, and PyYAML
@@ -52,8 +52,8 @@ three declared base dependencies. The repository-only validator parent uses
 isolated children do not import it, and the base runtime dependencies remain
 unchanged. The full installed `Requires-Dist` contract is the exact 13 records:
 three base and ten optional-extra requirements. The direct-source and
-sdist-derived install probes have equal normalized startup receipts and each
-observe 154 successful imports and five exact
+sdist-derived install contracts require equal normalized startup receipts and
+127 successful imports plus five exact
 `ModuleNotFoundError.name == "torch"` outcomes for the model-extra modules.
 Each module runs in its own fresh process with a neutral working directory,
 no `PYTHONPATH`, and a 30-second bound. The sole observed undeclared import
@@ -65,8 +65,8 @@ entries remain unavailable at the blocked Torch boundary. This establishes
 `closed_installed_module_import_outcome_inventory_established=true` and the
 narrow
 `runtime_successful_package_export_values_established=true`, not all-package
-runtime export closure. The adopted pre-projection live validation receipt has
-SHA-256
+runtime export closure. The historical pre-boundary live validation receipt
+for the former 159-member wheel has SHA-256
 `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
 The separately retained preA/preB/post invariants bind that receipt to
 validator SHA-256
@@ -81,8 +81,8 @@ changed afterward, and `README.md` is embedded in distribution metadata, its
 artifact hashes do not attest artifacts rebuilt from the later documentation
 state.
 
-The physical roles, static declarations, and observed imports remain separate
-classification axes. The bounded audit hook starts only after isolated
+The physical roles, static declarations, and installed-import expectations
+remain separate classification axes. The bounded audit hook starts only after isolated
 interpreter and standard-library probe bootstrap. It reports zero denied
 events for its listed write, process, network, and selected filesystem
 operations, but it is not an exhaustive side-effect monitor and deliberately
@@ -100,9 +100,14 @@ dependency environment. Accordingly
 `closed_library_allowlist_established` remain `false`, as do the authority,
 `lib_l0`, library, portability, public-API, and scientific grants. Optional
 dependency extras are not module roles, and installed presence does not make
-an operation portable. The full wheel still contains 46 qualification modules
-and legacy repository-inferred operations; it is therefore neither
-experiment-free nor library-grade. The repository tracks 116 Python files
+an operation portable. The wheel now retains the exact 19 model-free D0-D6
+qualification modules and all 115 ordered `spirallens.qualification` exports,
+while every one of the 47 `qualification/confirmation_*.py` source modules is
+repository-only. This removes the D7 confirmation implementation family from
+the distribution without changing its source or history. Legacy
+repository-inferred operations and other open allowlist, compatibility,
+portability, and release gates remain, so the wheel is still not library-grade
+and `LIB-L0` remains in progress. The repository tracks 116 Python files
 under `tests/`. The former sdist carried an implicit partial 106-file subset:
 10 tracked test/helper files were omitted, while some carried tests depended
 on omitted helpers or deliberately repository-only experiment modules. That
@@ -1870,12 +1875,16 @@ immediate next plan live in the single
   result is `insufficient`, has no claim delta, and is not an official D7
   result, launch, or promotion. The three v0.1 repository-only implementation
   files remain excluded from the installed wheel, and none of their surfaces
-  is exported from `spirallens.qualification` or the package root. The separate
-  20 v1 `confirmation_v1_*` modules remain byte-for-byte in the repository
-  source tree as part of an exact 22-module, 19,190-line experiment set. That
-  set is absent from the sdist, direct-source wheel, sdist-derived wheel, and
-  their fresh non-editable installations. This is physical distribution
-  separation only, not public-API promotion or `LIB-L0` completion. No public
+  is exported from `spirallens.qualification` or the package root. All 47
+  `src/spirallens/qualification/confirmation_*.py` modules, including the 20
+  `confirmation_v1_*` modules, remain byte-for-byte at their repository source
+  paths. Together with the two private Pythia-160M access kernels they form the
+  exact 49-module repository-only source set and are absent from the sdist,
+  direct-source wheel, sdist-derived wheel, and their fresh non-editable
+  installations. The installed qualification namespace retains exactly 19
+  model-free D0-D6 modules and its 115 ordered exports. This is physical
+  distribution separation only, not public-API promotion or `LIB-L0`
+  completion. No public
   admission,
   seed, execution, result, or promotion surface is published; the scoped `D7-OPS-21`
   successor-family admission is an internal tracked artifact, not an API.

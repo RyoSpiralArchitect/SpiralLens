@@ -116,12 +116,27 @@ def test_setup_accepts_exact_full_181_source_partition(
     _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
 
     setup_module._require_classified_source_state()
-    assert len(setup_module._SHIPPED_PYTHON_PATHS) == 159
-    assert len(setup_module._REPOSITORY_ONLY_PYTHON_PATHS) == 22
+    assert len(setup_module._SHIPPED_PYTHON_PATHS) == 132
+    assert len(setup_module._REPOSITORY_ONLY_PYTHON_PATHS) == 49
     assert len(setup_module._ALL_PYTHON_PATHS) == 181
+    confirmation_members = {
+        member
+        for member in setup_module._ALL_PYTHON_PATHS
+        if member.startswith("spirallens/qualification/confirmation_")
+    }
+    newly_repository_only_confirmation_members = {
+        member
+        for member in confirmation_members
+        if not member.startswith("spirallens/qualification/confirmation_v1_")
+    }
+    assert len(confirmation_members) == 47
+    assert len(newly_repository_only_confirmation_members) == 27
+    assert confirmation_members <= setup_module._REPOSITORY_ONLY_PYTHON_PATHS
+    assert confirmation_members.isdisjoint(setup_module._SHIPPED_PYTHON_PATHS)
+    assert "spirallens/qualification/__init__.py" in setup_module._SHIPPED_PYTHON_PATHS
 
 
-def test_setup_accepts_exact_159_pkg_info_no_git_sdist_source(
+def test_setup_accepts_exact_132_pkg_info_no_git_sdist_source(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -260,7 +275,7 @@ def _minimal_pyproject(dependencies: list[str]) -> str:
     return '[project]\nname = "spirallens"\ndependencies = ' + json.dumps(dependencies)
 
 
-def test_setup_installed_import_manifest_closes_exact_159_and_23_plus_1_projection(
+def test_setup_installed_import_manifest_closes_exact_132_and_23_plus_1_projection(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -271,9 +286,19 @@ def test_setup_installed_import_manifest_closes_exact_159_and_23_plus_1_projecti
 
     success = outcomes["base_import_success"]
     missing_torch = outcomes["models_extra_missing_torch"]
-    assert len(success) == 154
+    assert len(success) == 127
     assert missing_torch == setup_module._POLICY["MISSING_TORCH"]
-    assert len(set(success) | set(missing_torch)) == 159
+    assert len(set(success) | set(missing_torch)) == 132
+    newly_repository_only_confirmation_modules = {
+        setup_module._module_for_python_member(member)
+        for member in setup_module._ALL_PYTHON_PATHS
+        if member.startswith("spirallens/qualification/confirmation_")
+        and not member.startswith("spirallens/qualification/confirmation_v1_")
+    }
+    assert len(newly_repository_only_confirmation_modules) == 27
+    assert newly_repository_only_confirmation_modules.isdisjoint(
+        set(success) | set(missing_torch)
+    )
     initializer_modules = {
         setup_module._module_for_python_member(member)
         for member in setup_module._PYTHON_MEMBER_CLASSIFICATION["package_initializer"]
@@ -419,7 +444,7 @@ def test_setup_pyproject_dependency_gate_accepts_reordering(
 
     outcomes = setup_module._load_installed_import_classification()
 
-    assert len(outcomes["base_import_success"]) == 154
+    assert len(outcomes["base_import_success"]) == 127
 
 
 @pytest.mark.parametrize(
@@ -770,15 +795,22 @@ def test_library_build_py_filters_repository_only_and_retains_exact_shipped(
     command = object.__new__(setup_module.LibraryBuildPy)
 
     observed = command.find_package_modules("spirallens", "src/spirallens")
-    assert len(observed) == 159
-    assert {f"{package}.{name}" for package, name, _path in observed}.isdisjoint(
-        setup_module._REPOSITORY_ONLY_MODULES
+    observed_modules = {f"{package}.{name}" for package, name, _path in observed}
+    assert len(observed) == 132
+    assert observed_modules.isdisjoint(setup_module._REPOSITORY_ONLY_MODULES)
+    assert "spirallens.qualification.confirmation_attempt_records" not in (
+        observed_modules
+    )
+    assert any(
+        package == "spirallens.qualification" and name == "__init__"
+        for package, name, _path in observed
     )
 
 
 @pytest.mark.parametrize(
     "rogue",
     [
+        "spirallens/qualification/confirmation_attempt_records.py",
         "spirallens/qualification/confirmation_v1_records.py",
         "spirallens/core/__pycache__/canonical.cpython-313.pyc",
         "roguepkg/__init__.py",
