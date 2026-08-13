@@ -1254,10 +1254,27 @@ re-anchored. A `samefile` gate changes repository acceptance, validation/error
 order, and TOCTOU behavior, while a new wrapper preserves the old fallback and
 expands the surface. Both are rejected. Removing the 11-line resolver from the
 217-line cluster yields at most `-5.1%` and fewer than 20 lines, below the
-materiality gate. Counts stay 18 / 18 and 160 unknown. Next is the Faiss
-transitive-context equivalence audit. No source, production, test, artifact, schema,
-report, public API, portability, maturity, `LIB-L0`, science, authority, or VOY
-state changes.
+materiality gate. Counts stay 18 / 18 and 160 unknown.
+
+At clean baseline `9eeec4234790babae22989f36f4ad94c5eef94df`, the Faiss transitive-context audit rejected every migration shape. The exact exported signature is
+`(output_path: str | Path, *, worker_runtime_contract: Mapping[str, str] | None = None) -> FaissHNSWQualificationReceipt`; it has no repository argument. Its sole production
+caller, the CLI preflight, also independently infers its root from `__file__`. The runner
+captures source twice, each through 10 Git subprocesses including `ls-remote`; its
+reporter-first happy path launches 25 subprocesses overall and accepts mixed physical
+origins with parent A and worker B.
+The 119-line source capture plus 200-line exported runner total 319 lines; replacing one
+inferred-root line is about 0.3% and meets neither the 20-line nor 20% materiality gate,
+with only one production consumer. Required context changes accepted inputs and
+failure/observation order; optional context retains the fallback; a wrapper retains the
+legacy coordinate while expanding exports. Reviewed SHA-256 values are
+`ed29de5a89284d57b2a3628debc3cd8a8fe1586522fab5e02c2506778358ba92` for the runner,
+`ce82f280348cbe4a5a21881c6dfea6d7a66d5a3e502e0ef00e27060350326f50` for the context,
+and `934695307a3b116805a7115a95b75dd411d61089697e31e3c3d0c94919bef4f2` for the CLI.
+The runner is a historical D7 C1/C2 source member, not a direct `_CRITICAL_RUNTIME_MODULES`
+trust root; historical receipt `3c8c136c1e0dbbd84033b3c7144708b496e79bedc21dd9d5768494d37ba46b76` remains frozen and unre-anchored. Faiss stays transitively inferred; counts stay 18 / 18
+with 160 unknown. Next is the phantom transitive-context audit. No code, test, schema,
+receipt, re-anchor, export, public API, portability, maturity, network-free, `LIB-L0`,
+science, authority, or VOY state changes.
 
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
