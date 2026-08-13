@@ -4,6 +4,14 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Unreleased 0.2.0 repository candidate
+
+- The source/build version owners advance together to `0.2.0`; this is no tag,
+  publication, release, support activation, or core promotion.
+- Frozen v0.1 D7 locks and receipts stay immutable. Their re-anchor was exact-current
+  at issuance; current live readiness is false and no successor is created. No
+  schema, export, dependency, science, authority, or VOY state changes.
+
 ## 2026-08-13 — Forward-only pre-1.0 compatibility policy
 
 - The policy starts with the first release containing it; repository adoption

@@ -12,6 +12,9 @@ feature descriptions.
 > designed toward a reusable library, but the public API and artifact schemas
 > remain pre-1.0 and may change.
 
+Repository metadata is the unreleased `0.2.0` source/build candidate, not a
+publication, release, or support receipt; core remains on promotion HOLD.
+
 SpiralLens tracks independent scientific and library maturity lanes. A finite
 scientific `fail` or `insufficient` outcome does not block library maturation,
 and a positive scientific result does not stabilize an API. The
@@ -955,8 +958,9 @@ Exact paths, states, digest joins, durability boundaries, and non-claims are nor
 
 Import and tests still create no tracked `D7-OPS-22` artifact in the source
 checkout; tests exercise temporary clones only. The separately reviewed
-exact-current re-anchor is now tracked and strictly reloadable. The resulting
-transaction—not import or test collection—contains a Level-0 exclusive claim,
+re-anchor was exact-current at issuance and remains reloadable; this candidate
+makes current v0.1 live readiness false without creating a successor. The
+resulting transaction—not import or test collection—contains a Level-0 exclusive claim,
 a receipt claiming one honest-local supplier invocation, the
 `official-seed-inventory.json` role, and the canonical six-member target. That
 role name grants no authority: `seed_inventory_frozen`,
@@ -1807,7 +1811,7 @@ status ledger; the Roadmap and canonical artifacts prevail on any conflict.
 
 ### Library lane
 
-- **Research-package consolidation (`0.1.x`, pre-alpha):** extract common evidence mechanics,
+- **Research-package consolidation (`0.x`, pre-alpha):** extract common evidence mechanics,
   separate portable APIs from repository-bound official experiments, replace
   implicit repository discovery with explicit context, and keep the reusable
   public surface small. This work does not wait for a scientific-lane result.

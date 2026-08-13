@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+from email.parser import BytesParser
 from pathlib import Path
 import runpy
 import shutil
@@ -475,6 +476,7 @@ def test_setup_artifacts_omit_tests_and_place_policy_only_in_sdist(
     tmp_path: Path,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
+    expected_version = "0.2.0"
     source = tmp_path / "source"
     source.mkdir()
     for relative in (
@@ -536,11 +538,22 @@ def test_setup_artifacts_omit_tests_and_place_policy_only_in_sdist(
 
     archives = list(artifact_dir.glob("*.tar.gz"))
     assert len(archives) == 1
+    assert archives[0].name == f"spirallens-{expected_version}.tar.gz"
     expected_sdist_members = (
         "distribution/spirallens_installed_imports_v0_1.json",
         "distribution/_installed_import_policy.py",
     )
     with tarfile.open(archives[0], mode="r:gz") as archive:
+        metadata_members = [
+            member
+            for member in archive.getmembers()
+            if "/".join(Path(member.name).parts[1:]) == "PKG-INFO"
+        ]
+        assert len(metadata_members) == 1
+        metadata_handle = archive.extractfile(metadata_members[0])
+        assert metadata_handle is not None
+        metadata = BytesParser().parsebytes(metadata_handle.read())
+        assert metadata.get_all("Version") == [expected_version]
         relative_members = {
             "/".join(Path(member.name).parts[1:]) for member in archive.getmembers()
         }
@@ -560,7 +573,16 @@ def test_setup_artifacts_omit_tests_and_place_policy_only_in_sdist(
 
     wheels = list(artifact_dir.glob("*.whl"))
     assert len(wheels) == 1
+    assert wheels[0].name == f"spirallens-{expected_version}-py3-none-any.whl"
     with zipfile.ZipFile(wheels[0]) as archive:
+        metadata_members = [
+            member
+            for member in archive.namelist()
+            if member.endswith(".dist-info/METADATA")
+        ]
+        assert len(metadata_members) == 1
+        metadata = BytesParser().parsebytes(archive.read(metadata_members[0]))
+        assert metadata.get_all("Version") == [expected_version]
         assert all(
             not member.endswith("distribution/_installed_import_policy.py")
             for member in archive.namelist()

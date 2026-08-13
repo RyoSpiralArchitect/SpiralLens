@@ -960,7 +960,7 @@ def test_source_ordered_export_inventory_is_exact_and_static() -> None:
     assert receipt["package_count"] == 24
     assert receipt["export_count"] == 559
     assert receipt["initializer_bytes_sha256"] == (
-        "fcfef3724bb9902675052d88301c70422907eba60197c203925281fa45efd145"
+        "6f4556d990e93b4b82b857a872c25f7efd0b40a9e2131ee818832946137a7efa"
     )
     assert receipt["ordered_exports_sha256"] == (
         "e2c947c30f0323c54c1713274dac0117fd74dc86cd576279c44a040dfc0ae798"
@@ -2471,7 +2471,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         assert receipt["package_count"] == 24
         assert receipt["export_count"] == 559
         assert receipt["initializer_bytes_sha256"] == (
-            "fcfef3724bb9902675052d88301c70422907eba60197c203925281fa45efd145"
+            "6f4556d990e93b4b82b857a872c25f7efd0b40a9e2131ee818832946137a7efa"
         )
         assert receipt["ordered_exports_sha256"] == (
             "e2c947c30f0323c54c1713274dac0117fd74dc86cd576279c44a040dfc0ae798"
