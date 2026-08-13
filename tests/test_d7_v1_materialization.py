@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 from unittest.mock import patch
@@ -147,6 +148,7 @@ FOUNDATION_SOURCE_PATHS = {
 }
 PROTOCOL_PATH = REPOSITORY / "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_PATH = REPOSITORY / "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
+SOURCE_S = "a9b9da21954478e42982e27f9e6b02cbeba5a08d"
 
 
 @pytest.fixture(autouse=True)
@@ -187,6 +189,38 @@ def _write(root: Path, repository_path: str, source: bytes) -> None:
     target = root.joinpath(*repository_path.split("/"))
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(source)
+
+
+def _filesystem_snapshot(path: Path) -> tuple[object, ...]:
+    """Capture stable identity, content, and non-access metadata without following."""
+
+    try:
+        status = path.lstat()
+    except FileNotFoundError:
+        return ("absent",)
+    metadata = (
+        status.st_dev,
+        status.st_ino,
+        stat.S_IFMT(status.st_mode),
+        stat.S_IMODE(status.st_mode),
+        status.st_nlink,
+        status.st_uid,
+        status.st_gid,
+        status.st_size,
+        status.st_mtime_ns,
+        status.st_ctime_ns,
+    )
+    if stat.S_ISREG(status.st_mode):
+        return ("regular", metadata, path.read_bytes())
+    if stat.S_ISLNK(status.st_mode):
+        return ("symlink", metadata, os.readlink(path))
+    if stat.S_ISDIR(status.st_mode):
+        children = tuple(
+            (child.name, _filesystem_snapshot(child))
+            for child in sorted(path.iterdir(), key=lambda candidate: candidate.name)
+        )
+        return ("directory", metadata, children)
+    return ("other", metadata)
 
 
 def _bound(record: object) -> records.D7V1ArtifactBinding:
@@ -559,7 +593,17 @@ def _build_case(
             "/src/spirallens/**",
             "/experiments/qualification/d7_spectral_moment_confirmation_v1/*",
         )
-    _run(repository, "checkout", "--quiet", "HEAD")
+    # Materialization fixtures always need the reviewed artifact-free source S.
+    # Once commit A/B exist, cloning the current repository HEAD would make the
+    # prospective repository root present at S and correctly fail the verifier.
+    _run(
+        repository,
+        "checkout",
+        "--quiet",
+        "-b",
+        "d7-v1-fixture-source",
+        SOURCE_S,
+    )
     (repository / "experiments" / "qualification").mkdir(
         parents=True,
         exist_ok=True,
@@ -929,12 +973,18 @@ def test_high_level_verifiers_have_no_external_reader_injection_surface(
         materialization._verify_and_load_d7_v1_commit_b,
     ):
         assert "external_reader" not in inspect.signature(function).parameters
-    with pytest.raises(QualificationContractError, match="cannot open"):
+    with pytest.raises(QualificationContractError) as caught:
         materialization._load_d7_v1_staged_joined_records(
             case.context,
             case.stage_root,
             expected_receipt_sha256=case.receipt.canonical_sha256,
         )
+    # Before materialization the fixed external coordinates are absent.  Once
+    # the real store exists, its bytes must differ from this synthetic fixture.
+    # Either state proves that callers cannot inject fixture-owned evidence.
+    assert str(caught.value).startswith("cannot open ") or str(caught.value) == (
+        "external seed claim differs from repository projection"
+    )
 
 
 def test_staged_loader_rejects_locally_valid_but_cross_record_tampering(
@@ -1340,14 +1390,13 @@ def test_module_import_and_protocol_load_have_no_operational_side_effects() -> N
             str(external["route_future_external_coordinates"]["external_staging_path"])
         ),
     ]
-    assert all(not path.exists() for path in watched)
-    before = {path: path.exists() for path in watched}
+    before = {path: _filesystem_snapshot(path) for path in watched}
     importlib.reload(materialization)
     loaded = materialization._load_d7_v1_materialization_protocol(
         RepositoryContext(root=REPOSITORY.resolve())
     )
     assert isinstance(loaded, materialization.D7V1MaterializationProtocol)
-    assert {path: path.exists() for path in watched} == before
+    assert {path: _filesystem_snapshot(path) for path in watched} == before
 
     tree = ast.parse(MODULE_PATH.read_text(encoding="utf-8"))
     imported: set[str] = set()
