@@ -1169,6 +1169,45 @@ dependency, wheel, schema, or test helper was added. The rejection preserves
 historical evidence and does not complete `LIB-L0`, authorize VOY-V4, or alter
 any scientific or authority state.
 
+The following namespace-export repository-context review at clean baseline
+`a2b7a01f97dc8bbc1e83a9d30142bcff009bbaf0` is also a bounded rejection. The
+exact 24-initializer, 559-entry ordered namespace surface has 175 eager
+operations, 264 eager classes, 109 eager values, four `TypeAlias` declarations,
+and seven lazy Atlas exports. Static lazy-binding resolution closes the entry
+kinds as 178 operation entries / 175 unique functions, 271 types, and 110
+values, with zero unresolved entry kinds. These are namespace coordinates and
+source roles, not a public API or maturity inventory.
+
+Repository-context policy is defensible for only 14 operation entries. Eight
+require explicit context:
+`spirallens.atlas:run_public_example_plumbing` and
+`spirallens.qualification:{build_current_qualification_engine_binding,prepare_closed_d0_d5_selection_protocol,prepare_selection_launch,publish_closed_d0_d5_preseed_readiness_artifact,verify_closed_d0_d5_preseed_source_readiness,verify_protocol_source_binding,verify_protocol_source_binding_successor}`.
+Three accept optional context with a repository fallback:
+`spirallens.qualification:{advancement_source_binding_sha256,build_current_advancement_source_binding,validate_advancement_decision_source}`.
+`spirallens.qualification:run_and_publish_calibration_selection` directly
+infers a repository, while
+`spirallens.neighbors:run_faiss_hnsw_qualification` and
+`spirallens.synthetic:emit_representation_phantom_bundle` do so transitively.
+
+The remaining 164 operation entries / 161 unique functions stay
+`not_established`. No-observed repository dependency is not portability
+evidence, and `__all__` membership grants no support, API, compatibility, or
+maturity status. A normative 559-row manifest would duplicate the existing
+ordered-export inventory, while a compact default would launder those unknowns
+into repository independence. A new parser and diagnostic projection would add
+validation surface without satisfying the repository-context exit criterion
+above.
+Therefore no manifest, parser, report field, schema, production or test code is
+added. Runtime, exports, dependencies, public API, `LIB-L0`, science,
+authority, and VOY remain unchanged; VOY-V4 remains unauthorized.
+
+Reconsideration is limited to one bounded namespace or operation group with an
+exact direct-and-transitive source audit. Only after that audit may one
+non-frozen operation migrate, and only with exact signature, accepted-input,
+validation-order, exception, and failure-state equivalence. The review must
+stop if any unreviewed entry would receive a default portability or
+repository-independence declaration.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 

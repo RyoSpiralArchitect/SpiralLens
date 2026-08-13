@@ -4,6 +4,38 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Namespace-export repository-context manifest rejected
+
+- At clean baseline `a2b7a01f97dc8bbc1e83a9d30142bcff009bbaf0`, the exact 24
+  package initializers and 559 ordered namespace entries comprise 175 eager
+  operations, 264 eager classes, 109 eager values, four `TypeAlias`
+  declarations, and seven lazy Atlas exports. Static resolution of those lazy
+  bindings yields 178 operation entries / 175 unique functions, 271 types, 110
+  values, and zero unresolved entry kinds. This census does not reinterpret
+  `__all__` as a public API or maturity declaration.
+- Repository-context review closes only 14 unique operations. Explicit context
+  is required by `spirallens.atlas:run_public_example_plumbing` and
+  `spirallens.qualification:{build_current_qualification_engine_binding,prepare_closed_d0_d5_selection_protocol,prepare_selection_launch,publish_closed_d0_d5_preseed_readiness_artifact,verify_closed_d0_d5_preseed_source_readiness,verify_protocol_source_binding,verify_protocol_source_binding_successor}`.
+  Optional context with repository fallback remains in
+  `spirallens.qualification:{advancement_source_binding_sha256,build_current_advancement_source_binding,validate_advancement_decision_source}`.
+  `spirallens.qualification:run_and_publish_calibration_selection` performs
+  direct repository inference;
+  `spirallens.neighbors:run_faiss_hnsw_qualification` and
+  `spirallens.synthetic:emit_representation_phantom_bundle` reach repository
+  inference transitively.
+- The remaining 164 operation entries / 161 unique functions remain
+  `not_established`. Absence of an observed repository dependency proves
+  neither transitive repository independence nor portability. A normative
+  559-row manifest would duplicate the ordered-export inventory; a defaulted
+  compact form would launder the unknowns. The manifest, parser, and report
+  projection are therefore rejected, and no schema is added.
+- Reconsideration requires a bounded namespace/group source-and-transitive
+  audit. At most one non-frozen migration may follow, with exact signature and
+  failure equivalence. This documentation-only rejection changes no source,
+  tests, report, runtime, wheel, export, dependency, supported API, library or
+  `LIB-L0` status, scientific claim, authority record, or VOY state. VOY-V4
+  remains unauthorized.
+
 ## 2026-08-13 — Explicit sdist test-surface separation
 
 - The repository contains exactly 116 tracked Python files under `tests/`.

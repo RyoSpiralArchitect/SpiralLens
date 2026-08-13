@@ -198,6 +198,47 @@ data, extension modules, namespace/generated modules, or bytecode-only modules
 requires a reviewed, versioned manifest/schema successor rather than an
 implicit exception to the closed inventory.
 
+## Namespace-export repository-context audit
+
+The bounded static audit at clean baseline
+`a2b7a01f97dc8bbc1e83a9d30142bcff009bbaf0` stops before creating a
+normative manifest. The 24 package initializers still declare exactly 559
+ordered namespace entries. Their source forms comprise 175 eager operations,
+264 eager classes, 109 eager values, four `TypeAlias` declarations, and seven
+lazy Atlas exports. Resolving those seven static lazy bindings yields 178
+operation entries representing 175 unique functions, 271 types, 110 values,
+and zero unresolved entry kinds. This is a source census only: a namespace
+entry is not thereby a public API, and a resolved operation is not thereby
+portable, safe, supported, importable in every environment, or repository
+independent.
+
+Only 14 operation entries, each a unique function, have a defensible
+repository-context classification at this review coordinate:
+
+| Classification | Count | Exact namespace operations |
+| --- | ---: | --- |
+| explicit context required | 8 | `spirallens.atlas:run_public_example_plumbing`; `spirallens.qualification:build_current_qualification_engine_binding`; `spirallens.qualification:prepare_closed_d0_d5_selection_protocol`; `spirallens.qualification:prepare_selection_launch`; `spirallens.qualification:publish_closed_d0_d5_preseed_readiness_artifact`; `spirallens.qualification:verify_closed_d0_d5_preseed_source_readiness`; `spirallens.qualification:verify_protocol_source_binding`; `spirallens.qualification:verify_protocol_source_binding_successor` |
+| optional context with repository fallback | 3 | `spirallens.qualification:advancement_source_binding_sha256`; `spirallens.qualification:build_current_advancement_source_binding`; `spirallens.qualification:validate_advancement_decision_source` |
+| direct repository inference | 1 | `spirallens.qualification:run_and_publish_calibration_selection` |
+| transitive repository inference | 2 | `spirallens.neighbors:run_faiss_hnsw_qualification`; `spirallens.synthetic:emit_representation_phantom_bundle` |
+
+The other 164 operation entries, representing 161 unique functions, remain
+`not_established`. Neither absence of a direct `__file__` expression nor lack
+of an observed repository access proves that a callable or its transitive
+callees are repository independent. A 559-row normative declaration would
+therefore either duplicate the existing ordered-export inventory or turn the
+164 unknowns into unsupported portability claims. Adding a parser and report
+projection would grow the experimental validation surface without closing a
+`LIB-L0` exit criterion. The manifest/parser/report proposal is rejected at
+this gate; no source, test, schema, report, runtime, export, dependency, API,
+library, scientific, authority, or VOY state changes.
+
+Reconsider only one bounded namespace or operation group at a time. Its review
+must close direct and transitive repository access before assigning a policy;
+then at most one non-frozen migration may proceed after exact signature,
+accepted-input, validation-order, exception, and failure-state equivalence is
+demonstrated. Unknown entries remain unknown rather than inheriting a default.
+
 ## Candidate inventory
 
 `input equivalence` includes accepted values, bounds, and observation order.
