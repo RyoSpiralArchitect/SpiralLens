@@ -1238,10 +1238,10 @@ values, selected exact failures, and validation order. Existing policy evidence
 establishes independent shared-codec use at defining or legacy leaf paths; the
 four functions have 7 / 7 / 5 / 2 wheel-present top-level namespace families,
 while exact `spirallens.core` root-coordinate production consumers remain zero.
-A coherent eventual promotion would cover all seven names rather than only the
-four functions. Promotion remains on HOLD pending clean-wheel Python 3.11–3.13
-parity, a deterministic user example, an explicit pre-1.0 compatibility and
-legacy/deprecation policy, and a separate reviewed promotion decision.
+A coherent eventual promotion covers all seven names, not only the four
+functions. The adopted policy grants no promotion; HOLD remains pending the
+intended clean-wheel support matrix, a deterministic user example, and a
+separate reviewed promotion decision.
 
 This test-and-documentation preflight changes no production source, API, export,
 dependency, schema, artifact, receipt, D7 re-anchor, `LIB-L0`, scientific,
@@ -1392,7 +1392,20 @@ depending on repository internals or a particular research experiment.
 Before 1.0:
 
 - artifact schemas are always versioned and fail closed;
-- public symbols may change between minor versions, with migration notes;
+- supported pre-1.0 surfaces are distinct from stable 1.0 contracts;
+- this policy starts with its first release; adoption is not a release, and historical `0.1.0` compatibility is not attested;
+- patches preserve callable coordinates/signatures and keep documented successes and documented failure boundaries backward-compatible;
+- patches preserve the `spirallens.__version__` coordinate, `str` type/value format, and release-reporting semantics; its value tracks the release;
+- their breaking changes or removal are minor-release-only, after a
+  deprecation announcement in at least one prior minor and a migration note;
+- pre-1.0 support promotion is minor-release-only and reviewed; stable status is a 1.0 transition;
+- after any pre-1.0 core promotion, the exact seven legacy
+  `instrument_contracts.canonical` identities and exact four
+  `instrument_contracts` root aliases remain identity-preserving through
+  `0.x`; they are not currently deprecated, and the whole namespace remains
+  provisional;
+- Python support covers only an exact Python patch, OS, architecture, and dependency-version tuple whose clean-wheel jobs pass;
+- `requires-python` metadata and classifiers are not support receipts;
 - functions used only by one experiment remain internal or experimental;
 - a symbol is promoted only after two independent consumers, full tests, and
   user-facing documentation;
