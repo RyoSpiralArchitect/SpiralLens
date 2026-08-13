@@ -211,6 +211,15 @@ def test_lock_parser_rejects_noncanonical_or_implicit_inventory(
             ),
             "version_mismatch=\\['numpy'\\]",
         ),
+        (
+            tuple(
+                _distribution(item.metadata["Name"], "0.2.0")
+                if item.metadata["Name"] == "spirallens"
+                else item
+                for item in _distributions()
+            ),
+            "version_mismatch=\\['spirallens'\\]",
+        ),
     ),
 )
 def test_lock_equality_rejects_missing_unexpected_and_version_drift(

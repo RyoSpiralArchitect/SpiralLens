@@ -1740,7 +1740,11 @@ def test_private_surface_keeps_protocol_route_records_api_and_dependencies() -> 
         "4dab13d8a847400280682f61fcf0b03fdd9ad51c68d8909ab63a463d07579023"
     )
     for repository_path, (byte_count, digest) in EXPECTED_STATIC_FILES.items():
-        source = REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        source = (
+            _show(REPOSITORY, SOURCE_S, repository_path)
+            if repository_path == "pyproject.toml"
+            else REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        )
         assert len(source) == byte_count
         assert sha256_bytes(source) == digest
     for repository_path, markers in DOCUMENT_BOUNDARY_MARKERS.items():

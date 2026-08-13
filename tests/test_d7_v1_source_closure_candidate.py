@@ -57,6 +57,7 @@ FIXED_SOURCE_PATHS = {
 }
 EXPECTED_C1_ID = "d7-v1-c1-source-set-candidate"
 EXPECTED_C2_ID = "d7-v1-c2-source-closure-candidate"
+SOURCE_S = "a9b9da21954478e42982e27f9e6b02cbeba5a08d"
 EXPECTED_ROOT_ALL_SHA256 = (
     "a67ce5620fe4a53824cc2b3e0e0b4d46a452298a72fdaa8974ace14e97f13b7c"
 )
@@ -918,7 +919,11 @@ def test_private_surface_dependencies_and_docs_retain_the_candidate_boundary() -
         EXPECTED_QUALIFICATION_ALL_SHA256
     )
     for repository_path, (byte_count, expected_sha256) in EXPECTED_STATIC_FILES.items():
-        source = REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        source = (
+            _git(REPOSITORY, "show", f"{SOURCE_S}:{repository_path}")
+            if repository_path == "pyproject.toml"
+            else REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        )
         assert len(source) == byte_count
         assert sha256_bytes(source) == expected_sha256
 

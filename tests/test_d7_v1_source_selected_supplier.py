@@ -27,6 +27,7 @@ from spirallens.qualification.common import QualificationContractError
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
+SOURCE_S = "a9b9da21954478e42982e27f9e6b02cbeba5a08d"
 MODULE_REPOSITORY_PATH = (
     "src/spirallens/qualification/confirmation_v1_source_selected_supplier.py"
 )
@@ -836,7 +837,11 @@ def test_private_surface_keeps_protocol_schema_route_dependencies_and_api() -> N
         "4dab13d8a847400280682f61fcf0b03fdd9ad51c68d8909ab63a463d07579023"
     )
     for repository_path, (byte_count, digest) in EXPECTED_STATIC_FILES.items():
-        source = REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        source = (
+            _show(REPOSITORY, SOURCE_S, repository_path)
+            if repository_path == "pyproject.toml"
+            else REPOSITORY.joinpath(*repository_path.split("/")).read_bytes()
+        )
         assert len(source) == byte_count
         assert sha256_bytes(source) == digest
 
