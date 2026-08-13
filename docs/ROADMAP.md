@@ -964,22 +964,39 @@ repository source tree: 22 modules and 19,190 physical lines. A fail-closed
 versioned manifest now partitions all 181 `src/**/*.py` module paths into 159
 wheel-present modules (24 package initializers, two console-entrypoint runtime
 modules, and 133 other shipped runtime modules) and those 22 repository-only
-modules. The v0.6 diagnostic proves the exact 159-member set through the
-sdist, both wheel routes, and both fresh non-editable installations and records
+modules. The v0.7 diagnostic proves the exact 159-member set through the
+source tree, sdist, both wheel routes, and both fresh non-editable
+installations and records
 `closed_wheel_python_module_inventory_established=true`.
 
-This is a physical distribution-role closure, not a closed library allowlist.
-`closed_library_allowlist_established` remains `false`; `__all__`, public API,
-optional dependency extras, portability, authority, and scientific meaning
-remain orthogonal. In particular, the full wheel still contains 46
-qualification modules and legacy repository-inferred operations and is not an
-experiment-free or library-grade subset. The report's authority, `lib_l0`,
-library, portability, public-API, and scientific grants all remain `false`, so
-`LIB-L0` does not advance and VOY-V4 remains unauthorized. The current sdist's
-106 test files are not a self-contained replay, installed-wheel conformance
-suite, or maturity receipt. Future package data, extension modules,
-namespace/generated modules, or bytecode-only distribution support requires a
-reviewed versioned classification/schema successor.
+A second versioned manifest,
+`distribution/spirallens_ordered_exports_v0_1.json`, schema
+`spirallens.ordered-package-exports.v0.1`, closes only the static literal
+ordered `__all__` declarations for all 24 classified package initializers: 559
+namespace-scoped entries. The v0.7 diagnostic proves the same initializer
+bytes and ordered declarations in the source tree, sdist, both wheel routes,
+and both fresh installs, parsing installed initializer bytes without importing
+`spirallens`. It records
+`closed_ordered_package_export_inventory_established=true`.
+
+These are physical-placement and static-declaration closures, not a closed
+library allowlist or public API contract. The export inventory does not
+establish the runtime `module.__all__` value, symbol importability, identity,
+signature or behavior, star-import behavior, or the absence of aliases or
+dynamic mutation. `runtime_export_values_established`,
+`export_symbol_importability_established`,
+`closed_public_api_contract_established`, and
+`closed_library_allowlist_established` remain `false`; optional dependency
+extras, portability, authority, and scientific meaning remain orthogonal. In
+particular, the full wheel still contains 46 qualification modules and legacy
+repository-inferred operations and is not an experiment-free or library-grade
+subset. The report's authority, `lib_l0`, library, portability, public-API, and
+scientific grants all remain `false`, so `LIB-L0` does not advance and VOY-V4
+remains unauthorized. The current sdist's 106 test files are not a
+self-contained replay, installed-wheel conformance suite, or maturity receipt.
+Future package data, extension modules, namespace/generated modules, or
+bytecode-only distribution support requires a reviewed versioned
+classification/schema successor.
 
 The next bounded consolidation, measured against baseline commit
 `be274333e77d7518cb21ddb6afda3d62222e4b6c`, shares one standard-library-only

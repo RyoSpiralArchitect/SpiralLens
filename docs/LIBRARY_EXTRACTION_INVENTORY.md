@@ -13,12 +13,16 @@ remain authoritative for those boundaries.
 - current physical-placement manifest:
   `distribution/spirallens_python_members_v0_1.json`, schema
   `spirallens.python-distribution-members.v0.1`;
+- current ordered-export declaration manifest:
+  `distribution/spirallens_ordered_exports_v0_1.json`, schema
+  `spirallens.ordered-package-exports.v0.1`;
 - current `src/**/*.py` partition: 181 modules = 159 wheel-present modules
   (24 package initializers + 2 console-entrypoint runtime + 133 shipped
   runtime) + 22 repository-only modules;
 - `LIB-L0`: `in progress`;
 - public root surface: only `spirallens.__version__` is supported;
-- observed `__all__` baseline: 559 names across 24 package initializers;
+- closed static ordered `__all__` declaration inventory: 559 namespace-scoped
+  entries across 24 package initializers;
 - scientific and VOY deltas: none;
 - D7 verified-B interpretation: `insufficient`, Level 0, claim delta `none`,
   and VOY-V3 purpose evidence only; VOY-V4 dispatch remains unauthorized.
@@ -62,7 +66,7 @@ proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
 are rejected before wheel
 publication and are not deleted by the build.
 
-The successor v0.6 diagnostic and the versioned manifest now establish a
+The successor v0.7 diagnostic retains the versioned physical manifest and
 closed wheel Python-module inventory. They fail closed over every
 `src/**/*.py` path and require the exact 159-member shipped set in the sdist,
 direct-source wheel, sdist-derived wheel, and both fresh non-editable
@@ -75,15 +79,35 @@ stale build/install bytecode fail before a wheel is accepted. A role change is
 not inferred by the gate: it requires an explicit reviewed manifest delta and
 refreshed validation evidence.
 
-The four manifest roles describe physical placement only. A
-`package_initializer` role does not classify any `__all__` name, and the
-observed 559-name export baseline remains a separate API observation. The
-`models`, `ann`, `witness`, and `dev` extras classify dependency installation,
-not wheel membership. Portability is also independent: the shipped set still
-contains 46 qualification modules and legacy repository-inferred operations.
+The four physical-manifest roles describe placement only; the
+`package_initializer` role does not classify an export declaration. The
+separate ordered-export manifest records the exact literal ordered `__all__`
+declaration for all 24 classified initializers, totaling 559
+namespace-scoped entries. The source tree, sdist, direct-source wheel,
+sdist-derived wheel, and both fresh installations have the same initializer
+byte digest
+`fcfef3724bb9902675052d88301c70422907eba60197c203925281fa45efd145`
+and ordered-export digest
+`e2c947c30f0323c54c1713274dac0117fd74dc86cd576279c44a040dfc0ae798`.
+The sdist carries a byte-identical copy of the manifest, whose SHA-256 is
+`cb9d58ba50c3ead9551da17a7b3d31180157c0b0f7b005aff2df4c5f05effe3e`.
+Fresh-install inspection parses distribution-owned initializer bytes without
+importing a `spirallens` module.
+
+This is a static declaration inventory, not an API contract. It does not
+observe a runtime `module.__all__` value or establish symbol importability,
+identity, signature or behavior, star-import behavior, or the absence of
+aliases or dynamic mutation. The `models`, `ann`, `witness`, and `dev` extras
+classify dependency installation, not wheel membership or export-declaration
+roles. Portability is also independent: the shipped set still contains 46
+qualification modules and legacy repository-inferred operations.
 Consequently the full wheel is not an experiment-free or library-grade
 subset. The report states
-`closed_wheel_python_module_inventory_established=true`, keeps
+`closed_wheel_python_module_inventory_established=true` and
+`closed_ordered_package_export_inventory_established=true`; it keeps
+`runtime_export_values_established=false`,
+`export_symbol_importability_established=false`,
+`closed_public_api_contract_established=false`, and
 `closed_library_allowlist_established=false`, and keeps its authority,
 `lib_l0`, library, portability, public-API, and scientific grants `false`.
 
@@ -146,12 +170,13 @@ the affected implementation:
 
 ## Next bounded decisions
 
-1. Preserve the reviewed 181 = 159 + 22 manifest and its fail-closed parity
-   proof through source, sdist, both wheel routes, and both fresh installs.
-   Any intended Python-module addition, removal, rename, or role change
-   requires an explicit reviewed manifest delta and refreshed validation
-   evidence; the gate rejects only changes left unclassified against the
-   manifest it is given.
+1. Preserve both reviewed inventories: the 181 = 159 + 22 Python-member
+   partition and the exact 24-initializer, 559-entry static ordered-export
+   declarations. Keep their fail-closed parity proofs through source, sdist,
+   both wheel routes, and both fresh installs. Any intended module, role,
+   initializer, or literal ordered-declaration change requires an explicit
+   reviewed manifest delta and refreshed validation evidence; neither
+   manifest promotes the changed surface into a public API.
 2. Move a repository-only module into the shipped set only after its own
    two-independent-consumer, exact-equivalence, and material-benefit review.
    Public export requires a separate `__all__`, compatibility, documentation,

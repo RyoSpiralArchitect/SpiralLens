@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import stat
 from collections.abc import Sequence
@@ -18,6 +19,9 @@ _PACKAGE_NAME = "spirallens"
 _CLASSIFICATION_PATH = (
     _PROJECT_ROOT / "distribution/spirallens_python_members_v0_1.json"
 )
+_EXPORT_CLASSIFICATION_PATH = (
+    _PROJECT_ROOT / "distribution/spirallens_ordered_exports_v0_1.json"
+)
 _CLASSIFICATION_SCHEMA_VERSION = "spirallens.python-distribution-members.v0.1"
 _CLASSIFICATION_SCOPE = (
     "physical Python member placement across repository source, sdist, and wheels"
@@ -26,6 +30,11 @@ _CLASSIFICATION_CLAIM_BOUNDARY = (
     "classification grants no public API, stability, compatibility, authority, "
     "scientific claim, or library maturity"
 )
+_EXPORT_CLASSIFICATION_SCHEMA_VERSION = "spirallens.ordered-package-exports.v0.1"
+_EXPORT_CLASSIFICATION_SCOPE = (
+    "literal ordered __all__ values for every classified package initializer"
+)
+_EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = _CLASSIFICATION_CLAIM_BOUNDARY
 _CLASSIFICATION_ROLES = (
     "package_initializer",
     "console_entrypoint_runtime",
@@ -68,6 +77,17 @@ def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     for key, value in pairs:
         if key in result:
             raise SetupError(f"distribution classification has duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def _reject_export_duplicate_json_keys(
+    pairs: list[tuple[str, Any]],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise SetupError(f"ordered export classification has duplicate key {key!r}")
         result[key] = value
     return result
 
@@ -189,6 +209,126 @@ def _load_distribution_classification() -> dict[str, tuple[str, ...]]:
 
 
 _PYTHON_MEMBER_CLASSIFICATION = _load_distribution_classification()
+
+
+def _load_ordered_export_classification() -> dict[str, tuple[str, ...]]:
+    if not _is_ordinary_directory(_EXPORT_CLASSIFICATION_PATH.parent):
+        raise SetupError(
+            "ordered export classification parent must be an ordinary directory"
+        )
+    if not _is_ordinary_file(_EXPORT_CLASSIFICATION_PATH):
+        raise SetupError("ordered export classification must be an ordinary file")
+    try:
+        source = _EXPORT_CLASSIFICATION_PATH.read_bytes()
+    except OSError as error:
+        raise SetupError("cannot read ordered export classification") from error
+    if len(source) > 1024 * 1024:
+        raise SetupError("ordered export classification exceeds its size bound")
+    try:
+        document = json.loads(
+            source.decode("utf-8"),
+            object_pairs_hook=_reject_export_duplicate_json_keys,
+        )
+    except SetupError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SetupError(
+            "ordered export classification is not strict UTF-8 JSON"
+        ) from error
+    expected_top_level = {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "packages",
+    }
+    if not isinstance(document, dict) or set(document) != expected_top_level:
+        raise SetupError(
+            "ordered export classification must have the exact top-level fields"
+        )
+    if document["schema_version"] != _EXPORT_CLASSIFICATION_SCHEMA_VERSION:
+        raise SetupError("ordered export classification has the wrong schema version")
+    if document["classification_scope"] != _EXPORT_CLASSIFICATION_SCOPE:
+        raise SetupError("ordered export classification has the wrong literal scope")
+    if document["claim_boundary"] != _EXPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+        raise SetupError("ordered export classification has the wrong claim boundary")
+
+    packages = document["packages"]
+    if not isinstance(packages, list) or not packages:
+        raise SetupError(
+            "ordered export classification packages must be a non-empty list"
+        )
+    parsed: dict[str, tuple[str, ...]] = {}
+    initializers: set[str] = set()
+    observed_order: list[str] = []
+    for package in packages:
+        if not isinstance(package, dict) or set(package) != {
+            "module",
+            "initializer",
+            "exports",
+        }:
+            raise SetupError(
+                "ordered export package must have the exact package fields"
+            )
+        module = package["module"]
+        initializer = package["initializer"]
+        exports = package["exports"]
+        if (
+            not isinstance(module, str)
+            or not module
+            or any(
+                not part.isascii() or not part.isidentifier()
+                for part in module.split(".")
+            )
+            or module.split(".")[0] != _PACKAGE_NAME
+        ):
+            raise SetupError(
+                "ordered export package module must be a dotted spirallens identifier"
+            )
+        expected_initializer = f"{module.replace('.', '/')}/__init__.py"
+        if (
+            not isinstance(initializer, str)
+            or initializer != expected_initializer
+            or not _is_portable_python_member(initializer)
+        ):
+            raise SetupError(
+                f"ordered export initializer does not match module {module!r}"
+            )
+        if (
+            not isinstance(exports, list)
+            or not exports
+            or any(
+                not isinstance(name, str)
+                or not name
+                or not name.isascii()
+                or not name.isidentifier()
+                for name in exports
+            )
+            or len(set(exports)) != len(exports)
+        ):
+            raise SetupError(
+                f"ordered exports for {module!r} must be a non-empty, ordered, "
+                "unique list of ASCII identifiers"
+            )
+        if module in parsed or initializer in initializers:
+            raise SetupError(
+                f"ordered export classification repeats package {module!r}"
+            )
+        parsed[module] = tuple(exports)
+        initializers.add(initializer)
+        observed_order.append(module)
+
+    if observed_order != sorted(observed_order):
+        raise SetupError("ordered export packages must be sorted by module")
+    expected_initializers = set(_PYTHON_MEMBER_CLASSIFICATION["package_initializer"])
+    if initializers != expected_initializers:
+        raise SetupError(
+            "ordered export packages must exactly close the classified package "
+            "initializer set"
+        )
+    return parsed
+
+
+_ORDERED_EXPORT_CLASSIFICATION = _load_ordered_export_classification()
 _SHIPPED_PYTHON_PATHS = frozenset(
     member for role in _SHIPPED_ROLES for member in _PYTHON_MEMBER_CLASSIFICATION[role]
 )
@@ -299,6 +439,133 @@ def _require_classified_source_state() -> None:
     )
 
 
+def _load_literal_ordered_exports(path: Path, *, label: str) -> tuple[str, ...]:
+    if not _is_ordinary_file(path):
+        raise SetupError(f"{label} initializer must be an ordinary file")
+    try:
+        source = path.read_bytes()
+    except OSError as error:
+        raise SetupError(f"cannot read {label} initializer") from error
+    if len(source) > 1024 * 1024:
+        raise SetupError(f"{label} initializer exceeds its size bound")
+    try:
+        text = source.decode("utf-8")
+        tree = ast.parse(text, filename=str(path))
+    except (UnicodeDecodeError, SyntaxError) as error:
+        raise SetupError(
+            f"cannot parse {label} initializer as strict UTF-8 Python"
+        ) from error
+
+    assignments: list[ast.Assign | ast.AnnAssign] = []
+    for node in tree.body:
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "__all__"
+        ) or (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "__all__"
+        ):
+            assignments.append(node)
+    if len(assignments) != 1:
+        raise SetupError(
+            f"{label} initializer must have one literal __all__ assignment"
+        )
+    declaration = assignments[0]
+    declaration_target = (
+        declaration.targets[0]
+        if isinstance(declaration, ast.Assign)
+        else declaration.target
+    )
+    stores_or_deletes = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name)
+        and node.id == "__all__"
+        and isinstance(node.ctx, (ast.Store, ast.Del))
+    ]
+    if stores_or_deletes != [declaration_target]:
+        raise SetupError(
+            f"{label} initializer must not contain another direct __all__ "
+            "name store or delete"
+        )
+
+    def rooted_in_all(node: ast.expr) -> bool:
+        while isinstance(node, (ast.Attribute, ast.Subscript)):
+            node = node.value
+        return isinstance(node, ast.Name) and node.id == "__all__"
+
+    if any(
+        (
+            isinstance(node, (ast.Attribute, ast.Subscript))
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+            and rooted_in_all(node)
+        )
+        or (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and rooted_in_all(node.func.value)
+        )
+        for node in ast.walk(tree)
+    ):
+        raise SetupError(
+            f"{label} initializer must not contain a direct __all__ "
+            "attribute/subscript write or method call"
+        )
+    try:
+        value = ast.literal_eval(assignments[0].value)
+    except (TypeError, ValueError) as error:
+        raise SetupError(f"{label} initializer __all__ must be literal") from error
+    if (
+        not isinstance(value, (list, tuple))
+        or not value
+        or any(
+            not isinstance(name, str)
+            or not name
+            or not name.isascii()
+            or not name.isidentifier()
+            for name in value
+        )
+        or len(set(value)) != len(value)
+    ):
+        raise SetupError(
+            f"{label} initializer __all__ must be a non-empty, ordered, unique "
+            "literal of ASCII identifiers"
+        )
+    return tuple(value)
+
+
+def _require_source_ordered_export_state() -> None:
+    expected_initializers = {
+        f"{module.replace('.', '/')}/__init__.py"
+        for module in _ORDERED_EXPORT_CLASSIFICATION
+    }
+    observed_python, _ = _observed_source_python_paths()
+    observed_initializers = {
+        member
+        for member in observed_python
+        if PurePosixPath(member).name == "__init__.py"
+    }
+    if observed_initializers != expected_initializers:
+        raise SetupError(
+            "source package initializers differ from the exact ordered export "
+            "classification"
+        )
+    for module, expected_exports in _ORDERED_EXPORT_CLASSIFICATION.items():
+        initializer = f"{module.replace('.', '/')}/__init__.py"
+        observed_exports = _load_literal_ordered_exports(
+            _SOURCE_ROOT / initializer,
+            label=f"source package {module}",
+        )
+        if observed_exports != expected_exports:
+            raise SetupError(
+                f"source package {module!r} ordered __all__ differs from the "
+                "classification"
+            )
+
+
 def _scan_built_package_tree(root: Path) -> tuple[frozenset[str], frozenset[str]]:
     if _is_absent(root):
         return frozenset(), frozenset()
@@ -370,6 +637,49 @@ def _require_built_package_state(
     )
 
 
+def _require_built_ordered_export_state(
+    root: Path,
+    *,
+    allow_absent_or_empty: bool,
+    label: str,
+) -> None:
+    observed_files, observed_directories = _scan_built_package_tree(root)
+    if (
+        allow_absent_or_empty
+        and not observed_files
+        and observed_directories
+        in {
+            frozenset(),
+            frozenset({_PACKAGE_NAME}),
+        }
+    ):
+        return
+    expected_initializers = {
+        f"{module.replace('.', '/')}/__init__.py"
+        for module in _ORDERED_EXPORT_CLASSIFICATION
+    }
+    observed_initializers = {
+        member
+        for member in observed_files
+        if PurePosixPath(member).name == "__init__.py"
+    }
+    if observed_initializers != expected_initializers:
+        raise SetupError(
+            f"{label} initializers differ from the exact ordered export classification"
+        )
+    for module, expected_exports in _ORDERED_EXPORT_CLASSIFICATION.items():
+        initializer = f"{module.replace('.', '/')}/__init__.py"
+        observed_exports = _load_literal_ordered_exports(
+            root / initializer,
+            label=f"{label} package {module}",
+        )
+        if observed_exports != expected_exports:
+            raise SetupError(
+                f"{label} package {module!r} ordered __all__ differs from the "
+                "classification"
+            )
+
+
 def _absolute_command_path(value: str) -> Path:
     path = Path(value)
     return path if path.is_absolute() else _PROJECT_ROOT / path
@@ -380,6 +690,7 @@ class LibraryBuildPy(build_py):
         self, package: str, package_dir: str
     ) -> list[tuple[str, str, str]]:
         _require_classified_source_state()
+        _require_source_ordered_export_state()
         modules = super().find_package_modules(package, package_dir)
         return [
             item
@@ -389,8 +700,14 @@ class LibraryBuildPy(build_py):
 
     def run(self) -> None:
         _require_classified_source_state()
+        _require_source_ordered_export_state()
         build_root = _absolute_command_path(self.build_lib)
         _require_built_package_state(
+            build_root,
+            allow_absent_or_empty=True,
+            label="pre-build package tree",
+        )
+        _require_built_ordered_export_state(
             build_root,
             allow_absent_or_empty=True,
             label="pre-build package tree",
@@ -401,14 +718,25 @@ class LibraryBuildPy(build_py):
             allow_absent_or_empty=False,
             label="post-build package tree",
         )
+        _require_built_ordered_export_state(
+            build_root,
+            allow_absent_or_empty=False,
+            label="post-build package tree",
+        )
 
 
 class LibraryInstallLib(install_lib):
     def install(self) -> list[str] | None:
         _require_classified_source_state()
+        _require_source_ordered_export_state()
         build_root = _absolute_command_path(self.build_dir)
         install_root = _absolute_command_path(self.install_dir)
         _require_built_package_state(
+            build_root,
+            allow_absent_or_empty=False,
+            label="install input package tree",
+        )
+        _require_built_ordered_export_state(
             build_root,
             allow_absent_or_empty=False,
             label="install input package tree",
@@ -418,8 +746,18 @@ class LibraryInstallLib(install_lib):
             allow_absent_or_empty=True,
             label="pre-install package tree",
         )
+        _require_built_ordered_export_state(
+            install_root,
+            allow_absent_or_empty=True,
+            label="pre-install package tree",
+        )
         outputs = super().install()
         _require_built_package_state(
+            install_root,
+            allow_absent_or_empty=False,
+            label="post-install package tree",
+        )
+        _require_built_ordered_export_state(
             install_root,
             allow_absent_or_empty=False,
             label="post-install package tree",
