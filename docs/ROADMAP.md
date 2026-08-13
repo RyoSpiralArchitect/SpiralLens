@@ -1246,8 +1246,8 @@ dedicated 90-line, 3,943-byte test has SHA-256
 `36d86cf8f3bdd3567cd92fe430d6a39eca3c24974da49810773f20f46dc4d457`.
 The focused pair collected and passed seven tests without model, network, or
 private data. The example and adopted policy grant no promotion. The intended
-clean-wheel matrix has since passed for the exact recorded tuples; HOLD remains
-pending only a separate explicit promotion review.
+clean-wheel matrix has since passed for the exact recorded tuples; the separate
+review below retains HOLD under the remaining promotion and release gates.
 
 This test-and-documentation preflight changes no production source, API, export,
 dependency, schema, artifact, receipt, D7 re-anchor, `LIB-L0`, scientific,
@@ -1278,9 +1278,11 @@ SHA-256 `3239f43eefa6f391ae8360027b54a519ca1a516e255418157c60287dd192c0b2`;
 the probe is 141 / 5,257 at `1802abb986897723a35fab6564086740f9f086f7eec448893658f9a6ae87c68c`;
 the lock is 36 / 1,997 at `e95cd686c67e2d5dbb37aa95bac5ea3245a28cffd479957fc26931a9523f42d7`.
 
-This clears the clean-wheel prerequisite only for those observed tuples. Core
-remains on HOLD solely for explicit promotion review; zero exact-root
-production consumers remains an adoption fact, not a separate formal blocker.
+This clears the clean-wheel prerequisite only for those observed tuples. The
+review qualifies 5 / 7 exact names, but `JsonScalar` and `JsonValue` each have
+zero independent production consumers. Coherent exact-seven promotion therefore
+stays rejected and on HOLD, not designated or active. The selected six tests are
+not full compatibility evidence, and there is no PEP 561 typing claim.
 Hosted logs are non-durable observations, not artifacts or support, stability,
 or promotion receipts. They establish no other OS, architecture, Python patch,
 runner image, dependency tuple, sdist parity, reproducible wheel-byte identity,
@@ -1288,6 +1290,15 @@ typing, exhaustive behavior, resource, safety, purity, whole-package
 portability, `LIB-L0`, science, authority, or VOY change. These later
 documentation bytes were not in the tested checkout and are not attested by
 the run or its wheel metadata.
+
+Repository `0.1.0` metadata activates no protection; historical `0.1.0`
+compatibility is unattested. `0.2.0` is only the earliest re-review before its
+genuine cut if both aliases gain real independent consumers and all gates pass;
+if it ships on HOLD, activation is earliest `0.3.0`. Neither coordinate is an
+approval, reservation, designation, or release promise. A future release needs
+equal version owners, a new final-byte matrix, and a published-install receipt.
+The historical D7 `spirallens==0.1.0` lock and receipts stay immutable; a
+successor uses new coordinates. This review changes no release or claim state.
 
 The last declaration-only candidate, at clean baseline
 `65a567659200ac41c5a15329af1074239b525ac5`, covered exactly
@@ -1351,7 +1362,7 @@ C1/item21/item22 and v1 C1/C2 source member, but not a direct
 protocol and `representation_phantom.py` generator; neither frozen byte set nor
 historical receipt is rewritten or re-anchored. Phantom remains transitively
 inferred; counts stay 18 / 18 with 160 unknown. Repeated context-rejection
-reviews stop here; next is a core library-promotion audit. No production source,
+reviews stopped here; the completed core promotion audit retains HOLD. No production source,
 test, schema, artifact, report, receipt, re-anchor, runtime, export, dependency, public API,
 portability, maturity, network-free, `LIB-L0`, science, authority, or VOY state changes.
 

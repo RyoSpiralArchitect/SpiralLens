@@ -18,7 +18,8 @@ and cannot change experiment status or authority.
 ## Maturity labels
 
 - **Supported pre-1.0 surface:** explicitly enumerated names protected within
-  the first policy-bearing `0.y` line; `spirallens.__version__` is the sole designated coordinate.
+  the first policy-bearing `0.y` line; `spirallens.__version__` is the sole
+  prospectively designated coordinate, and no protection is active yet.
 - **Stable 1.0 surface:** the later semantic-versioned contract; none exists.
 - **Stable candidate:** framework-neutral functionality whose compatibility
   tests have started, but which has not yet met every promotion gate below.
@@ -155,7 +156,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 
 | Namespace or symbol | Status | Compatibility boundary |
 | --- | --- | --- |
-| `spirallens.__version__` | designated supported pre-1.0 coordinate | protection starts with the first policy-bearing release; historical `0.1.0` compatibility is not attested; its string value reports the installed release |
+| `spirallens.__version__` | prospectively designated supported pre-1.0 coordinate | no policy-bearing release has occurred; repository `0.1.0` metadata activates no protection, historical `0.1.0` compatibility is unattested, and its string value reports the installed release |
 | `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
 | `spirallens.core.canonical` | stable candidate (promotion HOLD) | the coherent future promotion candidate is the current exact seven-name `spirallens.core` surface: four functions, `CanonicalJsonError`, `JsonScalar`, and `JsonValue`; shared-codec use is established at defining and legacy leaf paths, but exact root-coordinate production consumers remain zero and the compatibility preflight grants no support or stability |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
@@ -168,6 +169,12 @@ library or `LIB-L0` status, scientific claim, or authority record.
 | `spirallens.atlas` | provisional/model extra | manifest-reader imports retain NumPy/PyYAML but load no model framework, adapter, or capture runtime; capture and runner symbols are lazy while the ordered public `__all__`, symbol identities, reader signatures/defining modules, exception identities, and failure behavior remain compatible; the repository-bound public-example runner still requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files; this reader boundary does not make the whole namespace framework-neutral |
 | `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
 | CLI handlers, workers, frozen one-experiment runners, private context markers | internal | CLI is a thin adapter, never the Python API |
+
+The post-matrix gate qualifies 5 / 7 exact names; `JsonScalar` and `JsonValue`
+each have zero independent production consumers. Exact-seven promotion is
+coherent, so the review rejects partial promotion: HOLD, not designated or
+active. Six selected tests are not full compatibility, and there is no PEP 561
+typing claim (`py.typed` and a static-checker receipt are absent).
 
 Repository-bound provisional migration note: callers of
 `build_current_qualification_engine_binding()` and
