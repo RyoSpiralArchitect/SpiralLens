@@ -1238,11 +1238,26 @@ withdrawn rather than obscured by opaque digests or a shared analyzer; no test
 or declaration was adopted. Counts therefore stay 18 coordinates / 18 audited
 identities, with 160 unknown = 157 never-audited identities + three unaudited
 `spirallens.instrument_contracts` aliases. Mechanical declaration-only rollout
-ends here. Next is the exact signature, accepted-input, validation-order,
-exception, and failure-state equivalence audit for the advancement
-optional-fallback operations before any `RepositoryContext` migration. No
-production, schema, report, runtime, export, dependency, public API,
-portability, maturity, `LIB-L0`, science, authority, or VOY state changes.
+ends here. At clean baseline
+`20409385eda0e0922772f08137f02ed8fc54d012`, the exact optional-fallback group
+`spirallens.qualification:{advancement_source_binding_sha256,build_current_advancement_source_binding,validate_advancement_decision_source}`
+was rejected for migration. `advancement_source_binding_sha256` requires the
+keyword but accepts `None`; the other two also default it to `None`, so removal
+is an accepted-input and public-signature break. Exact source SHA-256 values are
+`7001959db17fb2d6c44fcdca024cc6ffc22b4df74a0a20333e94e113e470cc0a`
+for `advancement.py`, `ce82f280348cbe4a5a21881c6dfea6d7a66d5a3e502e0ef00e27060350326f50`
+for `_repository_context.py`, and
+`e000cddd999a78af5911ca00325f0c6cb9da9e1a776311e66a629c8042d3b879`
+for `qualification/__init__.py`. Advancement remains an exact D7
+critical-runtime source/chronology member; no frozen binding is rewritten or
+re-anchored. A `samefile` gate changes repository acceptance, validation/error
+order, and TOCTOU behavior, while a new wrapper preserves the old fallback and
+expands the surface. Both are rejected. Removing the 11-line resolver from the
+217-line cluster yields at most `-5.1%` and fewer than 20 lines, below the
+materiality gate. Counts stay 18 / 18 and 160 unknown. Next is the Faiss
+transitive-context equivalence audit. No source, production, test, artifact, schema,
+report, public API, portability, maturity, `LIB-L0`, science, authority, or VOY
+state changes.
 
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
