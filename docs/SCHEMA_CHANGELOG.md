@@ -4,6 +4,27 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — D7 v1 structural materialization and descriptive-result observation
+
+- Recorded the already-persisted exact S → A → B chronology: source
+  `a9b9da21954478e42982e27f9e6b02cbeba5a08d`, nine-file commit A
+  `be4462c3eee666aff620292b1494cc4209a0c6a6`, and result-only commit B
+  `9735ae8b231f5b6e967a4b7dbaed0fb2eca78061`. This entry changes no artifact,
+  protocol, or route bytes.
+- The 5,308,075-byte result has SHA-256
+  `409d211fac2db52a88facaa79a526903379545af7b1619a8c50ee4820358d109`,
+  status `insufficient`, 26 available outputs, and one blocked output caused by
+  unpersisted historical main-D2 scalar values. The attempt remains
+  `reserved_not_started`; reconstruction and rerun remain unauthorized.
+- This docs-only projection records **VOY-V3 purpose evidence observed**. It
+  grants no VOY completion credit, `D7-OPS` credit, VOY-V4 authorization,
+  D7/D8/SCI progress, scientific result, or library promotion. Every authority
+  fact remains false, claim ceiling remains Level 0, and claim delta is `none`.
+- No supported schema, public API, CLI, dependency, or library-maturity
+  change accompanies this observation. The frozen `frozen_not_run` field is
+  retained as issue-time history, and any future route bend requires a new
+  version and dated pre-consumption review.
+
 ## 2026-08-13 — Review-pending Pythia-160M identity candidate
 
 - Invoked the private metadata/config-only acquisition exactly once from clean,

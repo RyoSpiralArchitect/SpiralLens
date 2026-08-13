@@ -168,6 +168,36 @@ Reviewed source completion has not been reached, commit S has not been
 selected, and no artifact or descriptive result has been generated. VOY-V3
 remains `frozen_not_run`.
 
+### Current D7 v1 verified-B observation (2026-08-13)
+
+The preceding paragraphs retain the source-era facts at the commits they
+describe. Independent review later selected exact source
+`a9b9da21954478e42982e27f9e6b02cbeba5a08d`, after which one materialization
+publication recorded the protocol-exact nine files in direct-child commit
+`be4462c3eee666aff620292b1494cc4209a0c6a6` whose sole parent is S, and the
+separate descriptive-result publication was recorded in direct-child commit
+`9735ae8b231f5b6e967a4b7dbaed0fb2eca78061` whose sole parent is A. The
+chronology receipt SHA-256 is
+`12d6bc5cc05fe48b07dc706b52b896ebb17b971b57aa9dc65cdbce870071c5d6`.
+
+The 5,308,075-byte result has SHA-256
+`409d211fac2db52a88facaa79a526903379545af7b1619a8c50ee4820358d109`
+and record ID `d7-v1-post-d6-descriptive-e329e2d56f48f8d3c5bc564a`. Its status is
+`insufficient`: 26 outputs are available and
+`amplitude-identifiability-support-separation` is blocked because the
+historical main-D2 scalar values were not persisted. Reconstruction and rerun
+remain unauthorized. The exclusive attempt is `reserved_not_started`, the
+postselection record is formed, no scientific result is issued, every
+authority fact remains false, and the claim boundary remains Level 0 with
+delta `none`.
+
+Verified B therefore supplies evidence with the shape named by the VOY-V3
+purpose, `prospective-receipt-and-conforming-descriptive-artifact`. The route
+is navigation-only, so this observation grants no VOY completion credit,
+`D7-OPS` credit, V4 authorization, D7/D8/SCI progress, or library promotion.
+The frozen protocol's `frozen_not_run` text remains an issue-time field rather
+than a mutable live-status register.
+
 ## Scientific interpretation anchors
 
 The project adopted an order-parameter-first fundamental interpretation after

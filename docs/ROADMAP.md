@@ -283,6 +283,41 @@ scientific evidence is created; S remains unreviewed and unselected, claim
 delta is `none`, VOY-V3 remains `frozen_not_run`, and D7/D8 remain `not_run`.
 No `D7-OPS`, scientific, or library completion credit changes here.
 
+### Current verified-B observation (2026-08-13)
+
+The source-era paragraphs above remain historical statements. Exact source S
+`a9b9da21954478e42982e27f9e6b02cbeba5a08d` now has a strict successor A
+`be4462c3eee666aff620292b1494cc4209a0c6a6` containing only the nine
+pre-item-23 files and a strict successor B
+`9735ae8b231f5b6e967a4b7dbaed0fb2eca78061` containing only the descriptive
+result. Existing protocol and route bytes are unchanged. The protocol's
+`frozen_not_run` value records its issue-time state; it is not rewritten into a
+live status claim.
+
+Verified B matches the evidence shape named by the VOY-V3 purpose,
+`prospective-receipt-and-conforming-descriptive-artifact`. Because the VOY
+route is a navigation alias rather than a status or authority registry, this
+is recorded only as **VOY-V3 purpose evidence observed**. It does not establish
+VOY-V3 completion credit, `D7-OPS-22` or `D7-OPS-23` credit, or authorization
+to enter VOY-V4. The V4 predecessor relation orders review; it is not a
+dispatch trigger.
+
+The descriptive status is `insufficient`, with 26 available outputs and one
+blocked output caused by unpersisted historical main-D2 scalar values. Its
+attempt remains `reserved_not_started`, `scientific_result_issued=false`, and
+`d7_result_produced=false`; this is not a D7 terminal and is not the VOY-V9
+branch status. No reconstruction, rerun, or same-identity rescue is authorized.
+Progress therefore holds at the V3/V4 decision boundary. Continuing the strict
+route requires a separate V4 readiness and authority decision. Bending the
+route requires a new reviewed route version and a dated Ledger entry before
+any affected input is consumed.
+
+The library lane remains independent. Neither this documentation projection
+nor the artifact chain counts as either independent library consumer; no
+library-owned contract or maturity was promoted. The two-independent-consumer
+rule and the preservation of `blocked`, `insufficient`, and `not_run` states
+remain in force. No library milestone changes.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.
