@@ -62,6 +62,9 @@ CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = (
     "spirallens/qualification/confirmation_v1_source_selected_supplier.py",
 )
 
+PRIVATE_HELD_FILE_WHEEL_MEMBER = "spirallens/_held_file.py"
+PRIVATE_HELD_FILE_IMPORT = "spirallens._held_file"
+
 
 def test_sha256_file_streams_exact_bytes(tmp_path: Path) -> None:
     artifact = tmp_path / "artifact.whl"
@@ -137,6 +140,15 @@ def test_zero_matching_members_is_bounded_absence_not_library_readiness(
             "scientific": False,
         },
     }
+
+
+def test_private_held_file_is_an_explicit_non_experiment_wheel_import() -> None:
+    assert PRIVATE_HELD_FILE_WHEEL_MEMBER in REQUIRED_WHEEL_MEMBERS
+    assert PRIVATE_HELD_FILE_IMPORT in DEFAULT_IMPORTS
+    assert not any(
+        PRIVATE_HELD_FILE_WHEEL_MEMBER.startswith(prefix)
+        for prefix in REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
+    )
 
 
 def _probe(

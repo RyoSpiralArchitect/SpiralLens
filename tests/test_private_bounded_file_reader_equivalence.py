@@ -12,6 +12,7 @@ import stat
 import pytest
 
 from access_fixtures import preparation_descriptor
+from spirallens import _held_file as held_file_module
 from spirallens.access import (
     AtlasAccessContractError,
     AtlasPreparationDescriptor,
@@ -30,11 +31,15 @@ from spirallens.referents import loader as referent_loader_module
 
 _UNSET = object()
 _DIGEST_ERROR = "must be a lowercase SHA-256 digest"
+_DIR_FD_READER_SUPPORTED = os.name == "posix" and os.open in os.supports_dir_fd
 _HELD_FD_READER_SUPPORTED = (
-    os.name == "posix"
-    and os.open in os.supports_dir_fd
+    _DIR_FD_READER_SUPPORTED
     and hasattr(os, "O_DIRECTORY")
     and hasattr(os, "O_NOFOLLOW")
+)
+requires_dir_fd_reader = pytest.mark.skipif(
+    not _DIR_FD_READER_SUPPORTED,
+    reason="the current held-file readers require POSIX dir_fd support",
 )
 requires_held_fd_reader = pytest.mark.skipif(
     not _HELD_FD_READER_SUPPORTED,
@@ -291,6 +296,72 @@ def test_root_path_and_bad_digest_preserve_domain_preprocessing_precedence(
         else f"expected_source_sha256 {_DIGEST_ERROR}"
     )
     _assert_policy_error(error, reader_case, expected)
+
+
+class _ObservedPathLike(os.PathLike[str]):
+    def __init__(self, value: str, *, failure: BaseException | None = None) -> None:
+        self.value = value
+        self.failure = failure
+        self.calls = 0
+
+    def __fspath__(self) -> str:
+        self.calls += 1
+        if self.failure is not None:
+            raise self.failure
+        return self.value
+
+
+@requires_held_fd_reader
+def test_relative_pathlike_is_lexically_normalized_once_before_held_read(
+    reader_case: _ReaderCase,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path.resolve() / reader_case.name
+    root.mkdir()
+    path = root / reader_case.leaf_name
+    path.write_bytes(reader_case.source)
+    supplied = _ObservedPathLike(
+        f"{reader_case.name}/./unused/../{reader_case.leaf_name}"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    loaded = reader_case.load(supplied)  # type: ignore[arg-type]
+
+    assert supplied.calls == 1
+    assert loaded.source_path == path
+    assert loaded.read_trace == (path,)
+
+
+def test_pathlike_coercion_retains_domain_specific_digest_precedence() -> None:
+    atlas_failure = RuntimeError("synthetic atlas path coercion failure")
+    atlas_path = _ObservedPathLike("unused", failure=atlas_failure)
+
+    _loaded, atlas_error = _capture(
+        lambda: _load_atlas(atlas_path, "bad", "also-bad")  # type: ignore[arg-type]
+    )
+
+    assert atlas_error is atlas_failure
+    assert atlas_error.__cause__ is None
+    assert atlas_error.__context__ is None
+    assert atlas_path.calls == 1
+
+    referent_failure = RuntimeError("must not coerce the referent path")
+    referent_path = _ObservedPathLike("unused", failure=referent_failure)
+    _loaded, referent_error = _capture(
+        lambda: _load_referents(  # type: ignore[arg-type]
+            referent_path,
+            "bad",
+            "also-bad",
+        )
+    )
+
+    _assert_policy_error(
+        referent_error,
+        _READER_CASES[1],
+        f"expected_source_sha256 {_DIGEST_ERROR}",
+    )
+    assert referent_path.calls == 0
 
 
 def test_source_digest_validation_precedes_canonical_digest_and_filesystem(
@@ -621,6 +692,115 @@ def _run_with_fake_filesystem(
 
 def _close_events(fake: _FakeFileSystem) -> list[int]:
     return [event[1] for event in fake.events if event[0] == "close"]
+
+
+def test_private_held_file_module_exports_nothing() -> None:
+    assert held_file_module.__all__ == ()
+
+
+@pytest.mark.parametrize(
+    "missing_flag",
+    ("O_DIRECTORY", "O_CLOEXEC", "O_NOFOLLOW"),
+)
+@requires_dir_fd_reader
+def test_optional_open_flag_absence_preserves_exact_fallback_order(
+    reader_case: _ReaderCase,
+    monkeypatch: pytest.MonkeyPatch,
+    missing_flag: str,
+) -> None:
+    flag_values = {
+        name: getattr(os, name, 0)
+        for name in ("O_DIRECTORY", "O_CLOEXEC", "O_NOFOLLOW")
+    }
+    metadata = _FakeStat(st_size=len(reader_case.source))
+    fake = _FakeFileSystem(
+        fstats=[metadata, metadata],
+        reads=[reader_case.source, b""],
+    )
+
+    with monkeypatch.context() as patch:
+        patch.delattr(os, missing_flag, raising=False)
+        loaded, error = _run_with_fake_filesystem(patch, reader_case, fake)
+
+    assert error is None
+    assert loaded is not None
+    optional = {
+        name: 0 if name == missing_flag else value
+        for name, value in flag_values.items()
+    }
+    directory_flags = os.O_RDONLY | optional["O_DIRECTORY"] | optional["O_CLOEXEC"]
+    component_flags = directory_flags | optional["O_NOFOLLOW"]
+    leaf_flags = os.O_RDONLY | optional["O_CLOEXEC"] | optional["O_NOFOLLOW"]
+    assert fake.events == [
+        ("open", "/", None, 10, directory_flags),
+        ("open", "safe", 10, 11, component_flags),
+        ("close", 10),
+        ("open", "parent", 11, 12, component_flags),
+        ("close", 11),
+        ("open", reader_case.leaf_name, 12, 13, leaf_flags),
+        ("fstat", 13),
+        ("read", 13, 64 * 1024),
+        ("read", 13, 64 * 1024),
+        ("fstat", 13),
+        ("close", 13),
+        ("close", 12),
+    ]
+    assert fake.open_fds == set()
+
+
+@requires_held_fd_reader
+def test_descriptor_writer_retains_its_local_directory_opener(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path.resolve() / "writer-boundary.json"
+    original_local_opener = access_descriptor_module._open_directory_chain
+    opened: list[Path] = []
+
+    def local_opener(directory: Path) -> int:
+        opened.append(directory)
+        return original_local_opener(directory)
+
+    def forbidden_shared_opener(_directory: Path) -> int:
+        raise AssertionError("the writer must retain its local publication opener")
+
+    sentinel = object()
+
+    def no_readback(
+        path: str | Path,
+        *,
+        expected_source_sha256: str,
+        expected_canonical_sha256: str,
+    ) -> object:
+        assert path == output
+        assert expected_source_sha256 == _ATLAS_DESCRIPTOR.canonical_sha256
+        assert expected_canonical_sha256 == _ATLAS_DESCRIPTOR.canonical_sha256
+        return sentinel
+
+    monkeypatch.setattr(
+        access_descriptor_module,
+        "_open_directory_chain",
+        local_opener,
+    )
+    monkeypatch.setattr(
+        held_file_module,
+        "_open_directory_chain",
+        forbidden_shared_opener,
+    )
+    monkeypatch.setattr(
+        access_descriptor_module,
+        "load_atlas_preparation_descriptor",
+        no_readback,
+    )
+
+    result = access_descriptor_module.write_atlas_preparation_descriptor(
+        output,
+        _ATLAS_DESCRIPTOR,
+    )
+
+    assert result is sentinel
+    assert opened == [output.parent]
+    assert output.read_bytes() == _ATLAS_DESCRIPTOR.canonical_bytes
 
 
 @requires_held_fd_reader
