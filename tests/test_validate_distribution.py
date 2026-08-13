@@ -43,6 +43,11 @@ ORDERED_EXPORT_CLASSIFICATION_PATH = _VALIDATOR.ORDERED_EXPORT_CLASSIFICATION_PA
 ORDERED_EXPORT_CLASSIFICATION_SCHEMA_VERSION = (
     _VALIDATOR.ORDERED_EXPORT_CLASSIFICATION_SCHEMA_VERSION
 )
+INSTALLED_IMPORT_CLASSIFICATION_PATH = _VALIDATOR.INSTALLED_IMPORT_CLASSIFICATION_PATH
+INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION = (
+    _VALIDATOR.INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION
+)
+INSTALLED_IMPORT_DENIED_AUDIT_EVENTS = _VALIDATOR.INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
 _classify_source_python_members = _VALIDATOR._classify_source_python_members
 _classify_sdist_python_members = _VALIDATOR._classify_sdist_python_members
 _classify_wheel_python_members = _VALIDATOR._classify_wheel_python_members
@@ -50,6 +55,16 @@ _extract_sdist = _VALIDATOR._extract_sdist
 _load_python_member_classification = _VALIDATOR._load_python_member_classification
 _load_literal_ordered_exports = _VALIDATOR._load_literal_ordered_exports
 _load_ordered_export_classification = _VALIDATOR._load_ordered_export_classification
+_load_installed_import_classification = _VALIDATOR._load_installed_import_classification
+_parse_installed_import_probe_output = _VALIDATOR._parse_installed_import_probe_output
+_normalize_installed_import_explicit_roots = (
+    _VALIDATOR._normalize_installed_import_explicit_roots
+)
+_normalize_installed_requires_dist = _VALIDATOR._normalize_installed_requires_dist
+_require_minimum_release_version = _VALIDATOR._require_minimum_release_version
+_require_installed_import_outcome_equality = (
+    _VALIDATOR._require_installed_import_outcome_equality
+)
 _parse_installed_python_member_probe_output = (
     _VALIDATOR._parse_installed_python_member_probe_output
 )
@@ -139,6 +154,542 @@ def _write_export_manifest(root: Path, document: object) -> None:
         json.dumps(document, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def _installed_import_classification() -> dict[str, object]:
+    repository = Path(__file__).resolve().parents[1]
+    return _load_installed_import_classification(
+        repository,
+        python_member_classification=_classification(),
+        ordered_export_classification=_export_classification(),
+    )
+
+
+def _copy_installed_import_classification_inputs(destination: Path) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    for relative in (
+        "pyproject.toml",
+        PYTHON_MEMBER_CLASSIFICATION_PATH,
+        ORDERED_EXPORT_CLASSIFICATION_PATH,
+        INSTALLED_IMPORT_CLASSIFICATION_PATH,
+    ):
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((repository / relative).read_bytes())
+
+
+def test_installed_import_manifest_freezes_exact_159_outcomes() -> None:
+    classification = _installed_import_classification()
+
+    assert classification["schema_version"] == (
+        INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION
+    )
+    assert classification["manifest_sha256"] == (
+        "d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795"
+    )
+    assert len(classification["outcomes"]["base_import_success"]) == 154
+    assert classification["outcomes"]["models_extra_missing_torch"] == (
+        "spirallens.adapters",
+        "spirallens.adapters.pythia",
+        "spirallens.atlas._capture_store",
+        "spirallens.atlas.engineering_run",
+        "spirallens.atlas.id_sweep",
+    )
+    assert classification["successful_package_modules"] == tuple(
+        package["module"]
+        for package in _export_classification()["packages"]
+        if package["module"] != "spirallens.adapters"
+    )
+    assert classification["successful_runtime_export_count"] == 554
+    assert classification["unavailable_package_modules"] == ("spirallens.adapters",)
+    assert classification["unavailable_runtime_export_count"] == 5
+    requires_dist = classification["requires_dist_contract"]
+    assert len(requires_dist) == 13
+    assert [record for record in requires_dist if record["name"] == "cryptography"] == [
+        {"extra": "dev", "name": "cryptography", "specifier": ">=42"},
+        {"extra": "witness", "name": "cryptography", "specifier": ">=42"},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("mutation", "match"),
+    [
+        ("unknown_top_key", "unexpected top-level keys"),
+        ("wrong_scope", "wrong scope"),
+        ("reorder_success", "sorted and unique"),
+        ("overlap", "overlap"),
+        ("missing_module", "exact shipped module set"),
+        ("wrong_negative", "overlap"),
+        ("extra_dependency", "base dependencies differ"),
+    ],
+)
+def test_installed_import_manifest_rejects_drift(
+    tmp_path: Path,
+    mutation: str,
+    match: str,
+) -> None:
+    _copy_installed_import_classification_inputs(tmp_path)
+    path = tmp_path / INSTALLED_IMPORT_CLASSIFICATION_PATH
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if mutation == "unknown_top_key":
+        document["unknown"] = True
+    elif mutation == "wrong_scope":
+        document["classification_scope"] = "broader"
+    elif mutation == "reorder_success":
+        document["outcomes"]["base_import_success"][0:2] = reversed(
+            document["outcomes"]["base_import_success"][0:2]
+        )
+    elif mutation == "overlap":
+        document["outcomes"]["base_import_success"].append(
+            document["outcomes"]["models_extra_missing_torch"][0]
+        )
+        document["outcomes"]["base_import_success"].sort()
+    elif mutation == "missing_module":
+        document["outcomes"]["base_import_success"].pop()
+    elif mutation == "wrong_negative":
+        document["outcomes"]["models_extra_missing_torch"][-1] = (
+            "spirallens.synthetic.generators"
+        )
+        document["outcomes"]["models_extra_missing_torch"].sort()
+    elif mutation == "extra_dependency":
+        document["base_dependencies"].append(
+            {
+                "distribution": "rogue",
+                "import_name": "rogue",
+                "requirement": "rogue>=1",
+            }
+        )
+    else:  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(DistributionValidationError, match=match):
+        _load_installed_import_classification(
+            tmp_path,
+            python_member_classification=_classification(),
+            ordered_export_classification=_export_classification(),
+        )
+
+
+def test_installed_import_manifest_accepts_pyproject_dependency_reordering(
+    tmp_path: Path,
+) -> None:
+    _copy_installed_import_classification_inputs(tmp_path)
+    pyproject = tmp_path / "pyproject.toml"
+    source = pyproject.read_text(encoding="utf-8")
+    source = source.replace(
+        '  "numpy>=1.26",\n  "scipy>=1.11",',
+        '  "scipy>=1.11",\n  "numpy>=1.26",',
+    )
+    pyproject.write_text(source, encoding="utf-8")
+
+    classification = _load_installed_import_classification(
+        tmp_path,
+        python_member_classification=_classification(),
+        ordered_export_classification=_export_classification(),
+    )
+
+    assert classification["manifest_sha256"] == (
+        "d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795"
+    )
+
+
+@pytest.mark.parametrize(
+    "replacement",
+    [
+        '  "numpy>=1.25",\n  "scipy>=1.11",',
+        '  "numpy>=1.26",',
+        '  "numpy>=1.26",\n  "numpy>=1.26",\n  "scipy>=1.11",',
+        '  "numpy>=1.26",\n  "scipy>=1.11",\n  "rogue>=1",',
+        '  "NUMPY>=1.26",\n  "scipy>=1.11",',
+    ],
+)
+def test_installed_import_manifest_rejects_pyproject_dependency_drift(
+    tmp_path: Path,
+    replacement: str,
+) -> None:
+    _copy_installed_import_classification_inputs(tmp_path)
+    pyproject = tmp_path / "pyproject.toml"
+    source = pyproject.read_text(encoding="utf-8")
+    source = source.replace(
+        '  "numpy>=1.26",\n  "scipy>=1.11",',
+        replacement,
+    )
+    pyproject.write_text(source, encoding="utf-8")
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="project dependencies differ",
+    ):
+        _load_installed_import_classification(
+            tmp_path,
+            python_member_classification=_classification(),
+            ordered_export_classification=_export_classification(),
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation", ["symlink", "oversize", "invalid_utf8", "invalid_toml"]
+)
+def test_installed_import_manifest_rejects_unsafe_pyproject(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    _copy_installed_import_classification_inputs(tmp_path)
+    pyproject = tmp_path / "pyproject.toml"
+    if mutation == "symlink":
+        original = tmp_path / "pyproject-original.toml"
+        pyproject.rename(original)
+        pyproject.symlink_to(original)
+    elif mutation == "oversize":
+        pyproject.write_bytes(b"x" * (1024 * 1024 + 1))
+    elif mutation == "invalid_utf8":
+        pyproject.write_bytes(b"\xff")
+    elif mutation == "invalid_toml":
+        pyproject.write_text("[project\n", encoding="utf-8")
+    else:  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+
+    with pytest.raises(DistributionValidationError):
+        _load_installed_import_classification(
+            tmp_path,
+            python_member_classification=_classification(),
+            ordered_export_classification=_export_classification(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('  "cryptography>=42",\n  "pytest>=8",', '  "pytest>=8",'),
+        (
+            '  "cryptography>=42",\n  "pytest>=8",',
+            '  "Cryptography>=42",\n  "pytest>=8",',
+        ),
+        (
+            '  "cryptography>=42",\n  "pytest>=8",',
+            '  "cryptography>=43",\n  "pytest>=8",',
+        ),
+        ("witness = [", "review = ["),
+    ],
+)
+def test_installed_import_manifest_rejects_optional_dependency_drift(
+    tmp_path: Path,
+    old: str,
+    new: str,
+) -> None:
+    _copy_installed_import_classification_inputs(tmp_path)
+    pyproject = tmp_path / "pyproject.toml"
+    source = pyproject.read_text(encoding="utf-8")
+    assert old in source
+    pyproject.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="project .*dependencies",
+    ):
+        _load_installed_import_classification(
+            tmp_path,
+            python_member_classification=_classification(),
+            ordered_export_classification=_export_classification(),
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        'rogue>=1; python_version >= "3.11"',
+        'torch>=2.3; extra == "models"',
+        'Torch>=2.2; extra == "models"',
+        'torch>=2.2; extra == "dev"',
+        'torch>=2.2; extra == "models" and python_version >= "3.11"',
+    ],
+)
+def test_installed_requires_dist_rejects_full_metadata_drift(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    document = _installed_import_probe_document(tmp_path)
+    raw = list(document["spirallens_requires_dist"])
+    if mutation.startswith("rogue"):
+        raw.append(mutation)
+    else:
+        raw[raw.index('torch>=2.2; extra == "models"')] = mutation
+
+    with pytest.raises(DistributionValidationError):
+        _normalize_installed_requires_dist(
+            raw,
+            expected=_installed_import_classification()["requires_dist_contract"],
+            label="synthetic wheel",
+        )
+
+
+def _installed_import_probe_document(
+    environment_root: Path,
+    *,
+    denied_count: int = 0,
+    module_origin: Path | None = None,
+) -> dict[str, object]:
+    origin = module_origin or (
+        environment_root / "lib/python3.13/site-packages/spirallens/core/canonical.py"
+    )
+    origin.parent.mkdir(parents=True, exist_ok=True)
+    origin.touch(exist_ok=True)
+    distribution_root = environment_root / "lib/python3.13/site-packages"
+    return {
+        "audit_denied_event_count": denied_count,
+        "audit_denied_events": ([] if denied_count == 0 else ["subprocess.Popen"]),
+        "blocked_optional_prefixes_loaded": [],
+        "blocked_undeclared_import_attempts": [],
+        "dependency_runtime_modules_without_file_origin": [],
+        "dependency_runtime_module_aliases": [],
+        "explicit_import_roots": [str(distribution_root)],
+        "failure_message": None,
+        "failure_type": None,
+        "missing_name": None,
+        "module": "spirallens.core.canonical",
+        "module_origin": str(origin),
+        "runtime_exports": None,
+        "runtime_exports_sha256": None,
+        "spirallens_requires_dist": [
+            "numpy>=1.26",
+            "scipy>=1.11",
+            "PyYAML>=6.0",
+            'faiss-cpu==1.14.3; extra == "ann"',
+            'build>=1.2.2; extra == "dev"',
+            'cryptography>=42; extra == "dev"',
+            'pytest>=8; extra == "dev"',
+            'ruff>=0.9; extra == "dev"',
+            'huggingface-hub>=0.34; extra == "models"',
+            'torch>=2.2; extra == "models"',
+            'transformers>=4.40; extra == "models"',
+            'safetensors>=0.4; extra == "models"',
+            'cryptography>=42; extra == "witness"',
+        ],
+        "spirallens_distribution_root": str(distribution_root),
+        "site_initialization_enabled": False,
+        "status": "base_import_success",
+        "third_party_distributions": {},
+        "pth_startup_executed": False,
+    }
+
+
+def test_installed_import_probe_parser_accepts_bounded_success(
+    tmp_path: Path,
+) -> None:
+    document = _installed_import_probe_document(tmp_path)
+
+    parsed = _parse_installed_import_probe_output(
+        json.dumps(document),
+        module="spirallens.core.canonical",
+        expected_member="spirallens/core/canonical.py",
+        expected_outcome="base_import_success",
+        expected_initializer_exports=None,
+        environment_root=tmp_path,
+        explicit_import_roots=(str(tmp_path / "lib/python3.13/site-packages"),),
+        expected_dependencies=(),
+        expected_requires_dist=_installed_import_classification()[
+            "requires_dist_contract"
+        ],
+    )
+
+    assert parsed["status"] == "base_import_success"
+    assert parsed["module_origin"].endswith("spirallens/core/canonical.py")
+    assert parsed["explicit_import_roots"] == [
+        "fresh-environment/lib/python3.13/site-packages"
+    ]
+
+
+def test_installed_import_probe_receipt_normalizes_distinct_fresh_roots(
+    tmp_path: Path,
+) -> None:
+    receipts = []
+    for name in ("direct", "sdist"):
+        environment_root = tmp_path / name
+        document = _installed_import_probe_document(environment_root)
+        receipts.append(
+            _parse_installed_import_probe_output(
+                json.dumps(document),
+                module="spirallens.core.canonical",
+                expected_member="spirallens/core/canonical.py",
+                expected_outcome="base_import_success",
+                expected_initializer_exports=None,
+                environment_root=environment_root,
+                explicit_import_roots=(
+                    str(environment_root / "lib/python3.13/site-packages"),
+                ),
+                expected_dependencies=(),
+                expected_requires_dist=_installed_import_classification()[
+                    "requires_dist_contract"
+                ],
+            )
+        )
+
+    assert receipts[0] == receipts[1]
+
+
+def test_installed_import_startup_roots_normalize_across_distinct_environments(
+    tmp_path: Path,
+) -> None:
+    host_root = tmp_path.parent / "host/site-packages"
+    normalized = []
+    for name in ("direct", "sdist"):
+        environment_root = tmp_path / name
+        fresh_root = environment_root / "lib/python3.13/site-packages"
+        normalized.append(
+            _normalize_installed_import_explicit_roots(
+                (str(fresh_root), str(host_root)),
+                environment_root=environment_root,
+            )
+        )
+
+    assert normalized == [
+        ["fresh-environment/lib/python3.13/site-packages", str(host_root.resolve())],
+        ["fresh-environment/lib/python3.13/site-packages", str(host_root.resolve())],
+    ]
+
+
+def test_installed_import_equality_includes_normalized_startup() -> None:
+    receipt = {
+        "outcome_manifest_sha256": "a" * 64,
+        "modules": [],
+        "third_party_dependencies": {},
+        "startup": {
+            "explicit_import_roots": ["fresh-environment/lib/python3.13/site-packages"]
+        },
+    }
+
+    assert _require_installed_import_outcome_equality(receipt, dict(receipt)) == {
+        "direct_source_to_sdist_derived_install": True,
+        "direct_source_to_sdist_derived_startup": True,
+    }
+    drifted = {**receipt, "startup": {"explicit_import_roots": ["absolute-drift"]}}
+    with pytest.raises(DistributionValidationError, match="outcomes differ"):
+        _require_installed_import_outcome_equality(receipt, drifted)
+
+
+def test_installed_import_probe_parser_rejects_denied_audit_event(
+    tmp_path: Path,
+) -> None:
+    document = _installed_import_probe_document(tmp_path, denied_count=1)
+
+    with pytest.raises(DistributionValidationError, match="denied audit event"):
+        _parse_installed_import_probe_output(
+            json.dumps(document),
+            module="spirallens.core.canonical",
+            expected_member="spirallens/core/canonical.py",
+            expected_outcome="base_import_success",
+            expected_initializer_exports=None,
+            environment_root=tmp_path,
+            explicit_import_roots=(str(tmp_path / "lib/python3.13/site-packages"),),
+            expected_dependencies=(),
+            expected_requires_dist=_installed_import_classification()[
+                "requires_dist_contract"
+            ],
+        )
+
+
+def test_installed_import_probe_parser_rejects_origin_outside_environment(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path.parent / "shadow/spirallens/core/canonical.py"
+    document = _installed_import_probe_document(
+        tmp_path,
+        module_origin=outside,
+    )
+
+    with pytest.raises(DistributionValidationError, match="outside"):
+        _parse_installed_import_probe_output(
+            json.dumps(document),
+            module="spirallens.core.canonical",
+            expected_member="spirallens/core/canonical.py",
+            expected_outcome="base_import_success",
+            expected_initializer_exports=None,
+            environment_root=tmp_path,
+            explicit_import_roots=(str(tmp_path / "lib/python3.13/site-packages"),),
+            expected_dependencies=(),
+            expected_requires_dist=_installed_import_classification()[
+                "requires_dist_contract"
+            ],
+        )
+
+
+@pytest.mark.parametrize(
+    ("version", "accepted"),
+    [
+        ("1.26", True),
+        ("1.26.0", True),
+        ("2.0.0", True),
+        ("1.25.9", False),
+        ("1.26rc1", False),
+    ],
+)
+def test_minimum_release_version_is_fail_closed(
+    version: str,
+    accepted: bool,
+) -> None:
+    if accepted:
+        _require_minimum_release_version(
+            version,
+            minimum=(1, 26),
+            label="numpy",
+        )
+    else:
+        with pytest.raises(DistributionValidationError):
+            _require_minimum_release_version(
+                version,
+                minimum=(1, 26),
+                label="numpy",
+            )
+
+
+def test_installed_import_probe_script_compiles_and_policy_is_bounded() -> None:
+    compile(_VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE, "installed probe", "exec")
+    compile(
+        _VALIDATOR._INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE,
+        "installed root discovery",
+        "exec",
+    )
+    assert "subprocess.Popen" in INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
+    assert "os.fork" in INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
+    assert "ctypes.dlopen" not in INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
+    assert "os.putenv" not in INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
+
+
+def test_installed_import_probe_has_no_site_no_preload_and_exact_owner_join() -> None:
+    probe = _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE
+    discovery = _VALIDATOR._INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE
+
+    assert "sys.flags.isolated != 1 or sys.flags.no_site != 1" in probe
+    assert "sys.flags.isolated != 1 or sys.flags.no_site != 1" in discovery
+    assert 'environment_root / "Lib/site-packages"' in discovery
+    assert 'environment_root\n            / f"lib/python' in discovery
+    assert "baseline_modules = frozenset(sys.modules)" in probe
+    assert probe.index("baseline_modules = frozenset(sys.modules)") < probe.index(
+        "module = importlib.import_module(module_name)"
+    )
+    assert 'for import_name in ("numpy", "yaml", "scipy")' not in probe
+    assert "owner_top_level_stems" not in probe
+    assert "len(mapped_distributions) != 1" in probe
+    assert '"_cyutility": ("scipy._cyutility", "scipy")' in probe
+    assert "stdlib_internal_modules = {sysconfig._get_sysconfigdata_name()}" in probe
+    assert "packaging" not in probe
+    assert "packaging" not in discovery
+    assert 'if ";" not in requirement' not in probe
+    assert 'if ";" not in requirement' not in discovery
+    assert 'site_initialization_enabled": False' in probe
+    assert 'pth_startup_executed": False' in probe
+
+
+def test_packaging_parser_stays_in_parent_build_validator_only() -> None:
+    source = _VALIDATOR_PATH.read_text(encoding="utf-8")
+
+    assert "`build>=1.2.2` requires packaging" in source
+    assert (
+        "from packaging.requirements import InvalidRequirement, Requirement" in source
+    )
+    assert "packaging" not in _VALIDATOR._INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE
+    assert "packaging" not in _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE
 
 
 def test_ordered_export_manifest_freezes_exact_24_package_559_name_state() -> None:
@@ -1069,9 +1620,13 @@ def test_zero_artifact_members_is_bounded_absence_not_library_readiness() -> Non
         "ordered_package_export_inventory": {"fixture": True},
         "closed_wheel_python_module_inventory_established": True,
         "closed_ordered_package_export_inventory_established": True,
+        "closed_installed_module_import_outcome_inventory_established": True,
         "closed_public_api_contract_established": False,
+        "runtime_successful_package_export_values_established": True,
         "runtime_export_values_established": False,
+        "all_package_runtime_export_values_established": False,
         "export_symbol_importability_established": False,
+        "side_effect_free_imports_established": False,
         "closed_library_allowlist_established": False,
         "grants": {
             "authority": False,
@@ -1104,7 +1659,7 @@ def test_private_strict_yaml_factory_is_an_explicit_wheel_member() -> None:
 
 
 def test_atlas_reader_probe_is_separate_from_dependency_free_imports() -> None:
-    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.7"
+    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.8"
     assert set(ATLAS_READER_IMPORTS).isdisjoint(DEFAULT_IMPORTS)
     assert ATLAS_READER_IMPORTS == (
         "spirallens.atlas",

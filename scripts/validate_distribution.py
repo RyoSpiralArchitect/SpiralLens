@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import ast
 import base64
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -21,12 +22,19 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 import venv
 import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.7"
+# `packaging` is provided to this parent validator by the declared dev/build
+# toolchain (`build>=1.2.2` requires packaging); it is never imported by the
+# isolated `-I -S` installed-module workers or treated as a runtime dependency.
+from packaging.markers import Marker
+from packaging.requirements import InvalidRequirement, Requirement
+
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.8"
 PYTHON_MEMBER_CLASSIFICATION_PATH = "distribution/spirallens_python_members_v0_1.json"
 PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION = (
     "spirallens.python-distribution-members.v0.1"
@@ -52,6 +60,109 @@ ORDERED_EXPORT_CLASSIFICATION_SCOPE = (
 ORDERED_EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
     "classification grants no public API, stability, compatibility, authority, "
     "scientific claim, or library maturity"
+)
+INSTALLED_IMPORT_CLASSIFICATION_PATH = (
+    "distribution/spirallens_installed_imports_v0_1.json"
+)
+INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION = (
+    "spirallens.installed-import-conformance.v0.1"
+)
+INSTALLED_IMPORT_CLASSIFICATION_SCOPE = (
+    "fresh non-editable SpiralLens wheel module-import outcomes with "
+    "host-projected declared base dependencies, blocked optional-import "
+    "prefixes, and a bounded denied-audit-event policy"
+)
+INSTALLED_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
+    "classification grants no export-symbol importability, behavior, operation "
+    "safety, side-effect freedom, stability, compatibility, dependency closure, "
+    "portability, public API, authority, scientific claim, or library maturity"
+)
+INSTALLED_IMPORT_BASE_DEPENDENCIES = (
+    {
+        "distribution": "numpy",
+        "import_name": "numpy",
+        "requirement": "numpy>=1.26",
+    },
+    {
+        "distribution": "PyYAML",
+        "import_name": "yaml",
+        "requirement": "PyYAML>=6.0",
+    },
+    {
+        "distribution": "scipy",
+        "import_name": "scipy",
+        "requirement": "scipy>=1.11",
+    },
+)
+INSTALLED_IMPORT_PROJECT_DEPENDENCIES = (
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "PyYAML>=6.0",
+)
+INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
+    ("ann", ("faiss-cpu==1.14.3",)),
+    ("dev", ("build>=1.2.2", "cryptography>=42", "pytest>=8", "ruff>=0.9")),
+    (
+        "models",
+        (
+            "huggingface-hub>=0.34",
+            "torch>=2.2",
+            "transformers>=4.40",
+            "safetensors>=0.4",
+        ),
+    ),
+    ("witness", ("cryptography>=42",)),
+)
+INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = (
+    "cryptography",
+    "faiss",
+    "huggingface_hub",
+    "safetensors",
+    "torch",
+    "transformers",
+)
+INSTALLED_IMPORT_MODELS_EXTRA_MISSING_TORCH = (
+    "spirallens.adapters",
+    "spirallens.adapters.pythia",
+    "spirallens.atlas._capture_store",
+    "spirallens.atlas.engineering_run",
+    "spirallens.atlas.id_sweep",
+)
+INSTALLED_IMPORT_SUCCESS_COUNT = 154
+INSTALLED_IMPORT_MISSING_TORCH_COUNT = 5
+INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
+INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
+INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT = 5
+INSTALLED_IMPORT_PROBE_TIMEOUT_SECONDS = 30
+INSTALLED_IMPORT_PROBE_CONCURRENCY = 8
+INSTALLED_IMPORT_DENIED_AUDIT_EVENTS = (
+    "builtins/open-write",
+    "http.client.connect",
+    "os.chdir",
+    "os.chmod",
+    "os.chown",
+    "os.exec",
+    "os.fork",
+    "os.forkpty",
+    "os.kill",
+    "os.link",
+    "os.mkdir",
+    "os.remove",
+    "os.rename",
+    "os.rmdir",
+    "os.posix_spawn",
+    "os.symlink",
+    "os.system",
+    "os.truncate",
+    "os.utime",
+    "shutil.copyfile",
+    "smtplib.connect",
+    "socket.__new__",
+    "socket.bind",
+    "socket.connect",
+    "socket.getaddrinfo",
+    "subprocess.Popen",
+    "urllib.Request",
 )
 _MAX_CLASSIFICATION_BYTES = 1024 * 1024
 _MAX_INITIALIZER_BYTES = 1024 * 1024
@@ -399,6 +510,404 @@ def _load_python_member_classification(source_root: Path) -> dict[str, object]:
         "schema_version": PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION,
         "shipped_members": shipped_members,
         "source_members": source_members,
+    }
+
+
+def _python_member_module(member: str) -> str:
+    """Map one already-validated package member to its dotted module name."""
+
+    path = PurePosixPath(member)
+    if path.name == "__init__.py":
+        parts = path.parts[:-1]
+    else:
+        parts = (*path.parts[:-1], path.stem)
+    return ".".join(parts)
+
+
+def _normalize_project_requires_dist(
+    project: dict[str, object],
+) -> tuple[dict[str, str | None], ...]:
+    """Convert strict PEP 621 base/extra declarations to an exact contract."""
+
+    dependencies = project.get("dependencies")
+    optional_dependencies = project.get("optional-dependencies")
+    expected_optional_dependencies = dict(
+        INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES
+    )
+    if (
+        not isinstance(dependencies, list)
+        or any(not isinstance(item, str) for item in dependencies)
+        or len(dependencies) != len(set(dependencies))
+        or set(dependencies) != set(INSTALLED_IMPORT_PROJECT_DEPENDENCIES)
+        or not isinstance(optional_dependencies, dict)
+        or set(optional_dependencies) != set(expected_optional_dependencies)
+    ):
+        raise DistributionValidationError(
+            "project dependencies differ from the exact reviewed structure"
+        )
+
+    records: list[dict[str, str | None]] = []
+
+    def add(requirement_text: str, *, extra: str | None) -> None:
+        try:
+            requirement = Requirement(requirement_text)
+        except InvalidRequirement as error:
+            raise DistributionValidationError(
+                "project contains an invalid dependency requirement"
+            ) from error
+        if (
+            requirement.marker is not None
+            or requirement.url is not None
+            or requirement.extras
+            or not str(requirement.specifier)
+        ):
+            raise DistributionValidationError(
+                "project dependency entries must be marker-free named requirements "
+                "with exact version specifiers"
+            )
+        records.append(
+            {
+                "extra": extra,
+                "name": requirement.name,
+                "specifier": str(requirement.specifier),
+            }
+        )
+
+    for requirement_text in dependencies:
+        add(requirement_text, extra=None)
+    for extra, requirements in optional_dependencies.items():
+        if (
+            not isinstance(extra, str)
+            or not extra
+            or extra.casefold() != extra
+            or any(
+                not (character.isascii() and (character.isalnum() or character == "-"))
+                for character in extra
+            )
+            or not isinstance(requirements, list)
+            or not requirements
+            or any(not isinstance(item, str) for item in requirements)
+            or len(requirements) != len(set(requirements))
+            or set(requirements) != set(expected_optional_dependencies[extra])
+        ):
+            raise DistributionValidationError(
+                "project optional dependencies have an invalid extra declaration"
+            )
+        for requirement_text in requirements:
+            add(requirement_text, extra=extra)
+    ordered = tuple(
+        sorted(
+            records,
+            key=lambda record: (
+                record["extra"] or "",
+                record["name"] or "",
+                record["specifier"] or "",
+            ),
+        )
+    )
+    if len(ordered) != len({json.dumps(record, sort_keys=True) for record in ordered}):
+        raise DistributionValidationError(
+            "project contains a duplicate dependency within one marker association"
+        )
+    return ordered
+
+
+def _normalize_installed_requires_dist(
+    raw_requirements: object,
+    *,
+    expected: tuple[dict[str, str | None], ...],
+    label: str,
+) -> tuple[dict[str, str | None], ...]:
+    """Parse every installed Requires-Dist and require the exact PEP 621 contract."""
+
+    if (
+        not isinstance(raw_requirements, list)
+        or len(raw_requirements) > 1024
+        or any(
+            not isinstance(item, str) or not item or len(item) > 4096
+            for item in raw_requirements
+        )
+    ):
+        raise DistributionValidationError(f"{label} has invalid Requires-Dist data")
+    allowed_extras = {
+        record["extra"] for record in expected if record["extra"] is not None
+    }
+    marker_to_extra = {
+        str(Marker(f'extra == "{extra}"')): extra for extra in allowed_extras
+    }
+    records: list[dict[str, str | None]] = []
+    for raw_requirement in raw_requirements:
+        try:
+            requirement = Requirement(raw_requirement)
+        except InvalidRequirement as error:
+            raise DistributionValidationError(
+                f"{label} contains an invalid Requires-Dist requirement"
+            ) from error
+        if requirement.url is not None or requirement.extras:
+            raise DistributionValidationError(
+                f"{label} Requires-Dist contains an unsupported URL or requirement extra"
+            )
+        marker = None if requirement.marker is None else str(requirement.marker)
+        if marker is None:
+            extra = None
+        else:
+            extra = marker_to_extra.get(marker)
+            if extra is None:
+                raise DistributionValidationError(
+                    f"{label} Requires-Dist contains a non-exact extra marker"
+                )
+        records.append(
+            {
+                "extra": extra,
+                "name": requirement.name,
+                "specifier": str(requirement.specifier),
+            }
+        )
+    ordered = tuple(
+        sorted(
+            records,
+            key=lambda record: (
+                record["extra"] or "",
+                record["name"] or "",
+                record["specifier"] or "",
+            ),
+        )
+    )
+    if len(ordered) != len({json.dumps(record, sort_keys=True) for record in ordered}):
+        raise DistributionValidationError(
+            f"{label} has duplicate Requires-Dist entries"
+        )
+    if ordered != expected:
+        raise DistributionValidationError(
+            f"{label} full Requires-Dist set differs from pyproject dependencies"
+        )
+    return ordered
+
+
+def _normalize_installed_import_explicit_roots(
+    roots: Sequence[str],
+    *,
+    environment_root: Path,
+) -> list[str]:
+    """Normalize only the fresh-environment root; retain exact host roots."""
+
+    resolved_environment = environment_root.resolve()
+    normalized = []
+    for root_value in roots:
+        root = Path(root_value).resolve()
+        if root.is_relative_to(resolved_environment):
+            normalized.append(
+                f"fresh-environment/{root.relative_to(resolved_environment).as_posix()}"
+            )
+        else:
+            normalized.append(str(root))
+    return normalized
+
+
+def _load_installed_import_classification(
+    source_root: Path,
+    *,
+    python_member_classification: dict[str, object],
+    ordered_export_classification: dict[str, object],
+) -> dict[str, object]:
+    """Load the independent literal installed-import outcome inventory."""
+
+    manifest_path = source_root / INSTALLED_IMPORT_CLASSIFICATION_PATH
+    try:
+        distribution_mode = (source_root / "distribution").lstat().st_mode
+        manifest_mode = manifest_path.lstat().st_mode
+        manifest_bytes = manifest_path.read_bytes()
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot read the installed import classification manifest"
+        ) from error
+    if not stat.S_ISDIR(distribution_mode) or not stat.S_ISREG(manifest_mode):
+        raise DistributionValidationError(
+            "installed import classification path must be an ordinary file"
+        )
+    if len(manifest_bytes) > _MAX_CLASSIFICATION_BYTES:
+        raise DistributionValidationError(
+            "installed import classification manifest exceeds its size bound"
+        )
+    try:
+        value = json.loads(
+            manifest_bytes.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_json_object,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        raise DistributionValidationError(
+            "installed import classification manifest is not duplicate-free JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "base_dependencies",
+        "blocked_optional_prefixes",
+        "outcomes",
+    }:
+        raise DistributionValidationError(
+            "installed import classification manifest has unexpected top-level keys"
+        )
+    if value.get("schema_version") != INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION:
+        raise DistributionValidationError(
+            "installed import classification manifest has the wrong schema version"
+        )
+    if value.get("classification_scope") != INSTALLED_IMPORT_CLASSIFICATION_SCOPE:
+        raise DistributionValidationError(
+            "installed import classification manifest has the wrong scope"
+        )
+    if value.get("claim_boundary") != INSTALLED_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+        raise DistributionValidationError(
+            "installed import classification manifest has the wrong claim boundary"
+        )
+    if value.get("base_dependencies") != list(INSTALLED_IMPORT_BASE_DEPENDENCIES):
+        raise DistributionValidationError(
+            "installed import classification base dependencies differ"
+        )
+    pyproject_path = source_root / "pyproject.toml"
+    try:
+        pyproject_mode = pyproject_path.lstat().st_mode
+        pyproject_bytes = pyproject_path.read_bytes()
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot read project dependencies for installed import classification"
+        ) from error
+    if (
+        not stat.S_ISREG(pyproject_mode)
+        or len(pyproject_bytes) > _MAX_CLASSIFICATION_BYTES
+    ):
+        raise DistributionValidationError(
+            "project metadata must be an ordinary file within its size bound"
+        )
+    try:
+        pyproject = tomllib.loads(pyproject_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
+        raise DistributionValidationError(
+            "cannot parse project dependencies for installed import classification"
+        ) from error
+    project = pyproject.get("project") if isinstance(pyproject, dict) else None
+    if not isinstance(project, dict):
+        raise DistributionValidationError("project metadata has no project table")
+    requires_dist_contract = _normalize_project_requires_dist(project)
+    manifest_requirements = {
+        dependency["requirement"] for dependency in INSTALLED_IMPORT_BASE_DEPENDENCIES
+    }
+    if manifest_requirements != set(INSTALLED_IMPORT_PROJECT_DEPENDENCIES):
+        raise DistributionValidationError(
+            "installed import manifest dependencies do not map to project dependencies"
+        )
+    if value.get("blocked_optional_prefixes") != list(
+        INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES
+    ):
+        raise DistributionValidationError(
+            "installed import classification optional prefixes differ"
+        )
+    outcomes = value.get("outcomes")
+    if not isinstance(outcomes, dict) or set(outcomes) != {
+        "base_import_success",
+        "models_extra_missing_torch",
+    }:
+        raise DistributionValidationError(
+            "installed import classification has unexpected outcome roles"
+        )
+    parsed_outcomes: dict[str, tuple[str, ...]] = {}
+    for role in ("base_import_success", "models_extra_missing_torch"):
+        raw_modules = outcomes.get(role)
+        if not isinstance(raw_modules, list) or any(
+            not isinstance(module, str)
+            or not module
+            or any(
+                not part.isascii() or not part.isidentifier()
+                for part in module.split(".")
+            )
+            for module in raw_modules
+        ):
+            raise DistributionValidationError(
+                f"installed import outcome {role!r} contains an invalid module"
+            )
+        modules = tuple(raw_modules)
+        if modules != tuple(sorted(set(modules))):
+            raise DistributionValidationError(
+                f"installed import outcome {role!r} must be sorted and unique"
+            )
+        parsed_outcomes[role] = modules
+    success = parsed_outcomes["base_import_success"]
+    missing_torch = parsed_outcomes["models_extra_missing_torch"]
+    if set(success).intersection(missing_torch):
+        raise DistributionValidationError(
+            "installed import classification outcome roles overlap"
+        )
+    shipped_members = python_member_classification.get("shipped_members")
+    if not isinstance(shipped_members, tuple):
+        raise DistributionValidationError(
+            "Python member classification shipped members are unavailable"
+        )
+    expected_modules = tuple(
+        sorted(_python_member_module(member) for member in shipped_members)
+    )
+    if tuple(sorted((*success, *missing_torch))) != expected_modules:
+        raise DistributionValidationError(
+            "installed import outcomes do not close the exact shipped module set"
+        )
+    if (
+        len(success) != INSTALLED_IMPORT_SUCCESS_COUNT
+        or missing_torch != INSTALLED_IMPORT_MODELS_EXTRA_MISSING_TORCH
+        or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
+    ):
+        raise DistributionValidationError(
+            "installed import outcomes differ from the exact 154/5 inventory"
+        )
+    packages = ordered_export_classification.get("packages")
+    if not isinstance(packages, tuple):
+        raise DistributionValidationError(
+            "ordered package export classification is unavailable"
+        )
+    package_modules = tuple(str(package["module"]) for package in packages)
+    successful_packages = tuple(
+        module for module in package_modules if module in set(success)
+    )
+    unavailable_packages = tuple(
+        module for module in package_modules if module in set(missing_torch)
+    )
+    successful_runtime_exports = sum(
+        len(package["exports"])
+        for package in packages
+        if package["module"] in set(successful_packages)
+    )
+    unavailable_runtime_exports = sum(
+        len(package["exports"])
+        for package in packages
+        if package["module"] in set(unavailable_packages)
+    )
+    if (
+        len(successful_packages) != INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT
+        or successful_runtime_exports
+        != INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT
+        or unavailable_packages != ("spirallens.adapters",)
+        or unavailable_runtime_exports
+        != INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT
+    ):
+        raise DistributionValidationError(
+            "installed import outcomes differ from the exact initializer/export "
+            "projection"
+        )
+    return {
+        "base_dependencies": tuple(INSTALLED_IMPORT_BASE_DEPENDENCIES),
+        "blocked_optional_prefixes": INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES,
+        "claim_boundary": value["claim_boundary"],
+        "classification_scope": value["classification_scope"],
+        "manifest_bytes": manifest_bytes,
+        "manifest_path": INSTALLED_IMPORT_CLASSIFICATION_PATH,
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "outcomes": parsed_outcomes,
+        "python_members": python_member_classification,
+        "requires_dist_contract": requires_dist_contract,
+        "schema_version": INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION,
+        "successful_package_modules": successful_packages,
+        "successful_runtime_export_count": successful_runtime_exports,
+        "unavailable_package_modules": unavailable_packages,
+        "unavailable_runtime_export_count": unavailable_runtime_exports,
     }
 
 
@@ -1262,6 +1771,44 @@ def _require_sdist_ordered_export_manifest(
     }
 
 
+def _require_sdist_installed_import_manifest(
+    sdist: Path,
+    *,
+    expected_bytes: bytes,
+) -> dict[str, object]:
+    """Require the sdist to carry the exact installed-import inventory bytes."""
+
+    with tarfile.open(sdist, mode="r:gz") as archive:
+        matches = [
+            info
+            for info in archive.getmembers()
+            if "/".join(PurePosixPath(info.name).parts[1:])
+            == INSTALLED_IMPORT_CLASSIFICATION_PATH
+        ]
+        if len(matches) != 1 or not matches[0].isfile():
+            raise DistributionValidationError(
+                "sdist must contain one regular installed import classification "
+                "manifest"
+            )
+        handle = archive.extractfile(matches[0])
+        if handle is None:
+            raise DistributionValidationError(
+                "cannot read the sdist installed import classification manifest"
+            )
+        with handle:
+            payload = handle.read(_MAX_CLASSIFICATION_BYTES + 1)
+    if len(payload) > _MAX_CLASSIFICATION_BYTES or payload != expected_bytes:
+        raise DistributionValidationError(
+            "sdist installed import classification manifest differs from source"
+        )
+    return {
+        "path": INSTALLED_IMPORT_CLASSIFICATION_PATH,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "size_bytes": len(payload),
+        "byte_identical_to_source": True,
+    }
+
+
 def _classify_repository_experiment_members(wheel: Path) -> tuple[str, ...]:
     """Return repository-experiment members currently shipped in ``wheel``."""
 
@@ -1571,9 +2118,13 @@ def _library_separation_report(
         "ordered_package_export_inventory": ordered_package_export_inventory,
         "closed_wheel_python_module_inventory_established": True,
         "closed_ordered_package_export_inventory_established": True,
+        "closed_installed_module_import_outcome_inventory_established": True,
         "closed_public_api_contract_established": False,
+        "runtime_successful_package_export_values_established": True,
         "runtime_export_values_established": False,
+        "all_package_runtime_export_values_established": False,
         "export_symbol_importability_established": False,
+        "side_effect_free_imports_established": False,
         "closed_library_allowlist_established": False,
         "grants": {
             "authority": False,
@@ -1688,6 +2239,1270 @@ print(
     )
 )
 """
+
+
+_INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE = r"""
+import importlib.metadata
+import json
+import os
+from pathlib import Path
+import site
+import sys
+import sysconfig
+
+dependencies = json.loads(sys.argv[1])
+environment_root = Path(sys.argv[2]).resolve()
+if sys.flags.isolated != 1 or sys.flags.no_site != 1:
+    raise RuntimeError("root discovery requires isolated no-site startup")
+
+candidate_roots = []
+
+
+def add_candidate(value):
+    if not isinstance(value, str):
+        return
+    path = Path(value).resolve()
+    if path.is_dir() and path not in candidate_roots:
+        candidate_roots.append(path)
+
+
+if os.name == "nt":
+    add_candidate(str(environment_root / "Lib/site-packages"))
+else:
+    add_candidate(
+        str(
+            environment_root
+            / f"lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
+        )
+    )
+add_candidate(sysconfig.get_path("purelib"))
+add_candidate(sysconfig.get_path("platlib"))
+base_variables = {"base": sys.base_prefix, "platbase": sys.base_prefix}
+add_candidate(sysconfig.get_path("purelib", vars=base_variables))
+add_candidate(sysconfig.get_path("platlib", vars=base_variables))
+for value in site.getsitepackages([sys.base_prefix]):
+    add_candidate(value)
+user_sites = site.getusersitepackages()
+if isinstance(user_sites, str):
+    add_candidate(user_sites)
+else:
+    for value in user_sites:
+        add_candidate(value)
+sys.path.extend(str(path) for path in candidate_roots)
+
+
+def distribution_import_root(distribution, import_name):
+    files = distribution.files
+    if files is None:
+        raise RuntimeError(f"{distribution.metadata['Name']!r} has no file inventory")
+    expected = f"{import_name}/__init__.py"
+    matching = [
+        Path(distribution.locate_file(item)).resolve()
+        for item in files
+        if Path(str(item)).as_posix() == expected
+    ]
+    if len(matching) != 1 or not matching[0].is_file():
+        raise RuntimeError(
+            f"{distribution.metadata['Name']!r} has no unique {expected!r}"
+        )
+    return matching[0].parent.parent, matching[0]
+
+
+spirallens = importlib.metadata.distribution("spirallens")
+spirallens_root, spirallens_origin = distribution_import_root(
+    spirallens, "spirallens"
+)
+if not spirallens_origin.is_relative_to(environment_root):
+    raise RuntimeError("SpiralLens discovery resolved outside its fresh environment")
+
+observations = []
+explicit_roots = [spirallens_root]
+for expected in dependencies:
+    distribution = importlib.metadata.distribution(expected["distribution"])
+    import_root, import_origin = distribution_import_root(
+        distribution, expected["import_name"]
+    )
+    if import_origin.is_relative_to(environment_root):
+        raise RuntimeError(
+            f"declared dependency {expected['import_name']!r} is not host-projected"
+        )
+    if import_root not in explicit_roots:
+        explicit_roots.append(import_root)
+    observations.append(
+        {
+            "distribution": distribution.metadata["Name"],
+            "import_name": expected["import_name"],
+            "origin": str(import_origin),
+            "requirement": expected["requirement"],
+            "version": distribution.version,
+        }
+    )
+
+print(
+    json.dumps(
+        {
+            "base_dependencies": observations,
+            "explicit_import_roots": [str(path) for path in explicit_roots],
+            "isolated_mode_enabled": True,
+            "pth_startup_executed": False,
+            "site_initialization_enabled": False,
+            "spirallens_requires_dist": list(spirallens.requires or ()),
+            "spirallens_origin": str(spirallens_origin),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
+_INSTALLED_IMPORT_MODULE_PROBE = r"""
+import hashlib
+import importlib
+import importlib.abc
+import importlib.metadata
+import json
+import os
+from pathlib import Path
+import sys
+import sysconfig
+import traceback
+
+module_name = sys.argv[1]
+expected_outcome = sys.argv[2]
+expected_initializer_exports = json.loads(sys.argv[3])
+blocked_optional_prefixes = tuple(json.loads(sys.argv[4]))
+denied_audit_events = tuple(json.loads(sys.argv[5]))
+explicit_import_roots = tuple(json.loads(sys.argv[6]))
+expected_member = sys.argv[7]
+
+if sys.flags.isolated != 1 or sys.flags.no_site != 1:
+    raise RuntimeError("installed import probe requires isolated no-site startup")
+if not explicit_import_roots or any(
+    not isinstance(root, str) or not Path(root).is_absolute()
+    for root in explicit_import_roots
+):
+    raise RuntimeError("installed import probe received invalid explicit roots")
+if any("site-packages" in Path(root).parts for root in sys.path):
+    raise RuntimeError("installed import probe started with an implicit site path")
+sys.path.extend(explicit_import_roots)
+
+
+def matches_prefix(name, prefix):
+    return name == prefix or name.startswith(prefix + ".")
+
+
+preloaded_optional = sorted(
+    prefix
+    for prefix in blocked_optional_prefixes
+    if any(matches_prefix(name, prefix) for name in sys.modules)
+)
+if preloaded_optional:
+    raise RuntimeError(
+        f"installed import probe began with optional modules: {preloaded_optional}"
+    )
+
+
+class OptionalImportBlocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        for prefix in blocked_optional_prefixes:
+            if matches_prefix(fullname, prefix):
+                raise ModuleNotFoundError(
+                    f"blocked optional dependency: {fullname}",
+                    name=fullname,
+                )
+        return None
+
+
+sys.meta_path.insert(0, OptionalImportBlocker())
+packages_to_distributions = importlib.metadata.packages_distributions()
+blocked_undeclared_import_attempts = []
+
+
+class UndeclaredImportBlocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        top_level = fullname.split(".", 1)[0]
+        if top_level in sys.stdlib_module_names or top_level == "spirallens":
+            return None
+        distributions = packages_to_distributions.get(top_level)
+        if distributions is None:
+            return None
+        canonical = {
+            name.casefold().replace("_", "-") for name in distributions
+        }
+        if not canonical or not canonical.issubset({"numpy", "pyyaml", "scipy"}):
+            blocked_undeclared_import_attempts.append(fullname)
+            raise ModuleNotFoundError(
+                f"blocked undeclared dependency: {fullname}",
+                name=fullname,
+            )
+        return None
+
+
+sys.meta_path.insert(1, UndeclaredImportBlocker())
+denied_events = []
+write_flags = (
+    os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND
+)
+audited_events = set(denied_audit_events) - {"builtins/open-write"}
+
+
+def deny_import_side_effect(event, arguments):
+    denied = False
+    if event == "open":
+        mode = arguments[1] if len(arguments) > 1 else None
+        flags = arguments[2] if len(arguments) > 2 else None
+        denied = (
+            isinstance(mode, str)
+            and any(character in mode for character in "wax+")
+        ) or (isinstance(flags, int) and bool(flags & write_flags))
+        policy_event = "builtins/open-write"
+    else:
+        denied = event in audited_events
+        policy_event = event
+    if denied:
+        denied_events.append(policy_event)
+        raise RuntimeError(f"blocked installed import audit event: {policy_event}")
+
+
+sys.addaudithook(deny_import_side_effect)
+stdlib_bootstrap_modules = frozenset(sys.modules)
+if any(
+    name
+    and name.split(".", 1)[0] not in sys.stdlib_module_names
+    and name.split(".", 1)[0] != "__main__"
+    and packages_to_distributions.get(name.split(".", 1)[0]) is not None
+    for name in stdlib_bootstrap_modules
+):
+    raise RuntimeError("installed import probe bootstrapped a third-party module")
+
+allowed_dependencies = {
+    "numpy": ("numpy", "numpy>=1.26"),
+    "pyyaml": ("yaml", "PyYAML>=6.0"),
+    "scipy": ("scipy", "scipy>=1.11"),
+}
+allowed_distribution_versions = {}
+allowed_distribution_files = {}
+for distribution_name in ("numpy", "PyYAML", "scipy"):
+    distribution = importlib.metadata.distribution(distribution_name)
+    canonical_name = distribution_name.casefold().replace("_", "-")
+    allowed_distribution_versions[canonical_name] = distribution.version
+    files = distribution.files
+    if files is None:
+        raise RuntimeError(
+            f"declared dependency {distribution_name!r} has no file inventory"
+        )
+    allowed_distribution_files[canonical_name] = {
+        Path(distribution.locate_file(item)).resolve() for item in files
+    }
+
+spirallens_distribution = importlib.metadata.distribution("spirallens")
+spirallens_files = spirallens_distribution.files
+if spirallens_files is None:
+    raise RuntimeError("installed SpiralLens distribution has no file inventory")
+spirallens_distribution_files = {
+    Path(spirallens_distribution.locate_file(item)).resolve()
+    for item in spirallens_files
+}
+spirallens_initializers = [
+    path
+    for path in spirallens_distribution_files
+    if path.as_posix().endswith("/spirallens/__init__.py")
+]
+if len(spirallens_initializers) != 1:
+    raise RuntimeError("installed SpiralLens distribution has no unique initializer")
+spirallens_distribution_root = spirallens_initializers[0].parent.parent
+spirallens_requires_dist = list(spirallens_distribution.requires or ())
+
+
+def concrete_origin(loaded_module):
+    origin = getattr(loaded_module, "__file__", None)
+    if not isinstance(origin, str):
+        specification = getattr(loaded_module, "__spec__", None)
+        origin = getattr(specification, "origin", None)
+    if not isinstance(origin, str) or origin in {"built-in", "frozen"}:
+        return None
+    return Path(origin).resolve()
+
+
+stdlib_roots = {
+    Path(path).resolve()
+    for path in (sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib"))
+    if isinstance(path, str)
+}
+stdlib_internal_modules = {sysconfig._get_sysconfigdata_name()}
+baseline_modules = frozenset(sys.modules)
+status = "unexpected_failure"
+missing_name = None
+module = None
+failure_type = None
+failure_message = None
+failure_frames = []
+try:
+    module = importlib.import_module(module_name)
+except ModuleNotFoundError as error:
+    status = "models_extra_missing_torch"
+    missing_name = error.name
+    failure_type = type(error).__name__
+    failure_message = str(error)
+    failure_frames = [frame.filename for frame in traceback.extract_tb(error.__traceback__)]
+except BaseException as error:
+    failure_type = type(error).__name__
+    failure_message = str(error)
+else:
+    status = "base_import_success"
+
+if status != expected_outcome:
+    raise RuntimeError(
+        f"{module_name} produced {status!r}, expected {expected_outcome!r}: "
+        f"{failure_type}: {failure_message}"
+    )
+if status == "models_extra_missing_torch":
+    if (
+        missing_name != "torch"
+        or failure_type != "ModuleNotFoundError"
+        or failure_message != "blocked optional dependency: torch"
+    ):
+        raise RuntimeError(
+            f"{module_name} did not fail solely at the exact blocked torch boundary"
+        )
+    expected_suffix = "/" + expected_member
+    candidate_origins = sorted(
+        {
+            str(Path(filename).resolve())
+            for filename in failure_frames
+            if filename.endswith(expected_suffix)
+        }
+    )
+    if len(candidate_origins) != 1:
+        raise RuntimeError(
+            f"{module_name} failure is not bound to exact member {expected_member!r}"
+        )
+    module_origin = candidate_origins[0]
+    if Path(module_origin).resolve() not in spirallens_distribution_files:
+        raise RuntimeError(
+            f"{module_name} failure origin is not an exact SpiralLens wheel file"
+        )
+    runtime_exports = None
+else:
+    module_origin = getattr(module, "__file__", None)
+    if not isinstance(module_origin, str):
+        raise RuntimeError(f"{module_name} has no concrete module origin")
+    if Path(module_origin).resolve() not in spirallens_distribution_files:
+        raise RuntimeError(
+            f"{module_name} origin is not an exact SpiralLens wheel file"
+        )
+    runtime_value = getattr(module, "__all__", None)
+    if expected_initializer_exports is None:
+        runtime_exports = None
+    else:
+        if (
+            type(runtime_value) is not list
+            or any(type(item) is not str for item in runtime_value)
+            or runtime_value != expected_initializer_exports
+        ):
+            raise RuntimeError(
+                f"{module_name} runtime __all__ differs from its literal inventory"
+            )
+        runtime_exports = runtime_value
+
+loaded_optional = sorted(
+    prefix
+    for prefix in blocked_optional_prefixes
+    if any(matches_prefix(name, prefix) for name in sys.modules)
+)
+if loaded_optional:
+    raise RuntimeError(
+        f"{module_name} loaded blocked optional modules: {loaded_optional}"
+    )
+
+stdlib_names = set(sys.stdlib_module_names)
+loaded_allowed_distributions = set()
+dependency_runtime_modules_without_file_origin = []
+dependency_runtime_module_aliases = []
+reviewed_dependency_module_aliases = {
+    "_cyutility": ("scipy._cyutility", "scipy"),
+}
+for name in sorted(set(sys.modules) - baseline_modules):
+    loaded_module = sys.modules[name]
+    if not name:
+        continue
+    top_level = name.split(".", 1)[0]
+    if top_level in stdlib_names:
+        continue
+    resolved_origin = concrete_origin(loaded_module)
+    if resolved_origin is None:
+        dependency_runtime_modules_without_file_origin.append(name)
+        continue
+    if any(resolved_origin.is_relative_to(root) for root in stdlib_roots) and not any(
+        part in {"site-packages", "dist-packages"}
+        for part in resolved_origin.parts
+    ):
+        if top_level not in stdlib_internal_modules:
+            raise RuntimeError(
+                f"{module_name} loaded unclassified stdlib-path module {name!r}"
+            )
+        continue
+    owners = []
+    if resolved_origin in spirallens_distribution_files:
+        owners.append("spirallens")
+    owners.extend(
+        distribution_name
+        for distribution_name, files in allowed_distribution_files.items()
+        if resolved_origin in files
+    )
+    if len(owners) != 1:
+        raise RuntimeError(
+            f"{module_name} target import module {name!r} is not owned by "
+            f"exactly one allowed distribution: {resolved_origin}"
+        )
+    mapped_distributions = packages_to_distributions.get(top_level)
+    if owners == ["spirallens"]:
+        if top_level != "spirallens":
+            raise RuntimeError(
+                f"{module_name} loaded a non-SpiralLens name from a SpiralLens file"
+            )
+    else:
+        if mapped_distributions is None:
+            specification = getattr(loaded_module, "__spec__", None)
+            specification_name = getattr(specification, "name", None)
+            expected_alias = reviewed_dependency_module_aliases.get(top_level)
+            if (
+                expected_alias != (specification_name, owners[0])
+                or sys.modules.get(specification_name) is not loaded_module
+            ):
+                raise RuntimeError(
+                    f"{module_name} target import {top_level!r} has no exact "
+                    f"metadata owner matching file owner {owners[0]!r}"
+                )
+            dependency_runtime_module_aliases.append(
+                {
+                    "alias": top_level,
+                    "canonical_module": specification_name,
+                    "distribution": owners[0],
+                }
+            )
+            mapped_distributions = packages_to_distributions.get(
+                specification_name.split(".", 1)[0]
+            )
+        if (
+            not isinstance(mapped_distributions, list)
+            or len(mapped_distributions) != 1
+            or mapped_distributions[0].casefold().replace("_", "-") != owners[0]
+        ):
+            raise RuntimeError(
+                f"{module_name} target import {top_level!r} metadata ownership "
+                f"does not match exact file owner {owners[0]!r}"
+            )
+    if owners[0] != "spirallens":
+        loaded_allowed_distributions.add(owners[0])
+    if top_level == "spirallens" and owners != ["spirallens"]:
+        raise RuntimeError(
+            f"{module_name} loaded a SpiralLens module outside its exact wheel files"
+        )
+
+if any(
+    name != "cython_runtime"
+    and not (
+        name.startswith("_cython_")
+        and name.removeprefix("_cython_")
+        and all(
+            part.isascii() and part.isdigit()
+            for part in name.removeprefix("_cython_").split("_")
+        )
+    )
+    for name in dependency_runtime_modules_without_file_origin
+):
+    raise RuntimeError("target import created an unexpected originless module")
+if dependency_runtime_modules_without_file_origin and not loaded_allowed_distributions:
+    raise RuntimeError(
+        "target import created originless runtime modules without a declared dependency"
+    )
+
+third_party_distributions = {}
+for canonical_distribution in sorted(loaded_allowed_distributions):
+    import_name, requirement = allowed_dependencies[canonical_distribution]
+    imported = sys.modules.get(import_name)
+    import_origin = concrete_origin(imported)
+    if import_origin not in allowed_distribution_files[canonical_distribution]:
+        raise RuntimeError(
+            f"declared dependency {import_name!r} is not an exact distribution file"
+        )
+    distribution_name = (
+        "PyYAML" if canonical_distribution == "pyyaml" else canonical_distribution
+    )
+    third_party_distributions[import_name] = {
+        "distribution": distribution_name,
+        "origin": str(import_origin),
+        "requirement": requirement,
+        "version": allowed_distribution_versions[canonical_distribution],
+    }
+
+print(
+    json.dumps(
+        {
+            "audit_denied_event_count": len(denied_events),
+            "audit_denied_events": denied_events,
+            "blocked_optional_prefixes_loaded": loaded_optional,
+            "blocked_undeclared_import_attempts": sorted(
+                set(blocked_undeclared_import_attempts)
+            ),
+            "dependency_runtime_modules_without_file_origin": (
+                dependency_runtime_modules_without_file_origin
+            ),
+            "dependency_runtime_module_aliases": dependency_runtime_module_aliases,
+            "explicit_import_roots": list(explicit_import_roots),
+            "failure_message": failure_message,
+            "failure_type": failure_type,
+            "missing_name": missing_name,
+            "module": module_name,
+            "module_origin": module_origin,
+            "runtime_exports": runtime_exports,
+            "runtime_exports_sha256": (
+                None
+                if runtime_exports is None
+                else hashlib.sha256(
+                    json.dumps(
+                        runtime_exports,
+                        ensure_ascii=True,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest()
+            ),
+            "spirallens_requires_dist": spirallens_requires_dist,
+            "spirallens_distribution_root": str(spirallens_distribution_root),
+            "site_initialization_enabled": False,
+            "status": status,
+            "third_party_distributions": third_party_distributions,
+            "pth_startup_executed": False,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
+def _discover_installed_import_roots(
+    *,
+    python: Path,
+    environment_root: Path,
+    neutral_cwd: Path,
+    environment: dict[str, str],
+    artifact_kind: str,
+    expected_requires_dist: tuple[dict[str, str | None], ...],
+) -> dict[str, object]:
+    """Discover only canonical venv/base/user roots without executing site files."""
+
+    completed = subprocess.run(
+        (
+            str(python),
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            _INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE,
+            json.dumps(INSTALLED_IMPORT_BASE_DEPENDENCIES),
+            str(environment_root),
+        ),
+        cwd=neutral_cwd,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=INSTALLED_IMPORT_PROBE_TIMEOUT_SECONDS,
+    )
+    if completed.returncode != 0 or completed.stderr != "":
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise DistributionValidationError(
+            f"{artifact_kind} explicit import-root discovery failed"
+            + (f": {detail[-2000:]}" if detail else "")
+        )
+    try:
+        value = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            f"{artifact_kind} explicit import-root discovery returned invalid JSON"
+        ) from error
+    expected_keys = {
+        "base_dependencies",
+        "explicit_import_roots",
+        "isolated_mode_enabled",
+        "pth_startup_executed",
+        "site_initialization_enabled",
+        "spirallens_requires_dist",
+        "spirallens_origin",
+    }
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        raise DistributionValidationError(
+            f"{artifact_kind} explicit import-root discovery returned unexpected fields"
+        )
+    if (
+        value.get("isolated_mode_enabled") is not True
+        or value.get("site_initialization_enabled") is not False
+        or value.get("pth_startup_executed") is not False
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} import-root discovery did not disable site startup"
+        )
+    normalized_requires_dist = _normalize_installed_requires_dist(
+        value.get("spirallens_requires_dist"),
+        expected=expected_requires_dist,
+        label=f"{artifact_kind} installed wheel",
+    )
+    value["spirallens_requires_dist"] = list(normalized_requires_dist)
+    environment_root = environment_root.resolve()
+    spirallens_origin_value = value.get("spirallens_origin")
+    if not isinstance(spirallens_origin_value, str):
+        raise DistributionValidationError(
+            f"{artifact_kind} root discovery omitted SpiralLens origin"
+        )
+    spirallens_origin = Path(spirallens_origin_value).resolve()
+    if (
+        not spirallens_origin.is_file()
+        or not spirallens_origin.is_relative_to(environment_root)
+        or not spirallens_origin.as_posix().endswith("/spirallens/__init__.py")
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} root discovery found invalid SpiralLens origin"
+        )
+    dependencies = value.get("base_dependencies")
+    if not isinstance(dependencies, list) or len(dependencies) != len(
+        INSTALLED_IMPORT_BASE_DEPENDENCIES
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} root discovery returned wrong dependency count"
+        )
+    expected_roots = [spirallens_origin.parent.parent]
+    normalized_dependencies = []
+    minimum_by_import = {"numpy": (1, 26), "scipy": (1, 11), "yaml": (6, 0)}
+    for expected, observation in zip(
+        INSTALLED_IMPORT_BASE_DEPENDENCIES, dependencies, strict=True
+    ):
+        if not isinstance(observation, dict) or set(observation) != {
+            "distribution",
+            "import_name",
+            "origin",
+            "requirement",
+            "version",
+        }:
+            raise DistributionValidationError(
+                f"{artifact_kind} root discovery returned malformed dependency data"
+            )
+        distribution = observation.get("distribution")
+        import_name = observation.get("import_name")
+        requirement = observation.get("requirement")
+        version = observation.get("version")
+        origin_value = observation.get("origin")
+        if (
+            not isinstance(distribution, str)
+            or distribution.casefold().replace("_", "-")
+            != expected["distribution"].casefold().replace("_", "-")
+            or import_name != expected["import_name"]
+            or requirement != expected["requirement"]
+            or not isinstance(version, str)
+            or not isinstance(origin_value, str)
+        ):
+            raise DistributionValidationError(
+                f"{artifact_kind} root discovery dependency differs"
+            )
+        origin = Path(origin_value).resolve()
+        if (
+            not origin.is_file()
+            or origin.is_relative_to(environment_root)
+            or not origin.as_posix().endswith(f"/{import_name}/__init__.py")
+        ):
+            raise DistributionValidationError(
+                f"{artifact_kind} dependency {import_name} is not host-projected"
+            )
+        _require_minimum_release_version(
+            version,
+            minimum=minimum_by_import[import_name],
+            label=f"{artifact_kind} dependency {import_name}",
+        )
+        if origin.parent.parent not in expected_roots:
+            expected_roots.append(origin.parent.parent)
+        normalized_dependencies.append(observation)
+    explicit_roots = value.get("explicit_import_roots")
+    if (
+        not isinstance(explicit_roots, list)
+        or any(not isinstance(root, str) for root in explicit_roots)
+        or [Path(root).resolve() for root in explicit_roots] != expected_roots
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} explicit import roots differ from exact package roots"
+        )
+    value["explicit_import_roots"] = [str(root) for root in expected_roots]
+    value["spirallens_origin"] = spirallens_origin.relative_to(
+        environment_root
+    ).as_posix()
+    value["base_dependencies"] = normalized_dependencies
+    return value
+
+
+def _parse_installed_import_probe_output(
+    output: str,
+    *,
+    module: str,
+    expected_member: str,
+    expected_outcome: str,
+    expected_initializer_exports: tuple[str, ...] | None,
+    environment_root: Path,
+    explicit_import_roots: tuple[str, ...],
+    expected_dependencies: tuple[dict[str, object], ...],
+    expected_requires_dist: tuple[dict[str, str | None], ...],
+) -> dict[str, object]:
+    """Parse one isolated installed-module probe and enforce exact boundaries."""
+
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            f"installed import probe for {module} did not emit valid JSON"
+        ) from error
+    expected_keys = {
+        "audit_denied_event_count",
+        "audit_denied_events",
+        "blocked_optional_prefixes_loaded",
+        "blocked_undeclared_import_attempts",
+        "dependency_runtime_modules_without_file_origin",
+        "dependency_runtime_module_aliases",
+        "explicit_import_roots",
+        "failure_message",
+        "failure_type",
+        "missing_name",
+        "module",
+        "module_origin",
+        "runtime_exports",
+        "runtime_exports_sha256",
+        "spirallens_requires_dist",
+        "spirallens_distribution_root",
+        "site_initialization_enabled",
+        "status",
+        "third_party_distributions",
+        "pth_startup_executed",
+    }
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        raise DistributionValidationError(
+            f"installed import probe for {module} returned unexpected fields"
+        )
+    if value.get("module") != module or value.get("status") != expected_outcome:
+        raise DistributionValidationError(
+            f"installed import probe for {module} returned the wrong outcome"
+        )
+    if (
+        value.get("audit_denied_event_count") != 0
+        or value.get("audit_denied_events") != []
+    ):
+        raise DistributionValidationError(
+            f"installed import probe for {module} attempted a denied audit event"
+        )
+    if value.get("blocked_optional_prefixes_loaded") != []:
+        raise DistributionValidationError(
+            f"installed import probe for {module} loaded a blocked optional prefix"
+        )
+    blocked_undeclared = value.get("blocked_undeclared_import_attempts")
+    if (
+        not isinstance(blocked_undeclared, list)
+        or blocked_undeclared != sorted(set(blocked_undeclared))
+        or any(not isinstance(name, str) or not name for name in blocked_undeclared)
+    ):
+        raise DistributionValidationError(
+            f"installed import probe for {module} returned invalid undeclared attempts"
+        )
+    if (
+        value.get("site_initialization_enabled") is not False
+        or value.get("pth_startup_executed") is not False
+        or value.get("explicit_import_roots") != list(explicit_import_roots)
+    ):
+        raise DistributionValidationError(
+            f"installed import probe for {module} did not preserve no-site roots"
+        )
+    environment_root = environment_root.resolve()
+    value["explicit_import_roots"] = _normalize_installed_import_explicit_roots(
+        explicit_import_roots,
+        environment_root=environment_root,
+    )
+    generated_modules = value.get("dependency_runtime_modules_without_file_origin")
+    if (
+        not isinstance(generated_modules, list)
+        or generated_modules != sorted(set(generated_modules))
+        or any(
+            not isinstance(name, str)
+            or (
+                name != "cython_runtime"
+                and not (
+                    name.startswith("_cython_")
+                    and name.removeprefix("_cython_")
+                    and all(
+                        part.isascii() and part.isdigit()
+                        for part in name.removeprefix("_cython_").split("_")
+                    )
+                )
+            )
+            for name in generated_modules
+        )
+    ):
+        raise DistributionValidationError(
+            f"installed import probe for {module} returned invalid generated modules"
+        )
+    runtime_aliases = value.get("dependency_runtime_module_aliases")
+    if not isinstance(runtime_aliases, list) or any(
+        alias
+        != {
+            "alias": "_cyutility",
+            "canonical_module": "scipy._cyutility",
+            "distribution": "scipy",
+        }
+        for alias in runtime_aliases
+    ):
+        raise DistributionValidationError(
+            f"installed import probe for {module} returned invalid dependency aliases"
+        )
+    distribution_root_value = value.get("spirallens_distribution_root")
+    if not isinstance(distribution_root_value, str):
+        raise DistributionValidationError(
+            f"installed import probe for {module} omitted SpiralLens metadata root"
+        )
+    spirallens_distribution_root = Path(distribution_root_value).resolve()
+    if not spirallens_distribution_root.is_relative_to(environment_root):
+        raise DistributionValidationError(
+            f"installed import probe for {module} resolved SpiralLens metadata "
+            "outside its fresh environment"
+        )
+    value["spirallens_distribution_root"] = spirallens_distribution_root.relative_to(
+        environment_root
+    ).as_posix()
+    normalized_requires_dist = _normalize_installed_requires_dist(
+        value.get("spirallens_requires_dist"),
+        expected=expected_requires_dist,
+        label=f"installed import probe for {module}",
+    )
+    value["spirallens_requires_dist"] = list(normalized_requires_dist)
+    negative_outcome = expected_outcome == "models_extra_missing_torch"
+    if negative_outcome:
+        if (
+            value.get("failure_type") != "ModuleNotFoundError"
+            or value.get("failure_message") != "blocked optional dependency: torch"
+            or value.get("missing_name") != "torch"
+            or value.get("runtime_exports") is not None
+            or value.get("runtime_exports_sha256") is not None
+        ):
+            raise DistributionValidationError(
+                f"installed import probe for {module} did not stop at exact torch"
+            )
+    else:
+        if any(
+            value.get(key) is not None
+            for key in ("failure_type", "failure_message", "missing_name")
+        ):
+            raise DistributionValidationError(
+                f"successful installed import probe for {module} returned a failure"
+            )
+    origin_value = value.get("module_origin")
+    if not isinstance(origin_value, str):
+        raise DistributionValidationError(
+            f"installed import probe for {module} omitted its origin"
+        )
+    origin = Path(origin_value).resolve()
+    if not origin.is_relative_to(environment_root):
+        raise DistributionValidationError(
+            f"{module} observed outside the fresh import environment: {origin}"
+        )
+    relative_origin = origin.relative_to(environment_root).as_posix()
+    if not relative_origin.endswith(f"/{expected_member}"):
+        raise DistributionValidationError(
+            f"{module} origin does not match classified member {expected_member!r}"
+        )
+    value["module_origin"] = relative_origin
+    if not negative_outcome:
+        runtime_exports = value.get("runtime_exports")
+        runtime_exports_sha256 = value.get("runtime_exports_sha256")
+        if expected_initializer_exports is None:
+            if runtime_exports is not None or runtime_exports_sha256 is not None:
+                raise DistributionValidationError(
+                    f"non-initializer {module} returned runtime package exports"
+                )
+        else:
+            if runtime_exports != list(expected_initializer_exports):
+                raise DistributionValidationError(
+                    f"initializer {module} runtime exports differ"
+                )
+            expected_sha256 = hashlib.sha256(
+                json.dumps(
+                    list(expected_initializer_exports),
+                    ensure_ascii=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+            if runtime_exports_sha256 != expected_sha256:
+                raise DistributionValidationError(
+                    f"initializer {module} runtime export digest differs"
+                )
+    third_party = value.get("third_party_distributions")
+    if not isinstance(third_party, dict):
+        raise DistributionValidationError(
+            f"installed import probe for {module} omitted dependency observations"
+        )
+    allowed_imports = {"numpy", "scipy", "yaml"}
+    allowed_distributions = {"numpy", "scipy", "pyyaml"}
+    for import_name, observation in third_party.items():
+        if import_name not in allowed_imports or not isinstance(observation, dict):
+            raise DistributionValidationError(
+                f"installed import probe for {module} loaded an undeclared dependency"
+            )
+        if set(observation) != {
+            "distribution",
+            "version",
+            "origin",
+            "requirement",
+        }:
+            raise DistributionValidationError(
+                f"installed import probe for {module} returned malformed dependency data"
+            )
+        distribution_name = observation.get("distribution")
+        version = observation.get("version")
+        origin_value = observation.get("origin")
+        requirement = observation.get("requirement")
+        expected_dependency = next(
+            (
+                dependency
+                for dependency in INSTALLED_IMPORT_BASE_DEPENDENCIES
+                if dependency["import_name"] == import_name
+            ),
+            None,
+        )
+        if (
+            not isinstance(distribution_name, str)
+            or distribution_name.casefold().replace("_", "-")
+            not in allowed_distributions
+            or not isinstance(version, str)
+            or not version
+            or not isinstance(origin_value, str)
+            or expected_dependency is None
+            or requirement != expected_dependency["requirement"]
+        ):
+            raise DistributionValidationError(
+                f"installed import probe for {module} returned invalid dependency data"
+            )
+        origin = Path(origin_value).resolve()
+        if not origin.exists():
+            raise DistributionValidationError(
+                f"{module} dependency {import_name} has a missing origin: {origin}"
+            )
+        if origin.is_relative_to(environment_root):
+            raise DistributionValidationError(
+                f"{module} dependency {import_name} was not host-projected: {origin}"
+            )
+        observation["origin"] = str(origin)
+        minimum_by_import = {
+            "numpy": (1, 26),
+            "scipy": (1, 11),
+            "yaml": (6, 0),
+        }
+        _require_minimum_release_version(
+            version,
+            minimum=minimum_by_import[import_name],
+            label=f"{module} dependency {import_name}",
+        )
+    expected_dependency_by_import = {}
+    for dependency in expected_dependencies:
+        import_name = dependency["import_name"]
+        if import_name not in third_party:
+            continue
+        expected_dependency_by_import[import_name] = {
+            key: dependency[key]
+            for key in ("distribution", "origin", "requirement", "version")
+        }
+    if third_party != expected_dependency_by_import:
+        raise DistributionValidationError(
+            f"installed import probe for {module} dependency receipt differs"
+        )
+    return value
+
+
+def _installed_import_outcome_manifest_sha256(
+    modules: Sequence[dict[str, object]],
+) -> str:
+    return hashlib.sha256(
+        "".join(
+            f"{module['module']}\t{module['status']}\t"
+            f"{module['module_origin'] or ''}\t"
+            f"{module['runtime_exports_sha256'] or ''}\n"
+            for module in modules
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _require_minimum_release_version(
+    version: str,
+    *,
+    minimum: tuple[int, ...],
+    label: str,
+) -> None:
+    """Require a numeric final release at or above one frozen lower bound."""
+
+    if not isinstance(version, str) or not version:
+        raise DistributionValidationError(f"{label} version must be non-empty")
+    components = version.split(".")
+    if any(
+        not component.isascii() or not component.isdigit() for component in components
+    ):
+        raise DistributionValidationError(
+            f"{label} version must be a numeric final release"
+        )
+    observed = tuple(int(component) for component in components)
+    width = max(len(observed), len(minimum))
+    padded_observed = observed + (0,) * (width - len(observed))
+    padded_minimum = minimum + (0,) * (width - len(minimum))
+    if padded_observed < padded_minimum:
+        raise DistributionValidationError(
+            f"{label} version does not satisfy its declared minimum"
+        )
+
+
+def _probe_installed_import_outcomes(
+    *,
+    python: Path,
+    environment_root: Path,
+    neutral_cwd: Path,
+    environment: dict[str, str],
+    classification: dict[str, object],
+    ordered_export_classification: dict[str, object],
+    artifact_kind: str,
+) -> dict[str, object]:
+    """Import every classified module in a distinct fail-closed subprocess."""
+
+    outcomes = classification.get("outcomes")
+    if not isinstance(outcomes, dict):
+        raise DistributionValidationError(
+            "installed import classification outcomes are unavailable"
+        )
+    expected_by_module = {
+        module: role for role, modules in outcomes.items() for module in modules
+    }
+    python_member_classification = classification.get("python_members")
+    if not isinstance(python_member_classification, dict):
+        raise DistributionValidationError(
+            "installed import classification lacks its Python member join"
+        )
+    expected_member_by_module = {
+        _python_member_module(member): member
+        for member in python_member_classification["shipped_members"]
+    }
+    if set(expected_member_by_module) != set(expected_by_module):
+        raise DistributionValidationError(
+            "installed import classification differs from its Python member join"
+        )
+    ordered_packages = ordered_export_classification.get("packages")
+    if not isinstance(ordered_packages, tuple):
+        raise DistributionValidationError(
+            "ordered package export classification is unavailable"
+        )
+    initializer_exports = {
+        str(package["module"]): package["exports"] for package in ordered_packages
+    }
+    blocked_prefixes = classification.get("blocked_optional_prefixes")
+    if not isinstance(blocked_prefixes, tuple):
+        raise DistributionValidationError(
+            "installed import optional-prefix classification is unavailable"
+        )
+    expected_requires_dist = classification.get("requires_dist_contract")
+    if not isinstance(expected_requires_dist, tuple):
+        raise DistributionValidationError(
+            "installed import full Requires-Dist contract is unavailable"
+        )
+    root_discovery = _discover_installed_import_roots(
+        python=python,
+        environment_root=environment_root,
+        neutral_cwd=neutral_cwd,
+        environment=environment,
+        artifact_kind=artifact_kind,
+        expected_requires_dist=expected_requires_dist,
+    )
+    explicit_import_roots = tuple(root_discovery["explicit_import_roots"])
+    expected_dependencies = tuple(root_discovery["base_dependencies"])
+
+    def run_module(module: str) -> dict[str, object]:
+        expected_outcome = expected_by_module[module]
+        expected_exports = initializer_exports.get(module)
+        try:
+            completed = subprocess.run(
+                (
+                    str(python),
+                    "-I",
+                    "-S",
+                    "-B",
+                    "-c",
+                    _INSTALLED_IMPORT_MODULE_PROBE,
+                    module,
+                    expected_outcome,
+                    json.dumps(expected_exports),
+                    json.dumps(blocked_prefixes),
+                    json.dumps(INSTALLED_IMPORT_DENIED_AUDIT_EVENTS),
+                    json.dumps(explicit_import_roots),
+                    expected_member_by_module[module],
+                ),
+                cwd=neutral_cwd,
+                env=environment,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=INSTALLED_IMPORT_PROBE_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise DistributionValidationError(
+                f"{artifact_kind} isolated import probe timed out for {module}"
+            ) from error
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or completed.stdout.strip()
+            if len(detail) > 2000:
+                detail = detail[-2000:]
+            raise DistributionValidationError(
+                f"{artifact_kind} isolated import probe failed for {module}"
+                + (f": {detail}" if detail else "")
+            )
+        if completed.stderr != "":
+            raise DistributionValidationError(
+                f"{artifact_kind} isolated import probe wrote stderr for {module}"
+            )
+        return _parse_installed_import_probe_output(
+            completed.stdout,
+            module=module,
+            expected_member=expected_member_by_module[module],
+            expected_outcome=expected_outcome,
+            expected_initializer_exports=expected_exports,
+            environment_root=environment_root,
+            explicit_import_roots=explicit_import_roots,
+            expected_dependencies=expected_dependencies,
+            expected_requires_dist=expected_requires_dist,
+        )
+
+    modules = tuple(sorted(expected_by_module))
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=INSTALLED_IMPORT_PROBE_CONCURRENCY
+    ) as executor:
+        observations = tuple(executor.map(run_module, modules))
+    successes = tuple(
+        observation
+        for observation in observations
+        if observation["status"] == "base_import_success"
+    )
+    missing_torch = tuple(
+        observation
+        for observation in observations
+        if observation["status"] == "models_extra_missing_torch"
+    )
+    runtime_packages = tuple(
+        observation
+        for observation in successes
+        if observation["module"] in initializer_exports
+    )
+    runtime_export_count = sum(
+        len(observation["runtime_exports"]) for observation in runtime_packages
+    )
+    if (
+        len(observations) != 159
+        or len(successes) != INSTALLED_IMPORT_SUCCESS_COUNT
+        or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
+        or len(runtime_packages) != INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT
+        or runtime_export_count != INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT
+        or any(
+            observation["audit_denied_event_count"] != 0 for observation in observations
+        )
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} installed import outcome aggregate differs"
+        )
+    dependency_observations: dict[str, dict[str, object]] = {}
+    for observation in observations:
+        for import_name, dependency in observation["third_party_distributions"].items():
+            current = dependency_observations.setdefault(import_name, dependency)
+            if current != dependency:
+                raise DistributionValidationError(
+                    f"{artifact_kind} dependency observation differs across imports"
+                )
+    if set(dependency_observations) != {"numpy", "scipy", "yaml"}:
+        raise DistributionValidationError(
+            f"{artifact_kind} imports did not exercise all declared base dependencies"
+        )
+    originless_runtime_modules = sorted(
+        {
+            name
+            for observation in observations
+            for name in observation["dependency_runtime_modules_without_file_origin"]
+        }
+    )
+    dependency_runtime_module_aliases = sorted(
+        {
+            json.dumps(alias, sort_keys=True, separators=(",", ":"))
+            for observation in observations
+            for alias in observation["dependency_runtime_module_aliases"]
+        }
+    )
+    blocked_undeclared_import_attempts = sorted(
+        {
+            name
+            for observation in observations
+            for name in observation["blocked_undeclared_import_attempts"]
+        }
+    )
+    return {
+        "observation": "exact-host-installed-module-import-outcomes",
+        "module_process_isolation": "one-fresh-process-per-module",
+        "module_count": len(observations),
+        "base_import_success_count": len(successes),
+        "models_extra_missing_torch_count": len(missing_torch),
+        "successful_runtime_initializer_count": len(runtime_packages),
+        "successful_runtime_export_count": runtime_export_count,
+        "unavailable_runtime_initializer_count": 1,
+        "unavailable_runtime_export_count": (
+            INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT
+        ),
+        "optional_prefixes_loaded": [],
+        "audit_denied_event_count": 0,
+        "blocked_undeclared_import_attempts": blocked_undeclared_import_attempts,
+        "denied_audit_event_policy": list(INSTALLED_IMPORT_DENIED_AUDIT_EVENTS),
+        "dependency_runtime_modules_without_file_origin": (originless_runtime_modules),
+        "dependency_runtime_module_aliases": [
+            json.loads(alias) for alias in dependency_runtime_module_aliases
+        ],
+        "startup": {
+            **root_discovery,
+            "explicit_import_roots": _normalize_installed_import_explicit_roots(
+                explicit_import_roots,
+                environment_root=environment_root,
+            ),
+        },
+        "per_module_timeout_seconds": INSTALLED_IMPORT_PROBE_TIMEOUT_SECONDS,
+        "outcome_manifest_sha256": _installed_import_outcome_manifest_sha256(
+            observations
+        ),
+        "third_party_dependencies": dependency_observations,
+        "modules": list(observations),
+    }
+
+
+def _require_installed_import_outcome_equality(
+    direct_source: dict[str, object],
+    sdist_derived: dict[str, object],
+) -> dict[str, bool]:
+    """Require exact normalized installed-import and startup receipts."""
+
+    for field in (
+        "outcome_manifest_sha256",
+        "modules",
+        "third_party_dependencies",
+        "startup",
+    ):
+        if direct_source.get(field) != sdist_derived.get(field):
+            raise DistributionValidationError(
+                "direct-source and sdist-derived installed import outcomes differ"
+            )
+    return {
+        "direct_source_to_sdist_derived_install": True,
+        "direct_source_to_sdist_derived_startup": True,
+    }
 
 
 _ATLAS_READER_PROBE = r"""
@@ -2509,6 +4324,11 @@ def validate_distribution(
         source_root,
         python_member_classification=python_member_classification,
     )
+    installed_import_classification = _load_installed_import_classification(
+        source_root,
+        python_member_classification=python_member_classification,
+        ordered_export_classification=ordered_export_classification,
+    )
     python_source_inventory = _classify_source_python_members(
         source_root,
         classification=python_member_classification,
@@ -2654,6 +4474,14 @@ def validate_distribution(
             sdist,
             expected_bytes=ordered_export_manifest_bytes,
         )
+        installed_import_manifest_bytes = installed_import_classification[
+            "manifest_bytes"
+        ]
+        assert isinstance(installed_import_manifest_bytes, bytes)
+        sdist_installed_import_manifest = _require_sdist_installed_import_manifest(
+            sdist,
+            expected_bytes=installed_import_manifest_bytes,
+        )
         sdist_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_sdist_members(sdist),
             artifact_kind="sdist",
@@ -2710,6 +4538,26 @@ def validate_distribution(
             _classify_repository_experiment_members(wheel),
             artifact_kind="sdist-derived wheel",
         )
+        installed_import_classification_report = {
+            "base_dependencies": list(
+                installed_import_classification["base_dependencies"]
+            ),
+            "blocked_optional_prefixes": list(
+                installed_import_classification["blocked_optional_prefixes"]
+            ),
+            "claim_boundary": installed_import_classification["claim_boundary"],
+            "classification_scope": installed_import_classification[
+                "classification_scope"
+            ],
+            "manifest_path": installed_import_classification["manifest_path"],
+            "manifest_sha256": installed_import_classification["manifest_sha256"],
+            "outcome_counts": {
+                role: len(modules)
+                for role, modules in installed_import_classification["outcomes"].items()
+            },
+            "schema_version": installed_import_classification["schema_version"],
+            "sdist_manifest": sdist_installed_import_manifest,
+        }
         library_separation = _library_separation_report(
             source_tree=source_inventory,
             sdist=sdist_separation,
@@ -2768,6 +4616,9 @@ def validate_distribution(
                 },
             },
         )
+        installed_import_conformance = {
+            "classification": installed_import_classification_report,
+        }
 
         venv.EnvBuilder(
             with_pip=True,
@@ -2926,6 +4777,15 @@ def validate_distribution(
                 artifact_kind="direct-source fresh install",
             )
         )
+        direct_installed_import_outcomes = _probe_installed_import_outcomes(
+            python=direct_scientific_python,
+            environment_root=direct_scientific_environment_root,
+            neutral_cwd=neutral_cwd,
+            environment=direct_scientific_environment,
+            classification=installed_import_classification,
+            ordered_export_classification=ordered_export_classification,
+            artifact_kind="direct-source fresh install",
+        )
 
         venv.EnvBuilder(
             with_pip=True,
@@ -2969,6 +4829,26 @@ def validate_distribution(
             environment_root=scientific_environment_root,
             expected_modules=REPOSITORY_EXPERIMENT_MODULES,
             expected_public_exports=public_package_exports,
+        )
+        sdist_installed_import_outcomes = _probe_installed_import_outcomes(
+            python=scientific_python,
+            environment_root=scientific_environment_root,
+            neutral_cwd=neutral_cwd,
+            environment=scientific_environment,
+            classification=installed_import_classification,
+            ordered_export_classification=ordered_export_classification,
+            artifact_kind="sdist-derived fresh install",
+        )
+        installed_import_equality = _require_installed_import_outcome_equality(
+            direct_installed_import_outcomes,
+            sdist_installed_import_outcomes,
+        )
+        installed_import_conformance.update(
+            {
+                "direct_source_install": direct_installed_import_outcomes,
+                "sdist_derived_install": sdist_installed_import_outcomes,
+                "equality": installed_import_equality,
+            }
         )
         if (
             installed_python_inventory["members"]
@@ -3116,6 +4996,9 @@ def validate_distribution(
             "installation": {
                 "atlas_reader_system_site_packages": True,
                 "atlas_reader_user_site_packages": True,
+                "base_dependencies_freshly_installed": False,
+                "host_projected_base_dependencies": True,
+                "isolated_base_dependency_environment_established": False,
                 "no_dependencies": True,
                 "system_site_packages": False,
                 "direct_source_wheel_filename": direct_wheel.name,
@@ -3127,6 +5010,7 @@ def validate_distribution(
             "atlas_reader_inspection": atlas_reader_inspection,
             "atlas_reader_forbidden_imports": list(ATLAS_READER_FORBIDDEN_IMPORTS),
             "inspection": inspection,
+            "installed_import_conformance": installed_import_conformance,
             "library_separation": library_separation,
             "repository_experiment_source_import_inspection": (
                 source_import_inspection
