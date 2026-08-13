@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
+import tomllib
 
 import spirallens
 from spirallens import (
@@ -403,6 +405,19 @@ def test_curated_public_export_snapshots_are_exact() -> None:
     assert qualification.__all__ == EXPECTED_QUALIFICATION_EXPORTS
     assert not hasattr(qualification, "run_calibration_selection")
     assert synthetic.__all__ == EXPECTED_SYNTHETIC_EXPORTS
+
+
+def test_package_version_owners_are_one_strict_numeric_final_coordinate() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    project_version = tomllib.loads(
+        (repository / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]["version"]
+    pattern = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+
+    assert type(project_version) is str
+    assert re.fullmatch(pattern, project_version)
+    assert type(spirallens.__version__) is str
+    assert spirallens.__version__ == project_version
 
 
 def test_legacy_canonical_module_is_an_identity_preserving_reexport() -> None:
