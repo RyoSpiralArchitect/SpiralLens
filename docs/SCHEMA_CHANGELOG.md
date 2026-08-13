@@ -4,6 +4,27 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Forward-only pre-1.0 compatibility policy
+
+- The policy starts with the first release containing it; repository adoption
+  is not a release. `spirallens.__version__` is the sole coordinate designated
+  for that release; historical `0.1.0` compatibility is not attested.
+- Same-`0.y` callable patches preserve coordinates/signatures and keep
+  documented behavior and documented failure boundaries backward-compatible. The version string retains its coordinate, `str`
+  type/value format, and release-reporting semantics while its value tracks the
+  release. Breaking changes/removals require a prior-minor deprecation and
+  migration note; pre-1.0 support promotion is minor-only and reviewed, while
+  stable status remains a 1.0 transition.
+- After any pre-1.0 core promotion, the exact seven
+  `spirallens.instrument_contracts.canonical` identities and exact four
+  `spirallens.instrument_contracts` root aliases remain identity-preserving
+  through `0.x`. They are legacy compatibility routes, currently neither
+  deprecated nor warning-emitting; the whole namespace remains provisional.
+- Python support covers only an exact Python patch, OS, architecture, and
+  dependency-version tuple whose clean-wheel jobs pass; `requires-python` and classifiers are no receipt.
+  This prospective policy keeps core on HOLD and establishes no typing,
+  portability, API, schema, source, export, D7, scientific, or authority state.
+
 ## 2026-08-13 — Namespace-export repository-context manifest rejected
 
 - At clean baseline `a2b7a01f97dc8bbc1e83a9d30142bcff009bbaf0`, the exact 24

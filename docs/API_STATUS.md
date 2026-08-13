@@ -17,8 +17,9 @@ and cannot change experiment status or authority.
 
 ## Maturity labels
 
-- **Supported root surface:** intentionally tiny and covered by the package
-  versioning policy. At present this is only `spirallens.__version__`.
+- **Supported pre-1.0 surface:** explicitly enumerated names protected within
+  the first policy-bearing `0.y` line; `spirallens.__version__` is the sole designated coordinate.
+- **Stable 1.0 surface:** the later semantic-versioned contract; none exists.
 - **Stable candidate:** framework-neutral functionality whose compatibility
   tests have started, but which has not yet met every promotion gate below.
 - **Provisional:** documented and tested, but allowed to change between minor
@@ -154,7 +155,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 
 | Namespace or symbol | Status | Compatibility boundary |
 | --- | --- | --- |
-| `spirallens.__version__` | supported root surface | single package version |
+| `spirallens.__version__` | designated supported pre-1.0 coordinate | protection starts with the first policy-bearing release; historical `0.1.0` compatibility is not attested; its string value reports the installed release |
 | `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
 | `spirallens.core.canonical` | stable candidate (promotion HOLD) | the coherent future promotion candidate is the current exact seven-name `spirallens.core` surface: four functions, `CanonicalJsonError`, `JsonScalar`, and `JsonValue`; shared-codec use is established at defining and legacy leaf paths, but exact root-coordinate production consumers remain zero and the compatibility preflight grants no support or stability |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
@@ -631,9 +632,31 @@ Passing these gates does not establish multi-platform support. Supported
 Python, operating-system, and backend matrices are updated only after those
 environments actually pass.
 
-## Promotion rule
+## Pre-1.0 compatibility and promotion rule
 
-A provisional symbol becomes stable only after at least two independent
-consumers, full compatibility tests, user-facing documentation, and an
-explicit reviewed promotion decision. Negative or inconclusive scientific
-results do not block promotion of a generally useful software primitive.
+Only explicitly listed supported pre-1.0 surfaces receive this policy from the
+first release containing it; repository adoption is not a release promise and
+historical `0.1.0` compatibility is not attested. Within one `0.y` line,
+callable patches preserve import coordinates and signatures and keep documented
+successful behavior and documented failure boundaries backward-compatible. Version
+patches preserve the `spirallens.__version__` coordinate, `str` type/value
+format, and release-reporting semantics while its value tracks the release.
+
+A breaking change or removal is minor-release-only after a deprecation
+announcement in at least one prior minor and a migration note. Pre-1.0
+promotion to supported status is also minor-release-only and requires two
+independent consumers, full compatibility tests, user-facing documentation,
+and an explicit reviewed decision. Stable status is a 1.0 transition.
+
+After any pre-1.0 `spirallens.core` promotion, all seven identities in
+`spirallens.instrument_contracts.canonical` and the exact four root aliases
+`CanonicalJsonError`, `canonical_json_bytes`, `canonical_json_sha256`, and
+`parse_canonical_json` remain identity-preserving through `0.x`. They are
+currently legacy compatibility routes, not deprecated, and emit no warning;
+the whole `spirallens.instrument_contracts` namespace remains provisional.
+
+A Python environment is supported only for an exact Python patch, OS,
+architecture, and dependency-version tuple whose clean-wheel jobs pass;
+`requires-python` and classifiers are metadata, not a support receipt. This
+policy keeps core on HOLD and establishes no retrospective `0.1.0`, typing, or
+portability fact. Scientific results do not govern software promotion.
