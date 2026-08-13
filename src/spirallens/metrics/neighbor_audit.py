@@ -33,6 +33,7 @@ from spirallens.neighbors import (
     validate_prepared_backend,
     validate_neighbor_pairs,
 )
+from spirallens.neighbors.contracts import _require_sha256
 
 from .candidate_pairs import (
     EXACT_RERANK_CONTRACT_VERSION,
@@ -58,16 +59,6 @@ BUILTIN_FAISS_AUDIT_RUNNER_CONTRACT = (
     "spirallens.builtin-faiss-audit-runner.v0.1"
 )
 CUSTOM_AUDIT_RUNNER_CONTRACT = "spirallens.custom-audit-runner.unverified"
-
-
-def _require_sha256(value: object, *, label: str) -> str:
-    if (
-        not isinstance(value, str)
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{label} must be a lowercase SHA-256 digest")
-    return value
 
 
 def _reject_duplicate_json_keys(

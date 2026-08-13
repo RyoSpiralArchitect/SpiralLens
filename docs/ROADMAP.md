@@ -1112,6 +1112,17 @@ publication, and authority remain local. This adds no module, export, external d
 support, security, portability, D7, science, authority, or VOY state and does not complete
 or promote `LIB-L0`.
 
+A subsequent narrow audit at baseline `c9167ae76757c287d7d75223fd2a33be23e5c777`
+reuses the byte-identical private lowercase SHA-256 syntax validator already owned by
+`neighbors.contracts` in execution-freeze, neighbor-audit, and the downstream audit
+receipt. Execution-freeze and neighbor-audit are the two independent consumers; the
+receipt is not counted again. The four-file scope changes from `8259` to `8232` physical
+lines (`-27`), while validator implementations plus imports change `32 → 11` (`-21`,
+65.6 percent). Calls retain exact input order, returned string identity, and raw
+`ValueError` message/cause/context; private helper identity, module, and traceback frame
+are not compatibility claims. No module, export, external dependency, schema, D7
+re-anchor, API, support, security, science, authority, VOY, or `LIB-L0` state changes.
+
 The following bounded split, measured against baseline commit
 `a1d6c615da9e39247afa0332658e9aee7b24bb5a`, moves mutable Atlas capture
 storage into private `_capture_store.py` while keeping manifest readers in

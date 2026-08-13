@@ -18,6 +18,7 @@ from spirallens.neighbors import (
     NeighborQuery,
     canonical_json_sha256,
 )
+from spirallens.neighbors.contracts import _require_sha256
 
 from .candidate_pairs import (
     EXACT_RERANK_CONTRACT_VERSION,
@@ -152,16 +153,6 @@ def _strict_yaml_load(payload_bytes: bytes, *, label: str) -> object:
         return yaml.load(payload_bytes, Loader=_UniqueKeySafeLoader)
     except yaml.YAMLError as error:
         raise ValueError(f"{label} YAML is invalid: {error}") from error
-
-
-def _require_sha256(value: object, *, label: str) -> str:
-    if (
-        not isinstance(value, str)
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{label} must be a lowercase SHA-256 digest")
-    return value
 
 
 def neighbor_query_boundary_dict(
