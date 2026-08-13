@@ -32,7 +32,7 @@ Physical distribution membership is a separate axis from these API labels.
 `src/**/*.py` module paths into 159 wheel-present modules and 22
 repository-only modules. The 159 comprise 24 package initializers, two
 console-entrypoint runtime modules, and 133 other shipped runtime modules; the
-v0.7 distribution diagnostic verifies the same exact set in the source tree,
+v0.8 distribution diagnostic verifies the same exact set in the source tree,
 sdist, both wheel routes, and both fresh non-editable installations. This
 establishes `closed_wheel_python_module_inventory_established=true`.
 
@@ -40,20 +40,78 @@ A separate manifest,
 `distribution/spirallens_ordered_exports_v0_1.json`, schema
 `spirallens.ordered-package-exports.v0.1`, closes only the static literal
 ordered `__all__` declarations: exact 24 classified package initializers and
-559 namespace-scoped entries. The v0.7 diagnostic observes the same ordered
+559 namespace-scoped entries. The v0.8 diagnostic observes the same ordered
 declarations in the source tree, sdist, both wheels, and both fresh installs;
 the install probes parse initializer bytes without importing `spirallens`.
 This establishes
 `closed_ordered_package_export_inventory_established=true`, not a supported
 API.
 
-The static inventory does not establish the runtime value of
-`module.__all__`, symbol importability, identity, signature or behavior,
-star-import behavior, or the absence of aliases or dynamic mutation.
+A third manifest,
+`distribution/spirallens_installed_imports_v0_1.json`, schema
+`spirallens.installed-import-conformance.v0.1`, classifies the expected import
+outcome of all 159 installed modules. The v0.8 diagnostic exercises the
+direct-source and sdist-derived non-editable wheels separately. It is a
+single-current-host observation, not a portability matrix. Every module
+receives its own fresh `-I -S -B` process, neutral working directory, empty
+`PYTHONPATH`, and a 30-second timeout. Site initialization is disabled and
+`.pth` startup is not executed; only the fresh-wheel root and the exact NumPy,
+SciPy, and PyYAML host-distribution roots are added explicitly. In addition to
+the six blocked optional prefixes, a generic blocker rejects distributions
+outside those three declared bases. The repository-only validator parent uses
+`packaging` from the already-declared dev `build` toolchain; the isolated
+children do not import it. No base runtime dependency changes, and the full
+installed `Requires-Dist` contract remains the exact 13 records: three base
+plus ten optional-extra requirements. The two routes have equal normalized
+startup receipts. Each wheel route yields 154 successful imports and five
+model-extra failures solely at exact
+`ModuleNotFoundError.name == "torch"`. Among the 24 package initializers, 23
+successful imports reproduce exact runtime list-valued `__all__` declarations
+containing 554 entries. `spirallens.adapters` cannot be imported at the blocked
+Torch boundary, so its five declared entries remain runtime-unavailable. The
+sole blocked undeclared attempt is `charset_normalizer`, which is not loaded;
+the loaded third-party distributions remain the exact three declared bases.
+Both routes have the same outcome-manifest SHA-256,
+`8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
+The adopted pre-projection live validation receipt has SHA-256
+`2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
+The separately retained preA/preB/post invariants bind that receipt to
+validator SHA-256
+`a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
+setup SHA-256
+`da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
+manifest SHA-256
+`d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
+and unchanged `src` inputs before this receipt-projection documentation was
+added. Because the documentation
+changed afterward, and `README.md` is embedded in distribution metadata, its
+artifact hashes do not attest artifacts rebuilt from the later documentation
+state.
+This establishes
+`closed_installed_module_import_outcome_inventory_established=true` and only
+the scoped
+`runtime_successful_package_export_values_established=true`.
+
+The installed probes observe imports and the successful initializers'
+`__all__` list values only. They do not resolve each declared name, invoke any
+operation, exercise behavior, close transitive dependencies, or test other
+hosts, dependency versions, Python versions, import orders, or concurrent
+imports. Their bounded audit hook starts only after isolated interpreter and
+standard-library probe bootstrap, denies a listed set of write, process,
+network, and selected filesystem events, and observes zero denials. It is not
+an exhaustive side-effect monitor; `ctypes.dlopen`, `os.putenv`, and
+`os.unsetenv` are deliberately outside the denied set. The explicit dependency
+roots share host directories, so the base dependencies are neither freshly
+installed nor an isolated dependency environment. The report records
+`base_dependencies_freshly_installed=false`,
+`host_projected_base_dependencies=true`, and
+`isolated_base_dependency_environment_established=false`. Therefore
 `runtime_export_values_established`,
+`all_package_runtime_export_values_established`,
 `export_symbol_importability_established`,
+`side_effect_free_imports_established`,
 `closed_public_api_contract_established`, and
-`closed_library_allowlist_established` therefore remain `false`; authority,
+`closed_library_allowlist_established` remain `false`; authority,
 `lib_l0`, library, portability, public-API, and scientific grants also remain
 `false`. The full wheel still includes 46 qualification modules and legacy
 repository-inferred operations, so it is not an experiment-free or
@@ -61,6 +119,14 @@ library-grade subset. The `models`, `ann`, `witness`, and `dev` extras classify
 dependency installation, not Python-module or export-declaration membership.
 Likewise, the 106 test files carried by the sdist are neither an installed-wheel
 conformance surface nor replay or maturity evidence.
+
+The diagnostic is a bounded fail-closed ratchet with no `src/spirallens`
+runtime, export, base-dependency, persistence/science-artifact, or authority
+change. Before a versioned successor adds another host-specific exception,
+dependency environment, import mode, or artifact kind, it must centralize the
+repeated manifest/setup/validator/embedded-worker metadata policy in one
+private reviewed boundary while preserving independent fail-closed validation
+and adversaries.
 
 ## Current surface
 

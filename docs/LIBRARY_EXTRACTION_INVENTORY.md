@@ -16,6 +16,10 @@ remain authoritative for those boundaries.
 - current ordered-export declaration manifest:
   `distribution/spirallens_ordered_exports_v0_1.json`, schema
   `spirallens.ordered-package-exports.v0.1`;
+- current installed-import outcome manifest:
+  `distribution/spirallens_installed_imports_v0_1.json`, schema
+  `spirallens.installed-import-conformance.v0.1`, 8,214 bytes, SHA-256
+  `d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`;
 - current `src/**/*.py` partition: 181 modules = 159 wheel-present modules
   (24 package initializers + 2 console-entrypoint runtime + 133 shipped
   runtime) + 22 repository-only modules;
@@ -23,6 +27,10 @@ remain authoritative for those boundaries.
 - public root surface: only `spirallens.__version__` is supported;
 - closed static ordered `__all__` declaration inventory: 559 namespace-scoped
   entries across 24 package initializers;
+- closed installed-module outcome inventory: 159 modules = 154 base-import
+  successes + 5 exact blocked-Torch model-extra outcomes; scoped runtime
+  `__all__` observation: 23 initializers and 554 entries succeeded, while one
+  initializer and five entries were unavailable;
 - scientific and VOY deltas: none;
 - D7 verified-B interpretation: `insufficient`, Level 0, claim delta `none`,
   and VOY-V3 purpose evidence only; VOY-V4 dispatch remains unauthorized.
@@ -66,7 +74,7 @@ proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
 are rejected before wheel
 publication and are not deleted by the build.
 
-The successor v0.7 diagnostic retains the versioned physical manifest and
+The successor v0.8 diagnostic retains the versioned physical manifest and
 closed wheel Python-module inventory. They fail closed over every
 `src/**/*.py` path and require the exact 159-member shipped set in the sdist,
 direct-source wheel, sdist-derived wheel, and both fresh non-editable
@@ -94,22 +102,85 @@ The sdist carries a byte-identical copy of the manifest, whose SHA-256 is
 Fresh-install inspection parses distribution-owned initializer bytes without
 importing a `spirallens` module.
 
-This is a static declaration inventory, not an API contract. It does not
-observe a runtime `module.__all__` value or establish symbol importability,
-identity, signature or behavior, star-import behavior, or the absence of
-aliases or dynamic mutation. The `models`, `ann`, `witness`, and `dev` extras
+The installed-import manifest adds a distinct dynamic observation without
+changing those physical or static roles. For both the direct-source and
+sdist-derived wheels, the v0.8 diagnostic imports each of the exact 159 modules
+in its own fresh `-I -S -B`, 30-second process from a neutral working
+directory and without `PYTHONPATH`. Site initialization is disabled and `.pth`
+startup is not executed. This is a single-current-host observation, not a
+host, Python, or dependency-version portability matrix. The validator explicitly
+adds only the fresh-wheel root and the exact roots of the declared host NumPy
+2.4.4, PyYAML 6.0.3, and SciPy 1.17.1 distributions. Because those roots share
+host directories, this is not a freshly installed or isolated base-dependency
+environment. Its repository parent uses `packaging` supplied by the
+already-declared dev `build` toolchain; no isolated child imports `packaging`.
+The base runtime dependencies are unchanged, and the installed metadata must
+contain the exact 13 normalized `Requires-Dist` records: three base and ten
+optional-extra requirements. The six
+`cryptography`, `faiss`, `huggingface_hub`, `safetensors`, `torch`, and
+`transformers` prefixes are blocked. A separate generic blocker rejects
+distribution-backed imports outside the three declared bases; the exact
+observed blocked attempt is `charset_normalizer`, and it is not loaded. Each
+route observes 154 base-import successes, five exact blocked-Torch model-extra
+outcomes, no loaded optional prefix, and the exact three declared bases as its
+aggregate loaded third-party distributions. Of the 24 initializers, 23
+reproduce their exact runtime list-valued `__all__`, totaling 554 entries; the
+five `spirallens.adapters` entries are unavailable with that initializer at the
+blocked Torch boundary. Their normalized startup receipts are equal. Both
+routes have outcome-manifest SHA-256
+`8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
+The adopted pre-projection live validation receipt has SHA-256
+`2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
+The separately retained preA/preB/post invariants bind that receipt to
+validator SHA-256
+`a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
+setup SHA-256
+`da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
+manifest SHA-256
+`d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
+and unchanged `src` inputs before this receipt-projection documentation was
+added. Because the documentation
+changed afterward, and `README.md` is embedded in distribution metadata, its
+artifact hashes do not attest artifacts rebuilt from the later documentation
+state.
+
+The audit hook begins after isolated interpreter and standard-library probe
+bootstrap and observes zero denied events within its bounded policy for file
+writes, process creation, network access, and selected filesystem mutation.
+It is not a complete side-effect proof: it deliberately permits
+`ctypes.dlopen`, `os.putenv`, and `os.unsetenv`, and does not observe every
+possible native, environment, descriptor, signal, thread, or external effect.
+One-process-per-module isolation prevents prior SpiralLens imports from
+contaminating the next receipt, but proves neither combined import-order nor
+concurrent-import behavior. The probes import modules; they do not invoke
+their operations.
+
+These are bounded placement, declaration, and installed-import inventories,
+not an API contract. Runtime `__all__` is observed only for the 23 successfully
+imported initializers; the probe does not resolve the 554 named attributes or
+establish symbol importability, identity, signature or behavior, star-import
+behavior, alias absence, dynamic-mutation absence, operation safety, or
+portability. The `models`, `ann`, `witness`, and `dev` extras
 classify dependency installation, not wheel membership or export-declaration
 roles. Portability is also independent: the shipped set still contains 46
 qualification modules and legacy repository-inferred operations.
 Consequently the full wheel is not an experiment-free or library-grade
 subset. The report states
 `closed_wheel_python_module_inventory_established=true` and
-`closed_ordered_package_export_inventory_established=true`; it keeps
+`closed_ordered_package_export_inventory_established=true`, plus
+`closed_installed_module_import_outcome_inventory_established=true` and the
+scoped `runtime_successful_package_export_values_established=true`; it keeps
 `runtime_export_values_established=false`,
+`all_package_runtime_export_values_established=false`,
 `export_symbol_importability_established=false`,
+`side_effect_free_imports_established=false`,
 `closed_public_api_contract_established=false`, and
 `closed_library_allowlist_established=false`, and keeps its authority,
 `lib_l0`, library, portability, public-API, and scientific grants `false`.
+The installation report separately records
+`base_dependencies_freshly_installed=false`,
+`host_projected_base_dependencies=true`, and
+`isolated_base_dependency_environment_established=false`.
 
 The sdist is a library source artifact, not the repository experiment replay
 or test bundle. Its current 106 test files are not a self-contained suite for
@@ -185,25 +256,33 @@ the affected implementation:
 3. Introduce package data, extension modules, namespace/generated modules, or
    bytecode-only distribution support only through a versioned
    classification/schema successor and new artifact/install adversaries.
-4. Keep the accepted bounded-file primitive private and preserve its audited
+4. Before an installed-import schema successor adds another host-specific
+   exception, dependency environment, import mode, or artifact kind,
+   centralize the repeated manifest/setup/validator/embedded-worker metadata
+   policy in one private reviewed boundary. Retain independent fail-closed
+   parsing, validation, and adversaries; do not grow parallel policy copies.
+   The current single-host diagnostic remains proportionate only as a bounded
+   ratchet with no `src/spirallens` runtime, export, base-dependency,
+   persistence/science-artifact, or authority change.
+5. Keep the accepted bounded-file primitive private and preserve its audited
    limits. It remains POSIX `dir_fd`-oriented, uses `O_NOFOLLOW` only when the
    host exposes it, may block while opening a FIFO before the regular-file
    check, and detects bounded before/after metadata drift without proving full
    hostile-race or TOCTOU safety. Any additional consumer requires a new
    equivalence audit.
-5. Continue `RepositoryContext` migrations only where the existing marker
+6. Continue `RepositoryContext` migrations only where the existing marker
    reduces duplicated origin plumbing without changing domain failures.
-6. Preserve the accepted Atlas reader/capture import boundary and its
+7. Preserve the accepted Atlas reader/capture import boundary and its
    fresh-wheel forbidden-prefix probe; any public promotion or added capture
    coupling requires a separate review.
-7. Keep the strict YAML factory private and limited to the four audited
+8. Keep the strict YAML factory private and limited to the four audited
    mapping-policy consumers. Adding the CLI, neighbor-receipt, or ordinary
    `safe_load` families requires a new equivalence decision because their
    alias, merge, key, and failure behavior differs.
-8. Preserve the array-fingerprint rejection. Reconsider only after a versioned
+9. Preserve the array-fingerprint rejection. Reconsider only after a versioned
    D7 trust-closure decision no longer requires the exact
    `qualification/common.py` bytes and a remaining independent consumer set
    demonstrates the material-reduction gate; never relax the historical
    verifier merely to enable deduplication.
-9. Keep VOY-V4 on hold. Returning to that lane requires a separate reviewed,
+10. Keep VOY-V4 on hold. Returning to that lane requires a separate reviewed,
    versioned readiness/authority decision and disjoint execution coordinates.

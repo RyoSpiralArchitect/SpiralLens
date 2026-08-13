@@ -21,25 +21,78 @@ aliases. Implementation summaries in this README are non-normative snapshots;
 if they drift, the Roadmap and canonical artifacts prevail until `LIB-L0`
 generated views replace them.
 
-The distribution gate now establishes two narrow static facts. The versioned
+The distribution gate now establishes two narrow static facts and one bounded
+installed-import observation. The versioned
 physical-placement manifest partitions all 181 `src/**/*.py` module paths into
 159 wheel-present modules (24 package initializers, two console-entrypoint
 runtime modules, and 133 other shipped runtime modules) and 22 repository-only
 modules. A separate versioned ordered-export manifest records the exact
 literal ordered `__all__` declaration in each of those 24 package initializers,
-for 559 namespace-scoped entries. The v0.7 distribution diagnostic verifies
+for 559 namespace-scoped entries. The v0.8 distribution diagnostic verifies
 both exact inventories through the source tree, sdist, both wheel routes, and
 both fresh non-editable installations; the installed-artifact export probe
 does so without importing `spirallens` modules. It records
 `closed_wheel_python_module_inventory_established=true` and
 `closed_ordered_package_export_inventory_established=true`.
 
-The physical roles and static declarations remain separate classification
-axes. Static literal closure does not establish a runtime `module.__all__`
-value, symbol importability, identity, signature or behavior, star-import
-behavior, or the absence of aliases or dynamic mutation. Accordingly
+The third versioned manifest,
+`distribution/spirallens_installed_imports_v0_1.json`, schema
+`spirallens.installed-import-conformance.v0.1`, classifies the expected fresh
+non-editable-wheel import outcome for the same exact 159 modules. This is a
+single-current-host observation, not a portability matrix. Each child
+starts with `-I -S -B`: site initialization is disabled, `.pth` startup is not
+executed, and only the fresh-wheel root plus the exact NumPy, SciPy, and PyYAML
+host-distribution roots are added explicitly. The six optional prefixes are
+blocked, and a separate generic blocker rejects distributions outside those
+three declared base dependencies. The repository-only validator parent uses
+`packaging` supplied by the already-declared dev `build` toolchain; the
+isolated children do not import it, and the base runtime dependencies remain
+unchanged. The full installed `Requires-Dist` contract is the exact 13 records:
+three base and ten optional-extra requirements. The direct-source and
+sdist-derived install probes have equal normalized startup receipts and each
+observe 154 successful imports and five exact
+`ModuleNotFoundError.name == "torch"` outcomes for the model-extra modules.
+Each module runs in its own fresh process with a neutral working directory,
+no `PYTHONPATH`, and a 30-second bound. The sole observed undeclared import
+attempt, `charset_normalizer`, is blocked and not loaded; the loaded
+third-party distributions remain the exact three declared bases. Of the 24
+package initializers, 23 import successfully and their runtime list-valued `__all__`
+values reproduce 554 declared entries; `spirallens.adapters` and its five
+entries remain unavailable at the blocked Torch boundary. This establishes
+`closed_installed_module_import_outcome_inventory_established=true` and the
+narrow
+`runtime_successful_package_export_values_established=true`, not all-package
+runtime export closure. The adopted pre-projection live validation receipt has
+SHA-256
+`2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
+The separately retained preA/preB/post invariants bind that receipt to
+validator SHA-256
+`a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
+setup SHA-256
+`da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
+manifest SHA-256
+`d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
+and unchanged `src` inputs before this receipt-projection documentation was
+added. Because the documentation
+changed afterward, and `README.md` is embedded in distribution metadata, its
+artifact hashes do not attest artifacts rebuilt from the later documentation
+state.
+
+The physical roles, static declarations, and observed imports remain separate
+classification axes. The bounded audit hook starts only after isolated
+interpreter and standard-library probe bootstrap. It reports zero denied
+events for its listed write, process, network, and selected filesystem
+operations, but it is not an exhaustive side-effect monitor and deliberately
+does not deny `ctypes.dlopen`, `os.putenv`, or `os.unsetenv`. Per-module process
+isolation also does not establish combined import-order or concurrent-import
+behavior. The probes never invoke exported operations or import every named
+export. Their explicit dependency roots still share host directories; the
+base dependencies are not freshly installed and do not form an isolated
+dependency environment. Accordingly
 `runtime_export_values_established`,
+`all_package_runtime_export_values_established`,
 `export_symbol_importability_established`,
+`side_effect_free_imports_established`,
 `closed_public_api_contract_established`, and
 `closed_library_allowlist_established` remain `false`, as do the authority,
 `lib_l0`, library, portability, public-API, and scientific grants. Optional
@@ -52,6 +105,14 @@ conformance suite, or maturity receipt. The Python-member manifest schema
 admits regular Python modules only; package data, extension or namespace
 modules, and generated-module support require an explicit versioned
 classification/schema change before they may ship.
+
+This is accepted as a bounded fail-closed diagnostic ratchet because it changes
+no `src/spirallens` runtime, export, base dependency, persistence/science
+artifact, or authority record. Before a versioned successor adds another
+host-specific exception, dependency environment, import mode, or artifact
+kind, the repeated manifest/setup/validator/embedded-worker metadata policy
+must be centralized in one private reviewed boundary while retaining
+independent fail-closed validation and adversaries.
 
 The project now separates two deliberately narrow questions:
 

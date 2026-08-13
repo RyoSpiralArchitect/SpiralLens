@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tarfile
 from types import ModuleType
 
 import pytest
@@ -182,6 +187,298 @@ def _write_export_manifest_fixture(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(document), encoding="utf-8")
     monkeypatch.setattr(setup_module, "_EXPORT_CLASSIFICATION_PATH", path)
+
+
+def _write_installed_import_contract_fixture(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    document: object | None = None,
+    pyproject_source: str | None = None,
+) -> tuple[Path, Path]:
+    repository = Path(__file__).resolve().parents[1]
+    manifest = tmp_path / "distribution/installed-imports.json"
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    if document is None:
+        manifest.write_bytes(setup_module._IMPORT_CLASSIFICATION_PATH.read_bytes())
+    else:
+        manifest.write_text(json.dumps(document), encoding="utf-8")
+    pyproject = tmp_path / "pyproject.toml"
+    if pyproject_source is None:
+        pyproject.write_bytes((repository / "pyproject.toml").read_bytes())
+    else:
+        pyproject.write_text(pyproject_source, encoding="utf-8")
+    monkeypatch.setattr(setup_module, "_PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(setup_module, "_IMPORT_CLASSIFICATION_PATH", manifest)
+    return manifest, pyproject
+
+
+def _minimal_pyproject(dependencies: list[str]) -> str:
+    return '[project]\nname = "spirallens"\ndependencies = ' + json.dumps(dependencies)
+
+
+def test_setup_installed_import_manifest_closes_exact_159_and_23_plus_1_projection(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _write_installed_import_contract_fixture(setup_module, monkeypatch, tmp_path)
+
+    outcomes = setup_module._load_installed_import_classification()
+
+    success = outcomes["base_import_success"]
+    missing_torch = outcomes["models_extra_missing_torch"]
+    assert len(success) == 154
+    assert missing_torch == setup_module._MODELS_EXTRA_MISSING_TORCH_MODULES
+    assert len(set(success) | set(missing_torch)) == 159
+    initializer_modules = {
+        setup_module._module_for_python_member(member)
+        for member in setup_module._PYTHON_MEMBER_CLASSIFICATION["package_initializer"]
+    }
+    assert len(initializer_modules & set(success)) == 23
+    assert initializer_modules & set(missing_torch) == {"spirallens.adapters"}
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "unknown_top_level",
+        "wrong_schema",
+        "wrong_scope",
+        "wrong_claim",
+        "wrong_base_dependency",
+        "wrong_blocked_prefixes",
+        "extra_outcome",
+        "unsorted_success",
+        "duplicate_success",
+        "invalid_module",
+        "overlap",
+        "missing_module",
+        "wrong_negative",
+    ],
+)
+def test_setup_installed_import_manifest_rejects_schema_and_topology_drift(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    original = json.loads(
+        setup_module._IMPORT_CLASSIFICATION_PATH.read_text(encoding="utf-8")
+    )
+    if mutation == "unknown_top_level":
+        original["unknown"] = True
+    elif mutation == "wrong_schema":
+        original["schema_version"] = "wrong"
+    elif mutation == "wrong_scope":
+        original["classification_scope"] = "broader"
+    elif mutation == "wrong_claim":
+        original["claim_boundary"] = "broader"
+    elif mutation == "wrong_base_dependency":
+        original["base_dependencies"][0]["requirement"] = "numpy>=1.25"
+    elif mutation == "wrong_blocked_prefixes":
+        original["blocked_optional_prefixes"].pop()
+    elif mutation == "extra_outcome":
+        original["outcomes"]["unknown"] = ["spirallens.unknown"]
+    elif mutation == "unsorted_success":
+        original["outcomes"]["base_import_success"][0:2] = reversed(
+            original["outcomes"]["base_import_success"][0:2]
+        )
+    elif mutation == "duplicate_success":
+        original["outcomes"]["base_import_success"].append(
+            original["outcomes"]["base_import_success"][-1]
+        )
+    elif mutation == "invalid_module":
+        original["outcomes"]["base_import_success"][-1] = "spirallens.bad-name"
+        original["outcomes"]["base_import_success"].sort()
+    elif mutation == "overlap":
+        original["outcomes"]["base_import_success"].append(
+            original["outcomes"]["models_extra_missing_torch"][0]
+        )
+        original["outcomes"]["base_import_success"].sort()
+    elif mutation == "missing_module":
+        original["outcomes"]["base_import_success"].pop()
+    elif mutation == "wrong_negative":
+        original["outcomes"]["models_extra_missing_torch"][-1] = (
+            "spirallens.synthetic.generators"
+        )
+        original["outcomes"]["models_extra_missing_torch"].sort()
+    else:  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+    _write_installed_import_contract_fixture(
+        setup_module,
+        monkeypatch,
+        tmp_path,
+        document=original,
+    )
+
+    with pytest.raises(SetupError):
+        setup_module._load_installed_import_classification()
+
+
+@pytest.mark.parametrize(
+    ("malformed", "match"),
+    [
+        ("duplicate_json_key", "duplicate key"),
+        ("invalid_utf8", "strict UTF-8 JSON"),
+        ("oversized", "size bound"),
+        ("symlink", "ordinary file"),
+    ],
+)
+def test_setup_installed_import_manifest_rejects_non_strict_files(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    malformed: str,
+    match: str,
+) -> None:
+    manifest, _pyproject = _write_installed_import_contract_fixture(
+        setup_module,
+        monkeypatch,
+        tmp_path,
+    )
+    if malformed == "duplicate_json_key":
+        source = manifest.read_text(encoding="utf-8")
+        marker = '  "schema_version": '
+        line = next(line for line in source.splitlines() if line.startswith(marker))
+        manifest.write_text(
+            source.replace(line, f"{line}\n{line}", 1), encoding="utf-8"
+        )
+    elif malformed == "invalid_utf8":
+        manifest.write_bytes(b"\xff")
+    elif malformed == "oversized":
+        manifest.write_bytes(b" " * (1024 * 1024 + 1))
+    elif malformed == "symlink":
+        target = tmp_path / "installed-imports-target.json"
+        target.write_bytes(manifest.read_bytes())
+        manifest.unlink()
+        manifest.symlink_to(target)
+    else:  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(malformed)
+
+    with pytest.raises(SetupError, match=match):
+        setup_module._load_installed_import_classification()
+
+
+def test_setup_pyproject_dependency_gate_accepts_reordering(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _write_installed_import_contract_fixture(
+        setup_module,
+        monkeypatch,
+        tmp_path,
+        pyproject_source=_minimal_pyproject(
+            ["PyYAML>=6.0", "numpy>=1.26", "scipy>=1.11"]
+        ),
+    )
+
+    outcomes = setup_module._load_installed_import_classification()
+
+    assert len(outcomes["base_import_success"]) == 154
+
+
+@pytest.mark.parametrize(
+    "dependencies",
+    [
+        ["numpy>=1.26", "scipy>=1.11", "PyYAML>=6.0", "rogue>=1"],
+        ["numpy>=1.26", "scipy>=1.11"],
+        ["numpy>=1.27", "scipy>=1.11", "PyYAML>=6.0"],
+        ["numpy>=1.26", "numpy>=1.26", "scipy>=1.11", "PyYAML>=6.0"],
+    ],
+)
+def test_setup_pyproject_dependency_gate_rejects_exact_set_drift(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dependencies: list[str],
+) -> None:
+    _write_installed_import_contract_fixture(
+        setup_module,
+        monkeypatch,
+        tmp_path,
+        pyproject_source=_minimal_pyproject(dependencies),
+    )
+
+    with pytest.raises(SetupError, match="exact installed import base requirements"):
+        setup_module._load_installed_import_classification()
+
+
+@pytest.mark.parametrize("malformed", ["symlink", "invalid_toml"])
+def test_setup_pyproject_dependency_gate_rejects_non_strict_file(
+    setup_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    malformed: str,
+) -> None:
+    _manifest, pyproject = _write_installed_import_contract_fixture(
+        setup_module,
+        monkeypatch,
+        tmp_path,
+    )
+    if malformed == "symlink":
+        target = tmp_path / "pyproject-target.toml"
+        target.write_bytes(pyproject.read_bytes())
+        pyproject.unlink()
+        pyproject.symlink_to(target)
+    else:
+        pyproject.write_text("[project\n", encoding="utf-8")
+
+    with pytest.raises(SetupError):
+        setup_module._load_installed_import_classification()
+
+
+def test_setup_sdist_contains_one_byte_identical_installed_import_manifest(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    source = tmp_path / "source"
+    source.mkdir()
+    for relative in (
+        "LICENSE",
+        "MANIFEST.in",
+        "README.md",
+        "pyproject.toml",
+        "setup.py",
+    ):
+        shutil.copy2(repository / relative, source / relative)
+    shutil.copytree(repository / "distribution", source / "distribution")
+    shutil.copytree(repository / "src", source / "src")
+    artifact_dir = tmp_path / "dist"
+    environment = dict(os.environ)
+    environment.update(
+        {
+            "PIP_NO_INDEX": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+        }
+    )
+
+    subprocess.run(
+        [sys.executable, "setup.py", "sdist", "--dist-dir", str(artifact_dir)],
+        cwd=source,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    archives = list(artifact_dir.glob("*.tar.gz"))
+    assert len(archives) == 1
+    relative = "distribution/spirallens_installed_imports_v0_1.json"
+    with tarfile.open(archives[0], mode="r:gz") as archive:
+        matches = [
+            member
+            for member in archive.getmembers()
+            if "/".join(Path(member.name).parts[1:]) == relative
+        ]
+        assert len(matches) == 1
+        assert matches[0].isfile()
+        handle = archive.extractfile(matches[0])
+        assert handle is not None
+        assert handle.read() == (repository / relative).read_bytes()
 
 
 def test_setup_export_manifest_rejects_missing_extra_and_invalid_packages(

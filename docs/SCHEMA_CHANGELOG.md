@@ -4,6 +4,96 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Closed installed-module import-outcome inventory
+
+- Added `distribution/spirallens_installed_imports_v0_1.json`, schema
+  `spirallens.installed-import-conformance.v0.1`, 8,214 bytes, SHA-256
+  `d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`.
+  It classifies the exact 159 installed Python modules into 154 expected
+  base-import successes and five expected model-extra failures solely at
+  `ModuleNotFoundError.name == "torch"`. Its three base requirements and six
+  blocked optional import prefixes are closed literal lists. The
+  classification grants no export-symbol importability, behavior, operation
+  safety, side-effect freedom, stability, compatibility, dependency closure,
+  portability, public API, authority, scientific claim, or library maturity.
+- The repository-only distribution diagnostic advances to
+  `spirallens.distribution-validation.v0.8`. It verifies the exact outcome set
+  in both direct-source and sdist-derived fresh non-editable wheel installs.
+  This is a single-current-host observation, not a portability matrix.
+  Each module is isolated in one fresh `-I -S -B` process with a neutral
+  working directory, no `PYTHONPATH`, and a 30-second timeout. Site
+  initialization is disabled and `.pth` startup is not executed. Only the
+  fresh-wheel root and the exact host-distribution roots for NumPy 2.4.4,
+  PyYAML 6.0.3, and SciPy 1.17.1 are added explicitly. Those dependency roots
+  share host directories; they are not freshly installed or an isolated
+  base-dependency closure. The report therefore records
+  `base_dependencies_freshly_installed=false`,
+  `host_projected_base_dependencies=true`, and
+  `isolated_base_dependency_environment_established=false`.
+- The repository validator parent imports `packaging`, supplied by the
+  already-declared dev `build` toolchain. The isolated installed-module
+  children do not import `packaging`; the base runtime dependencies do not
+  change. Installed metadata is normalized and required to contain exactly 13
+  `Requires-Dist` records: three base and ten optional-extra requirements.
+  The direct-source and sdist-derived normalized startup receipts are equal.
+- Both wheel routes observe 154 successes and the five exact blocked-Torch
+  outcomes, with no blocked optional prefix loaded. Separate from the six
+  optional-prefix blockers, a generic blocker rejects distribution-backed
+  imports outside the three declared bases. The exact observed blocked
+  undeclared attempt is `charset_normalizer`, which remains unloaded; the
+  aggregate loaded third-party distributions remain the exact declared base
+  three. Of the 24 package initializers, 23 import successfully; their exact
+  runtime list-valued `__all__` declarations total 554 entries.
+  `spirallens.adapters` and its five entries remain unavailable. Both routes
+  have outcome-manifest SHA-256
+  `8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
+  The adopted pre-projection live validation receipt has SHA-256
+  `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
+  The separately retained preA/preB/post invariants bind that receipt to
+  validator SHA-256
+  `a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
+  setup SHA-256
+  `da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
+  manifest SHA-256
+  `d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
+  and unchanged `src` inputs before this receipt-projection documentation was
+  added. Because the documentation
+  changed afterward, and `README.md` is embedded in distribution metadata,
+  its artifact hashes do not attest artifacts rebuilt from the later
+  documentation state.
+  The report sets
+  `closed_installed_module_import_outcome_inventory_established=true` and the
+  scoped `runtime_successful_package_export_values_established=true`, while
+  `runtime_export_values_established=false` and
+  `all_package_runtime_export_values_established=false` retain the global
+  fail-closed boundary.
+- The per-process audit hook begins only after isolated interpreter and
+  standard-library probe bootstrap. It observes zero denied events within its
+  bounded list of write, subprocess, network, and selected filesystem
+  mutations. It is not an exhaustive side-effect monitor and deliberately
+  does not deny `ctypes.dlopen`, `os.putenv`, or `os.unsetenv`. Process isolation prevents a
+  preceding SpiralLens import from populating the next process, but does not
+  test combined import order or concurrent import behavior. The probes do not
+  invoke any operation or resolve every name declared in `__all__`.
+- Consequently `side_effect_free_imports_established`,
+  `export_symbol_importability_established`,
+  `closed_public_api_contract_established`, and
+  `closed_library_allowlist_established` remain `false`. Operation
+  portability, behavioral compatibility, transitive dependency closure, and
+  all-package runtime exports are not established. Authority, `lib_l0`,
+  library, portability, public-API, and scientific grants remain `false`;
+  `LIB-L0` does not advance and VOY-V4 remains unauthorized. No module export,
+  dependency declaration, persistence schema, scientific artifact, protocol,
+  or authority record changes.
+- This bounded fail-closed diagnostic is accepted as a proportionate ratchet
+  because it changes no `src/spirallens` runtime or public surface. Before a
+  versioned successor adds another host-specific exception, dependency
+  environment, import mode, or artifact kind, it must centralize the repeated
+  manifest/setup/validator/embedded-worker metadata policy in one private
+  reviewed boundary while retaining independent fail-closed validation and
+  adversaries. Growing parallel policy copies would not satisfy the library
+  lane's anti-bloat constraint.
+
 ## 2026-08-13 — Closed ordered package-export declaration inventory
 
 - Added `distribution/spirallens_ordered_exports_v0_1.json`, schema

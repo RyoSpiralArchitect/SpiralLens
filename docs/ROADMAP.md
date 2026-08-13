@@ -964,7 +964,7 @@ repository source tree: 22 modules and 19,190 physical lines. A fail-closed
 versioned manifest now partitions all 181 `src/**/*.py` module paths into 159
 wheel-present modules (24 package initializers, two console-entrypoint runtime
 modules, and 133 other shipped runtime modules) and those 22 repository-only
-modules. The v0.7 diagnostic proves the exact 159-member set through the
+modules. The v0.8 diagnostic proves the exact 159-member set through the
 source tree, sdist, both wheel routes, and both fresh non-editable
 installations and records
 `closed_wheel_python_module_inventory_established=true`.
@@ -973,18 +973,71 @@ A second versioned manifest,
 `distribution/spirallens_ordered_exports_v0_1.json`, schema
 `spirallens.ordered-package-exports.v0.1`, closes only the static literal
 ordered `__all__` declarations for all 24 classified package initializers: 559
-namespace-scoped entries. The v0.7 diagnostic proves the same initializer
+namespace-scoped entries. The v0.8 diagnostic proves the same initializer
 bytes and ordered declarations in the source tree, sdist, both wheel routes,
 and both fresh installs, parsing installed initializer bytes without importing
 `spirallens`. It records
 `closed_ordered_package_export_inventory_established=true`.
 
-These are physical-placement and static-declaration closures, not a closed
-library allowlist or public API contract. The export inventory does not
-establish the runtime `module.__all__` value, symbol importability, identity,
-signature or behavior, star-import behavior, or the absence of aliases or
-dynamic mutation. `runtime_export_values_established`,
+A third versioned manifest,
+`distribution/spirallens_installed_imports_v0_1.json`, schema
+`spirallens.installed-import-conformance.v0.1`, closes the expected installed
+import outcomes for those exact 159 modules under one bounded host-projected
+environment contract. The v0.8 diagnostic applies that contract separately to
+the direct-source and sdist-derived non-editable wheels. This is a
+single-current-host observation, not a portability matrix. It uses one fresh
+`-I -S -B`, 30-second process per module, a neutral working directory, and no
+`PYTHONPATH`. Site initialization is disabled and `.pth` startup is not
+executed; the fresh-wheel root and the exact host-distribution roots for the
+three declared base dependencies are added explicitly. The six optional
+prefixes are blocked, and a separate generic blocker rejects distributions
+outside those declared bases. The repository-only validator parent uses
+`packaging` supplied by the already-declared dev `build` toolchain; the
+isolated children do not import it. The base runtime dependencies are
+unchanged, and installed metadata has the exact 13 normalized `Requires-Dist`
+records: three base and ten optional-extra requirements. The two routes have
+equal normalized startup receipts. Each route observes 154 base-import
+successes and five exact blocked-Torch model-extra outcomes. The sole blocked
+undeclared attempt is `charset_normalizer`, which remains unloaded; the aggregate loaded
+third-party distributions remain the exact declared base three. Runtime
+list-valued `__all__` equals the static declaration for the 23 successfully
+imported initializers and 554 entries; `spirallens.adapters` and its five
+entries remain unavailable at the blocked Torch boundary. Both routes have
+outcome-manifest SHA-256
+`8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
+The adopted pre-projection live validation receipt has SHA-256
+`2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
+The separately retained preA/preB/post invariants bind that receipt to
+validator SHA-256
+`a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
+setup SHA-256
+`da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
+manifest SHA-256
+`d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
+and unchanged `src` inputs before this receipt-projection documentation was
+added. Because the documentation
+changed afterward, and `README.md` is embedded in distribution metadata, its
+artifact hashes do not attest artifacts rebuilt from the later documentation
+state.
+The report records
+`closed_installed_module_import_outcome_inventory_established=true` and the
+strictly scoped
+`runtime_successful_package_export_values_established=true`.
+
+These are physical-placement, static-declaration, and installed-import
+closures, not a closed library allowlist or public API contract. The audit hook
+begins only after isolated interpreter and standard-library probe bootstrap
+and reports zero denied events inside a bounded
+write/process/network/filesystem policy. It deliberately does not deny
+`ctypes.dlopen`, `os.putenv`, or `os.unsetenv` and cannot establish side-effect
+freedom. Module-process isolation does not prove combined import-order or
+concurrent behavior. The probe does not resolve the 554 named exports or invoke
+any operation. Its explicit dependency roots share host directories, so base
+dependencies are neither freshly installed nor an isolated closure.
+`runtime_export_values_established`,
+`all_package_runtime_export_values_established`,
 `export_symbol_importability_established`,
+`side_effect_free_imports_established`,
 `closed_public_api_contract_established`, and
 `closed_library_allowlist_established` remain `false`; optional dependency
 extras, portability, authority, and scientific meaning remain orthogonal. In
@@ -997,6 +1050,16 @@ self-contained replay, installed-wheel conformance suite, or maturity receipt.
 Future package data, extension modules, namespace/generated modules, or
 bytecode-only distribution support requires a reviewed versioned
 classification/schema successor.
+
+The current diagnostic is accepted as a proportionate fail-closed ratchet
+because it changes no `src/spirallens` runtime, export, base dependency,
+persistence/science artifact, or authority record. Before a versioned
+installed-import successor adds another host-specific exception, dependency
+environment, import mode, or artifact kind, centralize the repeated
+manifest/setup/validator/embedded-worker metadata policy in one private
+reviewed boundary while retaining independent fail-closed validation and
+adversaries. Repeating those policy copies instead would violate the
+anti-bloat intent of the library lane.
 
 The next bounded consolidation, measured against baseline commit
 `be274333e77d7518cb21ddb6afda3d62222e4b6c`, shares one standard-library-only

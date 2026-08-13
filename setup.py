@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import stat
+import tomllib
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -22,6 +23,9 @@ _CLASSIFICATION_PATH = (
 _EXPORT_CLASSIFICATION_PATH = (
     _PROJECT_ROOT / "distribution/spirallens_ordered_exports_v0_1.json"
 )
+_IMPORT_CLASSIFICATION_PATH = (
+    _PROJECT_ROOT / "distribution/spirallens_installed_imports_v0_1.json"
+)
 _CLASSIFICATION_SCHEMA_VERSION = "spirallens.python-distribution-members.v0.1"
 _CLASSIFICATION_SCOPE = (
     "physical Python member placement across repository source, sdist, and wheels"
@@ -35,6 +39,59 @@ _EXPORT_CLASSIFICATION_SCOPE = (
     "literal ordered __all__ values for every classified package initializer"
 )
 _EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = _CLASSIFICATION_CLAIM_BOUNDARY
+_IMPORT_CLASSIFICATION_SCHEMA_VERSION = "spirallens.installed-import-conformance.v0.1"
+_IMPORT_CLASSIFICATION_SCOPE = (
+    "fresh non-editable SpiralLens wheel module-import outcomes with host-projected "
+    "declared base dependencies, blocked optional-import prefixes, and a bounded "
+    "denied-audit-event policy"
+)
+_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
+    "classification grants no export-symbol importability, behavior, operation "
+    "safety, side-effect freedom, stability, compatibility, dependency closure, "
+    "portability, public API, authority, scientific claim, or library maturity"
+)
+_IMPORT_BASE_DEPENDENCIES = (
+    {
+        "distribution": "numpy",
+        "import_name": "numpy",
+        "requirement": "numpy>=1.26",
+    },
+    {
+        "distribution": "PyYAML",
+        "import_name": "yaml",
+        "requirement": "PyYAML>=6.0",
+    },
+    {
+        "distribution": "scipy",
+        "import_name": "scipy",
+        "requirement": "scipy>=1.11",
+    },
+)
+_DECLARED_BASE_REQUIREMENTS = tuple(
+    sorted(
+        (dependency["requirement"] for dependency in _IMPORT_BASE_DEPENDENCIES),
+        key=str.casefold,
+    )
+)
+_BLOCKED_OPTIONAL_IMPORT_PREFIXES = (
+    "cryptography",
+    "faiss",
+    "huggingface_hub",
+    "safetensors",
+    "torch",
+    "transformers",
+)
+_IMPORT_OUTCOME_NAMES = (
+    "base_import_success",
+    "models_extra_missing_torch",
+)
+_MODELS_EXTRA_MISSING_TORCH_MODULES = (
+    "spirallens.adapters",
+    "spirallens.adapters.pythia",
+    "spirallens.atlas._capture_store",
+    "spirallens.atlas.engineering_run",
+    "spirallens.atlas.id_sweep",
+)
 _CLASSIFICATION_ROLES = (
     "package_initializer",
     "console_entrypoint_runtime",
@@ -88,6 +145,19 @@ def _reject_export_duplicate_json_keys(
     for key, value in pairs:
         if key in result:
             raise SetupError(f"ordered export classification has duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def _reject_import_duplicate_json_keys(
+    pairs: list[tuple[str, Any]],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise SetupError(
+                f"installed import classification has duplicate key {key!r}"
+            )
         result[key] = value
     return result
 
@@ -346,6 +416,191 @@ _EXPECTED_PACKAGE_DIRECTORIES = frozenset(
     for parent in PurePosixPath(member).parents
     if parent.as_posix() != "."
 )
+
+
+def _module_for_python_member(member: str) -> str:
+    path = PurePosixPath(member)
+    parts = path.with_suffix("").parts
+    if path.name == "__init__.py":
+        parts = parts[:-1]
+    return ".".join(parts)
+
+
+def _is_portable_spirallens_module(value: str) -> bool:
+    parts = value.split(".")
+    return (
+        value != ""
+        and parts[0] == _PACKAGE_NAME
+        and all(
+            part != "__init__" and part.isascii() and part.isidentifier()
+            for part in parts
+        )
+    )
+
+
+def _load_installed_import_classification() -> dict[str, tuple[str, ...]]:
+    if not _is_ordinary_directory(_IMPORT_CLASSIFICATION_PATH.parent):
+        raise SetupError(
+            "installed import classification parent must be an ordinary directory"
+        )
+    if not _is_ordinary_file(_IMPORT_CLASSIFICATION_PATH):
+        raise SetupError("installed import classification must be an ordinary file")
+    try:
+        source = _IMPORT_CLASSIFICATION_PATH.read_bytes()
+    except OSError as error:
+        raise SetupError("cannot read installed import classification") from error
+    if len(source) > 1024 * 1024:
+        raise SetupError("installed import classification exceeds its size bound")
+    try:
+        document = json.loads(
+            source.decode("utf-8"),
+            object_pairs_hook=_reject_import_duplicate_json_keys,
+        )
+    except SetupError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SetupError(
+            "installed import classification is not strict UTF-8 JSON"
+        ) from error
+
+    expected_top_level = {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "base_dependencies",
+        "blocked_optional_prefixes",
+        "outcomes",
+    }
+    if not isinstance(document, dict) or set(document) != expected_top_level:
+        raise SetupError(
+            "installed import classification must have the exact top-level fields"
+        )
+    if document["schema_version"] != _IMPORT_CLASSIFICATION_SCHEMA_VERSION:
+        raise SetupError("installed import classification has the wrong schema version")
+    if document["classification_scope"] != _IMPORT_CLASSIFICATION_SCOPE:
+        raise SetupError("installed import classification has the wrong scope")
+    if document["claim_boundary"] != _IMPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+        raise SetupError("installed import classification has the wrong claim boundary")
+    if document["base_dependencies"] != list(_IMPORT_BASE_DEPENDENCIES):
+        raise SetupError(
+            "installed import classification has the wrong base dependencies"
+        )
+    pyproject_path = _PROJECT_ROOT / "pyproject.toml"
+    if not _is_ordinary_file(pyproject_path):
+        raise SetupError("pyproject.toml must be an ordinary file")
+    try:
+        pyproject_source = pyproject_path.read_bytes()
+    except OSError as error:
+        raise SetupError("cannot read pyproject.toml") from error
+    if len(pyproject_source) > 1024 * 1024:
+        raise SetupError("pyproject.toml exceeds its size bound")
+    try:
+        pyproject = tomllib.loads(pyproject_source.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
+        raise SetupError("pyproject.toml is not strict UTF-8 TOML") from error
+    project = pyproject.get("project")
+    declared_dependencies = (
+        project.get("dependencies") if isinstance(project, dict) else None
+    )
+    if (
+        not isinstance(declared_dependencies, list)
+        or any(
+            not isinstance(requirement, str) or not requirement
+            for requirement in declared_dependencies
+        )
+        or len(declared_dependencies) != len(set(declared_dependencies))
+        or tuple(sorted(declared_dependencies, key=str.casefold))
+        != _DECLARED_BASE_REQUIREMENTS
+    ):
+        raise SetupError(
+            "pyproject.toml project dependencies differ from the exact installed "
+            "import base requirements"
+        )
+    if document["blocked_optional_prefixes"] != list(_BLOCKED_OPTIONAL_IMPORT_PREFIXES):
+        raise SetupError(
+            "installed import classification has the wrong blocked optional prefixes"
+        )
+
+    raw_outcomes = document["outcomes"]
+    if not isinstance(raw_outcomes, dict) or set(raw_outcomes) != set(
+        _IMPORT_OUTCOME_NAMES
+    ):
+        raise SetupError("installed import classification must have the exact outcomes")
+    parsed: dict[str, tuple[str, ...]] = {}
+    owner: dict[str, str] = {}
+    for outcome in _IMPORT_OUTCOME_NAMES:
+        raw_modules = raw_outcomes[outcome]
+        if (
+            not isinstance(raw_modules, list)
+            or not raw_modules
+            or any(not isinstance(module, str) for module in raw_modules)
+            or raw_modules != sorted(raw_modules)
+            or len(set(raw_modules)) != len(raw_modules)
+            or any(not _is_portable_spirallens_module(module) for module in raw_modules)
+        ):
+            raise SetupError(
+                f"installed import outcome {outcome!r} must be a non-empty, sorted, "
+                "unique list of dotted spirallens modules"
+            )
+        for module in raw_modules:
+            previous = owner.get(module)
+            if previous is not None:
+                raise SetupError(
+                    f"installed import module {module!r} appears in both "
+                    f"{previous!r} and {outcome!r}"
+                )
+            owner[module] = outcome
+        parsed[outcome] = tuple(raw_modules)
+
+    expected_modules = {
+        _module_for_python_member(member) for member in _SHIPPED_PYTHON_PATHS
+    }
+    if len(expected_modules) != len(_SHIPPED_PYTHON_PATHS):
+        raise SetupError(
+            "classified shipped Python paths do not map one-to-one to modules"
+        )
+    observed_modules = set(owner)
+    if observed_modules != expected_modules:
+        raise SetupError(
+            "installed import outcomes must exactly partition every shipped module"
+        )
+    if parsed["models_extra_missing_torch"] != (_MODELS_EXTRA_MISSING_TORCH_MODULES):
+        raise SetupError(
+            "models_extra_missing_torch differs from the reviewed exact modules"
+        )
+    expected_success = tuple(
+        sorted(expected_modules - set(_MODELS_EXTRA_MISSING_TORCH_MODULES))
+    )
+    if parsed["base_import_success"] != expected_success:
+        raise SetupError(
+            "base_import_success differs from the reviewed exact module complement"
+        )
+    if len(parsed["base_import_success"]) != 154:
+        raise SetupError(
+            "base_import_success differs from the exact 154-module inventory"
+        )
+
+    initializer_modules = {
+        _module_for_python_member(member)
+        for member in _PYTHON_MEMBER_CLASSIFICATION["package_initializer"]
+    }
+    successful_initializers = initializer_modules & set(parsed["base_import_success"])
+    missing_torch_initializers = initializer_modules & set(
+        parsed["models_extra_missing_torch"]
+    )
+    if (
+        len(initializer_modules) != 24
+        or len(successful_initializers) != 23
+        or missing_torch_initializers != {"spirallens.adapters"}
+    ):
+        raise SetupError(
+            "installed import outcomes differ from the exact 23-success/one-"
+            "missing-torch package-initializer projection"
+        )
+    return parsed
+
+
+_INSTALLED_IMPORT_CLASSIFICATION = _load_installed_import_classification()
 
 
 def _require_ordinary_source_ancestors(expected_members: Sequence[str]) -> None:
