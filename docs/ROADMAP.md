@@ -1026,6 +1026,34 @@ deduplication changes no public API, persistence schema, artifact, protocol,
 scientific or VOY authority; it neither authorizes VOY-V4 nor completes or
 advances `LIB-L0`.
 
+The subsequent array-fingerprint review at baseline commit
+`6273b3601a7f38947146677cccbb3ebf0ac876ed` is a bounded rejection, not an
+extraction. The graph, qualification, and representation-estimator helpers
+produce identical `dtype.str` / shape / NUL / C-order-byte fingerprints for
+stable ndarray metadata across 21 audited case families. Their unrestricted
+callable contracts are not exact, however: graph and qualification construct
+the digest from the first metadata observation and return a later metadata
+observation, while the representation estimator returns the first observation
+and hashes a later one; their digest-only callables also observe metadata a
+different number of times.
+
+More importantly, `src/spirallens/qualification/common.py` remains the exact
+10,613-byte D7 v1 trust-root member with SHA-256
+`a884545702c374def8df6fd9eb1fe0c3944b93f77cea3d50e9c6c3b5b0e648cf`
+at reviewed source S, commit A, commit B, and this review baseline. The current
+direct executing-source gate still joins those live bytes to reviewed S.
+Changing the file or making it depend on a new unbound helper would introduce
+a new, earlier deterministic trust-root failure; it must not be justified by
+weakening the historical verifier. This statement does not claim that the
+entire commit-B verifier is currently refreshable from the later descendant:
+it already reports a separate post-S Python path-set drift after the direct
+source gate. Excluding the trust root leaves only 33 local function lines in
+the graph/representation pair, and no reviewed design demonstrated the
+inventory's 20-line net-reduction threshold. Therefore no production, export,
+dependency, wheel, schema, or test helper was added. The rejection preserves
+historical evidence and does not complete `LIB-L0`, authorize VOY-V4, or alter
+any scientific or authority state.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 

@@ -4,6 +4,31 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Array-fingerprint extraction rejected
+
+- Audited the matching fingerprint framing in `graphs.common`,
+  `qualification.common`, and `synthetic.representation_estimator`. Stable
+  ndarray metadata produced equal results across 21 case families, but
+  duck-typed metadata that changes between accesses exposes different
+  observation schedules; the unrestricted callable contracts are not exact.
+- `qualification/common.py` remains a direct D7 v1 reviewed-source trust root:
+  its 10,613 bytes and SHA-256
+  `a884545702c374def8df6fd9eb1fe0c3944b93f77cea3d50e9c6c3b5b0e648cf`
+  are identical at S, A, B, and review baseline
+  `6273b3601a7f38947146677cccbb3ebf0ac876ed`. Its current direct live-byte join
+  to reviewed S passes. Editing it or importing a new unbound helper would add
+  an earlier deterministic trust-root failure and was rejected; no historical
+  verifier was weakened.
+- The full later-descendant commit-B refresh already stops separately on
+  post-S Python path-set drift after the direct source join, so this entry does
+  not overstate current refreshability. With the trust root excluded, only 33
+  local function lines remain and no design demonstrated the required 20-line
+  net reduction. No production helper or test-only scaffold was retained.
+- This rejection record changes no supported persistence schema, public API,
+  dependency, wheel member, artifact, protocol, execution, authority,
+  scientific claim, D7/D8/SCI status, library maturity, or VOY-V4
+  authorization.
+
 ## 2026-08-13 — Private strict YAML mapping-loader extraction
 
 - Replaced four duplicated strict PyYAML mapping-loader definitions with one
