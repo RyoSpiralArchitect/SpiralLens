@@ -266,11 +266,22 @@ already-audited targets, but their namespace import closure has not been
 audited, so they inherit no declaration. `LIB-L0`, science, authority, and VOY
 remain unchanged.
 
-Reconsider only one bounded namespace or operation group at a time. Its review
-must close direct and transitive repository access before assigning a policy;
-then at most one non-frozen migration may proceed after exact signature,
-accepted-input, validation-order, exception, and failure-state equivalence is
-demonstrated. Unknown entries remain unknown rather than inheriting a default.
+The final declaration-only candidate, at clean baseline
+`65a567659200ac41c5a15329af1074239b525ac5`, was
+`spirallens.gauge:{orthonormal_frame,principal_angles,procrustes_connection,track_subspaces}`
+across `src/spirallens/gauge/{__init__.py,procrustes_connection.py,subspace_tracking.py}`.
+Its owned implementation closure was semantically eligible and showed no
+repository, file, environment, process, or network dependency, but the honest
+formatted non-import AST ratchet required 230 lines and exceeded its hard
+220-line gate. The candidate was withdrawn rather than hidden behind opaque
+digests or a shared analyzer, and no test or declaration was adopted.
+The counters remain 18 classified coordinates / 18 audited identities and 160
+unknown coordinates = 157 never-audited identities + the three unaudited
+`spirallens.instrument_contracts` aliases. Mechanical declaration-only rollout
+stops here. The next lane is an exact equivalence audit of the advancement
+optional-fallback operations before any `RepositoryContext` migration. No
+production, schema, report, runtime, export, dependency, API, portability,
+maturity, `LIB-L0`, science, authority, or VOY state changes.
 
 ## Candidate inventory
 
