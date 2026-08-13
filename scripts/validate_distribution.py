@@ -25,7 +25,24 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.5"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.6"
+PYTHON_MEMBER_CLASSIFICATION_PATH = "distribution/spirallens_python_members_v0_1.json"
+PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION = (
+    "spirallens.python-distribution-members.v0.1"
+)
+PYTHON_MEMBER_CLASSIFICATION_SCOPE = (
+    "physical Python member placement across repository source, sdist, and wheels"
+)
+PYTHON_MEMBER_CLASSIFICATION_CLAIM_BOUNDARY = (
+    "classification grants no public API, stability, compatibility, authority, "
+    "scientific claim, or library maturity"
+)
+PYTHON_MEMBER_ROLE_NAMES = (
+    "package_initializer",
+    "console_entrypoint_runtime",
+    "shipped_runtime",
+    "repository_only",
+)
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens._held_file",
@@ -112,63 +129,6 @@ FORBIDDEN_IMPORTS = (
     "transformers",
     "yaml",
 )
-REQUIRED_WHEEL_MEMBERS = (
-    "spirallens/_held_file.py",
-    "spirallens/atlas/__init__.py",
-    "spirallens/atlas/_capture_store.py",
-    "spirallens/atlas/engineering_receipt.py",
-    "spirallens/atlas/store.py",
-    "spirallens/core/_strict_yaml.py",
-    "spirallens/graphs/__init__.py",
-    "spirallens/graphs/common.py",
-    "spirallens/graphs/constructors.py",
-    "spirallens/graphs/contracts.py",
-    "spirallens/graphs/diversity.py",
-    "spirallens/graphs/domain.py",
-    "spirallens/qualification/__init__.py",
-    "spirallens/qualification/advancement.py",
-    "spirallens/qualification/aggregation.py",
-    "spirallens/qualification/blind.py",
-    "spirallens/qualification/common.py",
-    "spirallens/qualification/confirmation_attempt_authority.py",
-    "spirallens/qualification/confirmation_attempt_evidence.py",
-    "spirallens/qualification/confirmation_attempt_evidence_validation.py",
-    "spirallens/qualification/confirmation_attempt_persistence.py",
-    "spirallens/qualification/confirmation_attempt_records.py",
-    "spirallens/qualification/confirmation_attempt_terminal_persistence.py",
-    "spirallens/qualification/confirmation_attempt_validation.py",
-    "spirallens/qualification/confirmation_c1.py",
-    "spirallens/qualification/confirmation_crossed_development.py",
-    "spirallens/qualification/confirmation_execution_design.py",
-    "spirallens/qualification/confirmation_execution_kernel.py",
-    "spirallens/qualification/confirmation_external_witness.py",
-    "spirallens/qualification/confirmation_protocol.py",
-    "spirallens/qualification/confirmation_rebinding.py",
-    "spirallens/qualification/confirmation_replay_contracts.py",
-    "spirallens/qualification/confirmation_result_component_validation.py",
-    "spirallens/qualification/confirmation_result_components.py",
-    "spirallens/qualification/confirmation_runner.py",
-    "spirallens/qualification/confirmation_source_closure.py",
-    "spirallens/qualification/confirmation_terminal_operations.py",
-    "spirallens/qualification/contracts.py",
-    "spirallens/qualification/crossed.py",
-    "spirallens/qualification/evidence_bundle.py",
-    "spirallens/qualification/freeze.py",
-    "spirallens/qualification/launch.py",
-    "spirallens/qualification/metamorphic.py",
-    "spirallens/qualification/persistence.py",
-    "spirallens/qualification/pipeline_metamorphic.py",
-    "spirallens/qualification/preparation.py",
-    "spirallens/qualification/prerequisites.py",
-    "spirallens/qualification/protocol.py",
-    "spirallens/qualification/runner.py",
-    "spirallens/qualification/source_binding.py",
-    "spirallens/qualification/winding.py",
-    "spirallens/synthetic/cartesian_fourier_domain_phantom.py",
-    "spirallens/synthetic/cartesian_fourier_estimator.py",
-    "spirallens/synthetic/representation_estimator.py",
-    "spirallens/synthetic/spectral_moment_confirmation.py",
-)
 REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
     "spirallens/access/_pythia160_",
     "spirallens/qualification/confirmation_v1_",
@@ -234,6 +194,200 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _ordered_path_manifest_sha256(paths: Sequence[str]) -> str:
+    return hashlib.sha256(
+        "".join(f"{path}\n" for path in paths).encode("utf-8")
+    ).hexdigest()
+
+
+def _reject_duplicate_json_object(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    value: dict[str, object] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        value[key] = item
+    return value
+
+
+def _require_portable_python_member(value: object, *, role: str) -> str:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise DistributionValidationError(
+            f"Python member role {role!r} contains a non-portable path: {value!r}"
+        )
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or path.as_posix() != value
+        or len(path.parts) < 2
+        or path.parts[0] != "spirallens"
+        or any(part in {"", ".", ".."} for part in path.parts)
+        or path.suffix != ".py"
+        or "__pycache__" in path.parts
+    ):
+        raise DistributionValidationError(
+            f"Python member role {role!r} contains an invalid path: {value!r}"
+        )
+    identifiers = (*path.parts[:-1], path.stem)
+    if not all(item.isascii() and item.isidentifier() for item in identifiers):
+        raise DistributionValidationError(
+            f"Python member role {role!r} contains a non-module path: {value!r}"
+        )
+    return value
+
+
+def _load_python_member_classification(source_root: Path) -> dict[str, object]:
+    """Load and validate the literal distribution-member authority document."""
+
+    manifest_path = source_root / PYTHON_MEMBER_CLASSIFICATION_PATH
+    for required_directory in (source_root / "distribution",):
+        try:
+            mode = required_directory.lstat().st_mode
+        except OSError as error:
+            raise DistributionValidationError(
+                "Python member classification has a missing distribution directory"
+            ) from error
+        if not stat.S_ISDIR(mode):
+            raise DistributionValidationError(
+                "Python member classification distribution directory must be ordinary"
+            )
+    try:
+        manifest_mode = manifest_path.lstat().st_mode
+        manifest_bytes = manifest_path.read_bytes()
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot read the Python member classification manifest"
+        ) from error
+    if not stat.S_ISREG(manifest_mode):
+        raise DistributionValidationError(
+            "Python member classification manifest must be an ordinary file"
+        )
+    if len(manifest_bytes) > 1024 * 1024:
+        raise DistributionValidationError(
+            "Python member classification manifest exceeds its size bound"
+        )
+    try:
+        value = json.loads(
+            manifest_bytes.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_json_object,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        raise DistributionValidationError(
+            "Python member classification manifest is not duplicate-free JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "roles",
+    }:
+        raise DistributionValidationError(
+            "Python member classification manifest has unexpected top-level keys"
+        )
+    if value.get("schema_version") != PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION:
+        raise DistributionValidationError(
+            "Python member classification manifest has the wrong schema version"
+        )
+    if value.get("classification_scope") != PYTHON_MEMBER_CLASSIFICATION_SCOPE:
+        raise DistributionValidationError(
+            "Python member classification manifest has the wrong physical scope"
+        )
+    if value.get("claim_boundary") != PYTHON_MEMBER_CLASSIFICATION_CLAIM_BOUNDARY:
+        raise DistributionValidationError(
+            "Python member classification manifest has the wrong claim boundary"
+        )
+    raw_roles = value.get("roles")
+    if not isinstance(raw_roles, dict) or set(raw_roles) != set(
+        PYTHON_MEMBER_ROLE_NAMES
+    ):
+        raise DistributionValidationError(
+            "Python member classification manifest has unexpected role keys"
+        )
+    roles: dict[str, tuple[str, ...]] = {}
+    already_classified: set[str] = set()
+    for role in PYTHON_MEMBER_ROLE_NAMES:
+        raw_members = raw_roles.get(role)
+        if not isinstance(raw_members, list) or not raw_members:
+            raise DistributionValidationError(
+                f"Python member role {role!r} must be a non-empty list"
+            )
+        members = tuple(
+            _require_portable_python_member(member, role=role) for member in raw_members
+        )
+        if members != tuple(sorted(set(members))):
+            raise DistributionValidationError(
+                f"Python member role {role!r} must be sorted and unique"
+            )
+        overlap = sorted(already_classified.intersection(members))
+        if overlap:
+            raise DistributionValidationError(
+                f"Python member roles overlap at: {overlap}"
+            )
+        already_classified.update(members)
+        roles[role] = members
+    if any(
+        not member.endswith("/__init__.py") for member in roles["package_initializer"]
+    ):
+        raise DistributionValidationError(
+            "package_initializer role contains a non-initializer member"
+        )
+    if any(
+        member.endswith("/__init__.py")
+        for role in PYTHON_MEMBER_ROLE_NAMES
+        if role != "package_initializer"
+        for member in roles[role]
+    ):
+        raise DistributionValidationError(
+            "a non-initializer role contains a package initializer"
+        )
+    if roles["console_entrypoint_runtime"] != (
+        "spirallens/__main__.py",
+        "spirallens/cli.py",
+    ):
+        raise DistributionValidationError(
+            "console_entrypoint_runtime differs from the reviewed paths"
+        )
+    shipped_members = tuple(
+        sorted(
+            member
+            for role in PYTHON_MEMBER_ROLE_NAMES
+            if role != "repository_only"
+            for member in roles[role]
+        )
+    )
+    repository_only_members = roles["repository_only"]
+    expected_repository_only = tuple(
+        path.removeprefix("src/") for path in REPOSITORY_EXPERIMENT_SOURCE_PATHS
+    )
+    if repository_only_members != expected_repository_only:
+        raise DistributionValidationError(
+            "repository_only role differs from the reviewed experiment set"
+        )
+    source_members = tuple(sorted((*shipped_members, *repository_only_members)))
+    expected_initializers = {
+        (parent / "__init__.py").as_posix()
+        for member in shipped_members
+        for parent in PurePosixPath(member).parents
+        if parent.as_posix() not in {"."}
+    }
+    if set(roles["package_initializer"]) != expected_initializers:
+        raise DistributionValidationError(
+            "package_initializer role does not close every shipped package ancestor"
+        )
+    return {
+        "classification_scope": value["classification_scope"],
+        "claim_boundary": value["claim_boundary"],
+        "manifest_path": PYTHON_MEMBER_CLASSIFICATION_PATH,
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "repository_only_members": repository_only_members,
+        "roles": roles,
+        "schema_version": PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION,
+        "shipped_members": shipped_members,
+        "source_members": source_members,
+    }
+
+
 def _run(
     command: Sequence[str],
     *,
@@ -289,6 +443,28 @@ def _seed_stale_repository_experiment_build_outputs(source_root: Path) -> int:
     return 1
 
 
+def _setuptools_build_python() -> str:
+    candidates = tuple(
+        dict.fromkeys(
+            str(candidate)
+            for candidate in (sys.executable, getattr(sys, "_base_executable", None))
+            if candidate
+        )
+    )
+    for candidate in candidates:
+        completed = subprocess.run(
+            [candidate, "-P", "-c", "import setuptools; import wheel"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode == 0:
+            return candidate
+    raise DistributionValidationError(
+        "stale-build adversary requires an interpreter with setuptools and wheel"
+    )
+
+
 def _require_stale_build_rejected(
     staged_source: Path,
     artifact_dir: Path,
@@ -298,7 +474,7 @@ def _require_stale_build_rejected(
     seeded_count = _seed_stale_repository_experiment_build_outputs(staged_source)
     completed = subprocess.run(
         [
-            str(sys.executable),
+            _setuptools_build_python(),
             "setup.py",
             "bdist_wheel",
             "--skip-build",
@@ -320,7 +496,12 @@ def _require_stale_build_rejected(
             "direct wheel build unexpectedly accepted stale repository-experiment "
             "build outputs"
         )
-    if "repository-experiment build outputs must be absent" not in detail:
+    if (
+        "install input package tree must contain the exact classified shipped "
+        "Python tree"
+        not in detail
+        or "confirmation_v1_records" not in detail
+    ):
         raise DistributionValidationError(
             "stale repository-experiment build failed for an unrelated reason"
         )
@@ -361,15 +542,12 @@ def _extract_sdist(source: Path, destination: Path) -> Path:
         top_levels: set[str] = set()
         checked: list[tuple[tarfile.TarInfo, PurePosixPath]] = []
         for member in members:
-            relative = PurePosixPath(member.name)
-            if (
-                relative.is_absolute()
-                or not relative.parts
-                or any(part in {"", ".", ".."} for part in relative.parts)
-            ):
+            _require_safe_archive_member_path(member.name, artifact_kind="sdist")
+            if member.isfile() and member.name.endswith("/"):
                 raise DistributionValidationError(
                     f"sdist contains an unsafe path: {member.name!r}"
                 )
+            relative = PurePosixPath(member.name)
             if not (member.isdir() or member.isfile()):
                 raise DistributionValidationError(
                     "sdist may contain only directories and regular files: "
@@ -402,19 +580,204 @@ def _extract_sdist(source: Path, destination: Path) -> Path:
     return extracted
 
 
-def _require_wheel_members(
+def _require_safe_archive_member_path(member: str, *, artifact_kind: str) -> None:
+    if not member or "\\" in member:
+        raise DistributionValidationError(
+            f"{artifact_kind} contains an unsafe path: {member!r}"
+        )
+    path = PurePosixPath(member)
+    canonical = path.as_posix()
+    expected_spelling = f"{canonical}/" if member.endswith("/") else canonical
+    if (
+        path.is_absolute()
+        or not path.parts
+        or any(part in {"", ".", ".."} for part in path.parts)
+        or member != expected_spelling
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} contains an unsafe path: {member!r}"
+        )
+
+
+def _require_exact_python_members(
+    observed_members: Sequence[str],
+    *,
+    expected_members: Sequence[str],
+    artifact_kind: str,
+) -> dict[str, object]:
+    observed = tuple(sorted(observed_members))
+    expected = tuple(expected_members)
+    if expected != tuple(sorted(set(expected))):
+        raise DistributionValidationError(
+            "expected Python member classification is not sorted and unique"
+        )
+    missing = sorted(set(expected) - set(observed))
+    unclassified = sorted(set(observed) - set(expected))
+    if missing or unclassified or len(observed) != len(set(observed)):
+        raise DistributionValidationError(
+            f"{artifact_kind} Python member classification differs from the exact "
+            f"manifest: missing={missing}, unclassified={unclassified}, "
+            f"duplicates={len(observed) - len(set(observed))}"
+        )
+    return {
+        "observation": "exact-closed-set",
+        "count": len(observed),
+        "manifest_sha256": _ordered_path_manifest_sha256(observed),
+        "missing_count": 0,
+        "unclassified_count": 0,
+        "members": list(observed),
+    }
+
+
+def _classify_wheel_python_members(
     wheel: Path,
     *,
-    required_members: Sequence[str],
-) -> tuple[str, ...]:
+    expected_members: Sequence[str],
+) -> dict[str, object]:
+    """Require one wheel's package subtree to be the exact Python-only set."""
+
     with zipfile.ZipFile(wheel) as archive:
-        members = set(archive.namelist())
-    missing = sorted(set(required_members) - members)
-    if missing:
+        infos = archive.infolist()
+    names = [info.filename for info in infos]
+    if len(names) != len(set(names)):
+        raise DistributionValidationError("wheel contains duplicate archive members")
+    for name in names:
+        _require_safe_archive_member_path(name, artifact_kind="wheel")
+    nonregular_archive_members: list[str] = []
+    for info in infos:
+        mode = (info.external_attr >> 16) & 0xFFFF
+        file_type = stat.S_IFMT(mode)
+        if info.is_dir():
+            if file_type not in {0, stat.S_IFDIR}:
+                nonregular_archive_members.append(info.filename)
+        elif file_type not in {0, stat.S_IFREG}:
+            nonregular_archive_members.append(info.filename)
+    if nonregular_archive_members:
         raise DistributionValidationError(
-            f"wheel is missing required package members: {missing}"
+            "wheel contains non-regular archive members: "
+            f"{sorted(nonregular_archive_members)}"
         )
-    return tuple(sorted(required_members))
+    package_infos = [
+        info
+        for info in infos
+        if not (
+            PurePosixPath(info.filename).parts
+            and PurePosixPath(info.filename).parts[0].endswith(".dist-info")
+        )
+    ]
+    file_infos = [info for info in package_infos if not info.is_dir()]
+    non_python_regular = sorted(
+        info.filename for info in file_infos if not info.filename.endswith(".py")
+    )
+    if non_python_regular:
+        raise DistributionValidationError(
+            "wheel contains non-Python regular members outside generated metadata: "
+            f"{non_python_regular}"
+        )
+    package_members = tuple(sorted(info.filename for info in file_infos))
+    non_python = sorted(
+        member for member in package_members if not member.endswith(".py")
+    )
+    if non_python:
+        raise DistributionValidationError(
+            f"wheel package subtree contains non-Python members: {non_python}"
+        )
+    return _require_exact_python_members(
+        package_members,
+        expected_members=expected_members,
+        artifact_kind="wheel",
+    )
+
+
+def _classify_sdist_python_members(
+    sdist: Path,
+    *,
+    expected_members: Sequence[str],
+) -> dict[str, object]:
+    """Require an sdist's ``src/spirallens`` subtree to be the exact set."""
+
+    with tarfile.open(sdist, mode="r:gz") as archive:
+        infos = archive.getmembers()
+    names = [info.name for info in infos]
+    if len(names) != len(set(names)):
+        raise DistributionValidationError("sdist contains duplicate archive members")
+    for info in infos:
+        _require_safe_archive_member_path(info.name, artifact_kind="sdist")
+        if info.isfile() and info.name.endswith("/"):
+            raise DistributionValidationError(
+                f"sdist contains an unsafe path: {info.name!r}"
+            )
+    top_levels = {PurePosixPath(name).parts[0] for name in names}
+    if len(top_levels) != 1:
+        raise DistributionValidationError(
+            "sdist must contain exactly one top-level directory"
+        )
+    package_infos: list[tuple[tarfile.TarInfo, str]] = []
+    for info in infos:
+        parts = PurePosixPath(info.name).parts
+        if len(parts) >= 3 and parts[1] == "src":
+            if len(parts) >= 3 and parts[2].endswith(".egg-info"):
+                continue
+            package_infos.append((info, "/".join(parts[2:])))
+    nonregular = sorted(
+        normalized
+        for info, normalized in package_infos
+        if not info.isdir() and not info.isfile()
+    )
+    if nonregular:
+        raise DistributionValidationError(
+            f"sdist package subtree contains non-regular members: {nonregular}"
+        )
+    package_members = tuple(
+        sorted(normalized for info, normalized in package_infos if info.isfile())
+    )
+    non_python = sorted(
+        member for member in package_members if not member.endswith(".py")
+    )
+    if non_python:
+        raise DistributionValidationError(
+            f"sdist package subtree contains non-Python members: {non_python}"
+        )
+    return _require_exact_python_members(
+        package_members,
+        expected_members=expected_members,
+        artifact_kind="sdist",
+    )
+
+
+def _require_sdist_classification_manifest(
+    sdist: Path,
+    *,
+    expected_sha256: str,
+) -> dict[str, object]:
+    with tarfile.open(sdist, mode="r:gz") as archive:
+        matches = [
+            info
+            for info in archive.getmembers()
+            if "/".join(PurePosixPath(info.name).parts[1:])
+            == PYTHON_MEMBER_CLASSIFICATION_PATH
+        ]
+        if len(matches) != 1 or not matches[0].isfile():
+            raise DistributionValidationError(
+                "sdist must contain one regular Python member classification manifest"
+            )
+        handle = archive.extractfile(matches[0])
+        if handle is None:
+            raise DistributionValidationError(
+                "cannot read the sdist Python member classification manifest"
+            )
+        with handle:
+            payload = handle.read(1024 * 1024 + 1)
+    digest = hashlib.sha256(payload).hexdigest()
+    if len(payload) > 1024 * 1024 or digest != expected_sha256:
+        raise DistributionValidationError(
+            "sdist Python member classification manifest differs from source"
+        )
+    return {
+        "path": PYTHON_MEMBER_CLASSIFICATION_PATH,
+        "sha256": digest,
+        "size_bytes": len(payload),
+    }
 
 
 def _classify_repository_experiment_members(wheel: Path) -> tuple[str, ...]:
@@ -527,6 +890,90 @@ def _repository_experiment_source_report(source_root: Path) -> dict[str, object]
     }
 
 
+def _classify_source_python_members(
+    source_root: Path,
+    *,
+    classification: dict[str, object],
+) -> dict[str, object]:
+    """Require every source ``.py`` member to have exactly one manifest role."""
+
+    package_root = source_root / "src"
+    try:
+        if not stat.S_ISDIR((source_root / "src").lstat().st_mode):
+            raise OSError("src is not an ordinary directory")
+        if not stat.S_ISDIR((package_root / "spirallens").lstat().st_mode):
+            raise OSError("src/spirallens is not an ordinary directory")
+    except OSError as error:
+        raise DistributionValidationError(
+            "Python member source inventory has a missing or non-ordinary root"
+        ) from error
+
+    observed: list[str] = []
+    nonregular: list[str] = []
+
+    def raise_walk_error(error: OSError) -> None:
+        raise DistributionValidationError(
+            "cannot enumerate the Python member source inventory"
+        ) from error
+
+    try:
+        for directory, directory_names, filenames in os.walk(
+            package_root,
+            followlinks=False,
+            onerror=raise_walk_error,
+        ):
+            parent = Path(directory)
+            retained_directories: list[str] = []
+            for name in directory_names:
+                child = parent / name
+                relative = child.relative_to(source_root).as_posix()
+                if stat.S_ISDIR(child.lstat().st_mode):
+                    retained_directories.append(name)
+                else:
+                    nonregular.append(relative)
+            directory_names[:] = retained_directories
+            for name in filenames:
+                child = parent / name
+                if not name.endswith(".py"):
+                    continue
+                relative = child.relative_to(source_root).as_posix()
+                observed.append(relative.removeprefix("src/"))
+                if not stat.S_ISREG(child.lstat().st_mode):
+                    nonregular.append(relative)
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot inspect the Python member source inventory"
+        ) from error
+    if nonregular:
+        raise DistributionValidationError(
+            "Python member source inventory contains non-ordinary paths: "
+            f"{sorted(nonregular)}"
+        )
+    expected_source_members = classification["source_members"]
+    assert isinstance(expected_source_members, tuple)
+    exact = _require_exact_python_members(
+        observed,
+        expected_members=expected_source_members,
+        artifact_kind="source tree",
+    )
+    shipped_members = classification["shipped_members"]
+    repository_only_members = classification["repository_only_members"]
+    assert isinstance(shipped_members, tuple)
+    assert isinstance(repository_only_members, tuple)
+    exact.update(
+        {
+            "all_regular_files": True,
+            "shipped_count": len(shipped_members),
+            "shipped_manifest_sha256": _ordered_path_manifest_sha256(shipped_members),
+            "repository_only_count": len(repository_only_members),
+            "repository_only_manifest_sha256": _ordered_path_manifest_sha256(
+                repository_only_members
+            ),
+        }
+    )
+    return exact
+
+
 def _require_zero_repository_experiment_members(
     members: Sequence[str],
     *,
@@ -608,6 +1055,7 @@ def _library_separation_report(
     sdist: dict[str, object],
     direct_source_wheel: dict[str, object],
     sdist_derived_wheel: dict[str, object],
+    python_module_inventory: dict[str, object],
 ) -> dict[str, object]:
     return {
         "repository_experiment_separation": {
@@ -621,10 +1069,14 @@ def _library_separation_report(
             ],
             "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
+        "python_module_inventory": python_module_inventory,
+        "closed_wheel_python_module_inventory_established": True,
         "closed_library_allowlist_established": False,
         "grants": {
             "authority": False,
+            "lib_l0": False,
             "library": False,
+            "portability": False,
             "public_api": False,
             "scientific": False,
         },
@@ -904,6 +1356,29 @@ print(
         separators=(",", ":"),
     )
 )
+"""
+
+
+_INSTALLED_PYTHON_MEMBER_PROBE = r"""
+import importlib.metadata
+import json
+from pathlib import PurePosixPath
+
+distribution = importlib.metadata.distribution("spirallens")
+files = distribution.files
+if files is None:
+    raise RuntimeError("installed distribution omitted its file inventory")
+members = []
+for item in files:
+    value = str(item)
+    path = PurePosixPath(value)
+    if path.parts[:1] != ("spirallens",) and (
+        path.suffix != ".py"
+        or any(part.endswith(".dist-info") for part in path.parts)
+    ):
+        continue
+    members.append(value)
+print(json.dumps({"package_members": sorted(members)}, separators=(",", ":")))
 """
 
 
@@ -1339,6 +1814,47 @@ def _parse_atlas_reader_probe_output(
     }
 
 
+def _parse_installed_python_member_probe_output(
+    output: str,
+    *,
+    expected_members: Sequence[str],
+    artifact_kind: str,
+) -> dict[str, object]:
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            "installed Python member probe did not emit valid JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {"package_members"}:
+        raise DistributionValidationError(
+            "installed Python member probe has unexpected fields"
+        )
+    members = value["package_members"]
+    if not isinstance(members, list) or any(
+        not isinstance(member, str) for member in members
+    ):
+        raise DistributionValidationError(
+            "installed Python member probe has invalid members"
+        )
+    if members != sorted(members) or len(members) != len(set(members)):
+        raise DistributionValidationError(
+            "installed Python member probe members must be sorted and unique"
+        )
+    for member in members:
+        _require_safe_archive_member_path(member, artifact_kind=artifact_kind)
+    non_python = sorted(member for member in members if not member.endswith(".py"))
+    if non_python:
+        raise DistributionValidationError(
+            f"{artifact_kind} package subtree contains non-Python members: {non_python}"
+        )
+    return _require_exact_python_members(
+        members,
+        expected_members=expected_members,
+        artifact_kind=artifact_kind,
+    )
+
+
 def validate_distribution(
     source_root: Path,
     *,
@@ -1351,6 +1867,13 @@ def validate_distribution(
     imports = tuple(required_imports)
     scientific_imports = tuple(required_scientific_imports)
     atlas_reader_imports = tuple(ATLAS_READER_IMPORTS)
+    python_member_classification = _load_python_member_classification(source_root)
+    python_source_inventory = _classify_source_python_members(
+        source_root,
+        classification=python_member_classification,
+    )
+    shipped_python_members = python_member_classification["shipped_members"]
+    assert isinstance(shipped_python_members, tuple)
     source_inventory = _repository_experiment_source_report(source_root)
     public_package_exports = _load_public_package_exports(source_root)
     if not imports or any(not isinstance(name, str) or not name for name in imports):
@@ -1439,9 +1962,9 @@ def validate_distribution(
             "*.whl",
             label="direct-source wheel",
         )
-        direct_verified_wheel_members = _require_wheel_members(
+        direct_python_inventory = _classify_wheel_python_members(
             direct_wheel,
-            required_members=REQUIRED_WHEEL_MEMBERS,
+            expected_members=shipped_python_members,
         )
         direct_wheel_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_members(direct_wheel),
@@ -1464,6 +1987,14 @@ def validate_distribution(
             ),
         )
         sdist = _single_artifact(artifact_dir, "*.tar.gz", label="sdist")
+        sdist_python_inventory = _classify_sdist_python_members(
+            sdist,
+            expected_members=shipped_python_members,
+        )
+        sdist_classification_manifest = _require_sdist_classification_manifest(
+            sdist,
+            expected_sha256=str(python_member_classification["manifest_sha256"]),
+        )
         sdist_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_sdist_members(sdist),
             artifact_kind="sdist",
@@ -1489,13 +2020,16 @@ def validate_distribution(
             "*.whl",
             label="wheel",
         )
-        verified_wheel_members = _require_wheel_members(
+        sdist_wheel_python_inventory = _classify_wheel_python_members(
             wheel,
-            required_members=REQUIRED_WHEEL_MEMBERS,
+            expected_members=shipped_python_members,
         )
-        if direct_verified_wheel_members != verified_wheel_members:
+        if (
+            direct_python_inventory["members"]
+            != sdist_wheel_python_inventory["members"]
+        ):
             raise DistributionValidationError(
-                "direct-source and sdist-derived wheels differ in required members"
+                "direct-source and sdist-derived wheels differ in observed Python members"
             )
         sdist_wheel_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_members(wheel),
@@ -1506,6 +2040,34 @@ def validate_distribution(
             sdist=sdist_separation,
             direct_source_wheel=direct_wheel_separation,
             sdist_derived_wheel=sdist_wheel_separation,
+            python_module_inventory={
+                "classification": {
+                    "claim_boundary": python_member_classification["claim_boundary"],
+                    "classification_scope": python_member_classification[
+                        "classification_scope"
+                    ],
+                    "manifest_path": python_member_classification["manifest_path"],
+                    "manifest_sha256": python_member_classification["manifest_sha256"],
+                    "sdist_manifest": sdist_classification_manifest,
+                    "role_counts": {
+                        role: len(members)
+                        for role, members in python_member_classification[
+                            "roles"
+                        ].items()
+                    },
+                    "schema_version": python_member_classification["schema_version"],
+                },
+                "source_tree": python_source_inventory,
+                "sdist": sdist_python_inventory,
+                "direct_source_wheel": direct_python_inventory,
+                "sdist_derived_wheel": sdist_wheel_python_inventory,
+                "equality": {
+                    "source_shipped_to_sdist": True,
+                    "source_shipped_to_direct_source_wheel": True,
+                    "source_shipped_to_sdist_derived_wheel": True,
+                    "direct_source_to_sdist_derived_wheel": True,
+                },
+            },
         )
 
         venv.EnvBuilder(
@@ -1523,6 +2085,7 @@ def validate_distribution(
                 "pip",
                 "install",
                 "--no-deps",
+                "--no-compile",
                 "--force-reinstall",
                 str(wheel),
             ),
@@ -1546,6 +2109,21 @@ def validate_distribution(
             probe.stdout,
             environment_root=environment_root,
             required_imports=imports,
+        )
+        installed_python_probe = _run(
+            (
+                str(venv_python),
+                "-P",
+                "-c",
+                _INSTALLED_PYTHON_MEMBER_PROBE,
+            ),
+            cwd=neutral_cwd,
+            env=environment,
+        )
+        installed_python_inventory = _parse_installed_python_member_probe_output(
+            installed_python_probe.stdout,
+            expected_members=shipped_python_members,
+            artifact_kind="sdist-derived fresh install",
         )
 
         # Qualification is a scientific surface and intentionally imports its
@@ -1573,6 +2151,7 @@ def validate_distribution(
                 "pip",
                 "install",
                 "--no-deps",
+                "--no-compile",
                 "--force-reinstall",
                 str(direct_wheel),
             ),
@@ -1597,6 +2176,21 @@ def validate_distribution(
             expected_modules=REPOSITORY_EXPERIMENT_MODULES,
             expected_public_exports=public_package_exports,
         )
+        direct_installed_python_probe = _run(
+            (
+                str(direct_scientific_python),
+                "-P",
+                "-c",
+                _INSTALLED_PYTHON_MEMBER_PROBE,
+            ),
+            cwd=neutral_cwd,
+            env=direct_scientific_environment,
+        )
+        direct_installed_python_inventory = _parse_installed_python_member_probe_output(
+            direct_installed_python_probe.stdout,
+            expected_members=shipped_python_members,
+            artifact_kind="direct-source fresh install",
+        )
 
         venv.EnvBuilder(
             with_pip=True,
@@ -1616,6 +2210,7 @@ def validate_distribution(
                 "pip",
                 "install",
                 "--no-deps",
+                "--no-compile",
                 "--force-reinstall",
                 str(wheel),
             ),
@@ -1639,6 +2234,34 @@ def validate_distribution(
             environment_root=scientific_environment_root,
             expected_modules=REPOSITORY_EXPERIMENT_MODULES,
             expected_public_exports=public_package_exports,
+        )
+        if (
+            installed_python_inventory["members"]
+            != (sdist_wheel_python_inventory["members"])
+        ):
+            raise DistributionValidationError(
+                "sdist-derived wheel and fresh install differ in Python members"
+            )
+        if (
+            direct_installed_python_inventory["members"]
+            != (direct_python_inventory["members"])
+        ):
+            raise DistributionValidationError(
+                "direct-source wheel and fresh install differ in Python members"
+            )
+        python_inventory_report = library_separation["python_module_inventory"]
+        assert isinstance(python_inventory_report, dict)
+        python_inventory_report["direct_source_install"] = (
+            direct_installed_python_inventory
+        )
+        python_inventory_report["sdist_derived_install"] = installed_python_inventory
+        equality_report = python_inventory_report["equality"]
+        assert isinstance(equality_report, dict)
+        equality_report.update(
+            {
+                "direct_source_wheel_to_install": True,
+                "sdist_derived_wheel_to_install": True,
+            }
         )
         scientific_probe = _run(
             (
@@ -1753,7 +2376,7 @@ def validate_distribution(
                 "sdist_derived_wheel": sdist_absence_inspection,
             },
             "scientific_surface_inspection": scientific_inspection,
-            "required_wheel_members": list(verified_wheel_members),
+            "required_wheel_members": list(shipped_python_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),
             "required_imports": list(imports),
             "required_atlas_reader_imports": list(atlas_reader_imports),

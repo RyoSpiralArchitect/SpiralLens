@@ -27,6 +27,25 @@ and cannot change experiment status or authority.
 - **Internal:** repository or experiment implementation detail. Import paths,
   call signatures, and persistence behavior are not public contracts.
 
+Physical distribution membership is a separate axis from these API labels.
+`distribution/spirallens_python_members_v0_1.json` closes the current 181
+`src/**/*.py` module paths into 159 wheel-present modules and 22
+repository-only modules. The 159 comprise 24 package initializers, two
+console-entrypoint runtime modules, and 133 other shipped runtime modules; the
+v0.6 distribution diagnostic verifies the same exact set in the sdist, both
+wheel routes, and both fresh non-editable installations. This establishes only
+`closed_wheel_python_module_inventory_established=true`.
+
+It does not turn initializer membership into an `__all__` declaration or make
+a deep import supported. `closed_library_allowlist_established` remains
+`false`, and authority, `lib_l0`, library, portability, public-API, and
+scientific grants remain `false`. The full wheel still includes 46
+qualification modules and legacy repository-inferred operations, so it is not
+an experiment-free or library-grade subset. The `models`, `ann`, `witness`,
+and `dev` extras classify dependency installation, not Python-module
+membership. Likewise, the 106 test files carried by the sdist are neither an
+installed-wheel conformance surface nor replay or maturity evidence.
+
 ## Current surface
 
 | Namespace or symbol | Status | Compatibility boundary |
