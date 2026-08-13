@@ -1238,10 +1238,15 @@ values, selected exact failures, and validation order. Existing policy evidence
 establishes independent shared-codec use at defining or legacy leaf paths; the
 four functions have 7 / 7 / 5 / 2 wheel-present top-level namespace families,
 while exact `spirallens.core` root-coordinate production consumers remain zero.
-A coherent eventual promotion covers all seven names, not only the four
-functions. The adopted policy grants no promotion; HOLD remains pending the
-intended clean-wheel support matrix, a deterministic user example, and a
-separate reviewed promotion decision.
+A coherent eventual promotion covers all seven names, not only the four functions.
+At clean baseline `da231477f91dc3d34e8f775f878d3a9992d355f3`, the deterministic
+current-source README is 116,777 bytes at SHA-256
+`fb868d4186a8811a4d136ae8d58d8c09cfa8fc952836b1843ae747f098e1d2f3`; its
+dedicated 90-line, 3,943-byte test has SHA-256
+`36d86cf8f3bdd3567cd92fe430d6a39eca3c24974da49810773f20f46dc4d457`.
+The focused pair collected and passed seven tests without model, network, or
+private data. The example and adopted policy grant no promotion; HOLD remains
+pending the intended clean-wheel support matrix and a separate reviewed decision.
 
 This test-and-documentation preflight changes no production source, API, export,
 dependency, schema, artifact, receipt, D7 re-anchor, `LIB-L0`, scientific,
