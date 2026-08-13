@@ -32,19 +32,35 @@ Physical distribution membership is a separate axis from these API labels.
 `src/**/*.py` module paths into 159 wheel-present modules and 22
 repository-only modules. The 159 comprise 24 package initializers, two
 console-entrypoint runtime modules, and 133 other shipped runtime modules; the
-v0.6 distribution diagnostic verifies the same exact set in the sdist, both
-wheel routes, and both fresh non-editable installations. This establishes only
-`closed_wheel_python_module_inventory_established=true`.
+v0.7 distribution diagnostic verifies the same exact set in the source tree,
+sdist, both wheel routes, and both fresh non-editable installations. This
+establishes `closed_wheel_python_module_inventory_established=true`.
 
-It does not turn initializer membership into an `__all__` declaration or make
-a deep import supported. `closed_library_allowlist_established` remains
-`false`, and authority, `lib_l0`, library, portability, public-API, and
-scientific grants remain `false`. The full wheel still includes 46
-qualification modules and legacy repository-inferred operations, so it is not
-an experiment-free or library-grade subset. The `models`, `ann`, `witness`,
-and `dev` extras classify dependency installation, not Python-module
-membership. Likewise, the 106 test files carried by the sdist are neither an
-installed-wheel conformance surface nor replay or maturity evidence.
+A separate manifest,
+`distribution/spirallens_ordered_exports_v0_1.json`, schema
+`spirallens.ordered-package-exports.v0.1`, closes only the static literal
+ordered `__all__` declarations: exact 24 classified package initializers and
+559 namespace-scoped entries. The v0.7 diagnostic observes the same ordered
+declarations in the source tree, sdist, both wheels, and both fresh installs;
+the install probes parse initializer bytes without importing `spirallens`.
+This establishes
+`closed_ordered_package_export_inventory_established=true`, not a supported
+API.
+
+The static inventory does not establish the runtime value of
+`module.__all__`, symbol importability, identity, signature or behavior,
+star-import behavior, or the absence of aliases or dynamic mutation.
+`runtime_export_values_established`,
+`export_symbol_importability_established`,
+`closed_public_api_contract_established`, and
+`closed_library_allowlist_established` therefore remain `false`; authority,
+`lib_l0`, library, portability, public-API, and scientific grants also remain
+`false`. The full wheel still includes 46 qualification modules and legacy
+repository-inferred operations, so it is not an experiment-free or
+library-grade subset. The `models`, `ann`, `witness`, and `dev` extras classify
+dependency installation, not Python-module or export-declaration membership.
+Likewise, the 106 test files carried by the sdist are neither an installed-wheel
+conformance surface nor replay or maturity evidence.
 
 ## Current surface
 

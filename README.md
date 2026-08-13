@@ -21,26 +21,36 @@ aliases. Implementation summaries in this README are non-normative snapshots;
 if they drift, the Roadmap and canonical artifacts prevail until `LIB-L0`
 generated views replace them.
 
-The distribution gate now establishes one narrower fact: a closed wheel
-Python-module inventory. The versioned physical-placement manifest partitions
-all 181 `src/**/*.py` module paths into 159 wheel-present modules (24 package
-initializers, two console-entrypoint runtime modules, and 133 other shipped
-runtime modules) and 22 repository-only modules. The v0.6 distribution
-diagnostic verifies that exact 159-member set through the sdist, both wheel
-routes, and both fresh non-editable installations. It records
-`closed_wheel_python_module_inventory_established=true`, while
-`closed_library_allowlist_established=false` and the authority, `lib_l0`,
-library, portability, public-API, and scientific grants all remain `false`.
+The distribution gate now establishes two narrow static facts. The versioned
+physical-placement manifest partitions all 181 `src/**/*.py` module paths into
+159 wheel-present modules (24 package initializers, two console-entrypoint
+runtime modules, and 133 other shipped runtime modules) and 22 repository-only
+modules. A separate versioned ordered-export manifest records the exact
+literal ordered `__all__` declaration in each of those 24 package initializers,
+for 559 namespace-scoped entries. The v0.7 distribution diagnostic verifies
+both exact inventories through the source tree, sdist, both wheel routes, and
+both fresh non-editable installations; the installed-artifact export probe
+does so without importing `spirallens` modules. It records
+`closed_wheel_python_module_inventory_established=true` and
+`closed_ordered_package_export_inventory_established=true`.
 
-Those roles classify physical distribution only. They do not classify or
-stabilize `__all__`, make optional dependency extras into module roles, or
-establish that an installed operation is portable. The full wheel still
-contains 46 qualification modules and legacy repository-inferred operations;
-it is therefore neither experiment-free nor library-grade. The current sdist
-also carries 106 test files, but they are not a self-contained experiment
-replay, installed-wheel conformance suite, or maturity receipt. The current
-manifest schema admits regular Python modules only; package data, extension or
-namespace modules, and generated-module support require an explicit versioned
+The physical roles and static declarations remain separate classification
+axes. Static literal closure does not establish a runtime `module.__all__`
+value, symbol importability, identity, signature or behavior, star-import
+behavior, or the absence of aliases or dynamic mutation. Accordingly
+`runtime_export_values_established`,
+`export_symbol_importability_established`,
+`closed_public_api_contract_established`, and
+`closed_library_allowlist_established` remain `false`, as do the authority,
+`lib_l0`, library, portability, public-API, and scientific grants. Optional
+dependency extras are not module roles, and installed presence does not make
+an operation portable. The full wheel still contains 46 qualification modules
+and legacy repository-inferred operations; it is therefore neither
+experiment-free nor library-grade. The current sdist also carries 106 test
+files, but they are not a self-contained experiment replay, installed-wheel
+conformance suite, or maturity receipt. The Python-member manifest schema
+admits regular Python modules only; package data, extension or namespace
+modules, and generated-module support require an explicit versioned
 classification/schema change before they may ship.
 
 The project now separates two deliberately narrow questions:

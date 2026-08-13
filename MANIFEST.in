@@ -1,3 +1,4 @@
 exclude src/spirallens/access/_pythia160_*.py
 exclude src/spirallens/qualification/confirmation_v1_*.py
 include distribution/spirallens_python_members_v0_1.json
+include distribution/spirallens_ordered_exports_v0_1.json

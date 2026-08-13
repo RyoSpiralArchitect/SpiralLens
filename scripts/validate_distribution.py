@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import base64
 import hashlib
 import json
 import os
@@ -25,7 +26,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.6"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.7"
 PYTHON_MEMBER_CLASSIFICATION_PATH = "distribution/spirallens_python_members_v0_1.json"
 PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION = (
     "spirallens.python-distribution-members.v0.1"
@@ -43,6 +44,19 @@ PYTHON_MEMBER_ROLE_NAMES = (
     "shipped_runtime",
     "repository_only",
 )
+ORDERED_EXPORT_CLASSIFICATION_PATH = "distribution/spirallens_ordered_exports_v0_1.json"
+ORDERED_EXPORT_CLASSIFICATION_SCHEMA_VERSION = "spirallens.ordered-package-exports.v0.1"
+ORDERED_EXPORT_CLASSIFICATION_SCOPE = (
+    "literal ordered __all__ values for every classified package initializer"
+)
+ORDERED_EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
+    "classification grants no public API, stability, compatibility, authority, "
+    "scientific claim, or library maturity"
+)
+_MAX_CLASSIFICATION_BYTES = 1024 * 1024
+_MAX_INITIALIZER_BYTES = 1024 * 1024
+ORDERED_EXPORT_PACKAGE_COUNT = 24
+ORDERED_EXPORT_NAME_COUNT = 559
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens._held_file",
@@ -388,6 +402,367 @@ def _load_python_member_classification(source_root: Path) -> dict[str, object]:
     }
 
 
+def _module_for_initializer(initializer: str) -> str:
+    path = PurePosixPath(initializer)
+    if (
+        path.is_absolute()
+        or path.as_posix() != initializer
+        or len(path.parts) < 2
+        or path.parts[0] != "spirallens"
+        or path.name != "__init__.py"
+        or any(
+            not part.isascii() or not part.isidentifier() for part in path.parts[:-1]
+        )
+    ):
+        raise DistributionValidationError(
+            f"ordered export classification contains an invalid initializer: "
+            f"{initializer!r}"
+        )
+    return ".".join(path.parts[:-1])
+
+
+def _load_ordered_export_classification(
+    source_root: Path,
+    *,
+    python_member_classification: dict[str, object],
+) -> dict[str, object]:
+    """Load the independent literal ordered-package-export classification."""
+
+    manifest_path = source_root / ORDERED_EXPORT_CLASSIFICATION_PATH
+    try:
+        distribution_mode = (source_root / "distribution").lstat().st_mode
+        manifest_mode = manifest_path.lstat().st_mode
+        manifest_bytes = manifest_path.read_bytes()
+    except OSError as error:
+        raise DistributionValidationError(
+            "cannot read the ordered export classification manifest"
+        ) from error
+    if not stat.S_ISDIR(distribution_mode) or not stat.S_ISREG(manifest_mode):
+        raise DistributionValidationError(
+            "ordered export classification path must be an ordinary file"
+        )
+    if len(manifest_bytes) > _MAX_CLASSIFICATION_BYTES:
+        raise DistributionValidationError(
+            "ordered export classification manifest exceeds its size bound"
+        )
+    try:
+        value = json.loads(
+            manifest_bytes.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_json_object,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        raise DistributionValidationError(
+            "ordered export classification manifest is not duplicate-free JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {
+        "schema_version",
+        "classification_scope",
+        "claim_boundary",
+        "packages",
+    }:
+        raise DistributionValidationError(
+            "ordered export classification manifest has unexpected top-level keys"
+        )
+    if value.get("schema_version") != ORDERED_EXPORT_CLASSIFICATION_SCHEMA_VERSION:
+        raise DistributionValidationError(
+            "ordered export classification manifest has the wrong schema version"
+        )
+    if value.get("classification_scope") != ORDERED_EXPORT_CLASSIFICATION_SCOPE:
+        raise DistributionValidationError(
+            "ordered export classification manifest has the wrong scope"
+        )
+    if value.get("claim_boundary") != ORDERED_EXPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+        raise DistributionValidationError(
+            "ordered export classification manifest has the wrong claim boundary"
+        )
+    raw_packages = value.get("packages")
+    if not isinstance(raw_packages, list) or not raw_packages:
+        raise DistributionValidationError(
+            "ordered export classification packages must be a non-empty list"
+        )
+    packages: list[dict[str, object]] = []
+    for raw_package in raw_packages:
+        if not isinstance(raw_package, dict) or set(raw_package) != {
+            "module",
+            "initializer",
+            "exports",
+        }:
+            raise DistributionValidationError(
+                "ordered export classification package has unexpected fields"
+            )
+        module = raw_package.get("module")
+        initializer = raw_package.get("initializer")
+        raw_exports = raw_package.get("exports")
+        if not isinstance(module, str) or not isinstance(initializer, str):
+            raise DistributionValidationError(
+                "ordered export classification package coordinates must be strings"
+            )
+        if _module_for_initializer(initializer) != module:
+            raise DistributionValidationError(
+                "ordered export classification module/initializer topology differs"
+            )
+        if (
+            not isinstance(raw_exports, list)
+            or not raw_exports
+            or any(
+                not isinstance(name, str)
+                or not name
+                or not name.isascii()
+                or not name.isidentifier()
+                for name in raw_exports
+            )
+            or len(raw_exports) != len(set(raw_exports))
+        ):
+            raise DistributionValidationError(
+                "ordered export classification exports must be non-empty ordered "
+                "unique ASCII identifiers"
+            )
+        packages.append(
+            {
+                "module": module,
+                "initializer": initializer,
+                "exports": tuple(raw_exports),
+            }
+        )
+    modules = tuple(str(package["module"]) for package in packages)
+    initializers = tuple(str(package["initializer"]) for package in packages)
+    if modules != tuple(sorted(set(modules))):
+        raise DistributionValidationError(
+            "ordered export classification packages must be sorted and unique"
+        )
+    if len(initializers) != len(set(initializers)):
+        raise DistributionValidationError(
+            "ordered export classification initializer paths must be unique"
+        )
+    roles = python_member_classification.get("roles")
+    if not isinstance(roles, dict):
+        raise DistributionValidationError(
+            "Python member classification roles are unavailable"
+        )
+    package_initializers = roles.get("package_initializer")
+    if not isinstance(package_initializers, tuple):
+        raise DistributionValidationError(
+            "Python member initializer classification is unavailable"
+        )
+    if set(initializers) != set(package_initializers):
+        raise DistributionValidationError(
+            "ordered export classification does not close the exact package "
+            "initializer topology"
+        )
+    export_count = sum(len(package["exports"]) for package in packages)
+    if (
+        len(packages) != ORDERED_EXPORT_PACKAGE_COUNT
+        or export_count != ORDERED_EXPORT_NAME_COUNT
+    ):
+        raise DistributionValidationError(
+            "ordered export classification differs from the exact 24-package/559-name "
+            "inventory"
+        )
+    return {
+        "classification_scope": value["classification_scope"],
+        "claim_boundary": value["claim_boundary"],
+        "export_count": export_count,
+        "initializers": initializers,
+        "manifest_bytes": manifest_bytes,
+        "manifest_path": ORDERED_EXPORT_CLASSIFICATION_PATH,
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "package_count": len(packages),
+        "packages": tuple(packages),
+        "schema_version": ORDERED_EXPORT_CLASSIFICATION_SCHEMA_VERSION,
+    }
+
+
+def _load_literal_ordered_exports(source: bytes, *, label: str) -> tuple[str, ...]:
+    """Statically read one and only one literal top-level ``__all__``."""
+
+    if len(source) > _MAX_INITIALIZER_BYTES:
+        raise DistributionValidationError(f"{label} exceeds its initializer size bound")
+    try:
+        text = source.decode("utf-8", errors="strict")
+        tree = ast.parse(text, filename=label)
+    except (UnicodeDecodeError, SyntaxError) as error:
+        raise DistributionValidationError(
+            f"cannot parse ordered package exports from {label}"
+        ) from error
+    stored_names = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name)
+        and node.id == "__all__"
+        and isinstance(node.ctx, (ast.Store, ast.Del))
+    ]
+
+    def rooted_in_all(node: ast.expr) -> bool:
+        while isinstance(node, (ast.Attribute, ast.Subscript)):
+            node = node.value
+        return isinstance(node, ast.Name) and node.id == "__all__"
+
+    mutations = [
+        node
+        for node in ast.walk(tree)
+        if (
+            isinstance(node, (ast.Attribute, ast.Subscript))
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+            and rooted_in_all(node)
+        )
+        or (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and rooted_in_all(node.func.value)
+        )
+    ]
+    assignments = [
+        node
+        for node in tree.body
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "__all__"
+        )
+        or (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "__all__"
+            and node.value is not None
+        )
+    ]
+    if len(assignments) != 1 or len(stored_names) != 1 or mutations:
+        raise DistributionValidationError(
+            f"expected one literal top-level __all__ assignment in {label}"
+        )
+    assignment = assignments[0]
+    value_node = assignment.value
+    assert value_node is not None
+    try:
+        value = ast.literal_eval(value_node)
+    except (TypeError, ValueError) as error:
+        raise DistributionValidationError(
+            f"package __all__ is not literal in {label}"
+        ) from error
+    if (
+        not isinstance(value, (list, tuple))
+        or not value
+        or any(
+            not isinstance(name, str)
+            or not name
+            or not name.isascii()
+            or not name.isidentifier()
+            for name in value
+        )
+        or len(value) != len(set(value))
+    ):
+        raise DistributionValidationError(
+            f"package __all__ is not a non-empty ordered unique ASCII identifier "
+            f"sequence in {label}"
+        )
+    return tuple(value)
+
+
+def _initializer_bytes_manifest_sha256(
+    ordered_sources: Sequence[tuple[str, bytes]],
+) -> str:
+    digest = hashlib.sha256()
+    for initializer, source in ordered_sources:
+        encoded_path = initializer.encode("utf-8")
+        digest.update(len(encoded_path).to_bytes(8, "big"))
+        digest.update(encoded_path)
+        digest.update(len(source).to_bytes(8, "big"))
+        digest.update(source)
+    return digest.hexdigest()
+
+
+def _ordered_export_manifest_sha256(packages: Sequence[dict[str, object]]) -> str:
+    payload = [
+        {
+            "module": package["module"],
+            "initializer": package["initializer"],
+            "exports": list(package["exports"]),
+        }
+        for package in packages
+    ]
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _require_ordered_export_state(
+    initializer_sources: dict[str, bytes],
+    *,
+    classification: dict[str, object],
+    artifact_kind: str,
+) -> dict[str, object]:
+    packages = classification.get("packages")
+    initializers = classification.get("initializers")
+    if not isinstance(packages, tuple) or not isinstance(initializers, tuple):
+        raise DistributionValidationError("ordered export classification is incomplete")
+    observed = tuple(sorted(initializer_sources))
+    expected = tuple(sorted(initializers))
+    missing = sorted(set(expected) - set(observed))
+    extra = sorted(set(observed) - set(expected))
+    if observed != expected:
+        raise DistributionValidationError(
+            f"{artifact_kind} package initializer topology differs: "
+            f"missing={missing}, extra={extra}"
+        )
+    package_receipts: list[dict[str, object]] = []
+    ordered_sources: list[tuple[str, bytes]] = []
+    for package in packages:
+        module = str(package["module"])
+        initializer = str(package["initializer"])
+        expected_exports = package["exports"]
+        assert isinstance(expected_exports, tuple)
+        source = initializer_sources[initializer]
+        observed_exports = _load_literal_ordered_exports(
+            source,
+            label=f"{artifact_kind}:{initializer}",
+        )
+        if observed_exports != expected_exports:
+            raise DistributionValidationError(
+                f"{artifact_kind} ordered exports differ for {module}: "
+                f"expected={list(expected_exports)!r}, "
+                f"observed={list(observed_exports)!r}"
+            )
+        ordered_sources.append((initializer, source))
+        package_receipts.append(
+            {
+                "module": module,
+                "initializer": initializer,
+                "export_count": len(observed_exports),
+                "ordered_exports_sha256": hashlib.sha256(
+                    json.dumps(
+                        list(observed_exports),
+                        ensure_ascii=True,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest(),
+                "source_sha256": hashlib.sha256(source).hexdigest(),
+            }
+        )
+    export_count = sum(int(receipt["export_count"]) for receipt in package_receipts)
+    if (
+        len(package_receipts) != ORDERED_EXPORT_PACKAGE_COUNT
+        or export_count != ORDERED_EXPORT_NAME_COUNT
+    ):
+        raise DistributionValidationError(
+            f"{artifact_kind} ordered exports differ from the exact "
+            "24-package/559-name inventory"
+        )
+    return {
+        "observation": "exact-literal-ordered-set",
+        "package_count": len(package_receipts),
+        "export_count": export_count,
+        "initializer_bytes_sha256": _initializer_bytes_manifest_sha256(ordered_sources),
+        "ordered_exports_sha256": _ordered_export_manifest_sha256(packages),
+        "packages": package_receipts,
+    }
+
+
 def _run(
     command: Sequence[str],
     *,
@@ -599,6 +974,22 @@ def _require_safe_archive_member_path(member: str, *, artifact_kind: str) -> Non
         )
 
 
+def _read_bounded_initializer(path: Path, *, label: str) -> bytes:
+    try:
+        mode = path.lstat().st_mode
+        if not stat.S_ISREG(mode):
+            raise DistributionValidationError(
+                f"{label} must be an ordinary initializer file"
+            )
+        with path.open("rb") as handle:
+            source = handle.read(_MAX_INITIALIZER_BYTES + 1)
+    except OSError as error:
+        raise DistributionValidationError(f"cannot read {label}") from error
+    if len(source) > _MAX_INITIALIZER_BYTES:
+        raise DistributionValidationError(f"{label} exceeds its initializer size bound")
+    return source
+
+
 def _require_exact_python_members(
     observed_members: Sequence[str],
     *,
@@ -633,11 +1024,27 @@ def _classify_wheel_python_members(
     wheel: Path,
     *,
     expected_members: Sequence[str],
+    ordered_export_classification: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Require one wheel's package subtree to be the exact Python-only set."""
 
+    initializer_sources: dict[str, bytes] = {}
     with zipfile.ZipFile(wheel) as archive:
         infos = archive.infolist()
+        for info in infos:
+            path = PurePosixPath(info.filename)
+            if (
+                not info.is_dir()
+                and path.name == "__init__.py"
+                and not any(part.endswith(".dist-info") for part in path.parts)
+            ):
+                with archive.open(info) as handle:
+                    source = handle.read(_MAX_INITIALIZER_BYTES + 1)
+                if len(source) > _MAX_INITIALIZER_BYTES:
+                    raise DistributionValidationError(
+                        f"wheel initializer {info.filename!r} exceeds its size bound"
+                    )
+                initializer_sources[info.filename] = source
     names = [info.filename for info in infos]
     if len(names) != len(set(names)):
         raise DistributionValidationError("wheel contains duplicate archive members")
@@ -682,22 +1089,53 @@ def _classify_wheel_python_members(
         raise DistributionValidationError(
             f"wheel package subtree contains non-Python members: {non_python}"
         )
-    return _require_exact_python_members(
+    receipt = _require_exact_python_members(
         package_members,
         expected_members=expected_members,
         artifact_kind="wheel",
     )
+    if ordered_export_classification is not None:
+        receipt["ordered_export_inventory"] = _require_ordered_export_state(
+            initializer_sources,
+            classification=ordered_export_classification,
+            artifact_kind="wheel",
+        )
+    return receipt
 
 
 def _classify_sdist_python_members(
     sdist: Path,
     *,
     expected_members: Sequence[str],
+    ordered_export_classification: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Require an sdist's ``src/spirallens`` subtree to be the exact set."""
 
+    initializer_sources: dict[str, bytes] = {}
     with tarfile.open(sdist, mode="r:gz") as archive:
         infos = archive.getmembers()
+        if ordered_export_classification is not None:
+            for info in infos:
+                parts = PurePosixPath(info.name).parts
+                if (
+                    info.isfile()
+                    and len(parts) >= 4
+                    and parts[1] == "src"
+                    and parts[-1] == "__init__.py"
+                    and not parts[2].endswith(".egg-info")
+                ):
+                    handle = archive.extractfile(info)
+                    if handle is None:
+                        raise DistributionValidationError(
+                            f"cannot read sdist initializer {info.name!r}"
+                        )
+                    with handle:
+                        source = handle.read(_MAX_INITIALIZER_BYTES + 1)
+                    if len(source) > _MAX_INITIALIZER_BYTES:
+                        raise DistributionValidationError(
+                            f"sdist initializer {info.name!r} exceeds its size bound"
+                        )
+                    initializer_sources["/".join(parts[2:])] = source
     names = [info.name for info in infos]
     if len(names) != len(set(names)):
         raise DistributionValidationError("sdist contains duplicate archive members")
@@ -738,11 +1176,18 @@ def _classify_sdist_python_members(
         raise DistributionValidationError(
             f"sdist package subtree contains non-Python members: {non_python}"
         )
-    return _require_exact_python_members(
+    receipt = _require_exact_python_members(
         package_members,
         expected_members=expected_members,
         artifact_kind="sdist",
     )
+    if ordered_export_classification is not None:
+        receipt["ordered_export_inventory"] = _require_ordered_export_state(
+            initializer_sources,
+            classification=ordered_export_classification,
+            artifact_kind="sdist",
+        )
+    return receipt
 
 
 def _require_sdist_classification_manifest(
@@ -777,6 +1222,43 @@ def _require_sdist_classification_manifest(
         "path": PYTHON_MEMBER_CLASSIFICATION_PATH,
         "sha256": digest,
         "size_bytes": len(payload),
+    }
+
+
+def _require_sdist_ordered_export_manifest(
+    sdist: Path,
+    *,
+    expected_bytes: bytes,
+) -> dict[str, object]:
+    """Require the sdist's export manifest to be byte-identical to source."""
+
+    with tarfile.open(sdist, mode="r:gz") as archive:
+        matches = [
+            info
+            for info in archive.getmembers()
+            if "/".join(PurePosixPath(info.name).parts[1:])
+            == ORDERED_EXPORT_CLASSIFICATION_PATH
+        ]
+        if len(matches) != 1 or not matches[0].isfile():
+            raise DistributionValidationError(
+                "sdist must contain one regular ordered export classification manifest"
+            )
+        handle = archive.extractfile(matches[0])
+        if handle is None:
+            raise DistributionValidationError(
+                "cannot read the sdist ordered export classification manifest"
+            )
+        with handle:
+            payload = handle.read(_MAX_CLASSIFICATION_BYTES + 1)
+    if len(payload) > _MAX_CLASSIFICATION_BYTES or payload != expected_bytes:
+        raise DistributionValidationError(
+            "sdist ordered export classification manifest differs from source"
+        )
+    return {
+        "path": ORDERED_EXPORT_CLASSIFICATION_PATH,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "size_bytes": len(payload),
+        "byte_identical_to_source": True,
     }
 
 
@@ -894,6 +1376,7 @@ def _classify_source_python_members(
     source_root: Path,
     *,
     classification: dict[str, object],
+    ordered_export_classification: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Require every source ``.py`` member to have exactly one manifest role."""
 
@@ -910,6 +1393,7 @@ def _classify_source_python_members(
 
     observed: list[str] = []
     nonregular: list[str] = []
+    initializer_sources: dict[str, bytes] = {}
 
     def raise_walk_error(error: OSError) -> None:
         raise DistributionValidationError(
@@ -940,6 +1424,13 @@ def _classify_source_python_members(
                 observed.append(relative.removeprefix("src/"))
                 if not stat.S_ISREG(child.lstat().st_mode):
                     nonregular.append(relative)
+                elif name == "__init__.py":
+                    initializer_sources[relative.removeprefix("src/")] = (
+                        _read_bounded_initializer(
+                            child,
+                            label=f"source initializer {relative!r}",
+                        )
+                    )
     except OSError as error:
         raise DistributionValidationError(
             "cannot inspect the Python member source inventory"
@@ -971,6 +1462,12 @@ def _classify_source_python_members(
             ),
         }
     )
+    if ordered_export_classification is not None:
+        exact["ordered_export_inventory"] = _require_ordered_export_state(
+            initializer_sources,
+            classification=ordered_export_classification,
+            artifact_kind="source tree",
+        )
     return exact
 
 
@@ -1056,6 +1553,7 @@ def _library_separation_report(
     direct_source_wheel: dict[str, object],
     sdist_derived_wheel: dict[str, object],
     python_module_inventory: dict[str, object],
+    ordered_package_export_inventory: dict[str, object],
 ) -> dict[str, object]:
     return {
         "repository_experiment_separation": {
@@ -1070,7 +1568,12 @@ def _library_separation_report(
             "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
         "python_module_inventory": python_module_inventory,
+        "ordered_package_export_inventory": ordered_package_export_inventory,
         "closed_wheel_python_module_inventory_established": True,
+        "closed_ordered_package_export_inventory_established": True,
+        "closed_public_api_contract_established": False,
+        "runtime_export_values_established": False,
+        "export_symbol_importability_established": False,
         "closed_library_allowlist_established": False,
         "grants": {
             "authority": False,
@@ -1379,6 +1882,62 @@ for item in files:
         continue
     members.append(value)
 print(json.dumps({"package_members": sorted(members)}, separators=(",", ":")))
+"""
+
+
+_INSTALLED_ORDERED_EXPORT_PROBE = r"""
+import base64
+import importlib.metadata
+import json
+from pathlib import Path, PurePosixPath
+import stat
+import sys
+
+distribution = importlib.metadata.distribution("spirallens")
+files = distribution.files
+if files is None:
+    raise RuntimeError("installed distribution omitted its file inventory")
+distribution_root = Path(distribution.locate_file("")).resolve(strict=True)
+initializer_sources = {}
+for item in files:
+    value = str(item)
+    path = PurePosixPath(value)
+    if path.name != "__init__.py" or any(
+        part.endswith(".dist-info") for part in path.parts
+    ):
+        continue
+    located = Path(distribution.locate_file(item))
+    try:
+        mode = located.lstat().st_mode
+    except OSError as error:
+        raise RuntimeError(f"cannot inspect installed initializer {value!r}") from error
+    if not stat.S_ISREG(mode):
+        raise RuntimeError(f"installed initializer is not ordinary: {value!r}")
+    resolved = located.resolve(strict=True)
+    try:
+        resolved.relative_to(distribution_root)
+    except ValueError as error:
+        raise RuntimeError(f"installed initializer escapes distribution root: {value!r}") from error
+    source = located.read_bytes()
+    if len(source) > 1024 * 1024:
+        raise RuntimeError(f"installed initializer exceeds its size bound: {value!r}")
+    initializer_sources[value] = base64.b64encode(source).decode("ascii")
+
+print(
+    json.dumps(
+        {
+            "distribution_root": str(distribution_root),
+            "initializer_sources_base64": initializer_sources,
+            "spirallens_modules_loaded": sorted(
+                name
+                for name in sys.modules
+                if name == "spirallens" or name.startswith("spirallens.")
+            ),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
 """
 
 
@@ -1855,6 +2414,84 @@ def _parse_installed_python_member_probe_output(
     )
 
 
+def _parse_installed_ordered_export_probe_output(
+    output: str,
+    *,
+    environment_root: Path,
+    classification: dict[str, object],
+    artifact_kind: str,
+) -> dict[str, object]:
+    """Verify static initializer bytes returned by one fresh installation."""
+
+    try:
+        value = json.loads(output, object_pairs_hook=_reject_duplicate_json_object)
+    except (json.JSONDecodeError, ValueError) as error:
+        raise DistributionValidationError(
+            "installed ordered export probe did not emit duplicate-free JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {
+        "distribution_root",
+        "initializer_sources_base64",
+        "spirallens_modules_loaded",
+    }:
+        raise DistributionValidationError(
+            "installed ordered export probe has unexpected fields"
+        )
+    if value.get("spirallens_modules_loaded") != []:
+        raise DistributionValidationError(
+            "installed ordered export probe imported SpiralLens modules"
+        )
+    raw_root = value.get("distribution_root")
+    if not isinstance(raw_root, str):
+        raise DistributionValidationError(
+            "installed ordered export probe omitted its distribution root"
+        )
+    distribution_root = Path(raw_root).resolve()
+    environment_root = environment_root.resolve()
+    try:
+        relative_root = distribution_root.relative_to(environment_root)
+    except ValueError as error:
+        raise DistributionValidationError(
+            f"{artifact_kind} ordered export probe resolved outside its fresh "
+            "environment"
+        ) from error
+    raw_sources = value.get("initializer_sources_base64")
+    if not isinstance(raw_sources, dict) or any(
+        not isinstance(initializer, str) or not isinstance(source, str)
+        for initializer, source in raw_sources.items()
+    ):
+        raise DistributionValidationError(
+            "installed ordered export probe returned invalid initializer sources"
+        )
+    sources: dict[str, bytes] = {}
+    for initializer, encoded in raw_sources.items():
+        _require_safe_archive_member_path(initializer, artifact_kind=artifact_kind)
+        try:
+            source = base64.b64decode(encoded, validate=True)
+        except (ValueError, TypeError) as error:
+            raise DistributionValidationError(
+                f"installed ordered export probe returned invalid base64 for "
+                f"{initializer!r}"
+            ) from error
+        if len(source) > _MAX_INITIALIZER_BYTES:
+            raise DistributionValidationError(
+                f"installed initializer {initializer!r} exceeds its size bound"
+            )
+        sources[initializer] = source
+    receipt = _require_ordered_export_state(
+        sources,
+        classification=classification,
+        artifact_kind=artifact_kind,
+    )
+    receipt.update(
+        {
+            "distribution_root": relative_root.as_posix(),
+            "spirallens_modules_imported": False,
+        }
+    )
+    return receipt
+
+
 def validate_distribution(
     source_root: Path,
     *,
@@ -1868,9 +2505,17 @@ def validate_distribution(
     scientific_imports = tuple(required_scientific_imports)
     atlas_reader_imports = tuple(ATLAS_READER_IMPORTS)
     python_member_classification = _load_python_member_classification(source_root)
+    ordered_export_classification = _load_ordered_export_classification(
+        source_root,
+        python_member_classification=python_member_classification,
+    )
     python_source_inventory = _classify_source_python_members(
         source_root,
         classification=python_member_classification,
+        ordered_export_classification=ordered_export_classification,
+    )
+    source_ordered_export_inventory = python_source_inventory.pop(
+        "ordered_export_inventory"
     )
     shipped_python_members = python_member_classification["shipped_members"]
     assert isinstance(shipped_python_members, tuple)
@@ -1965,6 +2610,10 @@ def validate_distribution(
         direct_python_inventory = _classify_wheel_python_members(
             direct_wheel,
             expected_members=shipped_python_members,
+            ordered_export_classification=ordered_export_classification,
+        )
+        direct_ordered_export_inventory = direct_python_inventory.pop(
+            "ordered_export_inventory"
         )
         direct_wheel_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_members(direct_wheel),
@@ -1990,10 +2639,20 @@ def validate_distribution(
         sdist_python_inventory = _classify_sdist_python_members(
             sdist,
             expected_members=shipped_python_members,
+            ordered_export_classification=ordered_export_classification,
+        )
+        sdist_ordered_export_inventory = sdist_python_inventory.pop(
+            "ordered_export_inventory"
         )
         sdist_classification_manifest = _require_sdist_classification_manifest(
             sdist,
             expected_sha256=str(python_member_classification["manifest_sha256"]),
+        )
+        ordered_export_manifest_bytes = ordered_export_classification["manifest_bytes"]
+        assert isinstance(ordered_export_manifest_bytes, bytes)
+        sdist_ordered_export_manifest = _require_sdist_ordered_export_manifest(
+            sdist,
+            expected_bytes=ordered_export_manifest_bytes,
         )
         sdist_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_sdist_members(sdist),
@@ -2023,6 +2682,10 @@ def validate_distribution(
         sdist_wheel_python_inventory = _classify_wheel_python_members(
             wheel,
             expected_members=shipped_python_members,
+            ordered_export_classification=ordered_export_classification,
+        )
+        sdist_wheel_ordered_export_inventory = sdist_wheel_python_inventory.pop(
+            "ordered_export_inventory"
         )
         if (
             direct_python_inventory["members"]
@@ -2031,6 +2694,18 @@ def validate_distribution(
             raise DistributionValidationError(
                 "direct-source and sdist-derived wheels differ in observed Python members"
             )
+        source_initializer_bytes_sha256 = source_ordered_export_inventory[
+            "initializer_bytes_sha256"
+        ]
+        for artifact_kind, inventory in (
+            ("sdist", sdist_ordered_export_inventory),
+            ("direct-source wheel", direct_ordered_export_inventory),
+            ("sdist-derived wheel", sdist_wheel_ordered_export_inventory),
+        ):
+            if inventory["initializer_bytes_sha256"] != source_initializer_bytes_sha256:
+                raise DistributionValidationError(
+                    f"{artifact_kind} package initializer bytes differ from source"
+                )
         sdist_wheel_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_members(wheel),
             artifact_kind="sdist-derived wheel",
@@ -2065,6 +2740,30 @@ def validate_distribution(
                     "source_shipped_to_sdist": True,
                     "source_shipped_to_direct_source_wheel": True,
                     "source_shipped_to_sdist_derived_wheel": True,
+                    "direct_source_to_sdist_derived_wheel": True,
+                },
+            },
+            ordered_package_export_inventory={
+                "classification": {
+                    "claim_boundary": ordered_export_classification["claim_boundary"],
+                    "classification_scope": ordered_export_classification[
+                        "classification_scope"
+                    ],
+                    "export_count": ordered_export_classification["export_count"],
+                    "manifest_path": ordered_export_classification["manifest_path"],
+                    "manifest_sha256": ordered_export_classification["manifest_sha256"],
+                    "package_count": ordered_export_classification["package_count"],
+                    "schema_version": ordered_export_classification["schema_version"],
+                    "sdist_manifest": sdist_ordered_export_manifest,
+                },
+                "source_tree": source_ordered_export_inventory,
+                "sdist": sdist_ordered_export_inventory,
+                "direct_source_wheel": direct_ordered_export_inventory,
+                "sdist_derived_wheel": sdist_wheel_ordered_export_inventory,
+                "equality": {
+                    "source_to_sdist": True,
+                    "source_to_direct_source_wheel": True,
+                    "source_to_sdist_derived_wheel": True,
                     "direct_source_to_sdist_derived_wheel": True,
                 },
             },
@@ -2124,6 +2823,24 @@ def validate_distribution(
             installed_python_probe.stdout,
             expected_members=shipped_python_members,
             artifact_kind="sdist-derived fresh install",
+        )
+        installed_ordered_export_probe = _run(
+            (
+                str(venv_python),
+                "-P",
+                "-c",
+                _INSTALLED_ORDERED_EXPORT_PROBE,
+            ),
+            cwd=neutral_cwd,
+            env=environment,
+        )
+        installed_ordered_export_inventory = (
+            _parse_installed_ordered_export_probe_output(
+                installed_ordered_export_probe.stdout,
+                environment_root=environment_root,
+                classification=ordered_export_classification,
+                artifact_kind="sdist-derived fresh install",
+            )
         )
 
         # Qualification is a scientific surface and intentionally imports its
@@ -2190,6 +2907,24 @@ def validate_distribution(
             direct_installed_python_probe.stdout,
             expected_members=shipped_python_members,
             artifact_kind="direct-source fresh install",
+        )
+        direct_installed_ordered_export_probe = _run(
+            (
+                str(direct_scientific_python),
+                "-P",
+                "-c",
+                _INSTALLED_ORDERED_EXPORT_PROBE,
+            ),
+            cwd=neutral_cwd,
+            env=direct_scientific_environment,
+        )
+        direct_installed_ordered_export_inventory = (
+            _parse_installed_ordered_export_probe_output(
+                direct_installed_ordered_export_probe.stdout,
+                environment_root=direct_scientific_environment_root,
+                classification=ordered_export_classification,
+                artifact_kind="direct-source fresh install",
+            )
         )
 
         venv.EnvBuilder(
@@ -2258,6 +2993,32 @@ def validate_distribution(
         equality_report = python_inventory_report["equality"]
         assert isinstance(equality_report, dict)
         equality_report.update(
+            {
+                "direct_source_wheel_to_install": True,
+                "sdist_derived_wheel_to_install": True,
+            }
+        )
+        ordered_export_inventory_report = library_separation[
+            "ordered_package_export_inventory"
+        ]
+        assert isinstance(ordered_export_inventory_report, dict)
+        for artifact_kind, inventory in (
+            ("direct-source fresh install", direct_installed_ordered_export_inventory),
+            ("sdist-derived fresh install", installed_ordered_export_inventory),
+        ):
+            if inventory["initializer_bytes_sha256"] != source_initializer_bytes_sha256:
+                raise DistributionValidationError(
+                    f"{artifact_kind} package initializer bytes differ from source"
+                )
+        ordered_export_inventory_report["direct_source_install"] = (
+            direct_installed_ordered_export_inventory
+        )
+        ordered_export_inventory_report["sdist_derived_install"] = (
+            installed_ordered_export_inventory
+        )
+        ordered_export_equality = ordered_export_inventory_report["equality"]
+        assert isinstance(ordered_export_equality, dict)
+        ordered_export_equality.update(
             {
                 "direct_source_wheel_to_install": True,
                 "sdist_derived_wheel_to_install": True,

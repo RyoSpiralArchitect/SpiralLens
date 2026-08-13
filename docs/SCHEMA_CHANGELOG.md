@@ -4,6 +4,43 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Closed ordered package-export declaration inventory
+
+- Added `distribution/spirallens_ordered_exports_v0_1.json`, schema
+  `spirallens.ordered-package-exports.v0.1`. It records the exact literal
+  ordered `__all__` declaration in each of the 24 classified package
+  initializers, totaling 559 namespace-scoped entries. Its classification
+  grants no public API, stability, compatibility, authority, scientific
+  claim, or library maturity.
+- The distribution diagnostic advances to
+  `spirallens.distribution-validation.v0.7`. It verifies exact declaration
+  parity in the source tree, sdist, direct-source wheel, sdist-derived wheel,
+  and both fresh non-editable installations. The common initializer-byte
+  SHA-256 is
+  `fcfef3724bb9902675052d88301c70422907eba60197c203925281fa45efd145`;
+  the ordered-export SHA-256 is
+  `e2c947c30f0323c54c1713274dac0117fd74dc86cd576279c44a040dfc0ae798`.
+  The sdist carries a byte-identical manifest with SHA-256
+  `cb9d58ba50c3ead9551da17a7b3d31180157c0b0f7b005aff2df4c5f05effe3e`.
+  Fresh-install probes inspect distribution-owned initializer bytes without
+  importing `spirallens` modules.
+- The report records
+  `closed_ordered_package_export_inventory_established=true`, while
+  `runtime_export_values_established`,
+  `export_symbol_importability_established`,
+  `closed_public_api_contract_established`, and
+  `closed_library_allowlist_established` remain `false`. Static literal
+  closure proves neither a runtime `module.__all__` value nor symbol
+  importability, identity, signature or behavior, star-import behavior, or the
+  absence of aliases or dynamic mutation. Authority, `lib_l0`, library,
+  portability, public-API, and scientific grants remain `false`; `LIB-L0`
+  does not advance and VOY-V4 remains unauthorized.
+- This distribution-schema change modifies no package initializer or exported
+  symbol, persistence schema, dependency, scientific artifact, or authority
+  record. The closed 159-member wheel still contains 46 qualification modules
+  and legacy repository-inferred operations and remains neither
+  experiment-free nor library-grade.
+
 ## 2026-08-13 — Closed wheel Python-module inventory
 
 - Added the repository-owned physical-placement manifest
