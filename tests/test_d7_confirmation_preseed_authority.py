@@ -1068,15 +1068,21 @@ def test_descendant_artifact_delete_and_readd_is_rejected(
 
 
 @pytest.mark.parametrize("history_shape", ("revert", "hidden-merge"))
+@pytest.mark.parametrize(
+    "repository_path",
+    ("src/spirallens/__init__.py", "pyproject.toml"),
+    ids=("root-version", "project-metadata"),
+)
 def test_descendant_source_history_change_requires_reanchor(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     history_shape: str,
+    repository_path: str,
 ) -> None:
     lineage, _state = _prepare_repository(tmp_path, monkeypatch)
     chain = _issue_positive_chain(lineage)
     changed = _clone(chain, tmp_path / f"source-{history_shape}")
-    path = "src/spirallens/__init__.py"
+    path = repository_path
     original_source = (changed / path).read_bytes()
     mutated_source = original_source + b"# transient source change\n"
 
