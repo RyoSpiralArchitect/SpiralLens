@@ -23,6 +23,7 @@ import yaml
 from spirallens import __version__ as SPIRALLENS_VERSION
 from spirallens.neighbors.contracts import (
     NeighborBackendDescriptor,
+    _require_sha256,
     canonical_json_sha256,
 )
 
@@ -259,16 +260,6 @@ def _read_repo_regular_file(
         raise ValueError(f"{label} must be a regular file")
     payload = lexical_path.read_bytes()
     return payload, relative.as_posix()
-
-
-def _require_sha256(value: object, *, label: str) -> str:
-    if (
-        not isinstance(value, str)
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{label} must be a lowercase SHA-256 digest")
-    return value
 
 
 def _require_git_object(value: object, *, label: str) -> str:
