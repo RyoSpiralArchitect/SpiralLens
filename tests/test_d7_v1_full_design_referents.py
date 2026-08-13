@@ -52,6 +52,7 @@ DOCUMENTS_MODULE_NAME = (
 )
 PROTOCOL_REPOSITORY_PATH = "protocols/d7_v1_pre_item23_materialization_v0_1.json"
 ROUTE_REPOSITORY_PATH = "protocols/voy_v1_v9_strict_successor_route_v0_1.json"
+SOURCE_S = "a9b9da21954478e42982e27f9e6b02cbeba5a08d"
 ROOT_KEYS = {
     "schema_version",
     "contract_id",
@@ -1174,6 +1175,7 @@ def test_cached_document_kernel_rejects_changed_leaf_at_exact_s2_and_retains_s1(
         ),
         check=True,
     )
+    _run(isolated, "checkout", "--quiet", "-b", "d7-v1-cache-source", SOURCE_S)
     production_paths = (
         DOCUMENTS_REPOSITORY_PATH,
         MODULE_REPOSITORY_PATH,
@@ -1199,8 +1201,19 @@ def test_cached_document_kernel_rejects_changed_leaf_at_exact_s2_and_retains_s1(
             "GIT_COMMITTER_DATE": "2001-02-01T00:00:00+0000",
         }
     )
+    # Post-merge, these reviewed source bytes already match the cloned HEAD.
+    # Keep a distinct S1 commit so the cache test can still exercise S1 -> S2.
     subprocess.run(
-        ("git", "-C", str(isolated), "commit", "--quiet", "-m", "PR55 S1"),
+        (
+            "git",
+            "-C",
+            str(isolated),
+            "commit",
+            "--allow-empty",
+            "--quiet",
+            "-m",
+            "PR55 S1",
+        ),
         check=True,
         env=commit_environment,
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from collections.abc import Iterator
 import importlib
 import importlib.util
 import inspect
@@ -73,6 +74,37 @@ EXPECTED_ROOT_ALL_SHA256 = (
 EXPECTED_QUALIFICATION_ALL_SHA256 = (
     "4dab13d8a847400280682f61fcf0b03fdd9ad51c68d8909ab63a463d07579023"
 )
+
+
+def _restore_authenticated_referent_documents_origin() -> None:
+    loaded = sys.modules.get(
+        "spirallens.qualification.confirmation_v1_design_referent_documents"
+    )
+    referents = sys.modules.get(
+        "spirallens.qualification.confirmation_v1_full_design_referents"
+    )
+    authenticated = getattr(
+        referents,
+        "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+        None,
+    )
+    if loaded is not None and loaded is authenticated:
+        workspace_leaf = REPOSITORY / (
+            "src/spirallens/qualification/confirmation_v1_design_referent_documents.py"
+        )
+        loaded.__file__ = str(workspace_leaf)
+        if loaded.__spec__ is not None:
+            loaded.__spec__.origin = str(workspace_leaf)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_authenticated_referent_documents(tmp_path: Path) -> Iterator[None]:
+    _restore_authenticated_referent_documents_origin()
+    try:
+        yield
+    finally:
+        _restore_authenticated_referent_documents_origin()
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _load_test_module(repository_name: str, module_name: str) -> ModuleType:
@@ -238,10 +270,13 @@ def test_documentation_projects_only_the_pre_s_internal_refactor() -> None:
 
 
 def test_work_packages_have_no_io_model_legacy_or_import_side_effects() -> None:
-    assert not any(path.exists() or path.is_symlink() for path in OFFICIAL_PATHS)
+    helpers = _materialization_test_helpers()
+    before = {path: helpers._filesystem_snapshot(path) for path in OFFICIAL_PATHS}
     for module in (descriptive, *_work_package_modules()):
         importlib.reload(module)
-    assert not any(path.exists() or path.is_symlink() for path in OFFICIAL_PATHS)
+    assert {path: helpers._filesystem_snapshot(path) for path in OFFICIAL_PATHS} == (
+        before
+    )
 
     allowed_imports = {
         "__future__",

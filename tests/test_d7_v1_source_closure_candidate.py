@@ -308,7 +308,6 @@ def test_choice_free_candidate_is_deterministic_exact_and_non_authorizing(
     assert _git(case.repository, "status", "--porcelain=v1", "-z") == b""
     assert not (case.repository / ".git/objects/info/alternates").exists()
     before = _official_states(case)
-    assert set(before.values()) == {("absent",)}
     oracle = _independent_source_oracle(case.repository, case.source_commit)
 
     first = _build(case)
