@@ -6,6 +6,7 @@ from importlib import metadata
 import json
 from pathlib import Path
 import platform
+import re
 import sys
 from urllib.parse import unquote, urlsplit
 from urllib.request import url2pathname
@@ -14,13 +15,13 @@ EXPORTS = (
     "CanonicalJsonError JsonScalar JsonValue canonical_json_bytes "
     "canonical_json_sha256 parse_canonical_json sha256_bytes"
 ).split()
-VERSIONS = dict(
+EXTERNAL_VERSIONS = dict(
     item.split("==", 1)
     for item in (
         "build==1.5.0 iniconfig==2.3.0 numpy==2.4.6 packaging==26.3 "
         "pip==26.2.1 pluggy==1.6.0 pygments==2.20.0 pyproject-hooks==1.2.0 "
         "pytest==9.1.1 pyyaml==6.0.3 scipy==1.17.1 setuptools==84.0.0 "
-        "spirallens==0.1.0 wheel==0.48.0"
+        "wheel==0.48.0"
     ).split()
 )
 FORBIDDEN = set(
@@ -38,12 +39,15 @@ def main() -> None:
     parser.add_argument("--wheel", type=Path, required=True)
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--expected-python", required=True)
+    parser.add_argument("--expected-version", required=True)
     parser.add_argument("--tested-sha", required=True)
     parser.add_argument("--runner-image", required=True)
     arguments = parser.parse_args()
     site_packages = arguments.site_packages.resolve(strict=True)
     wheel = arguments.wheel.resolve(strict=True)
     workspace = arguments.workspace.resolve(strict=True)
+    version_pattern = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    assert re.fullmatch(version_pattern, arguments.expected_version)
 
     assert sys.prefix != sys.base_prefix
     assert platform.python_implementation() == "CPython"
@@ -69,9 +73,12 @@ def main() -> None:
         _normalized_distribution_name(item.metadata["Name"]): item.version
         for item in metadata.distributions()
     }
-    assert distributions == VERSIONS
+    expected_versions = dict(EXTERNAL_VERSIONS)
+    expected_versions["spirallens"] = arguments.expected_version
+    assert distributions == expected_versions
 
     distribution = metadata.distribution("spirallens")
+    assert distribution.version == arguments.expected_version
     assert Path(distribution.locate_file("")).resolve() == site_packages
     direct_url = json.loads(distribution.read_text("direct_url.json") or "null")
     assert isinstance(direct_url, dict)
@@ -86,8 +93,12 @@ def main() -> None:
     assert archive_info["hashes"] == {"sha256": wheel_sha256}
     assert archive_info["hash"] == f"sha256={wheel_sha256}"
 
+    import spirallens
     import spirallens.core as core
     from spirallens.core import canonical
+
+    assert type(spirallens.__version__) is str
+    assert spirallens.__version__ == arguments.expected_version
 
     origins = {
         "spirallens": site_packages / "spirallens/__init__.py",
@@ -117,6 +128,7 @@ def main() -> None:
                 "distributions": distributions,
                 "forbidden_imports_loaded": [],
                 "machine": platform.machine(),
+                "metadata_version": distribution.version,
                 "module_origins": {
                     name: path.relative_to(site_packages).as_posix()
                     for name, path in origins.items()
@@ -126,6 +138,7 @@ def main() -> None:
                 "python_implementation": platform.python_implementation(),
                 "python": platform.python_version(),
                 "runner_image": arguments.runner_image,
+                "root_version": spirallens.__version__,
                 "status": "pass",
                 "tested_sha": arguments.tested_sha,
                 "wheel": {"filename": wheel.name, "sha256": wheel_sha256},
