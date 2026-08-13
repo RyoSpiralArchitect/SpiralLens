@@ -1227,12 +1227,22 @@ inherit no declaration. No runtime, export, dependency, schema, report, public
 API, `LIB-L0`, science, authority, or VOY state changes; VOY-V4 remains
 unauthorized.
 
-Reconsideration is limited to one bounded namespace or operation group with an
-exact direct-and-transitive source audit. Only after that audit may one
-non-frozen operation migrate, and only with exact signature, accepted-input,
-validation-order, exception, and failure-state equivalence. The review must
-stop if any unreviewed entry would receive a default portability or
-repository-independence declaration.
+The last declaration-only candidate, at clean baseline
+`65a567659200ac41c5a15329af1074239b525ac5`, covered exactly
+`spirallens.gauge:{orthonormal_frame,principal_angles,procrustes_connection,track_subspaces}`
+and `src/spirallens/gauge/{__init__.py,procrustes_connection.py,subspace_tracking.py}`.
+The owned closure was semantically eligible with no observed repository, file,
+environment, process, or network dependency, but its honest formatted
+non-import AST ratchet was 230 lines, above the hard 220-line gate. It was
+withdrawn rather than obscured by opaque digests or a shared analyzer; no test
+or declaration was adopted. Counts therefore stay 18 coordinates / 18 audited
+identities, with 160 unknown = 157 never-audited identities + three unaudited
+`spirallens.instrument_contracts` aliases. Mechanical declaration-only rollout
+ends here. Next is the exact signature, accepted-input, validation-order,
+exception, and failure-state equivalence audit for the advancement
+optional-fallback operations before any `RepositoryContext` migration. No
+production, schema, report, runtime, export, dependency, public API,
+portability, maturity, `LIB-L0`, science, authority, or VOY state changes.
 
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
