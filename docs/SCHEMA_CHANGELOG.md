@@ -4,6 +4,28 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private strict YAML mapping-loader extraction
+
+- Replaced four duplicated strict PyYAML mapping-loader definitions with one
+  private `core._strict_yaml` factory. The independent production consumers
+  are contexts, the instrument registry, the synthetic protocol, and the
+  Atlas engineering protocol.
+- Against baseline commit `366d195f112bc3b95f36504e8a711029c71e6161`,
+  the four consumer files plus the new helper change from `3081` to `2987`
+  physical production lines (`-94`); the audited extraction surface changes
+  from `158` to `64` lines (a 59.5 percent reduction), with no added export or
+  dependency. The helper is an explicit wheel member but is not a public API.
+- Wrapper-level equivalence preserves alias, merge-key, string-key, and
+  duplicate-key rejection; standard safe-tag and anchor behavior; downstream
+  nonfinite handling; exact domain exception type/message/cause/context;
+  wrapped PyYAML failures; raw recursion failure; and size, source-digest, and
+  UTF-8 precedence. Domain parsing and canonical digest joins remain local.
+- CLI YAML, neighbor-receipt YAML, and ordinary `safe_load` sites remain
+  excluded because their accepted syntax and failure semantics differ. This
+  private refactor changes no supported persistence schema, public API,
+  artifact, protocol, dependency, authority, scientific claim, D7/D8/SCI
+  status, library maturity, or VOY-V4 authorization.
+
 ## 2026-08-13 — Repository-experiment distribution separation
 
 - The exact 20 D7 v1 `confirmation_v1_*` modules and two private Pythia-160M

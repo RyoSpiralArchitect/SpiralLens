@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any, Collection, Mapping
 
 import yaml
-from yaml.events import AliasEvent
-from yaml.nodes import MappingNode
+
+from spirallens.core._strict_yaml import make_strict_safe_loader
 
 from .contracts import (
     CONTEXT_BANK_SCHEMA_VERSION,
@@ -36,38 +36,9 @@ class ContextBankIntegrityError(ContextContractError):
     """Raised when source or canonical content fails its expected digest."""
 
 
-class _StrictSafeLoader(yaml.SafeLoader):
-    """SafeLoader variant that rejects aliases before construction."""
-
-    def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(AliasEvent):
-            raise ContextBankSchemaError("YAML aliases are not allowed")
-        return super().compose_node(parent, index)
-
-
-def _construct_mapping(
-    loader: _StrictSafeLoader,
-    node: MappingNode,
-    deep: bool = False,
-) -> dict[str, Any]:
-    if not isinstance(node, MappingNode):
-        raise ContextBankSchemaError("expected a YAML mapping")
-    mapping: dict[str, Any] = {}
-    for key_node, value_node in node.value:
-        if key_node.tag == "tag:yaml.org,2002:merge":
-            raise ContextBankSchemaError("YAML merge keys are not allowed")
-        key = loader.construct_object(key_node, deep=deep)
-        if not isinstance(key, str):
-            raise ContextBankSchemaError("all mapping keys must be strings")
-        if key in mapping:
-            raise ContextBankSchemaError(f"duplicate YAML key {key!r}")
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
-
-
-_StrictSafeLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    _construct_mapping,
+_StrictSafeLoader = make_strict_safe_loader(
+    ContextBankSchemaError,
+    string_keys_message="all mapping keys must be strings",
 )
 
 

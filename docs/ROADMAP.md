@@ -1006,6 +1006,26 @@ changes no public API, dependency, persistence schema, artifact, protocol,
 scientific or VOY authority; it neither authorizes VOY-V4 nor completes or
 advances `LIB-L0`.
 
+The next bounded pay-down, measured against baseline commit
+`366d195f112bc3b95f36504e8a711029c71e6161`, replaces four duplicated strict
+PyYAML mapping-loader definitions with one private `core._strict_yaml` factory.
+The independent production consumers remain `contexts.loader`,
+`instrument_contracts.registry_loader`, `synthetic.protocol`, and
+`atlas.engineering_protocol`. Across those four files plus the new helper,
+physical production lines change from `3081` to `2987`, a net `-94`; the
+audited extraction surface changes from `158` to `64` lines, a 59.5 percent
+reduction, with no added export or dependency. The shared policy is limited
+to SafeLoader alias, merge-key, string-key, and duplicate-key handling. Each
+wrapper retains its own size, source-digest, UTF-8, domain-schema,
+canonical-digest, exception-prefix, and observation order. Exact wrapper tests
+preserve standard safe-tag behavior,
+anchor-only acceptance, downstream nonfinite handling, wrapped PyYAML causes,
+and raw recursion failure. The semantically different CLI, neighbor-receipt,
+and ordinary `safe_load` families remain outside this primitive. This
+deduplication changes no public API, persistence schema, artifact, protocol,
+scientific or VOY authority; it neither authorizes VOY-V4 nor completes or
+advances `LIB-L0`.
+
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)
 
