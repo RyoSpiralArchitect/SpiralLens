@@ -103,8 +103,33 @@ def _load_source_closure_test_helpers() -> ModuleType:
 
 @pytest.fixture(autouse=True)
 def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
-    yield
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    def restore_authenticated_referent_documents_origin() -> None:
+        loaded = sys.modules.get(
+            "spirallens.qualification.confirmation_v1_design_referent_documents"
+        )
+        referents = sys.modules.get(
+            "spirallens.qualification.confirmation_v1_full_design_referents"
+        )
+        authenticated = getattr(
+            referents,
+            "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+            None,
+        )
+        if loaded is not None and loaded is authenticated:
+            workspace_leaf = REPOSITORY / (
+                "src/spirallens/qualification/"
+                "confirmation_v1_design_referent_documents.py"
+            )
+            loaded.__file__ = str(workspace_leaf)
+            if loaded.__spec__ is not None:
+                loaded.__spec__.origin = str(workspace_leaf)
+
+    restore_authenticated_referent_documents_origin()
+    try:
+        yield
+    finally:
+        restore_authenticated_referent_documents_origin()
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 def _git(repository: Path, *arguments: str) -> bytes:
