@@ -1101,6 +1101,17 @@ meaning remain domain-local. This pay-down changes no public API, schema,
 artifact, protocol, scientific or VOY authority, does not authorize VOY-V4,
 and does not complete or advance `LIB-L0`.
 
+A later incremental audit at baseline `da10e358e6a6fc009992c5bec3dc7bf0e9d6bca8`
+reuses that existing private module's directory-chain traversal for three independent
+roles: bounded readers, the access descriptor writer, and the neighbor-audit reservation
+publisher. `_held_file.py` / `access/descriptor.py` / `audit_output.py` change from
+`85/457/292` to `85/437/273` physical lines, total `834 → 795` (`-39`); the three
+opener definitions change `65 → 21` (`-44`, 67.7 percent). Domain wrappers retain their
+exact relative-path errors, and leaf operations, identity, fsync, no-replace, recovery,
+publication, and authority remain local. This adds no module, export, external dependency, API,
+support, security, portability, D7, science, authority, or VOY state and does not complete
+or promote `LIB-L0`.
+
 The following bounded split, measured against baseline commit
 `a1d6c615da9e39247afa0332658e9aee7b24bb5a`, moves mutable Atlas capture
 storage into private `_capture_store.py` while keeping manifest readers in

@@ -13,6 +13,7 @@ import pytest
 
 from access_fixtures import preparation_descriptor
 from spirallens import _held_file as held_file_module
+from spirallens import audit_output as audit_output_module
 from spirallens.access import (
     AtlasAccessContractError,
     AtlasPreparationDescriptor,
@@ -614,7 +615,7 @@ class _FakeFileSystem:
         *,
         fstats: list[_FakeStat | OSError] | None = None,
         reads: list[bytes | OSError] | None = None,
-        open_errors: dict[int, OSError] | None = None,
+        open_errors: dict[int, BaseException] | None = None,
         close_errors: dict[int, OSError] | None = None,
     ) -> None:
         self.fstats = list(fstats or [])
@@ -749,6 +750,72 @@ def test_optional_open_flag_absence_preserves_exact_fallback_order(
 
 
 @requires_held_fd_reader
+def test_directory_chain_wrappers_preserve_domain_errors_and_delegate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = held_file_module._open_directory_chain
+    assert access_descriptor_module._open_held_directory_chain is provider
+    assert audit_output_module._open_held_directory_chain is provider
+    opened: list[Path] = []
+
+    def shared_opener(directory: Path) -> int:
+        opened.append(directory)
+        return 23
+
+    monkeypatch.setattr(
+        access_descriptor_module,
+        "_open_held_directory_chain",
+        shared_opener,
+    )
+    monkeypatch.setattr(
+        audit_output_module,
+        "_open_held_directory_chain",
+        shared_opener,
+    )
+    with pytest.raises(
+        AtlasAccessContractError,
+        match="^descriptor parent directory must be absolute$",
+    ):
+        access_descriptor_module._open_directory_chain(Path("relative"))
+    with pytest.raises(ValueError, match="^audit output parent must be absolute$"):
+        audit_output_module._open_directory_chain(Path("relative"))
+    assert access_descriptor_module._open_directory_chain(Path("/atlas")) == 23
+    assert audit_output_module._open_directory_chain(Path("/audit")) == 23
+    assert opened == [Path("/atlas"), Path("/audit")]
+
+
+@pytest.mark.parametrize(
+    "failure",
+    (OSError(errno.EIO, "synthetic component failure"), KeyboardInterrupt()),
+    ids=("oserror", "keyboard-interrupt"),
+)
+@requires_held_fd_reader
+def test_shared_directory_chain_closes_current_descriptor_after_open_baseexception(
+    monkeypatch: pytest.MonkeyPatch,
+    failure: BaseException,
+) -> None:
+    fake = _FakeFileSystem(open_errors={2: failure})
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "open", fake.open)
+        patch.setattr(os, "close", fake.close)
+        _loaded, error = _capture(
+            lambda: held_file_module._open_directory_chain(Path("/safe/parent"))
+        )
+
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC
+    component_flags = directory_flags | os.O_NOFOLLOW
+    assert error is failure
+    assert fake.events == [
+        ("open", "/", None, 10, directory_flags),
+        ("open", "safe", 10, 11, component_flags),
+        ("close", 10),
+        ("open-error", "parent", 11, component_flags),
+        ("close", 11),
+    ]
+    assert fake.open_fds == set()
+
+
+@requires_held_fd_reader
 def test_descriptor_writer_retains_its_local_directory_opener(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -760,9 +827,6 @@ def test_descriptor_writer_retains_its_local_directory_opener(
     def local_opener(directory: Path) -> int:
         opened.append(directory)
         return original_local_opener(directory)
-
-    def forbidden_shared_opener(_directory: Path) -> int:
-        raise AssertionError("the writer must retain its local publication opener")
 
     sentinel = object()
 
@@ -781,11 +845,6 @@ def test_descriptor_writer_retains_its_local_directory_opener(
         access_descriptor_module,
         "_open_directory_chain",
         local_opener,
-    )
-    monkeypatch.setattr(
-        held_file_module,
-        "_open_directory_chain",
-        forbidden_shared_opener,
     )
     monkeypatch.setattr(
         access_descriptor_module,
