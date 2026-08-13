@@ -338,9 +338,11 @@ confounder rows do not meet the required full-scope denominator, and the
 result records that no rerun or current-code reconstruction was performed.
 Its three exact v0.1 Python files remain excluded from the wheel and are
 members of the reviewed exact-current source/runtime re-anchor tracked on this
-branch. The separate v1 `confirmation_v1_*` internal modules are currently
-wheel-present but non-exported; their physical separation remains an explicit
-`LIB-L0` blocker.
+branch. The separate 20 v1 `confirmation_v1_*` modules remain unchanged in the
+repository source tree, but are absent from the sdist and both wheel routes as
+part of the exact 22-module, 19,190-line repository-experiment set. This
+packaging separation changes no historical S → A → B byte, claim, authority,
+or `LIB-L0` status.
 The Level-0 item-22 target was introduced by
 `f2c1e032f153d369eed99c1bbd467da518b5b9fb` at
 `publication-complete-unfrozen`. The PR #39 merge

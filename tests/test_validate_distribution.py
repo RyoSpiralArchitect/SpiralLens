@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
 import json
 import subprocess
 import sys
+import tarfile
 import zipfile
 from pathlib import Path
 
@@ -33,38 +35,30 @@ REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
 REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
     _VALIDATOR.REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
 )
+REPOSITORY_EXPERIMENT_MODULES = _VALIDATOR.REPOSITORY_EXPERIMENT_MODULES
+REPOSITORY_EXPERIMENT_SOURCE_PATHS = _VALIDATOR.REPOSITORY_EXPERIMENT_SOURCE_PATHS
 REQUIRED_WHEEL_MEMBERS = _VALIDATOR.REQUIRED_WHEEL_MEMBERS
 _classify_repository_experiment_members = (
     _VALIDATOR._classify_repository_experiment_members
 )
+_classify_repository_experiment_sdist_members = (
+    _VALIDATOR._classify_repository_experiment_sdist_members
+)
 _library_separation_report = _VALIDATOR._library_separation_report
+_load_public_package_exports = _VALIDATOR._load_public_package_exports
+_parse_repository_experiment_absence_probe_output = (
+    _VALIDATOR._parse_repository_experiment_absence_probe_output
+)
 _parse_atlas_reader_probe_output = _VALIDATOR._parse_atlas_reader_probe_output
 _parse_probe_output = _VALIDATOR._parse_probe_output
+_repository_experiment_source_report = _VALIDATOR._repository_experiment_source_report
+_require_zero_repository_experiment_members = (
+    _VALIDATOR._require_zero_repository_experiment_members
+)
 _sha256_file = _VALIDATOR._sha256_file
 
-CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = (
-    "spirallens/access/_pythia160_identity_acquisition.py",
-    "spirallens/access/_pythia160_preobservation.py",
-    "spirallens/qualification/confirmation_v1_descriptive_common.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d1.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d2.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d3.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d4.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d5_inputs.py",
-    "spirallens/qualification/confirmation_v1_descriptive_d5_outputs.py",
-    "spirallens/qualification/confirmation_v1_descriptive_independence.py",
-    "spirallens/qualification/confirmation_v1_design_referent_documents.py",
-    "spirallens/qualification/confirmation_v1_deterministic_inputs.py",
-    "spirallens/qualification/confirmation_v1_full_design_referents.py",
-    "spirallens/qualification/confirmation_v1_materialization.py",
-    "spirallens/qualification/confirmation_v1_official_execution.py",
-    "spirallens/qualification/confirmation_v1_post_d6_descriptive.py",
-    "spirallens/qualification/confirmation_v1_pre_item23_orchestrator.py",
-    "spirallens/qualification/confirmation_v1_private_publication.py",
-    "spirallens/qualification/confirmation_v1_records.py",
-    "spirallens/qualification/confirmation_v1_result_publication.py",
-    "spirallens/qualification/confirmation_v1_source_closure.py",
-    "spirallens/qualification/confirmation_v1_source_selected_supplier.py",
+CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = tuple(
+    path.removeprefix("src/") for path in REPOSITORY_EXPERIMENT_SOURCE_PATHS
 )
 
 PRIVATE_HELD_FILE_WHEEL_MEMBER = "spirallens/_held_file.py"
@@ -84,6 +78,21 @@ def _write_synthetic_wheel(wheel: Path, members: tuple[str, ...]) -> None:
     with zipfile.ZipFile(wheel, mode="w") as archive:
         for member in members:
             archive.writestr(member, "")
+
+
+def _write_synthetic_sdist(sdist: Path, members: tuple[str, ...]) -> None:
+    with tarfile.open(sdist, mode="w:gz") as archive:
+        for member in members:
+            info = tarfile.TarInfo(member)
+            info.size = 0
+            archive.addfile(info, io.BytesIO())
+
+
+def _write_source_inventory(root: Path, paths: tuple[str, ...]) -> None:
+    for relative in paths:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# repository experiment\n", encoding="utf-8")
 
 
 def test_repository_experiment_members_are_classified_from_wheel_paths(
@@ -119,24 +128,126 @@ def test_new_matching_wheel_member_is_classified_without_an_allowlist(
     assert _classify_repository_experiment_members(wheel) == (new_member,)
 
 
-def test_zero_matching_members_is_bounded_absence_not_library_readiness(
+def test_pep3147_matching_wheel_member_is_classified(tmp_path: Path) -> None:
+    wheel = tmp_path / "synthetic.whl"
+    member = (
+        "spirallens/qualification/__pycache__/confirmation_v1_records.cpython-313.pyc"
+    )
+    _write_synthetic_wheel(wheel, (member,))
+
+    assert _classify_repository_experiment_members(wheel) == (member,)
+
+
+def test_repository_experiment_members_are_classified_from_sdist_paths(
     tmp_path: Path,
 ) -> None:
-    wheel = tmp_path / "synthetic.whl"
-    _write_synthetic_wheel(
-        wheel,
+    sdist = tmp_path / "synthetic.tar.gz"
+    matching = (
+        "spirallens-0.1.0/src/spirallens/access/_pythia160_preobservation.py",
+        "spirallens-0.1.0/src/spirallens/qualification/confirmation_v1_records.py",
+    )
+    _write_synthetic_sdist(
+        sdist,
         (
-            "spirallens/__init__.py",
-            "spirallens/core/canonical.py",
+            "spirallens-0.1.0/src/spirallens/access/contracts.py",
+            matching[1],
+            matching[0],
         ),
     )
 
-    assert _library_separation_report(wheel) == {
-        "repository_experiment_wheel_membership": {
-            "observation": "absent",
-            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
-            "count": 0,
-            "members": [],
+    assert _classify_repository_experiment_sdist_members(sdist) == tuple(
+        sorted(matching)
+    )
+
+
+def test_source_inventory_requires_the_exact_reviewed_regular_22_paths(
+    tmp_path: Path,
+) -> None:
+    _write_source_inventory(tmp_path, REPOSITORY_EXPERIMENT_SOURCE_PATHS)
+
+    assert _repository_experiment_source_report(tmp_path) == {
+        "observation": "reviewed-exact-set-present",
+        "count": 22,
+        "all_regular_files": True,
+        "total_lines": 22,
+        "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
+    }
+
+
+def test_source_inventory_rejects_a_future_matching_prefix(tmp_path: Path) -> None:
+    _write_source_inventory(tmp_path, REPOSITORY_EXPERIMENT_SOURCE_PATHS)
+    future = tmp_path / "src/spirallens/qualification/confirmation_v1_future_module.py"
+    future.write_text("# unreviewed\n", encoding="utf-8")
+
+    with pytest.raises(DistributionValidationError, match="unexpected=.*future"):
+        _repository_experiment_source_report(tmp_path)
+
+
+def test_source_inventory_rejects_a_nonregular_reviewed_target(
+    tmp_path: Path,
+) -> None:
+    _write_source_inventory(tmp_path, REPOSITORY_EXPERIMENT_SOURCE_PATHS[1:])
+    nonregular = tmp_path / REPOSITORY_EXPERIMENT_SOURCE_PATHS[0]
+    nonregular.mkdir(parents=True)
+
+    with pytest.raises(DistributionValidationError, match="non-regular paths"):
+        _repository_experiment_source_report(tmp_path)
+
+
+def test_source_inventory_rejects_a_symlinked_package_ancestor(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path / "outside-access"
+    for relative in REPOSITORY_EXPERIMENT_SOURCE_PATHS:
+        if "/access/" not in relative:
+            continue
+        path = outside / Path(relative).name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# outside source\n", encoding="utf-8")
+    (tmp_path / "src/spirallens").mkdir(parents=True)
+    (tmp_path / "src/spirallens/access").symlink_to(outside)
+    _write_source_inventory(
+        tmp_path,
+        tuple(
+            path
+            for path in REPOSITORY_EXPERIMENT_SOURCE_PATHS
+            if "/qualification/" in path
+        ),
+    )
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="non-directory, or symlinked ancestors.*access",
+    ):
+        _repository_experiment_source_report(tmp_path)
+
+
+def test_zero_artifact_members_is_bounded_absence_not_library_readiness() -> None:
+    source_tree = {
+        "observation": "reviewed-exact-set-present",
+        "count": 22,
+        "all_regular_files": True,
+        "total_lines": 19190,
+        "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
+    }
+    absent = _require_zero_repository_experiment_members((), artifact_kind="fixture")
+
+    assert _library_separation_report(
+        source_tree=source_tree,
+        sdist=absent,
+        direct_source_wheel=absent,
+        sdist_derived_wheel=absent,
+    ) == {
+        "repository_experiment_separation": {
+            "source_tree": source_tree,
+            "sdist": absent,
+            "direct_source_wheel": absent,
+            "sdist_derived_wheel": absent,
+            "source_prefixes": [
+                "src/spirallens/access/_pythia160_",
+                "src/spirallens/qualification/confirmation_v1_",
+            ],
+            "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
         "closed_library_allowlist_established": False,
         "grants": {
@@ -158,7 +269,7 @@ def test_private_held_file_is_an_explicit_non_experiment_wheel_import() -> None:
 
 
 def test_atlas_reader_probe_is_separate_from_dependency_free_imports() -> None:
-    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.4"
+    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.5"
     assert set(ATLAS_READER_IMPORTS).isdisjoint(DEFAULT_IMPORTS)
     assert ATLAS_READER_IMPORTS == (
         "spirallens.atlas",
@@ -323,6 +434,121 @@ def test_atlas_reader_probe_rejects_public_export_reordering(
         )
 
 
+def _experiment_absence_probe(
+    environment_root: Path,
+    public_exports: dict[str, tuple[str, ...]],
+    *,
+    origins_root: Path | None = None,
+    receipts: list[dict[str, str]] | None = None,
+    editable: bool = False,
+) -> str:
+    root = environment_root if origins_root is None else origins_root
+    if receipts is None:
+        receipts = [
+            {
+                "exception_type": "ModuleNotFoundError",
+                "module": name,
+                "name": name,
+            }
+            for name in REPOSITORY_EXPERIMENT_MODULES
+        ]
+    return json.dumps(
+        {
+            "absence_receipts": receipts,
+            "distribution_root": str(root / "site-packages"),
+            "direct_url": (
+                {"dir_info": {"editable": True}}
+                if editable
+                else {"archive_info": {}, "url": "file:///artifact.whl"}
+            ),
+            "module_origins": {
+                name: str(
+                    root / "site-packages" / Path(*name.split(".")) / "__init__.py"
+                )
+                for name in public_exports
+            },
+            "package_version": "0.1.0",
+            "public_exports": {
+                name: list(exports) for name, exports in public_exports.items()
+            },
+        }
+    )
+
+
+def test_repository_experiment_absence_probe_accepts_exact_22_receipts(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    exports = _load_public_package_exports(repository)
+    environment_root = tmp_path / "venv"
+
+    parsed = _parse_repository_experiment_absence_probe_output(
+        _experiment_absence_probe(environment_root, exports),
+        environment_root=environment_root,
+        expected_modules=REPOSITORY_EXPERIMENT_MODULES,
+        expected_public_exports=exports,
+    )
+
+    assert parsed["direct_url_editable"] is False
+    assert parsed["exact_module_not_found_receipt_count"] == 22
+    assert list(parsed["module_origins"]) == [
+        "spirallens.access",
+        "spirallens.qualification",
+    ]
+    assert all(
+        len(receipt["ordered_sha256"]) == 64
+        for receipt in parsed["public_package_exports"].values()
+    )
+
+
+def test_repository_experiment_absence_probe_rejects_transitive_missing_name(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    exports = _load_public_package_exports(repository)
+    environment_root = tmp_path / "venv"
+    receipts = [
+        {
+            "exception_type": "ModuleNotFoundError",
+            "module": name,
+            "name": name,
+        }
+        for name in REPOSITORY_EXPERIMENT_MODULES
+    ]
+    receipts[0]["name"] = "transitive_dependency"
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="exact requested ModuleNotFoundError.name",
+    ):
+        _parse_repository_experiment_absence_probe_output(
+            _experiment_absence_probe(
+                environment_root,
+                exports,
+                receipts=receipts,
+            ),
+            environment_root=environment_root,
+            expected_modules=REPOSITORY_EXPERIMENT_MODULES,
+            expected_public_exports=exports,
+        )
+
+
+def test_repository_experiment_absence_probe_rejects_editable_install(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    exports = _load_public_package_exports(repository)
+    environment_root = tmp_path / "venv"
+
+    with pytest.raises(DistributionValidationError, match="editable install"):
+        _parse_repository_experiment_absence_probe_output(
+            _experiment_absence_probe(environment_root, exports, editable=True),
+            environment_root=environment_root,
+            expected_modules=REPOSITORY_EXPERIMENT_MODULES,
+            expected_public_exports=exports,
+        )
+
+
 def test_probe_rejects_import_from_an_editable_checkout(
     tmp_path: Path,
 ) -> None:
@@ -388,12 +614,24 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     report = json.loads(completed.stdout)
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
+    absent = {"observation": "absent", "count": 0, "members": []}
     assert report["library_separation"] == {
-        "repository_experiment_wheel_membership": {
-            "observation": "present",
-            "prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
-            "count": 22,
-            "members": list(CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS),
+        "repository_experiment_separation": {
+            "source_tree": {
+                "observation": "reviewed-exact-set-present",
+                "count": 22,
+                "all_regular_files": True,
+                "total_lines": 19190,
+                "paths": list(REPOSITORY_EXPERIMENT_SOURCE_PATHS),
+            },
+            "sdist": absent,
+            "direct_source_wheel": absent,
+            "sdist_derived_wheel": absent,
+            "source_prefixes": [
+                "src/spirallens/access/_pythia160_",
+                "src/spirallens/qualification/confirmation_v1_",
+            ],
+            "wheel_prefixes": list(REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES),
         },
         "closed_library_allowlist_established": False,
         "grants": {
@@ -418,9 +656,11 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         "yaml",
     ]
     assert report["build"] == {
+        "direct_source_wheel_built": True,
         "frontend": "python-build",
         "isolation": True,
         "source_copy": True,
+        "stale_build_outputs_fail_closed": True,
         "wheel_built_from_sdist": True,
     }
     assert report["installation"]["no_dependencies"] is True
@@ -430,6 +670,51 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert report["installation"]["scientific_surface_system_site_packages"] is True
     assert report["installation"]["scientific_surface_user_site_packages"] is True
     assert report["installation"]["wheel_filename"].endswith(".whl")
+    assert report["installation"]["direct_source_wheel_filename"].endswith(".whl")
+    assert report["installation"]["repository_experiment_fresh_environment_count"] == 2
+    assert report["repository_experiment_stale_build_rejection"] == {
+        "observation": "rejected-before-wheel-publication",
+        "seeded_target_count": 1,
+        "skip_build": True,
+        "wheel_artifact_count": 0,
+    }
+    source_import = report["repository_experiment_source_import_inspection"]
+    assert source_import["forbidden_model_imports_loaded"] == []
+    assert source_import["imported_module_count"] == 22
+    assert source_import["module_origins"] == dict(
+        zip(
+            REPOSITORY_EXPERIMENT_MODULES,
+            REPOSITORY_EXPERIMENT_SOURCE_PATHS,
+            strict=True,
+        )
+    )
+    assert set(report["repository_experiment_install_inspections"]) == {
+        "direct_source_wheel",
+        "sdist_derived_wheel",
+    }
+    for install_inspection in report[
+        "repository_experiment_install_inspections"
+    ].values():
+        assert install_inspection["direct_url_editable"] is False
+        assert install_inspection["exact_module_not_found_receipt_count"] == 22
+        assert set(install_inspection["module_origins"]) == {
+            "spirallens.access",
+            "spirallens.qualification",
+        }
+        assert install_inspection["public_package_exports"] == {
+            "spirallens.access": {
+                "count": 37,
+                "ordered_sha256": (
+                    "1c1be6d21261935335e310c1cb665469f4934db40310d47dcbfe625e66d93600"
+                ),
+            },
+            "spirallens.qualification": {
+                "count": 115,
+                "ordered_sha256": (
+                    "4dab13d8a847400280682f61fcf0b03fdd9ad51c68d8909ab63a463d07579023"
+                ),
+            },
+        }
     assert report["inspection"]["forbidden_imports_loaded"] == []
     assert report["inspection"]["direct_url_editable"] is False
     assert set(report["inspection"]["module_origins"]) == set(DEFAULT_IMPORTS)
@@ -469,8 +754,9 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         for origin in report["scientific_surface_inspection"]["module_origins"].values()
     )
     assert sorted(item["kind"] for item in report["artifacts"]) == [
+        "direct-source-wheel",
         "sdist",
-        "wheel",
+        "sdist-derived-wheel",
     ]
     for artifact in report["artifacts"]:
         assert len(artifact["sha256"]) == 64

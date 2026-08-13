@@ -958,13 +958,14 @@ import-origin plumbing family.
 
 The current extraction baseline and decision gates are recorded in the
 [LIB-L0 extraction inventory](LIBRARY_EXTRACTION_INVENTORY.md), audited at
-commit `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`. The inventory corrects a
-physical packaging misconception: setuptools currently includes 20 D7 v1
-`confirmation_v1_*` modules and two private Pythia-160M kernels in the wheel,
-although none is promoted as a public API or independent library consumer.
-Machine-readable distribution reporting now treats valid wheel construction
-and blocked experiment/library separation as distinct facts. This observation
-does not advance `LIB-L0`, VOY, D7/D8, or either scientific claim axis.
+commit `a7e24f912ffeaa15a6b79bf200c39dccf9cd5746`. The exact 20 D7 v1
+`confirmation_v1_*` modules and two private Pythia-160M kernels remain in the
+repository source tree: 22 modules and 19,190 physical lines. A fail-closed
+exact-set build gate now omits them from the sdist, direct-source wheel, and
+sdist-derived wheel; fresh non-editable installs of both wheels verify their
+exact import absence while preserving the ordered public package surfaces.
+The bounded separation does not establish a closed library allowlist, promote
+an API, or advance `LIB-L0`, VOY, D7/D8, or either scientific claim axis.
 
 The next bounded consolidation, measured against baseline commit
 `be274333e77d7518cb21ddb6afda3d62222e4b6c`, shares one standard-library-only
