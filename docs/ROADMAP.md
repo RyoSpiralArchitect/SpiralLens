@@ -1123,6 +1123,17 @@ lines (`-27`), while validator implementations plus imports change `32 → 11` (
 are not compatibility claims. No module, export, external dependency, schema, D7
 re-anchor, API, support, security, science, authority, VOY, or `LIB-L0` state changes.
 
+The next private consolidation at baseline `7782b24c350e1ee5f6aeb8e942e82e7063734bb0`
+keeps `access.contracts` as the existing owner of mapping, exact-key, digest, and enum
+schema validators and reuses them in terminal lifecycle records and value-access lineage.
+The three production files change from `919/566/229` to `919/526/221` physical lines,
+total `1714 → 1666` (`-48`); validator definitions plus import bindings change `74 → 40`
+(`-34`, 45.9 percent). Exact production inputs, validation order, return identity, domain
+error type/message/cause/context, and label interpolation remain fixed. Identifier, fact,
+typestate, derivation, and authority logic stay local. This adds no module, export, external
+dependency, schema, API, support, security, D7 re-anchor, science, authority, VOY, or
+`LIB-L0` state change; historical source receipts remain immutable and unre-anchored.
+
 The following bounded split, measured against baseline commit
 `a1d6c615da9e39247afa0332658e9aee7b24bb5a`, moves mutable Atlas capture
 storage into private `_capture_store.py` while keeping manifest readers in
