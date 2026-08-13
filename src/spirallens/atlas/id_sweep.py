@@ -23,7 +23,8 @@ from spirallens.contexts import (
 )
 
 from .engineering_protocol import validate_engineering_request_binding
-from .store import ATLAS_SCHEMA_VERSION, AtlasStore, token_ids_sha256
+from ._capture_store import AtlasStore
+from .store import ATLAS_SCHEMA_VERSION, token_ids_sha256
 
 
 ATLAS_CONTEXT_BINDING_SCHEMA_VERSION = "spirallens.atlas-context-binding.v1"

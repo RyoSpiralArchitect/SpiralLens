@@ -356,7 +356,7 @@ The target is:
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
-| `atlas` | Streaming observation storage, integrity journals, and replay | Optional model extras for capture; reader should trend lighter |
+| `atlas` | Streaming observation storage, integrity journals, and replay | NumPy/PyYAML reader closure verified without model frameworks, adapters, or capture modules; capture remains an optional model extra and the whole namespace remains provisional/model extra |
 | `jacobians`, `factors` | JVP and architecture-component accounting | Core analytic paths plus optional autodiff |
 | `interventions` | Explicitly scoped activation interventions | Optional model extras |
 | `semantics` | Post-discovery annotation and held-out evaluation | Never imported by discovery |
@@ -984,6 +984,26 @@ TOCTOU condition. Parsing, digest validation, read traces, claim and authority
 meaning remain domain-local. This pay-down changes no public API, schema,
 artifact, protocol, scientific or VOY authority, does not authorize VOY-V4,
 and does not complete or advance `LIB-L0`.
+
+The following bounded split, measured against baseline commit
+`a1d6c615da9e39247afa0332658e9aee7b24bb5a`, moves mutable Atlas capture
+storage into private `_capture_store.py` while keeping manifest readers in
+`store.py`. The two independent reader consumers are `metrics.candidate_pairs`
+and `atlas.engineering_receipt`. A fresh non-editable wheel verifies that the
+reader import closure may load NumPy and PyYAML but loads none of `torch`,
+`transformers`, `huggingface_hub`, `safetensors`, `spirallens.adapters`,
+`spirallens.atlas.id_sweep`, `spirallens.atlas.engineering_run`, or
+`spirallens.atlas._capture_store`. The four-file production scope
+`store.py` / `_capture_store.py` / `id_sweep.py` / `__init__.py` changes from
+`1226/0/589/57` to `760/492/590/78` physical lines, or `1872 → 1920`
+(`+48`); the reader store itself loses 466 lines. This boundary split satisfies
+the extraction gate by emptying its forbidden import set, not by reducing total
+production LOC. Lazy capture exports preserve the ordered 20-name
+Atlas `__all__`, symbol identities, reader signatures, defining modules, and
+exception identities. It does not make all of Atlas framework-neutral and
+changes no public API, dependency, persistence schema, artifact, protocol,
+scientific or VOY authority; it neither authorizes VOY-V4 nor completes or
+advances `LIB-L0`.
 
 <a id="lib-l1"></a>
 #### LIB-L1 — Library alpha (historical `M5`)

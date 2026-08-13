@@ -4,6 +4,31 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Atlas reader/capture import-boundary split
+
+- Moved mutable Atlas capture storage into private `_capture_store.py`; the
+  manifest readers remain in `atlas.store`. The independent production reader
+  consumers are `metrics.candidate_pairs` and `atlas.engineering_receipt`.
+- The reader closure continues to permit NumPy and PyYAML. A fresh
+  non-editable-wheel probe verifies that it loads none of `torch`,
+  `transformers`, `huggingface_hub`, `safetensors`, `spirallens.adapters`,
+  `spirallens.atlas.id_sweep`, `spirallens.atlas.engineering_run`, or
+  `spirallens.atlas._capture_store`. Capture remains a model extra, and the
+  whole Atlas namespace remains provisional/model extra.
+- Against baseline commit `a1d6c615da9e39247afa0332658e9aee7b24bb5a`,
+  `store.py` / `_capture_store.py` / `id_sweep.py` / `__init__.py` change from
+  `1226/0/589/57` to `760/492/590/78` physical lines, or `1872 → 1920`
+  (`+48`); the reader store loses 466 lines. Acceptance is based on the empty
+  reader forbidden-import set rather than total-LOC reduction. The ordered
+  20-name public `__all__`, symbol identities, reader signatures and defining modules,
+  exception identities, exports, and dependencies are unchanged.
+- The repository-only ephemeral distribution report advances to
+  `spirallens.distribution-validation.v0.4` and adds
+  `atlas_reader_inspection` for this installed-wheel boundary. This introduces
+  no public persistence schema, artifact or protocol change, scientific or
+  library promotion, authority or claim delta, D7/D8/SCI progress, or VOY-V4
+  authorization.
+
 ## 2026-08-13 — Private bounded held-file reader extraction
 
 - Replaced the duplicated held-file byte-reading bodies in

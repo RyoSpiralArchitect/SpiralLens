@@ -23,7 +23,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.3"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.4"
 DEFAULT_IMPORTS = (
     "spirallens",
     "spirallens._held_file",
@@ -55,6 +55,51 @@ DEFAULT_SCIENTIFIC_IMPORTS = (
     "spirallens.qualification.confirmation_terminal_operations",
     "spirallens.synthetic.spectral_moment_confirmation",
 )
+ATLAS_READER_IMPORTS = (
+    "spirallens.atlas",
+    "spirallens.atlas.store",
+    "spirallens.atlas.engineering_receipt",
+)
+ATLAS_READER_FORBIDDEN_IMPORTS = (
+    "torch",
+    "transformers",
+    "huggingface_hub",
+    "safetensors",
+    "spirallens.adapters",
+    "spirallens.atlas.id_sweep",
+    "spirallens.atlas.engineering_run",
+    "spirallens.atlas._capture_store",
+)
+ATLAS_PUBLIC_EXPORTS = (
+    "ATLAS_SCHEMA_VERSION",
+    "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION",
+    "AtlasIntegrityError",
+    "AtlasStateError",
+    "ContextBankBinding",
+    "EngineeringConsumerAuthorizationError",
+    "LoadedPublicExamplePlumbingProtocol",
+    "PublicExamplePlumbingProtocolError",
+    "PublicExamplePlumbingReceiptError",
+    "PublicExamplePlumbingRunError",
+    "SweepConfig",
+    "load_manifest",
+    "load_manifest_metadata",
+    "load_public_example_plumbing_protocol",
+    "load_public_example_plumbing_receipt",
+    "require_engineering_consumer_authorized",
+    "run_id_sweep",
+    "run_public_example_plumbing",
+    "select_token_ids",
+    "validate_engineering_request_binding",
+)
+ATLAS_READER_SYMBOL_MODULES = {
+    "AtlasIntegrityError": "spirallens.atlas.store",
+    "AtlasStateError": "spirallens.atlas.store",
+    "PublicExamplePlumbingReceiptError": ("spirallens.atlas.engineering_receipt"),
+    "load_manifest": "spirallens.atlas.store",
+    "load_manifest_metadata": "spirallens.atlas.store",
+    "load_public_example_plumbing_receipt": ("spirallens.atlas.engineering_receipt"),
+}
 FORBIDDEN_IMPORTS = (
     "faiss",
     "huggingface_hub",
@@ -67,6 +112,10 @@ FORBIDDEN_IMPORTS = (
 )
 REQUIRED_WHEEL_MEMBERS = (
     "spirallens/_held_file.py",
+    "spirallens/atlas/__init__.py",
+    "spirallens/atlas/_capture_store.py",
+    "spirallens/atlas/engineering_receipt.py",
+    "spirallens/atlas/store.py",
     "spirallens/graphs/__init__.py",
     "spirallens/graphs/common.py",
     "spirallens/graphs/constructors.py",
@@ -398,6 +447,114 @@ print(
 """
 
 
+_ATLAS_READER_PROBE = r"""
+import importlib
+import importlib.abc
+import importlib.metadata
+import json
+from pathlib import Path
+import sys
+
+required_imports = json.loads(sys.argv[1])
+forbidden_imports = tuple(json.loads(sys.argv[2]))
+expected_public_exports = json.loads(sys.argv[3])
+
+
+def matches(name, prefix):
+    return name == prefix or name.startswith(prefix + ".")
+
+
+preloaded_forbidden = sorted(
+    prefix
+    for prefix in forbidden_imports
+    if any(matches(name, prefix) for name in sys.modules)
+)
+if preloaded_forbidden:
+    raise RuntimeError(
+        f"Atlas reader probe began with forbidden imports: {preloaded_forbidden}"
+    )
+
+
+class Blocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(matches(fullname, prefix) for prefix in forbidden_imports):
+            raise ModuleNotFoundError(
+                f"blocked Atlas capture dependency: {fullname}"
+            )
+        return None
+
+
+blocker = Blocker()
+sys.meta_path.insert(0, blocker)
+module_origins = {}
+for name in required_imports:
+    module = importlib.import_module(name)
+    origin = getattr(module, "__file__", None)
+    if not isinstance(origin, str):
+        raise RuntimeError(f"{name} has no concrete module origin")
+    module_origins[name] = str(Path(origin).resolve())
+
+atlas = importlib.import_module("spirallens.atlas")
+store = importlib.import_module("spirallens.atlas.store")
+receipt = importlib.import_module("spirallens.atlas.engineering_receipt")
+reader_symbol_identities = (
+    atlas.load_manifest is store.load_manifest
+    and atlas.load_manifest_metadata is store.load_manifest_metadata
+    and atlas.AtlasIntegrityError is store.AtlasIntegrityError
+    and atlas.AtlasStateError is store.AtlasStateError
+    and atlas.load_public_example_plumbing_receipt
+    is receipt.load_public_example_plumbing_receipt
+    and atlas.PublicExamplePlumbingReceiptError
+    is receipt.PublicExamplePlumbingReceiptError
+)
+reader_symbol_modules = {
+    "AtlasIntegrityError": atlas.AtlasIntegrityError.__module__,
+    "AtlasStateError": atlas.AtlasStateError.__module__,
+    "PublicExamplePlumbingReceiptError": (
+        atlas.PublicExamplePlumbingReceiptError.__module__
+    ),
+    "load_manifest": atlas.load_manifest.__module__,
+    "load_manifest_metadata": atlas.load_manifest_metadata.__module__,
+    "load_public_example_plumbing_receipt": (
+        atlas.load_public_example_plumbing_receipt.__module__
+    ),
+}
+loaded_forbidden = sorted(
+    prefix
+    for prefix in forbidden_imports
+    if any(matches(name, prefix) for name in sys.modules)
+)
+
+distribution = importlib.metadata.distribution("spirallens")
+direct_url_text = distribution.read_text("direct_url.json")
+direct_url = None if direct_url_text is None else json.loads(direct_url_text)
+print(
+    json.dumps(
+        {
+            "dependencies_loaded": sorted(
+                name for name in ("numpy", "yaml") if name in sys.modules
+            ),
+            "dir_includes_public_exports": set(expected_public_exports).issubset(
+                dir(atlas)
+            ),
+            "distribution_root": str(
+                Path(distribution.locate_file("")).resolve()
+            ),
+            "direct_url": direct_url,
+            "forbidden_imports_loaded": loaded_forbidden,
+            "module_origins": module_origins,
+            "package_version": distribution.version,
+            "public_exports": list(atlas.__all__),
+            "reader_symbol_identities": reader_symbol_identities,
+            "reader_symbol_modules": reader_symbol_modules,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
 def _parse_probe_output(
     output: str,
     *,
@@ -496,6 +653,117 @@ def _parse_probe_output(
     }
 
 
+def _parse_atlas_reader_probe_output(
+    output: str,
+    *,
+    environment_root: Path,
+    required_imports: Sequence[str],
+) -> dict[str, object]:
+    """Validate the installed-wheel Atlas reader import receipt."""
+
+    try:
+        value = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise DistributionValidationError(
+            "Atlas reader probe did not emit valid JSON"
+        ) from error
+    if not isinstance(value, dict):
+        raise DistributionValidationError(
+            "Atlas reader probe output must be a JSON object"
+        )
+
+    origins = value.get("module_origins")
+    expected_imports = list(required_imports)
+    if (
+        not isinstance(origins, dict)
+        or sorted(origins) != sorted(expected_imports)
+        or any(not isinstance(item, str) for item in origins.values())
+    ):
+        raise DistributionValidationError(
+            "Atlas reader probe returned incomplete module origins"
+        )
+
+    environment_root = environment_root.resolve()
+    checked_origins: dict[str, str] = {}
+    for name in expected_imports:
+        origin = Path(origins[name]).resolve()
+        if not origin.is_relative_to(environment_root):
+            raise DistributionValidationError(
+                f"{name} imported outside the fresh Atlas reader environment: {origin}"
+            )
+        checked_origins[name] = origin.relative_to(environment_root).as_posix()
+
+    distribution_root_value = value.get("distribution_root")
+    if not isinstance(distribution_root_value, str):
+        raise DistributionValidationError(
+            "Atlas reader probe omitted distribution_root"
+        )
+    distribution_root = Path(distribution_root_value).resolve()
+    if not distribution_root.is_relative_to(environment_root):
+        raise DistributionValidationError(
+            "SpiralLens distribution metadata resolved outside the fresh "
+            f"Atlas reader environment: {distribution_root}"
+        )
+
+    direct_url = value.get("direct_url")
+    if direct_url is not None and not isinstance(direct_url, dict):
+        raise DistributionValidationError(
+            "installed-wheel Atlas reader direct_url metadata is malformed"
+        )
+    if (
+        isinstance(direct_url, dict)
+        and isinstance(direct_url.get("dir_info"), dict)
+        and direct_url["dir_info"].get("editable") is True
+    ):
+        raise DistributionValidationError(
+            "fresh Atlas reader environment contains an editable SpiralLens install"
+        )
+
+    forbidden = value.get("forbidden_imports_loaded")
+    if forbidden != []:
+        raise DistributionValidationError(
+            f"Atlas reader imports loaded forbidden capture modules: {forbidden!r}"
+        )
+    if value.get("dependencies_loaded") != ["numpy", "yaml"]:
+        raise DistributionValidationError(
+            "Atlas reader probe did not load its declared NumPy/PyYAML dependencies"
+        )
+    if value.get("public_exports") != list(ATLAS_PUBLIC_EXPORTS):
+        raise DistributionValidationError(
+            "installed Atlas public export order differs from the frozen surface"
+        )
+    if value.get("dir_includes_public_exports") is not True:
+        raise DistributionValidationError(
+            "installed Atlas dir() omits frozen public exports"
+        )
+    if value.get("reader_symbol_identities") is not True:
+        raise DistributionValidationError(
+            "installed Atlas reader symbols do not preserve object identity"
+        )
+    if value.get("reader_symbol_modules") != ATLAS_READER_SYMBOL_MODULES:
+        raise DistributionValidationError(
+            "installed Atlas reader symbols changed defining modules"
+        )
+
+    package_version = value.get("package_version")
+    if not isinstance(package_version, str) or not package_version:
+        raise DistributionValidationError(
+            "Atlas reader probe omitted the package version"
+        )
+    return {
+        "dependencies_loaded": ["numpy", "yaml"],
+        "direct_url_editable": False,
+        "dir_includes_public_exports": True,
+        "distribution_root": distribution_root.relative_to(environment_root).as_posix(),
+        "forbidden_imports_loaded": [],
+        "module_origins": checked_origins,
+        "package_version": package_version,
+        "public_exports": list(ATLAS_PUBLIC_EXPORTS),
+        "reader_symbol_identities": True,
+        "reader_symbol_modules": dict(ATLAS_READER_SYMBOL_MODULES),
+    }
+
+
 def validate_distribution(
     source_root: Path,
     *,
@@ -507,6 +775,7 @@ def validate_distribution(
     source_root = source_root.resolve(strict=True)
     imports = tuple(required_imports)
     scientific_imports = tuple(required_scientific_imports)
+    atlas_reader_imports = tuple(ATLAS_READER_IMPORTS)
     if not imports or any(not isinstance(name, str) or not name for name in imports):
         raise DistributionValidationError(
             "required_imports must contain non-empty module names"
@@ -671,6 +940,24 @@ def validate_distribution(
             environment_root=scientific_environment_root,
             required_imports=scientific_imports,
         )
+        atlas_reader_probe = _run(
+            (
+                str(scientific_python),
+                "-P",
+                "-c",
+                _ATLAS_READER_PROBE,
+                json.dumps(atlas_reader_imports),
+                json.dumps(ATLAS_READER_FORBIDDEN_IMPORTS),
+                json.dumps(ATLAS_PUBLIC_EXPORTS),
+            ),
+            cwd=neutral_cwd,
+            env=scientific_environment,
+        )
+        atlas_reader_inspection = _parse_atlas_reader_probe_output(
+            atlas_reader_probe.stdout,
+            environment_root=scientific_environment_root,
+            required_imports=atlas_reader_imports,
+        )
 
         cli = _venv_executable(environment_root, "spirallens")
         if not cli.is_file():
@@ -718,18 +1005,23 @@ def validate_distribution(
                 "wheel_built_from_sdist": True,
             },
             "installation": {
+                "atlas_reader_system_site_packages": True,
+                "atlas_reader_user_site_packages": True,
                 "no_dependencies": True,
                 "system_site_packages": False,
                 "scientific_surface_system_site_packages": True,
                 "scientific_surface_user_site_packages": True,
                 "wheel_filename": wheel.name,
             },
+            "atlas_reader_inspection": atlas_reader_inspection,
+            "atlas_reader_forbidden_imports": list(ATLAS_READER_FORBIDDEN_IMPORTS),
             "inspection": inspection,
             "library_separation": library_separation,
             "scientific_surface_inspection": scientific_inspection,
             "required_wheel_members": list(verified_wheel_members),
             "forbidden_imports": list(FORBIDDEN_IMPORTS),
             "required_imports": list(imports),
+            "required_atlas_reader_imports": list(atlas_reader_imports),
             "required_scientific_imports": list(scientific_imports),
         }
 

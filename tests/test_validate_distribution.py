@@ -24,6 +24,10 @@ _VALIDATOR_SPEC.loader.exec_module(_VALIDATOR)
 
 DEFAULT_IMPORTS = _VALIDATOR.DEFAULT_IMPORTS
 DEFAULT_SCIENTIFIC_IMPORTS = _VALIDATOR.DEFAULT_SCIENTIFIC_IMPORTS
+ATLAS_PUBLIC_EXPORTS = _VALIDATOR.ATLAS_PUBLIC_EXPORTS
+ATLAS_READER_FORBIDDEN_IMPORTS = _VALIDATOR.ATLAS_READER_FORBIDDEN_IMPORTS
+ATLAS_READER_IMPORTS = _VALIDATOR.ATLAS_READER_IMPORTS
+ATLAS_READER_SYMBOL_MODULES = _VALIDATOR.ATLAS_READER_SYMBOL_MODULES
 DistributionValidationError = _VALIDATOR.DistributionValidationError
 REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
 REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
@@ -34,6 +38,7 @@ _classify_repository_experiment_members = (
     _VALIDATOR._classify_repository_experiment_members
 )
 _library_separation_report = _VALIDATOR._library_separation_report
+_parse_atlas_reader_probe_output = _VALIDATOR._parse_atlas_reader_probe_output
 _parse_probe_output = _VALIDATOR._parse_probe_output
 _sha256_file = _VALIDATOR._sha256_file
 
@@ -64,6 +69,7 @@ CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = (
 
 PRIVATE_HELD_FILE_WHEEL_MEMBER = "spirallens/_held_file.py"
 PRIVATE_HELD_FILE_IMPORT = "spirallens._held_file"
+PRIVATE_ATLAS_CAPTURE_STORE_WHEEL_MEMBER = "spirallens/atlas/_capture_store.py"
 
 
 def test_sha256_file_streams_exact_bytes(tmp_path: Path) -> None:
@@ -151,6 +157,27 @@ def test_private_held_file_is_an_explicit_non_experiment_wheel_import() -> None:
     )
 
 
+def test_atlas_reader_probe_is_separate_from_dependency_free_imports() -> None:
+    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.4"
+    assert set(ATLAS_READER_IMPORTS).isdisjoint(DEFAULT_IMPORTS)
+    assert ATLAS_READER_IMPORTS == (
+        "spirallens.atlas",
+        "spirallens.atlas.store",
+        "spirallens.atlas.engineering_receipt",
+    )
+    assert ATLAS_READER_FORBIDDEN_IMPORTS == (
+        "torch",
+        "transformers",
+        "huggingface_hub",
+        "safetensors",
+        "spirallens.adapters",
+        "spirallens.atlas.id_sweep",
+        "spirallens.atlas.engineering_run",
+        "spirallens.atlas._capture_store",
+    )
+    assert PRIVATE_ATLAS_CAPTURE_STORE_WHEEL_MEMBER in REQUIRED_WHEEL_MEMBERS
+
+
 def _probe(
     environment_root: Path,
     *,
@@ -180,6 +207,120 @@ def _probe(
             "package_version": "0.1.0",
         }
     )
+
+
+def _atlas_reader_probe(
+    environment_root: Path,
+    *,
+    origins_root: Path | None = None,
+    forbidden: list[str] | None = None,
+    public_exports: list[str] | None = None,
+) -> str:
+    root = environment_root if origins_root is None else origins_root
+    return json.dumps(
+        {
+            "dependencies_loaded": ["numpy", "yaml"],
+            "dir_includes_public_exports": True,
+            "distribution_root": str(root / "site-packages"),
+            "direct_url": {
+                "archive_info": {},
+                "url": "file:///artifact.whl",
+            },
+            "forbidden_imports_loaded": ([] if forbidden is None else forbidden),
+            "module_origins": {
+                name: str(
+                    root / "site-packages" / Path(*name.split(".")) / "__init__.py"
+                )
+                for name in ATLAS_READER_IMPORTS
+            },
+            "package_version": "0.1.0",
+            "public_exports": (
+                list(ATLAS_PUBLIC_EXPORTS) if public_exports is None else public_exports
+            ),
+            "reader_symbol_identities": True,
+            "reader_symbol_modules": ATLAS_READER_SYMBOL_MODULES,
+        }
+    )
+
+
+def test_atlas_reader_probe_accepts_exact_non_editable_wheel_receipt(
+    tmp_path: Path,
+) -> None:
+    environment_root = tmp_path / "scientific-venv"
+
+    assert _parse_atlas_reader_probe_output(
+        _atlas_reader_probe(environment_root),
+        environment_root=environment_root,
+        required_imports=ATLAS_READER_IMPORTS,
+    ) == {
+        "dependencies_loaded": ["numpy", "yaml"],
+        "direct_url_editable": False,
+        "dir_includes_public_exports": True,
+        "distribution_root": "site-packages",
+        "forbidden_imports_loaded": [],
+        "module_origins": {
+            name: ("site-packages/" + Path(*name.split("."), "__init__.py").as_posix())
+            for name in ATLAS_READER_IMPORTS
+        },
+        "package_version": "0.1.0",
+        "public_exports": list(ATLAS_PUBLIC_EXPORTS),
+        "reader_symbol_identities": True,
+        "reader_symbol_modules": dict(ATLAS_READER_SYMBOL_MODULES),
+    }
+
+
+def test_atlas_reader_probe_rejects_checkout_origin(tmp_path: Path) -> None:
+    environment_root = tmp_path / "scientific-venv"
+    checkout = tmp_path / "checkout"
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="outside the fresh Atlas reader environment",
+    ):
+        _parse_atlas_reader_probe_output(
+            _atlas_reader_probe(environment_root, origins_root=checkout),
+            environment_root=environment_root,
+            required_imports=ATLAS_READER_IMPORTS,
+        )
+
+
+def test_atlas_reader_probe_rejects_forbidden_capture_import(
+    tmp_path: Path,
+) -> None:
+    environment_root = tmp_path / "scientific-venv"
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="loaded forbidden capture modules",
+    ):
+        _parse_atlas_reader_probe_output(
+            _atlas_reader_probe(
+                environment_root,
+                forbidden=["spirallens.atlas._capture_store"],
+            ),
+            environment_root=environment_root,
+            required_imports=ATLAS_READER_IMPORTS,
+        )
+
+
+def test_atlas_reader_probe_rejects_public_export_reordering(
+    tmp_path: Path,
+) -> None:
+    environment_root = tmp_path / "scientific-venv"
+    reordered = list(reversed(ATLAS_PUBLIC_EXPORTS))
+
+    with pytest.raises(
+        DistributionValidationError,
+        match="public export order differs",
+    ):
+        _parse_atlas_reader_probe_output(
+            _atlas_reader_probe(
+                environment_root,
+                public_exports=reordered,
+            ),
+            environment_root=environment_root,
+            required_imports=ATLAS_READER_IMPORTS,
+        )
 
 
 def test_probe_rejects_import_from_an_editable_checkout(
@@ -263,6 +404,7 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         },
     }
     assert report["required_imports"] == list(DEFAULT_IMPORTS)
+    assert report["required_atlas_reader_imports"] == list(ATLAS_READER_IMPORTS)
     assert report["required_scientific_imports"] == list(DEFAULT_SCIENTIFIC_IMPORTS)
     assert report["required_wheel_members"] == list(REQUIRED_WHEEL_MEMBERS)
     assert report["forbidden_imports"] == [
@@ -283,6 +425,8 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     }
     assert report["installation"]["no_dependencies"] is True
     assert report["installation"]["system_site_packages"] is False
+    assert report["installation"]["atlas_reader_system_site_packages"] is True
+    assert report["installation"]["atlas_reader_user_site_packages"] is True
     assert report["installation"]["scientific_surface_system_site_packages"] is True
     assert report["installation"]["scientific_surface_user_site_packages"] is True
     assert report["installation"]["wheel_filename"].endswith(".whl")
@@ -292,6 +436,30 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert all(
         "site-packages/spirallens" in origin
         for origin in report["inspection"]["module_origins"].values()
+    )
+    assert report["atlas_reader_forbidden_imports"] == list(
+        ATLAS_READER_FORBIDDEN_IMPORTS
+    )
+    assert report["atlas_reader_inspection"]["dependencies_loaded"] == [
+        "numpy",
+        "yaml",
+    ]
+    assert report["atlas_reader_inspection"]["dir_includes_public_exports"] is True
+    assert report["atlas_reader_inspection"]["direct_url_editable"] is False
+    assert report["atlas_reader_inspection"]["forbidden_imports_loaded"] == []
+    assert set(report["atlas_reader_inspection"]["module_origins"]) == set(
+        ATLAS_READER_IMPORTS
+    )
+    assert all(
+        "site-packages/spirallens" in origin
+        for origin in report["atlas_reader_inspection"]["module_origins"].values()
+    )
+    assert report["atlas_reader_inspection"]["public_exports"] == list(
+        ATLAS_PUBLIC_EXPORTS
+    )
+    assert report["atlas_reader_inspection"]["reader_symbol_identities"] is True
+    assert report["atlas_reader_inspection"]["reader_symbol_modules"] == (
+        ATLAS_READER_SYMBOL_MODULES
     )
     assert set(report["scientific_surface_inspection"]["module_origins"]) == set(
         DEFAULT_SCIENTIFIC_IMPORTS
