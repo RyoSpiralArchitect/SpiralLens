@@ -4,6 +4,48 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-13 — Private installed-import policy consolidation
+
+- Added the private repository/build-only
+  `distribution/_installed_import_policy.py` policy seam, SHA-256
+  `bf0ac9eed8eee09658efb6122e7d4babcda5611bc0cf12b7d4524a4fd34b1aa7`.
+  It is standard-library-only, performs no I/O or manifest/TOML parsing, and
+  owns only immutable installed-import metadata plus a pure worker-policy
+  projection. It imports neither `packaging`, setuptools, subprocess
+  machinery, nor `spirallens`.
+- `setup.py` and the repository validator path-load that reviewed file but
+  retain independent duplicate-free manifest and `pyproject.toml` parsers,
+  validation order, error boundaries, and mutation adversaries. Only exact
+  metadata and projection are shared. The validator parent serializes the
+  projection as deterministic canonical JSON; isolated workers import no
+  policy module and independently reject missing, extra, mistyped, empty, and
+  expected-outcome-inconsistent projections.
+- `MANIFEST.in` admits exactly one ordinary policy file to the sdist. Artifact
+  adversaries require it to be byte-identical to the repository source and
+  reject its absence, duplication, non-regular placement, or presence in a
+  wheel. The validator's former specialized ordered-export and
+  installed-import sdist readers are one generic exact-file reader, which also
+  verifies the policy file.
+- Against baseline `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, physical
+  lines in `setup.py`, `scripts/validate_distribution.py`, the policy file,
+  and `MANIFEST.in` change from `1029/5096/0/5` to `985/5046/61/6`, or
+  `6130 -> 6098` (`-32`). Four exact duplicated policy-literal blocks had 66
+  physical occurrences and 33 redundant lines; setup/validator duplicate
+  excess is now zero (`33 -> 0`, 100 percent). The frozen production hashes
+  are setup
+  `f439f6b850a207b90a2d4fafc55b6327308fc50d597f3e765e685c5b3617266d`,
+  validator
+  `8cb59db0361d9626cac5658ff321edb2e561e667ac2331ff43574cd5c6ab6e1a`,
+  and `MANIFEST.in`
+  `b4a33c8088620ac7a9e9cff1c6277360ac06fe542be835416dc078c80c6c3859`.
+- The static gate at the production/test freeze was 200 passed with the one
+  live distribution test deliberately deselected; Ruff format/check,
+  `py_compile`, and diff checking passed. This entry does not reinterpret the
+  earlier pre-projection live receipt and changes no installed-import schema,
+  expected outcome, report semantics, `src/spirallens` runtime, export,
+  dependency, supported API, portability, library or `LIB-L0` status,
+  scientific claim, or authority record.
+
 ## 2026-08-13 — Closed installed-module import-outcome inventory
 
 - Added `distribution/spirallens_installed_imports_v0_1.json`, schema

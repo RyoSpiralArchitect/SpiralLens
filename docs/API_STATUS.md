@@ -120,13 +120,27 @@ dependency installation, not Python-module or export-declaration membership.
 Likewise, the 106 test files carried by the sdist are neither an installed-wheel
 conformance surface nor replay or maturity evidence.
 
-The diagnostic is a bounded fail-closed ratchet with no `src/spirallens`
-runtime, export, base-dependency, persistence/science-artifact, or authority
-change. Before a versioned successor adds another host-specific exception,
-dependency environment, import mode, or artifact kind, it must centralize the
-repeated manifest/setup/validator/embedded-worker metadata policy in one
-private reviewed boundary while preserving independent fail-closed validation
-and adversaries.
+The diagnostic remains a bounded fail-closed ratchet. Its repeated immutable
+metadata now has one private repository/build-only owner,
+`distribution/_installed_import_policy.py`. That standard-library-only seam
+performs no I/O or parsing and emits the deterministic canonical JSON policy
+projection passed by the validator parent to each isolated worker. The worker
+does not import the policy module and independently validates the projection's
+exact fields, types, nonempty values, and expected-outcome relation.
+`setup.py` and the validator retain separate fail-closed manifest and
+`pyproject.toml` parsers, validation order, error boundaries, and adversaries;
+only metadata and pure projection are shared. A generic exact-file reader
+checks the relevant sdist members. The sdist must carry exactly one regular
+byte-identical policy file, and the wheel must omit it.
+
+Against `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, the four production
+paths (`setup.py`, validator, policy, and `MANIFEST.in`) change from 6,130 to
+6,098 physical lines (`-32`), while the four exact duplicated policy-literal
+blocks move from 66 physical occurrences and 33 redundant lines to zero
+setup/validator duplicate excess (`33 -> 0`, 100 percent). This private
+consolidation changes no schema, import outcome, report semantics,
+`src/spirallens` runtime, export, dependency, supported API, portability,
+library or `LIB-L0` status, scientific claim, or authority record.
 
 ## Current surface
 

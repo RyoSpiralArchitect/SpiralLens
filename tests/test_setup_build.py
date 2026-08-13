@@ -4,11 +4,13 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import runpy
 import shutil
 import subprocess
 import sys
 import tarfile
 from types import ModuleType
+import zipfile
 
 import pytest
 import setuptools
@@ -39,6 +41,45 @@ def _set_project_root(
 ) -> None:
     monkeypatch.setattr(module, "_PROJECT_ROOT", root)
     monkeypatch.setattr(module, "_SOURCE_ROOT", root / "src")
+
+
+@pytest.mark.parametrize(
+    ("mutation", "exception", "match"),
+    [
+        ("missing", SetupError, "cannot load installed import policy"),
+        ("symlink", SetupError, "cannot load installed import policy"),
+        ("oversize", SetupError, "cannot load installed import policy"),
+        ("import_failure", ValueError, "policy import failed"),
+    ],
+)
+def test_setup_policy_load_fails_closed(
+    tmp_path: Path,
+    mutation: str,
+    exception: type[BaseException],
+    match: str,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    setup_path = tmp_path / "setup.py"
+    setup_path.write_bytes((repository / "setup.py").read_bytes())
+    distribution = tmp_path / "distribution"
+    distribution.mkdir()
+    policy = distribution / "_installed_import_policy.py"
+    if mutation == "symlink":
+        target = tmp_path / "policy-target.py"
+        target.write_text("SCHEMA = 'untrusted'\n", encoding="utf-8")
+        policy.symlink_to(target)
+    elif mutation == "oversize":
+        policy.write_bytes(b"#" * (1024 * 1024 + 1))
+    elif mutation == "import_failure":
+        policy.write_text(
+            "raise ValueError('policy import failed')\n",
+            encoding="utf-8",
+        )
+    elif mutation != "missing":  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+
+    with pytest.raises(exception, match=match):
+        runpy.run_path(str(setup_path))
 
 
 def _write_paths(root: Path, paths: set[str] | frozenset[str]) -> None:
@@ -230,7 +271,7 @@ def test_setup_installed_import_manifest_closes_exact_159_and_23_plus_1_projecti
     success = outcomes["base_import_success"]
     missing_torch = outcomes["models_extra_missing_torch"]
     assert len(success) == 154
-    assert missing_torch == setup_module._MODELS_EXTRA_MISSING_TORCH_MODULES
+    assert missing_torch == setup_module._POLICY["MISSING_TORCH"]
     assert len(set(success) | set(missing_torch)) == 159
     initializer_modules = {
         setup_module._module_for_python_member(member)
@@ -430,7 +471,7 @@ def test_setup_pyproject_dependency_gate_rejects_non_strict_file(
         setup_module._load_installed_import_classification()
 
 
-def test_setup_sdist_contains_one_byte_identical_installed_import_manifest(
+def test_setup_artifacts_place_installed_import_policy_only_in_sdist(
     tmp_path: Path,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
@@ -464,21 +505,47 @@ def test_setup_sdist_contains_one_byte_identical_installed_import_manifest(
         capture_output=True,
         text=True,
     )
+    subprocess.run(
+        [
+            sys.executable,
+            "setup.py",
+            "bdist_wheel",
+            "--dist-dir",
+            str(artifact_dir),
+        ],
+        cwd=source,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
     archives = list(artifact_dir.glob("*.tar.gz"))
     assert len(archives) == 1
-    relative = "distribution/spirallens_installed_imports_v0_1.json"
+    expected_sdist_members = (
+        "distribution/spirallens_installed_imports_v0_1.json",
+        "distribution/_installed_import_policy.py",
+    )
     with tarfile.open(archives[0], mode="r:gz") as archive:
-        matches = [
-            member
-            for member in archive.getmembers()
-            if "/".join(Path(member.name).parts[1:]) == relative
-        ]
-        assert len(matches) == 1
-        assert matches[0].isfile()
-        handle = archive.extractfile(matches[0])
-        assert handle is not None
-        assert handle.read() == (repository / relative).read_bytes()
+        for relative in expected_sdist_members:
+            matches = [
+                member
+                for member in archive.getmembers()
+                if "/".join(Path(member.name).parts[1:]) == relative
+            ]
+            assert len(matches) == 1
+            assert matches[0].isfile()
+            handle = archive.extractfile(matches[0])
+            assert handle is not None
+            assert handle.read() == (repository / relative).read_bytes()
+
+    wheels = list(artifact_dir.glob("*.whl"))
+    assert len(wheels) == 1
+    with zipfile.ZipFile(wheels[0]) as archive:
+        assert all(
+            not member.endswith("distribution/_installed_import_policy.py")
+            for member in archive.namelist()
+        )
 
 
 def test_setup_export_manifest_rejects_missing_extra_and_invalid_packages(

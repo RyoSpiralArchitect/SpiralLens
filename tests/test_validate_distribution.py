@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import ast
+import builtins
 import hashlib
 import importlib.util
 import io
 import json
+import runpy
 import stat
 import subprocess
 import sys
@@ -15,6 +18,9 @@ import pytest
 
 _VALIDATOR_PATH = (
     Path(__file__).resolve().parents[1] / "scripts" / "validate_distribution.py"
+)
+_INSTALLED_IMPORT_POLICY_PATH = (
+    Path(__file__).resolve().parents[1] / "distribution" / "_installed_import_policy.py"
 )
 _VALIDATOR_SPEC = importlib.util.spec_from_file_location(
     "_spirallens_validate_distribution",
@@ -72,9 +78,7 @@ _parse_installed_ordered_export_probe_output = (
     _VALIDATOR._parse_installed_ordered_export_probe_output
 )
 _require_ordered_export_state = _VALIDATOR._require_ordered_export_state
-_require_sdist_ordered_export_manifest = (
-    _VALIDATOR._require_sdist_ordered_export_manifest
-)
+_require_sdist_exact_file = _VALIDATOR._require_sdist_exact_file
 _classify_repository_experiment_members = (
     _VALIDATOR._classify_repository_experiment_members
 )
@@ -176,6 +180,156 @@ def _copy_installed_import_classification_inputs(destination: Path) -> None:
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((repository / relative).read_bytes())
+
+
+def test_installed_import_policy_is_stdlib_only_pure_metadata_projection() -> None:
+    source = _INSTALLED_IMPORT_POLICY_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(_INSTALLED_IMPORT_POLICY_PATH))
+    imported_roots: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_roots.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            assert node.level == 0
+            assert node.module is not None
+            imported_roots.add(node.module.split(".", 1)[0])
+
+    assert imported_roots <= set(sys.stdlib_module_names) | {"__future__"}
+    assert imported_roots.isdisjoint(
+        {
+            "ast",
+            "configparser",
+            "csv",
+            "importlib",
+            "io",
+            "json",
+            "marshal",
+            "os",
+            "packaging",
+            "pathlib",
+            "pickle",
+            "setuptools",
+            "shutil",
+            "socket",
+            "spirallens",
+            "subprocess",
+            "tarfile",
+            "tempfile",
+            "tomllib",
+            "urllib",
+            "xml",
+            "yaml",
+            "zipfile",
+        }
+    )
+    forbidden_calls = {
+        "Popen",
+        "__import__",
+        "compile",
+        "dump",
+        "dumps",
+        "eval",
+        "exec",
+        "load",
+        "loads",
+        "lstat",
+        "open",
+        "parse",
+        "read_bytes",
+        "read_text",
+        "run",
+        "stat",
+        "write_bytes",
+        "write_text",
+        "urlopen",
+    }
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if isinstance(node.func, ast.Name):
+            called = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            called = node.func.attr
+        else:
+            continue
+        assert called not in forbidden_calls
+
+    def reject_io(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("policy module attempted I/O")
+
+    restricted_builtins = dict(vars(builtins))
+    restricted_builtins["open"] = reject_io
+    namespace: dict[str, object] = {
+        "__builtins__": restricted_builtins,
+        "__name__": "_installed_import_policy_test",
+    }
+    exec(compile(source, str(_INSTALLED_IMPORT_POLICY_PATH), "exec"), namespace)
+    projection = namespace["worker_policy_projection"]
+    assert callable(projection)
+    first = projection()
+    second = projection()
+    assert isinstance(first, dict)
+    assert first == second
+    assert first is not second
+    assert json.loads(json.dumps(first, sort_keys=True)) == first
+    blocked = first["blocked_optional_prefixes"]
+    assert isinstance(blocked, list)
+    blocked.append("rogue")
+    assert second == projection()
+
+
+def test_installed_import_manifest_parsers_remain_independent_of_policy() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    policy_source = _INSTALLED_IMPORT_POLICY_PATH.read_text(encoding="utf-8")
+    setup_source = (repository / "setup.py").read_text(encoding="utf-8")
+    validator_source = _VALIDATOR_PATH.read_text(encoding="utf-8")
+
+    assert "def _load_installed_import_classification(" not in policy_source
+    assert "def _reject_import_duplicate_json_keys(" not in policy_source
+    assert "def _load_installed_import_classification(" in setup_source
+    assert "def _reject_import_duplicate_json_keys(" in setup_source
+    assert "def _load_installed_import_classification(" in validator_source
+    assert "def _reject_duplicate_json_object(" in validator_source
+
+
+@pytest.mark.parametrize(
+    ("mutation", "exception", "match"),
+    [
+        ("missing", RuntimeError, "cannot load installed import policy"),
+        ("symlink", RuntimeError, "cannot load installed import policy"),
+        ("oversize", RuntimeError, "cannot load installed import policy"),
+        ("import_failure", ValueError, "policy import failed"),
+    ],
+)
+def test_validator_policy_load_fails_closed(
+    tmp_path: Path,
+    mutation: str,
+    exception: type[BaseException],
+    match: str,
+) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    validator_path = scripts / "validate_distribution.py"
+    validator_path.write_bytes(_VALIDATOR_PATH.read_bytes())
+    distribution = tmp_path / "distribution"
+    distribution.mkdir()
+    policy = distribution / "_installed_import_policy.py"
+    if mutation == "symlink":
+        target = tmp_path / "policy-target.py"
+        target.write_text("SCHEMA = 'untrusted'\n", encoding="utf-8")
+        policy.symlink_to(target)
+    elif mutation == "oversize":
+        policy.write_bytes(b"#" * (1024 * 1024 + 1))
+    elif mutation == "import_failure":
+        policy.write_text(
+            "raise ValueError('policy import failed')\n",
+            encoding="utf-8",
+        )
+    elif mutation != "missing":  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+
+    with pytest.raises(exception, match=match):
+        runpy.run_path(str(validator_path))
 
 
 def test_installed_import_manifest_freezes_exact_159_outcomes() -> None:
@@ -656,6 +810,91 @@ def test_installed_import_probe_script_compiles_and_policy_is_bounded() -> None:
     assert "os.putenv" not in INSTALLED_IMPORT_DENIED_AUDIT_EVENTS
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_field",
+        "extra_field",
+        "blocked_not_list",
+        "denied_not_list",
+        "missing_torch_not_list",
+        "empty_blocked",
+        "empty_denied",
+        "empty_missing_torch",
+        "empty_schema",
+        "empty_dependency_value",
+        "outcome_mismatch",
+    ],
+)
+def test_installed_import_worker_rejects_policy_projection_tamper(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    policy = json.loads(_VALIDATOR._INSTALLED_IMPORT_WORKER_POLICY)
+    module = "spirallens.core.canonical"
+    outcome = "base_import_success"
+    if mutation == "missing_field":
+        policy.pop("schema_version")
+    elif mutation == "extra_field":
+        policy["fallback"] = True
+    elif mutation == "blocked_not_list":
+        policy["blocked_optional_prefixes"] = "torch"
+    elif mutation == "denied_not_list":
+        policy["denied_audit_events"] = "subprocess.Popen"
+    elif mutation == "missing_torch_not_list":
+        policy["models_extra_missing_torch"] = "spirallens.adapters"
+    elif mutation == "empty_blocked":
+        policy["blocked_optional_prefixes"] = []
+    elif mutation == "empty_denied":
+        policy["denied_audit_events"] = []
+    elif mutation == "empty_missing_torch":
+        policy["models_extra_missing_torch"] = []
+    elif mutation == "empty_schema":
+        policy["schema_version"] = ""
+    elif mutation == "empty_dependency_value":
+        policy["base_dependencies"][0]["requirement"] = ""
+    elif mutation == "outcome_mismatch":
+        module = "spirallens.adapters"
+    else:  # pragma: no cover - parameter table is exhaustive
+        raise AssertionError(mutation)
+
+    completed = subprocess.run(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE,
+            module,
+            outcome,
+            "null",
+            json.dumps(policy),
+            json.dumps([str(tmp_path.resolve())]),
+            module.replace(".", "/") + ".py",
+        ),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert completed.returncode != 0
+    assert "installed import probe received invalid policy" in completed.stderr
+
+
+def test_installed_import_worker_receives_projection_without_importing_policy() -> None:
+    probe = _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE
+    projected = json.loads(_VALIDATOR._INSTALLED_IMPORT_WORKER_POLICY)
+
+    assert projected == _VALIDATOR._POLICY["worker_policy_projection"]()
+    assert "_installed_import_policy" not in probe
+    assert "runpy" not in probe
+    assert "worker_policy = json.loads(sys.argv[4])" in probe
+    assert "blocked_optional_prefixes = tuple(json.loads(sys.argv[4]))" not in probe
+
+
 def test_installed_import_probe_has_no_site_no_preload_and_exact_owner_join() -> None:
     probe = _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE
     discovery = _VALIDATOR._INSTALLED_IMPORT_ROOT_DISCOVERY_PROBE
@@ -979,17 +1218,81 @@ def test_sdist_ordered_export_manifest_requires_byte_identity(tmp_path: Path) ->
         manifest_bytes=manifest_bytes,
     )
 
-    receipt = _require_sdist_ordered_export_manifest(
+    receipt = _require_sdist_exact_file(
         sdist,
+        relative=ORDERED_EXPORT_CLASSIFICATION_PATH,
         expected_bytes=manifest_bytes,
+        label="ordered export classification manifest",
     )
     assert receipt["byte_identical_to_source"] is True
 
     with pytest.raises(DistributionValidationError, match="differs from source"):
-        _require_sdist_ordered_export_manifest(
+        _require_sdist_exact_file(
             sdist,
+            relative=ORDERED_EXPORT_CLASSIFICATION_PATH,
             expected_bytes=manifest_bytes + b" ",
+            label="ordered export classification manifest",
         )
+
+
+def test_sdist_installed_import_policy_requires_one_regular_exact_file(
+    tmp_path: Path,
+) -> None:
+    policy_relative = "distribution/_installed_import_policy.py"
+    policy_bytes = _INSTALLED_IMPORT_POLICY_PATH.read_bytes()
+
+    def write_archive(
+        path: Path, *, duplicate: bool = False, symlink: bool = False
+    ) -> None:
+        with tarfile.open(path, mode="w:gz") as archive:
+            for _index in range(2 if duplicate else 1):
+                info = tarfile.TarInfo(f"spirallens-0.1.0/{policy_relative}")
+                if symlink:
+                    info.type = tarfile.SYMTYPE
+                    info.linkname = "outside-policy.py"
+                    archive.addfile(info)
+                else:
+                    info.size = len(policy_bytes)
+                    archive.addfile(info, io.BytesIO(policy_bytes))
+
+    valid = tmp_path / "valid.tar.gz"
+    write_archive(valid)
+    receipt = _require_sdist_exact_file(
+        valid,
+        relative=policy_relative,
+        expected_bytes=policy_bytes,
+        label="installed import policy",
+    )
+    assert receipt == {
+        "path": policy_relative,
+        "sha256": hashlib.sha256(policy_bytes).hexdigest(),
+        "size_bytes": len(policy_bytes),
+        "byte_identical_to_source": True,
+    }
+
+    with pytest.raises(DistributionValidationError, match="differs from source"):
+        _require_sdist_exact_file(
+            valid,
+            relative=policy_relative,
+            expected_bytes=policy_bytes + b" ",
+            label="installed import policy",
+        )
+    for name, options in (
+        ("duplicate", {"duplicate": True}),
+        ("symlink", {"symlink": True}),
+    ):
+        invalid = tmp_path / f"{name}.tar.gz"
+        write_archive(invalid, **options)
+        with pytest.raises(
+            DistributionValidationError,
+            match="must contain one regular installed import policy",
+        ):
+            _require_sdist_exact_file(
+                invalid,
+                relative=policy_relative,
+                expected_bytes=policy_bytes,
+                label="installed import policy",
+            )
 
 
 def _installed_ordered_export_probe(
@@ -1190,6 +1493,14 @@ def test_exact_wheel_classifier_ignores_dist_info_but_rejects_extra_python(
     _write_synthetic_wheel(rogue, (*members, "roguepkg/__init__.py"))
     with pytest.raises(DistributionValidationError, match="unclassified=.*roguepkg"):
         _classify_wheel_python_members(rogue, expected_members=members)
+
+    policy = tmp_path / "policy.whl"
+    _write_synthetic_wheel(
+        policy,
+        (*members, "distribution/_installed_import_policy.py"),
+    )
+    with pytest.raises(DistributionValidationError, match="unclassified=.*policy"):
+        _classify_wheel_python_members(policy, expected_members=members)
 
 
 def test_exact_wheel_classifier_rejects_duplicate_unsafe_and_symlink(
