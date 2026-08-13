@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+import runpy
 import stat
 import tomllib
 from collections.abc import Sequence
@@ -26,6 +27,7 @@ _EXPORT_CLASSIFICATION_PATH = (
 _IMPORT_CLASSIFICATION_PATH = (
     _PROJECT_ROOT / "distribution/spirallens_installed_imports_v0_1.json"
 )
+_POLICY_PATH = _PROJECT_ROOT / "distribution/_installed_import_policy.py"
 _CLASSIFICATION_SCHEMA_VERSION = "spirallens.python-distribution-members.v0.1"
 _CLASSIFICATION_SCOPE = (
     "physical Python member placement across repository source, sdist, and wheels"
@@ -39,59 +41,15 @@ _EXPORT_CLASSIFICATION_SCOPE = (
     "literal ordered __all__ values for every classified package initializer"
 )
 _EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = _CLASSIFICATION_CLAIM_BOUNDARY
-_IMPORT_CLASSIFICATION_SCHEMA_VERSION = "spirallens.installed-import-conformance.v0.1"
-_IMPORT_CLASSIFICATION_SCOPE = (
-    "fresh non-editable SpiralLens wheel module-import outcomes with host-projected "
-    "declared base dependencies, blocked optional-import prefixes, and a bounded "
-    "denied-audit-event policy"
-)
-_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
-    "classification grants no export-symbol importability, behavior, operation "
-    "safety, side-effect freedom, stability, compatibility, dependency closure, "
-    "portability, public API, authority, scientific claim, or library maturity"
-)
-_IMPORT_BASE_DEPENDENCIES = (
-    {
-        "distribution": "numpy",
-        "import_name": "numpy",
-        "requirement": "numpy>=1.26",
-    },
-    {
-        "distribution": "PyYAML",
-        "import_name": "yaml",
-        "requirement": "PyYAML>=6.0",
-    },
-    {
-        "distribution": "scipy",
-        "import_name": "scipy",
-        "requirement": "scipy>=1.11",
-    },
-)
-_DECLARED_BASE_REQUIREMENTS = tuple(
-    sorted(
-        (dependency["requirement"] for dependency in _IMPORT_BASE_DEPENDENCIES),
-        key=str.casefold,
-    )
-)
-_BLOCKED_OPTIONAL_IMPORT_PREFIXES = (
-    "cryptography",
-    "faiss",
-    "huggingface_hub",
-    "safetensors",
-    "torch",
-    "transformers",
-)
-_IMPORT_OUTCOME_NAMES = (
-    "base_import_success",
-    "models_extra_missing_torch",
-)
-_MODELS_EXTRA_MISSING_TORCH_MODULES = (
-    "spirallens.adapters",
-    "spirallens.adapters.pythia",
-    "spirallens.atlas._capture_store",
-    "spirallens.atlas.engineering_run",
-    "spirallens.atlas.id_sweep",
-)
+try:
+    _POLICY_STAT = _POLICY_PATH.lstat()
+    if not stat.S_ISREG(_POLICY_STAT.st_mode) or _POLICY_STAT.st_size > 1024 * 1024:
+        raise OSError
+    _POLICY = runpy.run_path(str(_POLICY_PATH))
+except (OSError, SyntaxError) as error:
+    raise SetupError("cannot load installed import policy") from error
+
+_MODELS_EXTRA_MISSING_TORCH_MODULES = _POLICY["MISSING_TORCH"]
 _CLASSIFICATION_ROLES = (
     "package_initializer",
     "console_entrypoint_runtime",
@@ -475,13 +433,13 @@ def _load_installed_import_classification() -> dict[str, tuple[str, ...]]:
         raise SetupError(
             "installed import classification must have the exact top-level fields"
         )
-    if document["schema_version"] != _IMPORT_CLASSIFICATION_SCHEMA_VERSION:
+    if document["schema_version"] != _POLICY["SCHEMA"]:
         raise SetupError("installed import classification has the wrong schema version")
-    if document["classification_scope"] != _IMPORT_CLASSIFICATION_SCOPE:
+    if document["classification_scope"] != _POLICY["SCOPE"]:
         raise SetupError("installed import classification has the wrong scope")
-    if document["claim_boundary"] != _IMPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+    if document["claim_boundary"] != _POLICY["CLAIM"]:
         raise SetupError("installed import classification has the wrong claim boundary")
-    if document["base_dependencies"] != list(_IMPORT_BASE_DEPENDENCIES):
+    if document["base_dependencies"] != _POLICY["dependency_records"]():
         raise SetupError(
             "installed import classification has the wrong base dependencies"
         )
@@ -510,25 +468,25 @@ def _load_installed_import_classification() -> dict[str, tuple[str, ...]]:
         )
         or len(declared_dependencies) != len(set(declared_dependencies))
         or tuple(sorted(declared_dependencies, key=str.casefold))
-        != _DECLARED_BASE_REQUIREMENTS
+        != _POLICY["PROJECT_DEPENDENCIES"]
     ):
         raise SetupError(
             "pyproject.toml project dependencies differ from the exact installed "
             "import base requirements"
         )
-    if document["blocked_optional_prefixes"] != list(_BLOCKED_OPTIONAL_IMPORT_PREFIXES):
+    if document["blocked_optional_prefixes"] != list(_POLICY["BLOCKED"]):
         raise SetupError(
             "installed import classification has the wrong blocked optional prefixes"
         )
 
     raw_outcomes = document["outcomes"]
     if not isinstance(raw_outcomes, dict) or set(raw_outcomes) != set(
-        _IMPORT_OUTCOME_NAMES
+        _POLICY["OUTCOMES"]
     ):
         raise SetupError("installed import classification must have the exact outcomes")
     parsed: dict[str, tuple[str, ...]] = {}
     owner: dict[str, str] = {}
-    for outcome in _IMPORT_OUTCOME_NAMES:
+    for outcome in _POLICY["OUTCOMES"]:
         raw_modules = raw_outcomes[outcome]
         if (
             not isinstance(raw_modules, list)
@@ -564,13 +522,11 @@ def _load_installed_import_classification() -> dict[str, tuple[str, ...]]:
         raise SetupError(
             "installed import outcomes must exactly partition every shipped module"
         )
-    if parsed["models_extra_missing_torch"] != (_MODELS_EXTRA_MISSING_TORCH_MODULES):
+    if parsed["models_extra_missing_torch"] != _POLICY["MISSING_TORCH"]:
         raise SetupError(
             "models_extra_missing_torch differs from the reviewed exact modules"
         )
-    expected_success = tuple(
-        sorted(expected_modules - set(_MODELS_EXTRA_MISSING_TORCH_MODULES))
-    )
+    expected_success = tuple(sorted(expected_modules - set(_POLICY["MISSING_TORCH"])))
     if parsed["base_import_success"] != expected_success:
         raise SetupError(
             "base_import_success differs from the reviewed exact module complement"

@@ -3,3 +3,4 @@ exclude src/spirallens/qualification/confirmation_v1_*.py
 include distribution/spirallens_python_members_v0_1.json
 include distribution/spirallens_ordered_exports_v0_1.json
 include distribution/spirallens_installed_imports_v0_1.json
+include distribution/_installed_import_policy.py

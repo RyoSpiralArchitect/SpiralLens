@@ -106,13 +106,30 @@ admits regular Python modules only; package data, extension or namespace
 modules, and generated-module support require an explicit versioned
 classification/schema change before they may ship.
 
-This is accepted as a bounded fail-closed diagnostic ratchet because it changes
-no `src/spirallens` runtime, export, base dependency, persistence/science
-artifact, or authority record. Before a versioned successor adds another
-host-specific exception, dependency environment, import mode, or artifact
-kind, the repeated manifest/setup/validator/embedded-worker metadata policy
-must be centralized in one private reviewed boundary while retaining
-independent fail-closed validation and adversaries.
+The required anti-bloat consolidation is now complete in the private,
+repository/build-only `distribution/_installed_import_policy.py` seam. It owns
+only immutable installed-import metadata and a standard-library-only, no-I/O
+worker-policy projection; it performs no manifest or TOML parsing and imports
+neither `packaging`, setuptools, subprocess machinery, nor `spirallens`.
+`setup.py` and the repository validator path-load that reviewed file but retain
+independent fail-closed manifest and `pyproject.toml` parsers, validation, and
+mutation adversaries. The validator parent serializes one deterministic
+canonical JSON projection; an isolated worker imports no policy module and
+independently rejects missing, extra, mistyped, empty, or outcome-inconsistent
+fields. One generic validator reader now enforces exact sdist-file identity.
+The sdist must contain exactly one regular byte-identical policy file, while
+the wheel must contain none.
+
+Against baseline `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, the four
+production paths `setup.py`, `scripts/validate_distribution.py`, the policy
+file, and `MANIFEST.in` change from 6,130 to 6,098 physical lines (`-32`). The
+four exact duplicated policy-literal blocks change from 66 physical
+occurrences, including 33 redundant lines, to zero setup/validator duplicate
+excess (`33 -> 0`, 100 percent). This is still only an internal maintenance
+ratchet: it changes no installed-import schema, expected outcome, diagnostic
+report semantics, `src/spirallens` runtime, export, dependency, public API,
+portability result, library or `LIB-L0` status, scientific claim, or authority
+record.
 
 The project now separates two deliberately narrow questions:
 

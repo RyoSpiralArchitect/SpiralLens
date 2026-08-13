@@ -16,6 +16,7 @@ import concurrent.futures
 import hashlib
 import json
 import os
+import runpy
 import shutil
 import stat
 import subprocess
@@ -64,40 +65,22 @@ ORDERED_EXPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
 INSTALLED_IMPORT_CLASSIFICATION_PATH = (
     "distribution/spirallens_installed_imports_v0_1.json"
 )
-INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION = (
-    "spirallens.installed-import-conformance.v0.1"
+_POLICY_PATH = (
+    Path(__file__).resolve().parents[1] / "distribution/_installed_import_policy.py"
 )
-INSTALLED_IMPORT_CLASSIFICATION_SCOPE = (
-    "fresh non-editable SpiralLens wheel module-import outcomes with "
-    "host-projected declared base dependencies, blocked optional-import "
-    "prefixes, and a bounded denied-audit-event policy"
-)
-INSTALLED_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY = (
-    "classification grants no export-symbol importability, behavior, operation "
-    "safety, side-effect freedom, stability, compatibility, dependency closure, "
-    "portability, public API, authority, scientific claim, or library maturity"
-)
-INSTALLED_IMPORT_BASE_DEPENDENCIES = (
-    {
-        "distribution": "numpy",
-        "import_name": "numpy",
-        "requirement": "numpy>=1.26",
-    },
-    {
-        "distribution": "PyYAML",
-        "import_name": "yaml",
-        "requirement": "PyYAML>=6.0",
-    },
-    {
-        "distribution": "scipy",
-        "import_name": "scipy",
-        "requirement": "scipy>=1.11",
-    },
-)
-INSTALLED_IMPORT_PROJECT_DEPENDENCIES = (
-    "numpy>=1.26",
-    "scipy>=1.11",
-    "PyYAML>=6.0",
+try:
+    _POLICY_STAT = _POLICY_PATH.lstat()
+    if not stat.S_ISREG(_POLICY_STAT.st_mode) or _POLICY_STAT.st_size > 1024 * 1024:
+        raise OSError
+    _POLICY_BYTES = _POLICY_PATH.read_bytes()
+    _POLICY = runpy.run_path(str(_POLICY_PATH))
+except (OSError, SyntaxError) as error:
+    raise RuntimeError("cannot load installed import policy") from error
+
+INSTALLED_IMPORT_BASE_DEPENDENCIES = tuple(_POLICY["dependency_records"]())
+INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION = _POLICY["SCHEMA"]
+_INSTALLED_IMPORT_WORKER_POLICY = json.dumps(
+    _POLICY["worker_policy_projection"](), sort_keys=True, separators=(",", ":")
 )
 INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ("ann", ("faiss-cpu==1.14.3",)),
@@ -113,21 +96,7 @@ INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ),
     ("witness", ("cryptography>=42",)),
 )
-INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = (
-    "cryptography",
-    "faiss",
-    "huggingface_hub",
-    "safetensors",
-    "torch",
-    "transformers",
-)
-INSTALLED_IMPORT_MODELS_EXTRA_MISSING_TORCH = (
-    "spirallens.adapters",
-    "spirallens.adapters.pythia",
-    "spirallens.atlas._capture_store",
-    "spirallens.atlas.engineering_run",
-    "spirallens.atlas.id_sweep",
-)
+INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = _POLICY["BLOCKED"]
 INSTALLED_IMPORT_SUCCESS_COUNT = 154
 INSTALLED_IMPORT_MISSING_TORCH_COUNT = 5
 INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
@@ -135,35 +104,7 @@ INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
 INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT = 5
 INSTALLED_IMPORT_PROBE_TIMEOUT_SECONDS = 30
 INSTALLED_IMPORT_PROBE_CONCURRENCY = 8
-INSTALLED_IMPORT_DENIED_AUDIT_EVENTS = (
-    "builtins/open-write",
-    "http.client.connect",
-    "os.chdir",
-    "os.chmod",
-    "os.chown",
-    "os.exec",
-    "os.fork",
-    "os.forkpty",
-    "os.kill",
-    "os.link",
-    "os.mkdir",
-    "os.remove",
-    "os.rename",
-    "os.rmdir",
-    "os.posix_spawn",
-    "os.symlink",
-    "os.system",
-    "os.truncate",
-    "os.utime",
-    "shutil.copyfile",
-    "smtplib.connect",
-    "socket.__new__",
-    "socket.bind",
-    "socket.connect",
-    "socket.getaddrinfo",
-    "subprocess.Popen",
-    "urllib.Request",
-)
+INSTALLED_IMPORT_DENIED_AUDIT_EVENTS = _POLICY["DENIED_AUDIT_EVENTS"]
 _MAX_CLASSIFICATION_BYTES = 1024 * 1024
 _MAX_INITIALIZER_BYTES = 1024 * 1024
 ORDERED_EXPORT_PACKAGE_COUNT = 24
@@ -538,7 +479,7 @@ def _normalize_project_requires_dist(
         not isinstance(dependencies, list)
         or any(not isinstance(item, str) for item in dependencies)
         or len(dependencies) != len(set(dependencies))
-        or set(dependencies) != set(INSTALLED_IMPORT_PROJECT_DEPENDENCIES)
+        or set(dependencies) != set(_POLICY["PROJECT_DEPENDENCIES"])
         or not isinstance(optional_dependencies, dict)
         or set(optional_dependencies) != set(expected_optional_dependencies)
     ):
@@ -749,15 +690,15 @@ def _load_installed_import_classification(
         raise DistributionValidationError(
             "installed import classification manifest has unexpected top-level keys"
         )
-    if value.get("schema_version") != INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION:
+    if value.get("schema_version") != _POLICY["SCHEMA"]:
         raise DistributionValidationError(
             "installed import classification manifest has the wrong schema version"
         )
-    if value.get("classification_scope") != INSTALLED_IMPORT_CLASSIFICATION_SCOPE:
+    if value.get("classification_scope") != _POLICY["SCOPE"]:
         raise DistributionValidationError(
             "installed import classification manifest has the wrong scope"
         )
-    if value.get("claim_boundary") != INSTALLED_IMPORT_CLASSIFICATION_CLAIM_BOUNDARY:
+    if value.get("claim_boundary") != _POLICY["CLAIM"]:
         raise DistributionValidationError(
             "installed import classification manifest has the wrong claim boundary"
         )
@@ -793,7 +734,7 @@ def _load_installed_import_classification(
     manifest_requirements = {
         dependency["requirement"] for dependency in INSTALLED_IMPORT_BASE_DEPENDENCIES
     }
-    if manifest_requirements != set(INSTALLED_IMPORT_PROJECT_DEPENDENCIES):
+    if manifest_requirements != set(_POLICY["PROJECT_DEPENDENCIES"]):
         raise DistributionValidationError(
             "installed import manifest dependencies do not map to project dependencies"
         )
@@ -852,7 +793,7 @@ def _load_installed_import_classification(
         )
     if (
         len(success) != INSTALLED_IMPORT_SUCCESS_COUNT
-        or missing_torch != INSTALLED_IMPORT_MODELS_EXTRA_MISSING_TORCH
+        or missing_torch != _POLICY["MISSING_TORCH"]
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
     ):
         raise DistributionValidationError(
@@ -903,7 +844,7 @@ def _load_installed_import_classification(
         "outcomes": parsed_outcomes,
         "python_members": python_member_classification,
         "requires_dist_contract": requires_dist_contract,
-        "schema_version": INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION,
+        "schema_version": _POLICY["SCHEMA"],
         "successful_package_modules": successful_packages,
         "successful_runtime_export_count": successful_runtime_exports,
         "unavailable_package_modules": unavailable_packages,
@@ -1734,75 +1675,32 @@ def _require_sdist_classification_manifest(
     }
 
 
-def _require_sdist_ordered_export_manifest(
+def _require_sdist_exact_file(
     sdist: Path,
     *,
+    relative: str,
     expected_bytes: bytes,
+    label: str,
 ) -> dict[str, object]:
-    """Require the sdist's export manifest to be byte-identical to source."""
+    """Require one regular sdist member to equal its reviewed source bytes."""
 
     with tarfile.open(sdist, mode="r:gz") as archive:
         matches = [
             info
             for info in archive.getmembers()
-            if "/".join(PurePosixPath(info.name).parts[1:])
-            == ORDERED_EXPORT_CLASSIFICATION_PATH
+            if "/".join(PurePosixPath(info.name).parts[1:]) == relative
         ]
         if len(matches) != 1 or not matches[0].isfile():
-            raise DistributionValidationError(
-                "sdist must contain one regular ordered export classification manifest"
-            )
+            raise DistributionValidationError(f"sdist must contain one regular {label}")
         handle = archive.extractfile(matches[0])
         if handle is None:
-            raise DistributionValidationError(
-                "cannot read the sdist ordered export classification manifest"
-            )
+            raise DistributionValidationError(f"cannot read the sdist {label}")
         with handle:
             payload = handle.read(_MAX_CLASSIFICATION_BYTES + 1)
     if len(payload) > _MAX_CLASSIFICATION_BYTES or payload != expected_bytes:
-        raise DistributionValidationError(
-            "sdist ordered export classification manifest differs from source"
-        )
+        raise DistributionValidationError(f"sdist {label} differs from source")
     return {
-        "path": ORDERED_EXPORT_CLASSIFICATION_PATH,
-        "sha256": hashlib.sha256(payload).hexdigest(),
-        "size_bytes": len(payload),
-        "byte_identical_to_source": True,
-    }
-
-
-def _require_sdist_installed_import_manifest(
-    sdist: Path,
-    *,
-    expected_bytes: bytes,
-) -> dict[str, object]:
-    """Require the sdist to carry the exact installed-import inventory bytes."""
-
-    with tarfile.open(sdist, mode="r:gz") as archive:
-        matches = [
-            info
-            for info in archive.getmembers()
-            if "/".join(PurePosixPath(info.name).parts[1:])
-            == INSTALLED_IMPORT_CLASSIFICATION_PATH
-        ]
-        if len(matches) != 1 or not matches[0].isfile():
-            raise DistributionValidationError(
-                "sdist must contain one regular installed import classification "
-                "manifest"
-            )
-        handle = archive.extractfile(matches[0])
-        if handle is None:
-            raise DistributionValidationError(
-                "cannot read the sdist installed import classification manifest"
-            )
-        with handle:
-            payload = handle.read(_MAX_CLASSIFICATION_BYTES + 1)
-    if len(payload) > _MAX_CLASSIFICATION_BYTES or payload != expected_bytes:
-        raise DistributionValidationError(
-            "sdist installed import classification manifest differs from source"
-        )
-    return {
-        "path": INSTALLED_IMPORT_CLASSIFICATION_PATH,
+        "path": relative,
         "sha256": hashlib.sha256(payload).hexdigest(),
         "size_bytes": len(payload),
         "byte_identical_to_source": True,
@@ -2371,10 +2269,53 @@ import traceback
 module_name = sys.argv[1]
 expected_outcome = sys.argv[2]
 expected_initializer_exports = json.loads(sys.argv[3])
-blocked_optional_prefixes = tuple(json.loads(sys.argv[4]))
-denied_audit_events = tuple(json.loads(sys.argv[5]))
-explicit_import_roots = tuple(json.loads(sys.argv[6]))
-expected_member = sys.argv[7]
+worker_policy = json.loads(sys.argv[4])
+explicit_import_roots = tuple(json.loads(sys.argv[5]))
+expected_member = sys.argv[6]
+
+if not isinstance(worker_policy, dict) or set(worker_policy) != {
+    "base_dependencies",
+    "blocked_optional_prefixes",
+    "denied_audit_events",
+    "models_extra_missing_torch",
+    "schema_version",
+}:
+    raise RuntimeError("installed import probe received invalid policy fields")
+base_dependencies = worker_policy["base_dependencies"]
+raw_blocked_prefixes = worker_policy["blocked_optional_prefixes"]
+raw_denied_audit_events = worker_policy["denied_audit_events"]
+raw_missing_torch_modules = worker_policy["models_extra_missing_torch"]
+blocked_optional_prefixes = tuple(raw_blocked_prefixes)
+denied_audit_events = tuple(raw_denied_audit_events)
+missing_torch_modules = tuple(raw_missing_torch_modules)
+if (
+    not isinstance(worker_policy["schema_version"], str)
+    or not worker_policy["schema_version"]
+    or not isinstance(base_dependencies, list)
+    or not base_dependencies
+    or not isinstance(raw_blocked_prefixes, list)
+    or not raw_blocked_prefixes
+    or not isinstance(raw_denied_audit_events, list)
+    or not raw_denied_audit_events
+    or not isinstance(raw_missing_torch_modules, list)
+    or not raw_missing_torch_modules
+    or any(
+        not isinstance(item, dict)
+        or set(item) != {"distribution", "import_name", "requirement"}
+        or any(not isinstance(value, str) or not value for value in item.values())
+        for item in base_dependencies
+    )
+    or any(not isinstance(prefix, str) or not prefix for prefix in blocked_optional_prefixes)
+    or any(not isinstance(event, str) or not event for event in denied_audit_events)
+    or any(not isinstance(name, str) or not name for name in missing_torch_modules)
+    or (expected_outcome == "models_extra_missing_torch")
+    != (module_name in missing_torch_modules)
+):
+    raise RuntimeError("installed import probe received invalid policy values")
+declared_distribution_names = {
+    item["distribution"].casefold().replace("_", "-"): item["distribution"]
+    for item in base_dependencies
+}
 
 if sys.flags.isolated != 1 or sys.flags.no_site != 1:
     raise RuntimeError("installed import probe requires isolated no-site startup")
@@ -2430,7 +2371,7 @@ class UndeclaredImportBlocker(importlib.abc.MetaPathFinder):
         canonical = {
             name.casefold().replace("_", "-") for name in distributions
         }
-        if not canonical or not canonical.issubset({"numpy", "pyyaml", "scipy"}):
+        if not canonical or not canonical.issubset(declared_distribution_names):
             blocked_undeclared_import_attempts.append(fullname)
             raise ModuleNotFoundError(
                 f"blocked undeclared dependency: {fullname}",
@@ -2477,13 +2418,15 @@ if any(
     raise RuntimeError("installed import probe bootstrapped a third-party module")
 
 allowed_dependencies = {
-    "numpy": ("numpy", "numpy>=1.26"),
-    "pyyaml": ("yaml", "PyYAML>=6.0"),
-    "scipy": ("scipy", "scipy>=1.11"),
+    item["distribution"].casefold().replace("_", "-"): (
+        item["import_name"],
+        item["requirement"],
+    )
+    for item in base_dependencies
 }
 allowed_distribution_versions = {}
 allowed_distribution_files = {}
-for distribution_name in ("numpy", "PyYAML", "scipy"):
+for distribution_name in (item["distribution"] for item in base_dependencies):
     distribution = importlib.metadata.distribution(distribution_name)
     canonical_name = distribution_name.casefold().replace("_", "-")
     allowed_distribution_versions[canonical_name] = distribution.version
@@ -2728,9 +2671,7 @@ for canonical_distribution in sorted(loaded_allowed_distributions):
         raise RuntimeError(
             f"declared dependency {import_name!r} is not an exact distribution file"
         )
-    distribution_name = (
-        "PyYAML" if canonical_distribution == "pyyaml" else canonical_distribution
-    )
+    distribution_name = declared_distribution_names[canonical_distribution]
     third_party_distributions[import_name] = {
         "distribution": distribution_name,
         "origin": str(import_origin),
@@ -3338,8 +3279,7 @@ def _probe_installed_import_outcomes(
                     module,
                     expected_outcome,
                     json.dumps(expected_exports),
-                    json.dumps(blocked_prefixes),
-                    json.dumps(INSTALLED_IMPORT_DENIED_AUDIT_EVENTS),
+                    _INSTALLED_IMPORT_WORKER_POLICY,
                     json.dumps(explicit_import_roots),
                     expected_member_by_module[module],
                 ),
@@ -4470,17 +4410,27 @@ def validate_distribution(
         )
         ordered_export_manifest_bytes = ordered_export_classification["manifest_bytes"]
         assert isinstance(ordered_export_manifest_bytes, bytes)
-        sdist_ordered_export_manifest = _require_sdist_ordered_export_manifest(
+        sdist_ordered_export_manifest = _require_sdist_exact_file(
             sdist,
+            relative=ORDERED_EXPORT_CLASSIFICATION_PATH,
             expected_bytes=ordered_export_manifest_bytes,
+            label="ordered export classification manifest",
         )
         installed_import_manifest_bytes = installed_import_classification[
             "manifest_bytes"
         ]
         assert isinstance(installed_import_manifest_bytes, bytes)
-        sdist_installed_import_manifest = _require_sdist_installed_import_manifest(
+        sdist_installed_import_manifest = _require_sdist_exact_file(
             sdist,
+            relative=INSTALLED_IMPORT_CLASSIFICATION_PATH,
             expected_bytes=installed_import_manifest_bytes,
+            label="installed import classification manifest",
+        )
+        _require_sdist_exact_file(
+            sdist,
+            relative="distribution/_installed_import_policy.py",
+            expected_bytes=_POLICY_BYTES,
+            label="installed import policy",
         )
         sdist_separation = _require_zero_repository_experiment_members(
             _classify_repository_experiment_sdist_members(sdist),

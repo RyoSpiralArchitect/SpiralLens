@@ -1051,15 +1051,28 @@ Future package data, extension modules, namespace/generated modules, or
 bytecode-only distribution support requires a reviewed versioned
 classification/schema successor.
 
-The current diagnostic is accepted as a proportionate fail-closed ratchet
-because it changes no `src/spirallens` runtime, export, base dependency,
-persistence/science artifact, or authority record. Before a versioned
-installed-import successor adds another host-specific exception, dependency
-environment, import mode, or artifact kind, centralize the repeated
-manifest/setup/validator/embedded-worker metadata policy in one private
-reviewed boundary while retaining independent fail-closed validation and
-adversaries. Repeating those policy copies instead would violate the
-anti-bloat intent of the library lane.
+The current diagnostic remains a proportionate fail-closed ratchet. Its
+anti-bloat successor trigger is now satisfied by the private,
+repository/build-only `distribution/_installed_import_policy.py` seam. The
+seam is standard-library-only and performs no I/O or parsing; it owns only
+immutable installed-import metadata and the deterministic canonical JSON
+projection passed from the validator parent to isolated workers. Workers do
+not import it and independently reject projection shape, type, empty-value,
+and expected-outcome drift. Setup and validator retain independent manifest
+and `pyproject.toml` parsers, validation, error boundaries, and adversaries.
+The validator also uses one generic exact-file reader for the reviewed sdist
+members. The sdist must contain exactly one regular byte-identical policy file,
+while wheels must contain none.
+
+Against baseline `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, physical
+production lines across `setup.py`, `scripts/validate_distribution.py`, the
+policy file, and `MANIFEST.in` change from 6,130 to 6,098 (`-32`). The four
+exact duplicated policy-literal blocks change from 66 physical occurrences,
+including 33 redundant lines, to zero setup/validator duplicate excess
+(`33 -> 0`, 100 percent). This is maintenance of a private build boundary, not
+a library milestone: no installed-import schema or outcome, diagnostic report
+semantics, `src/spirallens` runtime, export, dependency, API, portability,
+library or `LIB-L0` status, scientific claim, or authority record changes.
 
 The next bounded consolidation, measured against baseline commit
 `be274333e77d7518cb21ddb6afda3d62222e4b6c`, shares one standard-library-only
