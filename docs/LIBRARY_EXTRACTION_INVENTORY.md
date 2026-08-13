@@ -105,6 +105,33 @@ The sdist carries a byte-identical copy of the manifest, whose SHA-256 is
 Fresh-install inspection parses distribution-owned initializer bytes without
 importing a `spirallens` module.
 
+The unreleased `0.2.0` candidate received a separate full-distribution observation from clean main
+`58ce3e19521934fc3b0c20b1fb35fefca28afcf6`, tree
+`fbbcfaeb1901aee949a8255ba9bb3d256ab5558a`, with empty pre/post status. The command
+`python3 scripts/validate_distribution.py --source-root .`, using validator SHA-256
+`b928c365253115a6c433a8762f12c40cb105cb9d77a5bbf29fb9547f6d601b48`, emitted 759,149 bytes at
+`b8fff56976a404357905fd1b024f8867c74de26e47b3f1b85ef14185af5352ab`; schema v0.9 reported `pass`.
+Host: CPython 3.13.13 / macOS 26.2 arm64; `pip/build/setuptools/packaging/numpy/scipy/PyYAML`
+`26.1.1/1.5.1/81.0.0/26.0/2.4.4/1.17.1/6.0.3`. Host `wheel` was absent; isolated backend versions were unrecorded.
+
+- sdist: `spirallens-0.2.0.tar.gz`, 969,693 bytes, `4648993d607d9daeeddea91b743c2e07f4cd23f4fa83bd255a75ce537632e11a`;
+- direct wheel: 959,887 bytes, `b38f5dbba968fa8d9dc4e2ba7e9a83f0d4dc03d0b081a5e1176da77d06024c73`;
+- sdist-derived wheel: 959,887 bytes, `66b97f8e0f4c7d5c6c2ff9fc6938fe851101ac840928200183dfeefe6b3503f4`.
+
+The report observed 181 source modules and exact 159-member parity through the sdist, both wheels,
+and both fresh non-editable installs; 24 initializers / 559 exports; an absent top-level sdist `tests` path; initializer digest
+`6f4556d990e93b4b82b857a872c25f7efd0b40a9e2131ee818832946137a7efa`; and equal outcome digest
+`8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7` on both installs.
+Separately, main run `31719129800` passed the selected direct-wheel six tests on CPython
+3.11.16 / 3.12.14 / 3.13.15; wheel hashes were
+`f369816d8af8c2e3abbe0117758be0255f79573f8d1ca45765c2c72ee287db95` /
+`19a2505a064a05f8a696b554628b2979feb9376f48e9b34bf8021d74a33d641c` /
+`eb2776438cf52f8a38daf98a692a3f1d8bb724d3aa58c2597c2649da0b8960c4`.
+These are nondurable environment-specific observations, not reproducible or published identities;
+build isolation was not hash-locked and base dependencies were host-projected. No tag, index install,
+release, support, full compatibility, portability, core promotion, D7 readiness, science, or authority is
+established; these later docs are outside the tested checkout.
+
 The installed-import manifest adds a distinct dynamic observation without
 changing those physical or static roles. For both the direct-source and
 sdist-derived wheels, the v0.9 diagnostic imports each of the exact 159 modules

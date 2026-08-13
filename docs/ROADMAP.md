@@ -1303,6 +1303,18 @@ successor re-anchor is created. Release still requires equal owners, a new
 final-byte matrix, and a published-install receipt. This review changes no
 release or claim state.
 
+At clean main `58ce3e19521934fc3b0c20b1fb35fefca28afcf6`, equal owners and
+main run `31719129800` closed the selected direct-wheel matrix; validator v0.9
+separately passed the sdist, direct wheel, sdist-derived wheel, and both fresh
+install routes. These nondurable candidate observations are not a release or
+support grant: build isolation was not hash-locked and no public-index install
+was tested. Publication stays HOLD pending an explicit human release decision,
+a reviewed protected/pinned publish mechanism, an exact-final-commit rerun
+after any distributed-input change, immutable tag/artifact provenance, and a
+neutral published-index install receipt. No tag, upload, release, support
+activation, core promotion, D7 successor, science, authority, or VOY state is
+created; these later docs are outside the observed checkout.
+
 The last declaration-only candidate, at clean baseline
 `65a567659200ac41c5a15329af1074239b525ac5`, covered exactly
 `spirallens.gauge:{orthonormal_frame,principal_angles,procrustes_connection,track_subspaces}`
