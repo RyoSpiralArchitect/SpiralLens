@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from importlib import import_module
+
 from .engineering_protocol import (
     EngineeringConsumerAuthorizationError,
     LoadedPublicExamplePlumbingProtocol,
@@ -13,17 +15,6 @@ from .engineering_protocol import (
 from .engineering_receipt import (
     PublicExamplePlumbingReceiptError,
     load_public_example_plumbing_receipt,
-)
-from .engineering_run import (
-    PublicExamplePlumbingRunError,
-    run_public_example_plumbing,
-)
-from .id_sweep import (
-    ATLAS_CONTEXT_BINDING_SCHEMA_VERSION,
-    ContextBankBinding,
-    SweepConfig,
-    run_id_sweep,
-    select_token_ids,
 )
 from .store import (
     ATLAS_SCHEMA_VERSION,
@@ -55,3 +46,33 @@ __all__ = [
     "select_token_ids",
     "validate_engineering_request_binding",
 ]
+
+_LAZY_EXPORTS = {
+    "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION": (
+        ".id_sweep",
+        "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION",
+    ),
+    "ContextBankBinding": (".id_sweep", "ContextBankBinding"),
+    "PublicExamplePlumbingRunError": (
+        ".engineering_run",
+        "PublicExamplePlumbingRunError",
+    ),
+    "SweepConfig": (".id_sweep", "SweepConfig"),
+    "run_id_sweep": (".id_sweep", "run_id_sweep"),
+    "run_public_example_plumbing": (".engineering_run", "run_public_example_plumbing"),
+    "select_token_ids": (".id_sweep", "select_token_ids"),
+}
+
+
+def __getattr__(name: str) -> object:
+    try:
+        module_name, attribute_name = _LAZY_EXPORTS[name]
+    except KeyError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    value = getattr(import_module(module_name, __name__), attribute_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

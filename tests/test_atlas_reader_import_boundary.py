@@ -273,33 +273,124 @@ def test_atlas_reader_public_surface_signatures_and_symbol_identities() -> None:
     } == EXPECTED_SYMBOL_MODULES
 
 
-def test_current_atlas_root_import_eagerly_loads_capture_runtime() -> None:
-    """Record the pre-split import graph; PR69's implementation will invert it."""
+def test_atlas_reader_imports_are_capture_runtime_free_and_lazy_exports_hold() -> None:
+    """Prove the reader closure under an adversarial import blocker."""
 
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = f"""
+import importlib
+import importlib.abc
 import json
 import sys
+
 sys.path.insert(0, {str(source_root)!r})
-import spirallens.atlas as atlas
-forbidden = ["huggingface_hub", "safetensors", "torch", "transformers"]
-capture_modules = [
+
+forbidden = (
+    "torch",
+    "transformers",
+    "huggingface_hub",
+    "safetensors",
     "spirallens.adapters",
-    "spirallens.adapters.pythia",
+    "spirallens.atlas.id_sweep",
+    "spirallens.atlas.engineering_run",
+    "spirallens.atlas._capture_store",
+)
+capture_modules = (
+    "spirallens.atlas._capture_store",
     "spirallens.atlas.engineering_run",
     "spirallens.atlas.id_sweep",
+)
+expected_exports = {EXPECTED_ATLAS_EXPORTS!r}
+
+
+def matches(name, prefix):
+    return name == prefix or name.startswith(prefix + ".")
+
+
+class Blocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(matches(fullname, prefix) for prefix in forbidden):
+            raise ModuleNotFoundError(f"blocked capture dependency: {{fullname}}")
+        return None
+
+
+blocker = Blocker()
+sys.meta_path.insert(0, blocker)
+import spirallens.atlas as atlas
+store = importlib.import_module("spirallens.atlas.store")
+receipt = importlib.import_module("spirallens.atlas.engineering_receipt")
+
+blocked_loaded = sorted(
+    prefix
+    for prefix in forbidden
+    if any(matches(name, prefix) for name in sys.modules)
+)
+capture_before = sorted(name for name in capture_modules if name in sys.modules)
+ordered_exports = list(atlas.__all__)
+dir_has_all_exports = set(expected_exports).issubset(dir(atlas))
+reader_symbol_modules = [
+    atlas.load_manifest.__module__,
+    atlas.load_manifest_metadata.__module__,
 ]
+reader_identities = (
+    atlas.load_manifest is store.load_manifest
+    and atlas.load_manifest_metadata is store.load_manifest_metadata
+    and atlas.AtlasIntegrityError is store.AtlasIntegrityError
+    and atlas.AtlasStateError is store.AtlasStateError
+    and atlas.load_public_example_plumbing_receipt
+    is receipt.load_public_example_plumbing_receipt
+)
+
+sys.meta_path.remove(blocker)
+context_binding = atlas.ContextBankBinding
+id_sweep = importlib.import_module("spirallens.atlas.id_sweep")
+capture_after_id_sweep = sorted(
+    name for name in capture_modules if name in sys.modules
+)
+run_public_example_plumbing = atlas.run_public_example_plumbing
+engineering_run = importlib.import_module("spirallens.atlas.engineering_run")
+capture_after_engineering_run = sorted(
+    name for name in capture_modules if name in sys.modules
+)
+
+star_namespace = {{}}
+exec("from spirallens.atlas import *", star_namespace)
+from_star_identity = all(
+    star_namespace[name] is getattr(atlas, name) for name in expected_exports
+)
+lazy_values_cached = all(
+    name in atlas.__dict__
+    for name in (
+        "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION",
+        "ContextBankBinding",
+        "PublicExamplePlumbingRunError",
+        "SweepConfig",
+        "run_id_sweep",
+        "run_public_example_plumbing",
+        "select_token_ids",
+    )
+)
+
 print(json.dumps({{
-    "capture_modules": sorted(name for name in capture_modules if name in sys.modules),
-    "forbidden_top_levels": sorted(name for name in forbidden if name in sys.modules),
-    "reader_symbol_modules": [
-        atlas.load_manifest.__module__,
-        atlas.load_manifest_metadata.__module__,
-    ],
+    "blocked_modules_loaded": blocked_loaded,
+    "capture_after_engineering_run": capture_after_engineering_run,
+    "capture_after_id_sweep": capture_after_id_sweep,
+    "capture_before": capture_before,
+    "dir_has_all_exports": dir_has_all_exports,
+    "from_star_identity": from_star_identity,
+    "lazy_symbol_identities": (
+        context_binding is id_sweep.ContextBankBinding
+        and run_public_example_plumbing
+        is engineering_run.run_public_example_plumbing
+    ),
+    "lazy_values_cached": lazy_values_cached,
+    "ordered_exports": ordered_exports,
+    "reader_identities": reader_identities,
+    "reader_symbol_modules": reader_symbol_modules,
 }}, sort_keys=True))
 """
     completed = subprocess.run(
-        [sys.executable, "-c", probe],
+        [sys.executable, "-P", "-c", probe],
         cwd=source_root.parent,
         check=False,
         capture_output=True,
@@ -308,13 +399,23 @@ print(json.dumps({{
 
     assert completed.returncode == 0, completed.stderr
     assert json.loads(completed.stdout) == {
-        "capture_modules": [
-            "spirallens.adapters",
-            "spirallens.adapters.pythia",
+        "blocked_modules_loaded": [],
+        "capture_after_engineering_run": [
+            "spirallens.atlas._capture_store",
             "spirallens.atlas.engineering_run",
             "spirallens.atlas.id_sweep",
         ],
-        "forbidden_top_levels": ["torch"],
+        "capture_after_id_sweep": [
+            "spirallens.atlas._capture_store",
+            "spirallens.atlas.id_sweep",
+        ],
+        "capture_before": [],
+        "dir_has_all_exports": True,
+        "from_star_identity": True,
+        "lazy_symbol_identities": True,
+        "lazy_values_cached": True,
+        "ordered_exports": EXPECTED_ATLAS_EXPORTS,
+        "reader_identities": True,
         "reader_symbol_modules": [
             "spirallens.atlas.store",
             "spirallens.atlas.store",

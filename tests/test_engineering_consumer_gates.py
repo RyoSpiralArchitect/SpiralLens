@@ -24,6 +24,16 @@ class _GateRejected(PermissionError):
     pass
 
 
+_ATLAS_ARRAY_NAMES = (
+    "token_ids",
+    "resid_pre",
+    "resid_post",
+    "norm_summary",
+    "logit_summary",
+    "prediction_ids",
+)
+
+
 def _minimal_manifest_structure(
     request: dict[str, object],
 ) -> dict[str, object]:
@@ -51,11 +61,7 @@ def _minimal_manifest_structure(
     return {
         "schema_version": atlas_store.ATLAS_SCHEMA_VERSION,
         "status": "complete",
-        "arrays": atlas_store._array_specs(
-            num_tokens=1,
-            num_layers=1,
-            hidden_size=1,
-        ),
+        "arrays": {name: {} for name in _ATLAS_ARRAY_NAMES},
         "progress": {
             "completed_rows": 1,
             "total_rows": 1,
@@ -265,9 +271,7 @@ def test_cli_neighbor_audit_rejects_before_array_load(
 
     repository = Path(__file__).resolve().parents[1]
     protocol = (
-        repository
-        / "protocols"
-        / "pythia70_slot_only_001_layer0_neighbor_v0_4.yaml"
+        repository / "protocols" / "pythia70_slot_only_001_layer0_neighbor_v0_4.yaml"
     )
     arguments: argparse.Namespace = cli.build_parser().parse_args(
         [
