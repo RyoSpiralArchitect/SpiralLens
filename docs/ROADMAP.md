@@ -1245,14 +1245,49 @@ current-source README is 116,777 bytes at SHA-256
 dedicated 90-line, 3,943-byte test has SHA-256
 `36d86cf8f3bdd3567cd92fe430d6a39eca3c24974da49810773f20f46dc4d457`.
 The focused pair collected and passed seven tests without model, network, or
-private data. The example and adopted policy grant no promotion; HOLD remains
-pending the intended clean-wheel support matrix and a separate reviewed decision.
+private data. The example and adopted policy grant no promotion. The intended
+clean-wheel matrix has since passed for the exact recorded tuples; HOLD remains
+pending only a separate explicit promotion review.
 
 This test-and-documentation preflight changes no production source, API, export,
 dependency, schema, artifact, receipt, D7 re-anchor, `LIB-L0`, scientific,
 authority, or VOY state. It proves no cross-version or cross-host portability,
 installed-distribution behavior, resource boundedness, safety, purity,
 exhaustive failure surface, or custom-`Mapping` callback behavior.
+
+The clean-wheel follow-up merged at main
+`2ae687a13f9c0cefe5a07d3cbd1e7e3f6c26853d`; GitHub Actions push run
+`31708106596` passed direct non-editable wheel jobs at these exact coordinates:
+
+- CPython 3.11.16, `ubuntu24/20260720.247.2`, kernel `6.17.0-1020-azure`, wheel SHA-256 `5e35b54379d4c2fef7cbdaf769ea1da4eefc0d3c0096f9be96e1c97522832c72`;
+- CPython 3.12.14, `ubuntu24/20260810.271.1`, kernel `6.17.0-1022-azure`, wheel SHA-256 `ee8d71c4076e9dc341868128d96fd68cabe0c75706cd0daaf6d2451335a57303`;
+- CPython 3.13.15, `ubuntu24/20260810.271.1`, kernel `6.17.0-1022-azure`, wheel SHA-256 `9b2b40768fdd64bc9d66935464e6d337bdc5442c628ca658148e7ad34c78021d`.
+
+All ran on Ubuntu 24.04.4 x86_64 with glibc 2.39 and the exact locked 13-package tuple
+`build==1.5.0`, `iniconfig==2.3.0`, `numpy==2.4.6`, `packaging==26.3`,
+`pip==26.2.1`, `pluggy==1.6.0`, `pygments==2.20.0`,
+`pyproject-hooks==1.2.0`, `pytest==9.1.1`, `pyyaml==6.0.3`,
+`scipy==1.17.1`, `setuptools==84.0.0`, and `wheel==0.48.0`. Before the
+frozen compatibility file was imported, the separate probe established the
+exact three installed module origins, ordered exact-seven identities, absence
+of its eight listed forbidden modules from `sys.modules`, and no workspace
+entry in `sys.path` or literal workspace path in `.pth` files; the frozen test at SHA-256
+`30d5088bfaf76639208c56b0201589b99a28c7656f382d431ddfb9c8f307ec1f`
+then passed 6 / 6 in every job. The workflow is 139 lines / 5,921 bytes at
+SHA-256 `3239f43eefa6f391ae8360027b54a519ca1a516e255418157c60287dd192c0b2`;
+the probe is 141 / 5,257 at `1802abb986897723a35fab6564086740f9f086f7eec448893658f9a6ae87c68c`;
+the lock is 36 / 1,997 at `e95cd686c67e2d5dbb37aa95bac5ea3245a28cffd479957fc26931a9523f42d7`.
+
+This clears the clean-wheel prerequisite only for those observed tuples. Core
+remains on HOLD solely for explicit promotion review; zero exact-root
+production consumers remains an adoption fact, not a separate formal blocker.
+Hosted logs are non-durable observations, not artifacts or support, stability,
+or promotion receipts. They establish no other OS, architecture, Python patch,
+runner image, dependency tuple, sdist parity, reproducible wheel-byte identity,
+typing, exhaustive behavior, resource, safety, purity, whole-package
+portability, `LIB-L0`, science, authority, or VOY change. These later
+documentation bytes were not in the tested checkout and are not attested by
+the run or its wheel metadata.
 
 The last declaration-only candidate, at clean baseline
 `65a567659200ac41c5a15329af1074239b525ac5`, covered exactly
