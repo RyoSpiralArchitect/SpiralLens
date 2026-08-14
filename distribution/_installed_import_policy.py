@@ -31,7 +31,6 @@ OUTCOMES = ("base_import_success", "models_extra_missing_torch")
 MISSING_TORCH = (
     "spirallens.adapters",
     "spirallens.adapters.pythia",
-    "spirallens.atlas._capture_store",
     "spirallens.atlas.engineering_run",
     "spirallens.atlas.id_sweep",
 )

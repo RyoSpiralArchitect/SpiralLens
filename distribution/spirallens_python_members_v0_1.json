@@ -35,6 +35,7 @@
     ],
     "shipped_runtime": [
       "spirallens/_held_file.py",
+      "spirallens/_model_observer.py",
       "spirallens/_repository_context.py",
       "spirallens/access/contracts.py",
       "spirallens/access/descriptor.py",

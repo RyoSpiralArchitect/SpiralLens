@@ -107,7 +107,7 @@ def _write_build_paths(root: Path, paths: set[str] | frozenset[str]) -> None:
             path.write_text("# classified built member\n", encoding="utf-8")
 
 
-def test_setup_accepts_exact_full_181_source_partition(
+def test_setup_accepts_exact_full_182_source_partition(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -116,9 +116,13 @@ def test_setup_accepts_exact_full_181_source_partition(
     _write_paths(tmp_path, setup_module._ALL_PYTHON_PATHS)
 
     setup_module._require_classified_source_state()
-    assert len(setup_module._SHIPPED_PYTHON_PATHS) == 132
+    assert len(setup_module._SHIPPED_PYTHON_PATHS) == 133
     assert len(setup_module._REPOSITORY_ONLY_PYTHON_PATHS) == 49
-    assert len(setup_module._ALL_PYTHON_PATHS) == 181
+    assert len(setup_module._ALL_PYTHON_PATHS) == 182
+    assert "spirallens/_model_observer.py" in setup_module._SHIPPED_PYTHON_PATHS
+    assert "spirallens/_model_observer.py" not in (
+        setup_module._REPOSITORY_ONLY_PYTHON_PATHS
+    )
     confirmation_members = {
         member
         for member in setup_module._ALL_PYTHON_PATHS
@@ -136,7 +140,7 @@ def test_setup_accepts_exact_full_181_source_partition(
     assert "spirallens/qualification/__init__.py" in setup_module._SHIPPED_PYTHON_PATHS
 
 
-def test_setup_accepts_exact_132_pkg_info_no_git_sdist_source(
+def test_setup_accepts_exact_133_pkg_info_no_git_sdist_source(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -275,7 +279,7 @@ def _minimal_pyproject(dependencies: list[str]) -> str:
     return '[project]\nname = "spirallens"\ndependencies = ' + json.dumps(dependencies)
 
 
-def test_setup_installed_import_manifest_closes_exact_132_and_23_plus_1_projection(
+def test_setup_installed_import_manifest_closes_exact_133_and_23_plus_1_projection(
     setup_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -286,9 +290,12 @@ def test_setup_installed_import_manifest_closes_exact_132_and_23_plus_1_projecti
 
     success = outcomes["base_import_success"]
     missing_torch = outcomes["models_extra_missing_torch"]
-    assert len(success) == 127
+    assert len(success) == 129
     assert missing_torch == setup_module._POLICY["MISSING_TORCH"]
-    assert len(set(success) | set(missing_torch)) == 132
+    assert len(set(success) | set(missing_torch)) == 133
+    assert "spirallens._model_observer" in success
+    assert "spirallens.atlas._capture_store" in success
+    assert "spirallens.atlas._capture_store" not in missing_torch
     newly_repository_only_confirmation_modules = {
         setup_module._module_for_python_member(member)
         for member in setup_module._ALL_PYTHON_PATHS
@@ -322,6 +329,7 @@ def test_setup_installed_import_manifest_closes_exact_132_and_23_plus_1_projecti
         "invalid_module",
         "overlap",
         "missing_module",
+        "stale_capture_store_negative",
         "wrong_negative",
     ],
 )
@@ -365,7 +373,15 @@ def test_setup_installed_import_manifest_rejects_schema_and_topology_drift(
         )
         original["outcomes"]["base_import_success"].sort()
     elif mutation == "missing_module":
-        original["outcomes"]["base_import_success"].pop()
+        original["outcomes"]["base_import_success"].remove("spirallens._model_observer")
+    elif mutation == "stale_capture_store_negative":
+        original["outcomes"]["base_import_success"].remove(
+            "spirallens.atlas._capture_store"
+        )
+        original["outcomes"]["models_extra_missing_torch"].append(
+            "spirallens.atlas._capture_store"
+        )
+        original["outcomes"]["models_extra_missing_torch"].sort()
     elif mutation == "wrong_negative":
         original["outcomes"]["models_extra_missing_torch"][-1] = (
             "spirallens.synthetic.generators"
@@ -444,7 +460,7 @@ def test_setup_pyproject_dependency_gate_accepts_reordering(
 
     outcomes = setup_module._load_installed_import_classification()
 
-    assert len(outcomes["base_import_success"]) == 127
+    assert len(outcomes["base_import_success"]) == 129
 
 
 @pytest.mark.parametrize(
@@ -796,7 +812,7 @@ def test_library_build_py_filters_repository_only_and_retains_exact_shipped(
 
     observed = command.find_package_modules("spirallens", "src/spirallens")
     observed_modules = {f"{package}.{name}" for package, name, _path in observed}
-    assert len(observed) == 132
+    assert len(observed) == 133
     assert observed_modules.isdisjoint(setup_module._REPOSITORY_ONLY_MODULES)
     assert "spirallens.qualification.confirmation_attempt_records" not in (
         observed_modules
@@ -827,6 +843,25 @@ def test_prebuild_rejects_stale_missing_or_unclassified_tree(
     path.write_text("stale", encoding="utf-8")
 
     with pytest.raises(SetupError, match="exact classified shipped Python tree"):
+        setup_module._require_built_package_state(
+            root,
+            allow_absent_or_empty=True,
+            label="pre-build package tree",
+        )
+
+
+def test_prebuild_rejects_old_complete_tree_missing_model_observer(
+    setup_module: ModuleType,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "build/lib"
+    _write_build_paths(root, setup_module._SHIPPED_PYTHON_PATHS)
+    (root / "spirallens/_model_observer.py").unlink()
+
+    with pytest.raises(
+        SetupError,
+        match=r"exact classified shipped Python tree.*_model_observer\.py",
+    ):
         setup_module._require_built_package_state(
             root,
             allow_absent_or_empty=True,

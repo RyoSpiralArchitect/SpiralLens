@@ -17,17 +17,13 @@ import torch
 from torch import Tensor, nn
 
 from spirallens import __version__ as SPIRALLENS_VERSION
+from spirallens._model_observer import (
+    LOGIT_SUMMARY_COLUMNS as _LOGIT_SUMMARY_COLUMNS,
+)
 
 
 CAPTURE_IMPLEMENTATION_VERSION = "spirallens.pythia.residual_hooks.v2"
-LOGIT_SUMMARY_COLUMNS: tuple[str, ...] = (
-    "max_logit",
-    "mean_logit",
-    "std_logit",
-    "logsumexp_logit",
-    "entropy_nats",
-    "input_token_logit",
-)
+LOGIT_SUMMARY_COLUMNS = _LOGIT_SUMMARY_COLUMNS
 
 
 class PythiaAdapterError(RuntimeError):

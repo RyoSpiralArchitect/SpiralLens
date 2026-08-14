@@ -29,10 +29,10 @@ and cannot change experiment status or authority.
   call signatures, and persistence behavior are not public contracts.
 
 Physical distribution membership is a separate axis from these API labels.
-`distribution/spirallens_python_members_v0_1.json` closes the current 181
-`src/**/*.py` module paths into 132 wheel-present modules and 49
-repository-only modules. The 132 comprise 24 package initializers, two
-console-entrypoint runtime modules, and 106 other shipped runtime modules; the
+`distribution/spirallens_python_members_v0_1.json` closes the current 182
+`src/**/*.py` module paths into 133 wheel-present modules and 49
+repository-only modules. The 133 comprise 24 package initializers, two
+console-entrypoint runtime modules, and 107 other shipped runtime modules; the
 v0.9 distribution diagnostic verifies the same exact set in the source tree,
 sdist, both wheel routes, and both fresh non-editable installations. This
 establishes `closed_wheel_python_module_inventory_established=true`.
@@ -51,7 +51,7 @@ API.
 A third manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, classifies the expected import
-outcome of all 132 installed modules. The v0.9 diagnostic exercises the
+outcome of all 133 installed modules. The v0.9 diagnostic exercises the
 direct-source and sdist-derived non-editable wheels separately. It is a
 single-current-host observation, not a portability matrix. Every module
 receives its own fresh `-I -S -B` process, neutral working directory, empty
@@ -64,9 +64,11 @@ outside those three declared bases. The repository-only validator parent uses
 children do not import it. No base runtime dependency changes, and the full
 installed `Requires-Dist` contract remains the exact 13 records: three base
 plus ten optional-extra requirements. The two routes have equal normalized
-startup receipts. Each wheel route yields 127 successful imports and five
+startup receipts. Each wheel route yields 129 successful imports and four
 model-extra failures solely at exact
-`ModuleNotFoundError.name == "torch"`. Among the 24 package initializers, 23
+`ModuleNotFoundError.name == "torch"`: `spirallens.adapters`,
+`spirallens.adapters.pythia`, `spirallens.atlas.id_sweep`, and
+`spirallens.atlas.engineering_run`. Among the 24 package initializers, 23
 successful imports reproduce exact runtime list-valued `__all__` declarations
 containing 554 entries. `spirallens.adapters` cannot be imported at the blocked
 Torch boundary, so its five declared entries remain runtime-unavailable. The
@@ -162,6 +164,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 | --- | --- | --- |
 | `spirallens.__version__` | prospectively designated supported pre-1.0 coordinate | no policy-bearing release has occurred; repository `0.2.0` candidate metadata activates no protection, historical `0.1.0` compatibility is unattested, and its exact string equals the source/build and installed-distribution version owners |
 | `spirallens._repository_context` | internal | non-authorizing marker for a caller-supplied absolute root plus a narrow same-file import-origin comparison; no public export, root discovery, Git, claim, chronology, or publication semantics |
+| `spirallens._model_observer` | internal | private `BatchObservationProtocol` declared/import seam used by the Atlas capture store; the reference Pythia output satisfies it structurally, without runtime registration or a change to the Tensor-backed `BatchObservation` identity, artifact schema, or residual-hooks v2 capture contract |
 | `spirallens.core.canonical` | stable candidate (promotion HOLD) | the coherent future promotion candidate is the current exact seven-name `spirallens.core` surface: four functions, `CanonicalJsonError`, `JsonScalar`, and `JsonValue`; shared-codec use is established at defining and legacy leaf paths, but exact root-coordinate production consumers remain zero and the compatibility preflight grants no support or stability |
 | `spirallens.access` | provisional | typed access, value lineage, pre-observation descriptor, and execution-lifecycle contracts |
 | `spirallens.referents` | provisional | canonical F0-F4 pointwise definitions and model-free same-object numeric relations; no substrate field |
@@ -171,7 +174,7 @@ library or `LIB-L0` status, scientific claim, or authority record.
 | `spirallens.qualification` | provisional | the installed namespace retains exactly 19 model-free D0-D6 modules and all 115 ordered root exports: frozen D0-D5 protocol and terminal chronology, read-only historical terminal binding, plus a scope-limited D6 decision. The 47 deep-internal `confirmation_*` D7 implementation modules remain at their reviewed repository source paths but are absent from sdist and wheels. They include C1/C2, replay-target/attempt-envelope specifications, D7 record/evidence/result joins, launch/persistence/runner mechanics, the corrected `D7-OPS-21` chain, one repository-local `D7-OPS-22` Level-0 transaction/freeze receipt, one operationally complete/scientifically insufficient but chronology-deviated item-23 result, one all-false descriptor/intent, and a canonical v0.1 disposition; every official v0.1 execution entry is blocked, none is a public export or caller-configurable supplier surface, and no official start/run, trusted pin root, independent confirmation, or D7/D8 authority exists |
 | future subject APIs | provisional | no subject execution surface is stabilized or authorized by this table |
 | `spirallens.atlas` | provisional/model extra | manifest-reader imports retain NumPy/PyYAML but load no model framework, adapter, or capture runtime; capture and runner symbols are lazy while the ordered public `__all__`, symbol identities, reader signatures/defining modules, exception identities, and failure behavior remain compatible; the repository-bound public-example runner still requires an explicit `repository_root`, never infers a checkout from its installed module path, and rejects a root that does not physically match its imported runner and adapter files; this reader boundary does not make the whole namespace framework-neutral |
-| `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas |
+| `spirallens.adapters`, `factors`, `interventions` | provisional/model extra | no framework types may define core artifact schemas; the private seam is not a NumPy-owned or value-neutral observation contract and does not make these namespaces base-importable |
 | CLI handlers, workers, frozen one-experiment runners, private context markers | internal | CLI is a thin adapter, never the Python API |
 
 The post-matrix gate qualifies 5 / 7 exact names; `JsonScalar` and `JsonValue`

@@ -557,6 +557,7 @@ def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, objec
         request=request,
         fingerprint_payload=fingerprint_payload,
         capture_metadata=capture_metadata,
+        torch_version=lambda: torch.__version__,
         resume=config.resume,
         batch_size=config.batch_size,
     )

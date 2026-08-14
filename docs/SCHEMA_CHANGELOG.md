@@ -4,6 +4,30 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Private model-observer import seam
+
+- Added private `spirallens._model_observer` as one shipped runtime module.
+  The current source partition is 182 = 133 wheel-present + 49 repository-only
+  modules; roles are 24 initializers / 2 console runtimes / 107 other shipped
+  runtimes / 49 repository-only modules.
+- `spirallens.atlas._capture_store` now consumes the private
+  `BatchObservationProtocol` without importing Torch or
+  `spirallens.adapters`. A deferred callback supplies the Torch version at its
+  prior environment-construction point. Offline conformance carries a
+  reference `PythiaAdapter` observation through the store boundary by
+  structural satisfaction, not runtime registration. `BatchObservation`
+  remains the same frozen CPU-Tensor dataclass; artifact schemas and
+  residual-hooks v2 capture identity are unchanged.
+- The installed projection is 129 base-import successes plus four exact
+  blocked-Torch modules: `spirallens.adapters`,
+  `spirallens.adapters.pythia`, `spirallens.atlas.id_sweep`, and
+  `spirallens.atlas.engineering_run`. Static 24 / 559 and successful-runtime
+  23 / 554 ordered declarations remain unchanged.
+- This private import boundary establishes no value-neutral or NumPy-owned
+  observation record, public protocol, security, portability, support, D7
+  readiness/re-anchor, authority, VOY state, or `LIB-L0` completion. Historical
+  receipts retain their original coordinates.
+
 ## 2026-08-14 — D7 confirmation distribution-boundary expansion
 
 - The physical-placement manifest keeps schema
@@ -11,13 +35,13 @@ promote a claim.
   formerly shipped non-v1 `spirallens/qualification/confirmation_*.py` members
   as `repository_only`. No role or manifest field is added. Together with the 20
   already repository-only `confirmation_v1_*` members and two private
-  Pythia-160M access kernels, the current source partition is exactly 181 = 132
+  Pythia-160M access kernels, that source partition was exactly 181 = 132
   wheel-present + 49 repository-only modules. The four role counts are 24
   package initializers, two console-entrypoint runtimes, 106 other shipped
   runtimes, and 49 repository-only modules.
-- The installed-import manifest keeps schema
-  `spirallens.installed-import-conformance.v0.1` and now classifies the exact
-  132 installed modules as 127 base-import successes plus the same five exact
+- At that coordinate the installed-import manifest kept schema
+  `spirallens.installed-import-conformance.v0.1` and classified 132 installed
+  modules as 127 base-import successes plus the same five exact
   blocked-Torch model-extra outcomes. The distribution gate requires exact
   132-member parity in the sdist, both wheel routes, and both fresh
   non-editable installs; all 49 repository-only module requests must fail at
@@ -34,7 +58,7 @@ promote a claim.
 - Earlier 159 + 22 placement counts, 154 + 5 import counts, artifact hashes,
   and validation receipts remain historical observations of their stated
   checkouts. They are not rewritten or cited as validation of the current
-  132 + 49 partition.
+  133 + 49 partition.
 - This expands the physical library/experiment boundary only. It does not
   re-anchor D7 source, establish current readiness, grant execution or
   scientific authority, authorize VOY-V4, complete `LIB-L0`, activate support,

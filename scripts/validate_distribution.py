@@ -97,8 +97,8 @@ INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ("witness", ("cryptography>=42",)),
 )
 INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = _POLICY["BLOCKED"]
-INSTALLED_IMPORT_SUCCESS_COUNT = 127
-INSTALLED_IMPORT_MISSING_TORCH_COUNT = 5
+INSTALLED_IMPORT_SUCCESS_COUNT = 129
+INSTALLED_IMPORT_MISSING_TORCH_COUNT = 4
 INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
 INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
 INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT = 5
@@ -822,7 +822,7 @@ def _load_installed_import_classification(
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
     ):
         raise DistributionValidationError(
-            "installed import outcomes differ from the exact 127/5 inventory"
+            "installed import outcomes differ from the exact 129/4 inventory"
         )
     packages = ordered_export_classification.get("packages")
     if not isinstance(packages, tuple):
@@ -3386,7 +3386,7 @@ def _probe_installed_import_outcomes(
         len(observation["runtime_exports"]) for observation in runtime_packages
     )
     if (
-        len(observations) != 132
+        len(observations) != 133
         or len(successes) != INSTALLED_IMPORT_SUCCESS_COUNT
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
         or len(runtime_packages) != INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT

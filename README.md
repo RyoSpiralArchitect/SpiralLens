@@ -26,9 +26,9 @@ generated views replace them.
 
 The distribution gate now establishes two narrow static facts and one bounded
 installed-import observation. The versioned
-physical-placement manifest partitions all 181 `src/**/*.py` module paths into
-132 wheel-present modules (24 package initializers, two console-entrypoint
-runtime modules, and 106 other shipped runtime modules) and 49 repository-only
+physical-placement manifest partitions all 182 `src/**/*.py` module paths into
+133 wheel-present modules (24 package initializers, two console-entrypoint
+runtime modules, and 107 other shipped runtime modules) and 49 repository-only
 modules. A separate versioned ordered-export manifest records the exact
 literal ordered `__all__` declaration in each of those 24 package initializers,
 for 559 namespace-scoped entries. The v0.9 distribution diagnostic verifies
@@ -41,7 +41,7 @@ does so without importing `spirallens` modules. It records
 The third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, classifies the expected fresh
-non-editable-wheel import outcome for the same exact 132 modules. This is a
+non-editable-wheel import outcome for the same exact 133 modules. This is a
 single-current-host observation, not a portability matrix. Each child
 starts with `-I -S -B`: site initialization is disabled, `.pth` startup is not
 executed, and only the fresh-wheel root plus the exact NumPy, SciPy, and PyYAML
@@ -53,8 +53,10 @@ isolated children do not import it, and the base runtime dependencies remain
 unchanged. The full installed `Requires-Dist` contract is the exact 13 records:
 three base and ten optional-extra requirements. The direct-source and
 sdist-derived install contracts require equal normalized startup receipts and
-127 successful imports plus five exact
-`ModuleNotFoundError.name == "torch"` outcomes for the model-extra modules.
+129 successful imports plus four exact
+`ModuleNotFoundError.name == "torch"` outcomes for `spirallens.adapters`,
+`spirallens.adapters.pythia`, `spirallens.atlas.id_sweep`, and
+`spirallens.atlas.engineering_run`.
 Each module runs in its own fresh process with a neutral working directory,
 no `PYTHONPATH`, and a 30-second bound. The sole observed undeclared import
 attempt, `charset_normalizer`, is blocked and not loaded; the loaded
@@ -65,7 +67,12 @@ entries remain unavailable at the blocked Torch boundary. This establishes
 `closed_installed_module_import_outcome_inventory_established=true` and the
 narrow
 `runtime_successful_package_export_values_established=true`, not all-package
-runtime export closure. The historical pre-boundary live validation receipt
+runtime export closure. The new private `spirallens._model_observer` and
+`spirallens.atlas._capture_store` successes bind an offline reference
+`PythiaAdapter` observation to the store. Tensor-backed `BatchObservation`,
+artifact schemas, and residual-hooks v2 remain unchanged; this establishes
+neither a NumPy-owned/value-neutral record nor a public protocol. The historical
+pre-boundary live validation receipt
 for the former 159-member wheel has SHA-256
 `2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
 The separately retained preA/preB/post invariants bind that receipt to
