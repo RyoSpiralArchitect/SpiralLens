@@ -4,6 +4,21 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Contracts namespace-scoped library-admission observation
+
+- The existing ordered-export manifest remains the exact-name owner for the seven
+  `spirallens.contracts` root exports. One provisional source line makes
+  default-generated `SampledLoop.parameter_values` read-only like explicit inputs;
+  numeric values, signatures, exports, dependencies, and schemas do not change.
+- `tests/test_contracts_library_admission.py` binds only enumerated source behavior
+  and root/defining identities. This provisional observation admits no installed
+  identity, deep module, per-name two-consumer claim, or promotion.
+  `closed_library_allowlist_established=false` and
+  `closed_public_api_contract_established=false`; all distribution grants remain
+  false; support, stability, compatibility, portability, and release remain
+  unestablished; `LIB-L0` remains in progress; no science, authority, or D7 state changes.
+  Historical source/D7 receipts stay unchanged and unre-anchored; current readiness remains false.
+
 ## 2026-08-14 — Neutral Atlas engineering-run import boundary
 
 - Without changing the v0.10 report or v0.1 installed-import schemas,

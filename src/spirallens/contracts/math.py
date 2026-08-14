@@ -86,6 +86,7 @@ class SampledLoop:
 
         if self.parameter_values is None:
             parameter_values = np.arange(points.shape[0], dtype=float) / points.shape[0]
+            parameter_values.setflags(write=False)
         else:
             parameter_values = _readonly_array(
                 self.parameter_values,

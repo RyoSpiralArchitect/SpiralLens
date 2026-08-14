@@ -347,7 +347,8 @@ The target is:
 | --- | --- | --- |
 | `core` | Stable-candidate canonical codecs and future framework-neutral status/error primitives | Standard library only; promotion still requires two independent consumers |
 | `access` | Provisional provenance, consumer authorization, value lineage, pre-observation descriptors, and attempt lifecycle | Standard library plus `core`; never reads model values |
-| `contracts`, `loops`, `holonomy`, `topology` | Framework-neutral mathematical types and operations | NumPy/SciPy only |
+| `contracts` | Exact-seven root namespace has one provisional, namespace-scoped library-admission observation; no deep module or per-name admission | NumPy only; focused behavior/identity evidence, not promotion |
+| `loops`, `holonomy`, `topology` | Framework-neutral mathematical operations; provisional and outside the `contracts` observation, with no admission decision following | NumPy/SciPy only |
 | `referents` | Provisional F0-F4 pointwise objects, transformation laws, fit/evaluation partitions, and same-object relations | NumPy plus contract enums; no substrate field or model-side existence claim |
 | `instrument_contracts` | Provisional manifests, closed-world integrity, selected metadata joins, and a separately authorized strict numeric consumer | Ordinary loading remains opaque; numeric access is lineage-gated and subject roles are forbidden |
 | `synthetic` | Model-free construction-family identities, development generators, separated truth controls, numeric self-audit, and bounded bundle publication | Experimental core; no calibration selection or subject execution |
@@ -891,6 +892,21 @@ for bounded reads during that invocation and writes nothing. The view is
 non-authoritative, and owner documents record no view hash. Freshness establishes no validation pass,
 API/support, compatibility/portability, library maturity, `LIB-L0` completion,
 release, science, authority, or D7 readiness/re-anchor.
+
+The first namespace-scoped provisional library-admission observation is the
+exact-seven `spirallens.contracts` root surface already owned by the ordered-export
+manifest. `tests/test_contracts_library_admission.py` binds only source behavior
+and root/defining identities; it supplies no installed identity, per-name
+two-consumer or deep-module admission, and no promotion.
+One provisional source line makes default-generated `SampledLoop.parameter_values`
+read-only like explicit inputs without a numeric value, signature, export, or
+dependency delta. Historical source/D7 receipts remain unchanged and unre-anchored;
+current readiness remains false.
+`closed_library_allowlist_established=false` and
+`closed_public_api_contract_established=false`; all distribution grants remain
+false; support, stability, compatibility, portability, and release remain
+unestablished; `LIB-L0` remains in progress; no science, authority, or D7 state
+changes.
 
 Exit criteria:
 
