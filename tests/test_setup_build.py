@@ -290,12 +290,14 @@ def test_setup_installed_import_manifest_closes_exact_133_and_23_plus_1_projecti
 
     success = outcomes["base_import_success"]
     missing_torch = outcomes["models_extra_missing_torch"]
-    assert len(success) == 129
+    assert len(success) == 130
     assert missing_torch == setup_module._POLICY["MISSING_TORCH"]
     assert len(set(success) | set(missing_torch)) == 133
     assert "spirallens._model_observer" in success
     assert "spirallens.atlas._capture_store" in success
     assert "spirallens.atlas._capture_store" not in missing_torch
+    assert "spirallens.atlas.id_sweep" in success
+    assert "spirallens.atlas.id_sweep" not in missing_torch
     newly_repository_only_confirmation_modules = {
         setup_module._module_for_python_member(member)
         for member in setup_module._ALL_PYTHON_PATHS
@@ -329,7 +331,7 @@ def test_setup_installed_import_manifest_closes_exact_133_and_23_plus_1_projecti
         "invalid_module",
         "overlap",
         "missing_module",
-        "stale_capture_store_negative",
+        "stale_id_sweep_negative",
         "wrong_negative",
     ],
 )
@@ -374,12 +376,10 @@ def test_setup_installed_import_manifest_rejects_schema_and_topology_drift(
         original["outcomes"]["base_import_success"].sort()
     elif mutation == "missing_module":
         original["outcomes"]["base_import_success"].remove("spirallens._model_observer")
-    elif mutation == "stale_capture_store_negative":
-        original["outcomes"]["base_import_success"].remove(
-            "spirallens.atlas._capture_store"
-        )
+    elif mutation == "stale_id_sweep_negative":
+        original["outcomes"]["base_import_success"].remove("spirallens.atlas.id_sweep")
         original["outcomes"]["models_extra_missing_torch"].append(
-            "spirallens.atlas._capture_store"
+            "spirallens.atlas.id_sweep"
         )
         original["outcomes"]["models_extra_missing_torch"].sort()
     elif mutation == "wrong_negative":
@@ -460,7 +460,7 @@ def test_setup_pyproject_dependency_gate_accepts_reordering(
 
     outcomes = setup_module._load_installed_import_classification()
 
-    assert len(outcomes["base_import_success"]) == 129
+    assert len(outcomes["base_import_success"]) == 130
 
 
 @pytest.mark.parametrize(

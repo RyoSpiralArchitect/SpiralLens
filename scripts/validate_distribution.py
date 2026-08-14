@@ -117,8 +117,8 @@ INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ("witness", ("cryptography>=42",)),
 )
 INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = _POLICY["BLOCKED"]
-INSTALLED_IMPORT_SUCCESS_COUNT = 129
-INSTALLED_IMPORT_MISSING_TORCH_COUNT = 4
+INSTALLED_IMPORT_SUCCESS_COUNT = 130
+INSTALLED_IMPORT_MISSING_TORCH_COUNT = 3
 INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
 INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
 INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT = 5
@@ -842,7 +842,7 @@ def _load_installed_import_classification(
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
     ):
         raise DistributionValidationError(
-            "installed import outcomes differ from the exact 129/4 inventory"
+            "installed import outcomes differ from the exact 130/3 inventory"
         )
     packages = ordered_export_classification.get("packages")
     if not isinstance(packages, tuple):
@@ -2323,12 +2323,14 @@ import hashlib
 import importlib
 import importlib.abc
 import importlib.metadata
+import inspect
 import json
 import os
 from pathlib import Path
 import sys
 import sysconfig
 import traceback
+import typing
 
 module_name = sys.argv[1]
 expected_outcome = sys.argv[2]
@@ -2612,6 +2614,83 @@ else:
                 f"{module_name} runtime __all__ differs from its literal inventory"
             )
         runtime_exports = runtime_value
+
+if module_name == "spirallens.atlas.id_sweep":
+    neutral_names = (
+        "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION",
+        "ContextBankBinding",
+        "SweepConfig",
+        "run_id_sweep",
+        "select_token_ids",
+    )
+    atlas = importlib.import_module("spirallens.atlas")
+    if (
+        tuple(name for name in atlas.__all__ if name in neutral_names)
+        != neutral_names
+        or any(getattr(atlas, name) is not getattr(module, name) for name in neutral_names)
+        or any(
+            getattr(getattr(module, name), "__module__", None) != module_name
+            for name in neutral_names[1:]
+        )
+    ):
+        raise RuntimeError("id_sweep neutral root/module identities differ")
+    expected_annotations = {
+        "adapter": "PythiaAdapter",
+        "config": "SweepConfig",
+        "return": "dict[str, object]",
+    }
+    signature = inspect.signature(module.run_id_sweep)
+    parameters = tuple(signature.parameters.values())
+    if (
+        tuple(parameter.name for parameter in parameters) != ("adapter", "config")
+        or any(
+            parameter.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD
+            or parameter.default is not inspect.Parameter.empty
+            for parameter in parameters
+        )
+        or signature.return_annotation != "dict[str, object]"
+        or module.run_id_sweep.__annotations__ != expected_annotations
+    ):
+        raise RuntimeError("id_sweep run signature or raw annotations differ")
+    for neutral in (
+        module.ContextBankBinding,
+        module.SweepConfig,
+        module.select_token_ids,
+    ):
+        resolved = typing.get_type_hints(neutral)
+        if set(resolved) != set(neutral.__annotations__) or any(
+            isinstance(value, str) for value in resolved.values()
+        ):
+            raise RuntimeError("id_sweep neutral type hints did not resolve")
+    selected = module.select_token_ids(6, subset=(4, 1, 3), max_tokens=2)
+    if selected.tolist() != [4, 1] or str(selected.dtype) != "int64":
+        raise RuntimeError("id_sweep bounded token selection differs")
+    if any(
+        name in sys.modules
+        for name in (
+            "spirallens.adapters",
+            "spirallens.adapters.pythia",
+            "spirallens.atlas.engineering_run",
+        )
+    ):
+        raise RuntimeError("id_sweep neutral surface loaded a model module")
+
+    class Bomb:
+        def __getattribute__(self, name):
+            raise RuntimeError(f"id_sweep bomb attribute accessed: {name}")
+
+    try:
+        module.run_id_sweep(Bomb(), Bomb())
+    except ModuleNotFoundError as error:
+        if (
+            error.name != "torch"
+            or str(error) != "blocked optional dependency: torch"
+            or error.__cause__ is not None
+            or error.__context__ is not None
+        ):
+            raise RuntimeError("id_sweep call did not fail at exact torch") from error
+    else:
+        raise RuntimeError("id_sweep call crossed the blocked torch boundary")
 
 loaded_optional = sorted(
     prefix

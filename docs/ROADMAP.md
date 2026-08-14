@@ -356,7 +356,7 @@ The target is:
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
-| `atlas` | Streaming observation storage, integrity journals, and replay | NumPy/PyYAML reader closure verified without model frameworks, adapters, or capture modules; capture remains an optional model extra and the whole namespace remains provisional/model extra |
+| `atlas` | Streaming observation storage, integrity journals, and replay | NumPy/PyYAML reader closure and the five `id_sweep` declaration/configuration bindings are importable without model frameworks; sweep execution and the engineering runner remain model extras, and the whole namespace remains provisional/model extra |
 | `jacobians`, `factors` | JVP and architecture-component accounting | Core analytic paths plus optional autodiff |
 | `interventions` | Explicitly scoped activation interventions | Optional model extras |
 | `semantics` | Post-discovery annotation and held-out evaluation | Never imported by discovery |
@@ -1008,10 +1008,10 @@ outside those declared bases. The repository-only validator parent uses
 isolated children do not import it. The base runtime dependencies are
 unchanged, and installed metadata has the exact 13 normalized `Requires-Dist`
 records: three base and ten optional-extra requirements. The two routes have
-equal normalized startup receipts. Each route observes 129 base-import
-successes and four exact blocked-Torch model-extra outcomes:
-`spirallens.adapters`, `spirallens.adapters.pythia`,
-`spirallens.atlas.id_sweep`, and `spirallens.atlas.engineering_run`. The sole
+equal normalized startup receipts. Each route observes 130 base-import
+successes and three exact blocked-Torch model-extra outcomes:
+`spirallens.adapters`, `spirallens.adapters.pythia`, and
+`spirallens.atlas.engineering_run`. The sole
 blocked undeclared attempt is `charset_normalizer`, which remains unloaded;
 the aggregate loaded third-party distributions remain the exact declared base
 three. Runtime
@@ -1038,6 +1038,15 @@ The report records
 `closed_installed_module_import_outcome_inventory_established=true` and the
 strictly scoped
 `runtime_successful_package_export_values_established=true`.
+
+`spirallens.atlas.id_sweep` is the additional base-import success. A source
+probe and the direct-source and sdist-derived fresh-wheel workers resolve its exact five defining/root
+bindings with model prefixes blocked; the neutral class/function hints resolve.
+`run_id_sweep` retains its raw signature and annotation spellings, but imports
+Torch at call time before adapter/config access. Default runtime
+`get_type_hints(run_id_sweep)` is outside the claim, and Atlas star import still
+reaches the blocked engineering runner. This is a bounded framework import
+boundary, not operation portability, public API/protocol, support, or `LIB-L0` completion.
 
 The private `spirallens._model_observer.BatchObservationProtocol` seam
 separates the declared observation capability from the Atlas store's NumPy

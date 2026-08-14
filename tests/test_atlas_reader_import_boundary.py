@@ -423,6 +423,130 @@ print(json.dumps({{
     }
 
 
+def test_id_sweep_neutral_exports_stop_at_the_torch_call_boundary() -> None:
+    """Keep neutral sweep contracts importable without widening the Atlas edge."""
+
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = f"""
+import importlib
+import importlib.abc
+import inspect
+import json
+import sys
+from typing import get_type_hints
+sys.path.insert(0, {str(source_root)!r})
+forbidden = "torch transformers huggingface_hub safetensors spirallens.adapters".split()
+attempts = []
+def matches(name, prefix):
+    return name == prefix or name.startswith(prefix + ".")
+class Blocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(matches(fullname, prefix) for prefix in forbidden):
+            attempts.append(fullname)
+            raise ModuleNotFoundError(
+                f"blocked model dependency: {{fullname}}", name=fullname
+            )
+        return None
+sys.meta_path.insert(0, Blocker())
+atlas = importlib.import_module("spirallens.atlas")
+sweep = importlib.import_module("spirallens.atlas.id_sweep")
+neutral_exports = (
+    "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION ContextBankBinding SweepConfig "
+    "select_token_ids run_id_sweep"
+).split()
+root_identities = all(
+    getattr(atlas, name) is getattr(sweep, name) for name in neutral_exports
+)
+hints_resolved = all(
+    get_type_hints(getattr(sweep, name))
+    for name in ("ContextBankBinding", "SweepConfig", "select_token_ids")
+)
+signature = inspect.signature(sweep.run_id_sweep)
+signature_parameters = [
+    [item.name, item.kind.name, item.default is inspect.Parameter.empty, item.annotation]
+    for item in signature.parameters.values()
+]
+attempts_before_run = list(attempts)
+touched = []
+class Untouched:
+    def __init__(self, label):
+        object.__setattr__(self, "label", label)
+
+    def __getattribute__(self, name):
+        label = object.__getattribute__(self, "label")
+        touched.append(f"{{label}}.{{name}}")
+        raise AssertionError(f"{{label}} accessed before torch import: {{name}}")
+try:
+    sweep.run_id_sweep(Untouched("adapter"), Untouched("config"))
+except ModuleNotFoundError as error:
+    run_failure = [error.name, str(error)]
+else:
+    raise AssertionError("run_id_sweep crossed the blocked torch boundary")
+attempts_after_run = list(attempts)
+try:
+    exec("from spirallens.atlas import *", {{}})
+except ModuleNotFoundError as error:
+    star_failure = [error.name, str(error)]
+else:
+    raise AssertionError("Atlas star import crossed the engineering model edge")
+blocked_loaded = sorted(
+    prefix
+    for prefix in forbidden
+    if any(matches(name, prefix) for name in sys.modules)
+)
+print(json.dumps({{
+    "annotations": sweep.run_id_sweep.__annotations__,
+    "attempts_after_run": attempts_after_run,
+    "attempts_after_star": attempts,
+    "attempts_before_run": attempts_before_run,
+    "blocked_loaded": blocked_loaded,
+    "engineering_run_loaded": "spirallens.atlas.engineering_run" in sys.modules,
+    "hints_resolved": hints_resolved,
+    "return_annotation": signature.return_annotation,
+    "root_identities": root_identities,
+    "run_failure": run_failure,
+    "signature_parameters": signature_parameters,
+    "star_failure": star_failure,
+    "touched": touched,
+}}, sort_keys=True))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-P", "-B", "-c", probe],
+        cwd=source_root.parent,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result == {
+        "annotations": {
+            "adapter": "PythiaAdapter",
+            "config": "SweepConfig",
+            "return": "dict[str, object]",
+        },
+        "attempts_after_run": ["torch"],
+        "attempts_after_star": ["torch", "spirallens.adapters"],
+        "attempts_before_run": [],
+        "blocked_loaded": [],
+        "engineering_run_loaded": False,
+        "hints_resolved": True,
+        "return_annotation": "dict[str, object]",
+        "root_identities": True,
+        "run_failure": ["torch", "blocked model dependency: torch"],
+        "signature_parameters": [
+            ["adapter", "POSITIONAL_OR_KEYWORD", True, "PythiaAdapter"],
+            ["config", "POSITIONAL_OR_KEYWORD", True, "SweepConfig"],
+        ],
+        "star_failure": [
+            "spirallens.adapters",
+            "blocked model dependency: spirallens.adapters",
+        ],
+        "touched": [],
+    }
+
+
 def test_manifest_readers_preserve_success_and_checksum_switch(
     tmp_path: Path,
 ) -> None:
