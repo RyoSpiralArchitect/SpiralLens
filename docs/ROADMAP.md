@@ -918,6 +918,23 @@ false; support, stability, compatibility, portability, typing, and release remai
 unestablished; `LIB-L0` remains in progress; no science, authority, or D7 state
 changes.
 
+A second bounded vertical observation fixes the exact analytic test files at
+SHA-256 `7b94e888b01f3d5170762b840f65268a2cdccd829cfac9797f72b910c0bbc385`,
+`a16f76461d90dd33a43236dee47562eb77164dfb729fcab770be27bfe7acc19b`, and
+`54aa348ff65da9b00b2433e23e833dcbd0c1a4667924ab1cb241876e4a66e160`;
+workflow SHA-256 is `8ee6a44e36f9a9e6f350cec1d95592aef87e03ada45f3e9cfb9d0b543f28b5a4`.
+Each exact CPython 3.11.16 / 3.12.14 / 3.13.15, Ubuntu 24.04 x86_64,
+locked-dependency job runs exact 25 source/direct-wheel nodes: 1 calibration +
+10 holonomy + 14 winding by full-file execution without node-id selectors,
+skips, deselection, or xfail. The calibration node binds exact 15-module loaded/origin closure and exact 24 ordered
+check names/categories, finite values, and pass recomputation. This is a model-free
+analytic slice only, not namespace admission/promotion, a second independent
+consumer, full exact-27 coverage (`affine_transform_loop` and `signed_area_2d`
+remain unobserved), sdist behavior, repository independence, full library-test
+ownership, portability, support/API/compatibility/release, or schema evidence.
+PR109 leaves production, exports, dependencies, manifests, validator, and report
+schema unchanged; `LIB-L0`, science, authority, historical receipts, and D7 do not change.
+
 Exit criteria:
 
 - every promoted common primitive has two independent consumers and materially

@@ -141,6 +141,16 @@ jobs:
           expected_contracts_test_sha="864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0"
           observed_contracts_test_sha="$(sha256sum "$contracts_test" | cut -d' ' -f1)"
           test "$observed_contracts_test_sha" = "$expected_contracts_test_sha"
+          source_phantom_tests=()
+          while read -r test_sha test_file; do
+            test "$(sha256sum "$test_file" | cut -d' ' -f1)" = "$test_sha"
+            source_phantom_tests+=("$GITHUB_WORKSPACE/$test_file")
+            cp "$test_file" "$neutral/"
+          done <<'EOF'
+          7b94e888b01f3d5170762b840f65268a2cdccd829cfac9797f72b910c0bbc385 tests/phantoms/test_calibration_suite.py
+          a16f76461d90dd33a43236dee47562eb77164dfb729fcab770be27bfe7acc19b tests/phantoms/test_holonomy_phantoms.py
+          54aa348ff65da9b00b2433e23e833dcbd0c1a4667924ab1cb241876e4a66e160 tests/phantoms/test_winding_phantoms.py
+          EOF
           cp .github/scripts/core_canonical_wheel_probe.py "$neutral/probe.py"
           cp tests/test_core_canonical_compatibility.py "$neutral/test_core_canonical_compatibility.py"
           cp "$contracts_test" "$neutral/test_contracts_library_admission.py"
@@ -156,6 +166,15 @@ jobs:
             -p no:cacheprovider \
             --basetemp "$RUNNER_TEMP/contracts-source-pytest" \
             "$GITHUB_WORKSPACE/$contracts_test"
+
+          env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+            PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+            SPIRALLENS_EXPECTED_IMPORT_ROOT="$GITHUB_WORKSPACE/src" \
+            "$test_venv/bin/python" -I -B -m pytest \
+            -c "$GITHUB_WORKSPACE/pyproject.toml" --rootdir "$GITHUB_WORKSPACE" \
+            --import-mode=importlib -p no:cacheprovider \
+            --basetemp "$RUNNER_TEMP/phantoms-source-pytest" \
+            "${source_phantom_tests[@]}"
 
           (
             cd "$neutral"
@@ -177,6 +196,16 @@ jobs:
               -p no:cacheprovider \
               --basetemp "$neutral/pytest-temp" \
               "$neutral/test_core_canonical_compatibility.py"
+            env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+              SPIRALLENS_EXPECTED_IMPORT_ROOT="$site_packages" \
+              "$test_venv/bin/python" -I -B -m pytest \
+              -c /dev/null --rootdir "$neutral" \
+              --import-mode=importlib -p no:cacheprovider \
+              --basetemp "$neutral/phantoms-pytest-temp" \
+              "$neutral/test_calibration_suite.py" \
+              "$neutral/test_holonomy_phantoms.py" \
+              "$neutral/test_winding_phantoms.py"
             env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
               PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
               SPIRALLENS_EXPECTED_IMPORT_ROOT="$site_packages" \

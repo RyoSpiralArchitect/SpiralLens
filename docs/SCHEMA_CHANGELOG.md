@@ -4,6 +4,23 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Analytic calibration direct-wheel observation
+
+- SHA-256 values `7b94e888b01f3d5170762b840f65268a2cdccd829cfac9797f72b910c0bbc385`,
+  `a16f76461d90dd33a43236dee47562eb77164dfb729fcab770be27bfe7acc19b`, and
+  `54aa348ff65da9b00b2433e23e833dcbd0c1a4667924ab1cb241876e4a66e160`
+  fix 1 calibration + 10 holonomy + 14 winding nodes; workflow SHA-256 is `8ee6a44e36f9a9e6f350cec1d95592aef87e03ada45f3e9cfb9d0b543f28b5a4`.
+- Exact CPython 3.11.16 / 3.12.14 / 3.13.15, Ubuntu 24.04 x86_64 jobs run
+  exact 25 source and neutral direct-wheel nodes by full-file execution without
+  node-id selectors, skips, deselection, or xfail. The calibration node binds
+  exact 15-module origin closure and exact 24 ordered name/category, finiteness,
+  and pass recomputation under the locked dependencies.
+- This model-free slice grants no namespace admission/promotion, second consumer,
+  full exact-27 coverage (`affine_transform_loop` and `signed_area_2d` remain
+  unobserved), sdist behavior, repository independence, portability, support/API,
+  compatibility/release/schema, science, authority, D7, or `LIB-L0` completion.
+  Production, exports, dependencies, manifests, validator, and report schema remain unchanged.
+
 ## 2026-08-14 — Contracts direct-wheel library-admission observation
 
 - SHA-256 `864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0`
