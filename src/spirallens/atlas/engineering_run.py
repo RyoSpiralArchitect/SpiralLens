@@ -9,10 +9,9 @@ from pathlib import Path
 import shutil
 import stat
 import subprocess
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from spirallens._repository_context import RepositoryContext
-from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION, PythiaAdapter
 from spirallens.contexts import ContextRole, load_context_bank
 
 from .engineering_protocol import (
@@ -29,6 +28,9 @@ from .engineering_receipt import (
     write_public_example_plumbing_receipt,
 )
 from .id_sweep import ContextBankBinding, SweepConfig, run_id_sweep
+
+if TYPE_CHECKING:
+    from spirallens.adapters import PythiaAdapter
 
 
 class PublicExamplePlumbingRunError(RuntimeError):
@@ -335,6 +337,8 @@ def _verify_protocol_git_anchor(
 
 
 def _verify_model_metadata(adapter: PythiaAdapter, protocol: Any) -> None:
+    from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION
+
     try:
         profile = _require_engineering_model_profile(protocol.model.model_id)
     except _UnsupportedEngineeringModelProfileError as error:
@@ -400,6 +404,9 @@ def run_public_example_plumbing(
 ) -> dict[str, object]:
     """Execute and receipt one frozen, atlas-integrity-only Pythia capture."""
 
+    import torch
+    from spirallens.adapters import PythiaAdapter
+
     context = RepositoryContext(
         root=Path(repository_root).resolve(strict=True),
     )
@@ -417,8 +424,6 @@ def run_public_example_plumbing(
         repository_path=_ENGINEERING_PROTOCOL_REPOSITORY_PATH,
         label="engineering protocol",
     )
-
-    import torch
 
     root = context.root
     _require_offline_environment()

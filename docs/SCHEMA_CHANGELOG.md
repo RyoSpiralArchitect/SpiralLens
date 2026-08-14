@@ -4,6 +4,24 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Neutral Atlas engineering-run import boundary
+
+- Without changing the v0.10 report or v0.1 installed-import schemas,
+  `spirallens.atlas.engineering_run` moves to base-import success: 133 outcomes
+  are now 131 successes plus exact blocked-Torch `spirallens.adapters` and
+  `spirallens.adapters.pythia`.
+- The source and both fresh-wheel probes resolve the exact 20-name Atlas
+  root/star namespace with defining identities. The public runner preserves its
+  root identity, structural signature, raw annotations, and exact model-free
+  resolved hints; on call its first executable work imports Torch and then the
+  adapter before argument/root access. The earlier `id_sweep` boundary remains.
+- Former private adapter/capture-version globals receive no compatibility
+  aliases; resolved private-helper hints and traceback frames are nonclaims.
+  Modules, 24 / 559 static and 23 / 554 runtime declarations, dependencies,
+  artifact schemas, and release state are unchanged; `engineering_run`'s source
+  identity changes. Historical D7 receipts remain frozen/unre-anchored and current
+  readiness false; this grants no portability, API/support, `LIB-L0`, science, or authority.
+
 ## 2026-08-14 — Neutral Atlas ID-sweep import boundary
 
 - Without changing the v0.10 report shape or v0.1 installed-import schema,

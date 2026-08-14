@@ -20,7 +20,7 @@ remain authoritative for those boundaries.
 - current installed-import outcome manifest:
   `distribution/spirallens_installed_imports_v0_1.json`, schema
   `spirallens.installed-import-conformance.v0.1`, 6,497 bytes, SHA-256
-  `d49165d09e224d60c310c324f7a3ad94f4e39b93438e8daa0a4c39064de7f752`;
+  `0314de5a125262522bdb2b141e4f9b191c8935979a8d0c4da946f215b2abc9cd`;
 - current generated navigation/freshness view:
   `docs/generated/lib_l0_status_v0_1.json`, schema
   `spirallens.lib-l0-status-view.v0.1`, non-authoritative;
@@ -34,12 +34,11 @@ remain authoritative for those boundaries.
   compatibility is unattested;
 - closed static ordered `__all__` declaration inventory: 559 namespace-scoped
   entries across 24 package initializers;
-- closed installed-module outcome inventory: 133 modules = 130 base-import
-  successes + 3 exact blocked-Torch model-extra outcomes; scoped runtime
+- closed installed-module outcome inventory: 133 modules = 131 base-import
+  successes + 2 exact blocked-Torch model-extra outcomes; scoped runtime
   `__all__` observation: 23 initializers and 554 entries succeeded, while one
-  initializer and five entries were unavailable; the three failures are
-  `spirallens.adapters`, `spirallens.adapters.pythia`,
-  and `spirallens.atlas.engineering_run`;
+  initializer and five entries were unavailable; the two failures are
+  `spirallens.adapters` and `spirallens.adapters.pythia`;
 - scientific and VOY deltas: none;
 - D7 verified-B interpretation: `insufficient`, Level 0, claim delta `none`,
   and VOY-V3 purpose evidence only; VOY-V4 dispatch remains unauthorized.
@@ -173,7 +172,7 @@ optional-extra requirements. The six
 `transformers` prefixes are blocked. A separate generic blocker rejects
 distribution-backed imports outside the three declared bases; the exact
 observed blocked attempt is `charset_normalizer`, and it is not loaded. Each
-route observes 130 base-import successes, three exact blocked-Torch model-extra
+route observes 131 base-import successes, two exact blocked-Torch model-extra
 outcomes, no loaded optional prefix, and the exact three declared bases as its
 aggregate loaded third-party distributions. Of the 24 initializers, 23
 reproduce their exact runtime list-valued `__all__`, totaling 554 entries; the
@@ -185,13 +184,18 @@ the structural observation/import boundary; offline conformance passes a referen
 `PythiaAdapter` observation into the store without replacing the Tensor-backed
 `BatchObservation`, changing an artifact schema, or advancing residual-hooks
 v2. Satisfaction is implicit, not a runtime `isinstance` gate. It is not a
-public adapter protocol or a NumPy-owned/value-neutral record. The current
-additional success is `spirallens.atlas.id_sweep`: a source probe and the
-direct-source and sdist-derived fresh-wheel workers resolve its exact five module/root bindings with model
-prefixes blocked. Neutral class/function hints resolve; `run_id_sweep` keeps its
-raw signature/annotation spellings but imports Torch on call before adapter/config
-access. Default runtime `get_type_hints(run_id_sweep)` is outside this claim.
-Star import still reaches the blocked engineering runner. The historical
+public adapter protocol or a NumPy-owned/value-neutral record. The two later
+Atlas successes are `spirallens.atlas.id_sweep` and
+`spirallens.atlas.engineering_run`. A source probe and both fresh-wheel workers
+resolve all exact 20 root/star exports with their defining identities under
+blocked model prefixes. The neutral sweep hints resolve; `run_id_sweep` keeps
+its raw signature/annotations and imports Torch before adapter/config access.
+The public runner keeps its root identity, structural signature, raw
+annotations, and exact model-free resolved hints; its first executable work on
+call imports Torch and then the adapter before argument/root access. Default
+resolved run-sweep hints, resolved private-helper hints, and compatibility for
+former private adapter/capture-version globals remain outside this claim. The
+historical
 pre-boundary 159-member routes had outcome-manifest SHA-256
 `8f885faab04cd796285d6263381172a4697fc310dafd96c504de44b4214187c7`.
 Their adopted pre-projection live validation receipt has SHA-256
@@ -262,9 +266,9 @@ The installation report separately records
 `isolated_base_dependency_environment_established=false`.
 
 The sdist is a library source artifact, not the repository experiment replay
-or test bundle. The repository tracks 116 Python files under `tests/`; the
-former sdist carried only an implicit 106-file subset, omitting 10 tracked
-test/helper files while retaining tests that can depend on omitted helpers or
+or test bundle. A current repository test-file count is intentionally not
+frozen here. The former sdist's 106-file surface was an implicit partial subset,
+retaining tests that can depend on omitted helpers or
 the deliberately repository-only experiment modules. That subset was neither
 self-contained nor an installed-distribution conformance, replay, or maturity
 surface. The v0.10 diagnostic now requires exact absence of the top-level
@@ -426,8 +430,8 @@ and retained state. `Unknown` or `not established` stops extraction.
 | private neighbor digest-syntax validator | internal private primitive | present inside the existing `neighbors.contracts` wheel member; no new dependency | lowercase 64-character SHA-256 string syntax only; no digest computation, content identity, security, or authority meaning | neighbor backend contracts, execution-freeze validation, neighbor-audit evaluation, and its downstream persistence receipt | established by execution-freeze and neighbor-audit as two independent consumers; the downstream receipt is reuse but is not counted as independent | exact `str`/subclass acceptance, short-circuit order, original-object return, and label interpolation are preserved | exact built-in `ValueError` type/message and no cause/context are preserved; private helper identity, module, and traceback frame are not compatibility claims | against baseline `c9167ae76757c287d7d75223fd2a33be23e5c777`, `neighbors/contracts.py` / `execution_freeze.py` / `metrics/neighbor_audit.py` / `metrics/neighbor_receipt.py`: `496/2608/3234/1921 → 496/2599/3225/1912`, total `8259 → 8232` (`-27`); validator implementations plus imports change `32 → 11` (`-21`, 65.6%), with `+0` modules, exports, and external dependencies | accepted only for the exact raw-`ValueError` neighbor-family subset; custom-error access/Atlas validators and frozen Faiss source members remain local, with no API, support, security, D7, science, or authority promotion |
 | private access schema validators | internal private primitives | present inside the existing `access.contracts` wheel member; standard library only | string-keyed mapping shape, exact keys, lowercase SHA-256 syntax, and enum decoding only; no file, model, claim, chronology, or authority meaning | access policy/descriptor contracts, terminal lifecycle records, and value-access lineage | established across three distinct schema roles; lifecycle and lineage neither wrap nor replay each other | exact production `Mapping`, plain-set key, `str`/subclass digest, and enum inputs, return identity, validation order, and label interpolation are preserved | exact `AtlasAccessContractError` type/message and no-cause boundary are preserved; unsupported enum values retain their native `ValueError` cause/context; private helper identity, module, and traceback frame are not compatibility claims | against baseline `7782b24c350e1ee5f6aeb8e942e82e7063734bb0`, `access/contracts.py` / `access/lifecycle.py` / `access/lineage.py`: `919/566/229 → 919/526/221`, total `1714 → 1666` (`-48`); validator definitions plus import bindings change `74 → 40` (`-34`, 45.9%), with `+0` modules, exports, and external dependencies | accepted only for exact schema-syntax reuse; identifier, lifecycle fact, typestate, lineage derivation, and domain authority remain local, historical source receipts remain immutable and unre-anchored, and no API, support, security, D7, science, or authority promotion follows |
 | Atlas manifest reader/capture boundary | provisional/model extra | present; reader closure retains NumPy/PyYAML and a fresh wheel loads none of `torch`, `transformers`, `huggingface_hub`, `safetensors`, `spirallens.adapters`, `spirallens.atlas.id_sweep`, `spirallens.atlas.engineering_run`, or `spirallens.atlas._capture_store`; capture remains a model extra | manifest/file I/O only; no capture, model, claim, or authority meaning enters the reader | `metrics.candidate_pairs` and `atlas.engineering_receipt` | established: two distinct production domains | established for reader signatures, defining modules, public symbol identities/order, accepted inputs, return behavior, and validation order | established for exception-class identity, type/message boundaries, and existing reader failures | against split baseline `a1d6c615da9e39247afa0332658e9aee7b24bb5a`, `store.py` / `_capture_store.py` / `id_sweep.py` / `__init__.py`: `1226/0/589/57 → 760/492/590/78`, total `1872 → 1920` (`+48`), while the reader store loses 466 lines; ordered 20-name `__all__`, exports, and dependencies are unchanged | accepted as a reader import-boundary split because its forbidden import set is empty, not as a total-LOC reduction; whole Atlas remains provisional/model extra, and public promotion requires its own review |
-| Atlas `id_sweep` neutral import boundary | provisional/model extra | exact five module/root bindings are base-importable; execution still requires Torch | binding/configuration/token selection only; no model execution claim | preparation and model-extra execution sides of one Atlas lane | boundary, not a promoted common primitive | defining modules, identities, raw run signature/annotations, neutral hint resolution, and bounded selection are fixed | missing Torch fails at call before adapter/config access; default resolved run hints are excluded | no module/export/dependency delta; installed outcomes become 130 + 3 | accepted only as a bounded import boundary; star import, operation portability, public protocol/API, support, and `LIB-L0` completion remain open |
-| private model-observer seam | internal | present; NumPy only, with Torch retained behind the Pythia adapter | private `BatchObservationProtocol` and store-local NumPy import only; no model value or claim meaning | reference `PythiaAdapter` output and private Atlas capture store | producer/consumer boundary, not a promoted common primitive | current Tensor-backed observation satisfies the protocol structurally without changing its public identity or capture v2 identity | store validation remains the owner of array shape and finite-value failures | `+1` shipped module; `_model_observer`, `_capture_store`, and `id_sweep` are base-import successes, while three exact model-runtime modules remain blocked on Torch | accepted only as a private import boundary with internal reference conformance; no runtime registration, NumPy-owned value type, public adapter protocol, portability, or `LIB-L0` completion |
+| Atlas neutral import boundaries | provisional/model extra | all exact 20 root/star bindings are base-importable; sweep/runner execution still requires Torch | declaration/configuration/manifest plumbing only; no model execution claim | preparation and model-extra execution sides of one Atlas lane | boundary, not a promoted common primitive | defining/root identities, public signatures/raw annotations, neutral hints, runner hints, and bounded selection are fixed | missing Torch fails first on call before sweep adapter/config or runner arguments/root; private-helper hints are excluded | no module/export/dependency delta; installed outcomes become 131 + 2 | accepted only as a bounded import boundary; operation portability, public protocol/API, support, release, D7 authority, and `LIB-L0` completion remain open |
+| private model-observer seam | internal | present; NumPy only, with Torch retained behind the Pythia adapter | private `BatchObservationProtocol` and store-local NumPy import only; no model value or claim meaning | reference `PythiaAdapter` output and private Atlas capture store | producer/consumer boundary, not a promoted common primitive | current Tensor-backed observation satisfies the protocol structurally without changing its public identity or capture v2 identity | store validation remains the owner of array shape and finite-value failures | `+1` shipped module; `_model_observer`, `_capture_store`, `id_sweep`, and `engineering_run` are current base-import successes, while the exact two adapter modules remain blocked on Torch | accepted only as a private import boundary with internal reference conformance; no runtime registration, NumPy-owned value type, public adapter protocol, portability, or `LIB-L0` completion |
 | private strict YAML mapping loader | internal private primitive | present as a private package module; existing PyYAML dependency | SafeLoader mapping syntax only; size/source-digest/UTF-8 checks, domain schemas, canonical digests, and claim meaning stay in each wrapper | contexts, instrument registry, synthetic protocol, and Atlas engineering protocol | established: four distinct production domains | established for alias, merge-key, string-key, duplicate-key, standard safe-tag, anchor-only, nonfinite-scalar, and wrapper preprocessing behavior | established for exact domain type/message/cause/context, wrapped PyYAML errors, and raw recursion failure | against extraction baseline `366d195f112bc3b95f36504e8a711029c71e6161`, the four consumers plus `_strict_yaml.py` change from `3081` to `2987` physical lines (`-94`); the audited extraction surface changes `158 → 64` (`-59.5%`), with `+0` exports and dependencies | accepted only as a private syntax-policy factory; domain parsing stays local, and the semantically different CLI, neighbor-receipt, and ordinary `safe_load` families remain excluded |
 | private installed-import policy seam | internal repository/build tool | absent from the wheel; exactly one regular byte-identical file in the sdist; standard-library only | immutable installed-import metadata and pure no-I/O worker projection only; no manifest/TOML parsing, operation, claim, or authority meaning | `setup.py` and the repository validator; isolated workers receive projection bytes and do not import the seam | build-tool consumers only, not independent library consumers | established for exact metadata and deterministic canonical JSON projection; setup and validator retain independent parsers and validation | fail-closed policy loading, independent parser/adversary families, and worker missing/extra/type/empty-value/outcome-tamper rejection remain separate | against baseline `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, `setup.py` / validator / policy / `MANIFEST.in`: `1029/5096/0/5 -> 985/5046/61/6`, total `6130 -> 6098` (`-32`); four exact duplicated blocks move from 66 physical occurrences and 33 redundant lines to zero setup/validator duplicate excess (`33 -> 0`, 100%); `+0` exports and dependencies | accepted as private anti-bloat maintenance only; preserve parser/adversary independence and never install the policy in the wheel |
 | exact array-fingerprint framing | rejected at current gate | present; NumPy | in-memory `dtype.str` + shape + NUL + C-order byte identity only; no scientific interpretation | `graphs.common`, `qualification.common`, and `synthetic.representation_estimator` | three candidate domains, but qualification is a frozen D7 trust root and the graph/synthetic pair is coupled | established only for stable ndarray metadata across 21 audited case families; unrestricted duck-typed inputs differ in metadata observation order | native ndarray failures are aligned, but callable-level failure/observation equivalence is not established for changing duck-typed metadata | no production/export delta; the three local function groups total 49 lines, while the only trust-root-free pair totals 33 lines and has no reviewed design demonstrating the required 20-line net reduction | reject extraction: changing `qualification/common.py` adds a direct reviewed-S execution-source violation; do not weaken that verifier, and do not add a sub-threshold two-consumer helper |

@@ -43,6 +43,7 @@
       "spirallens.atlas._capture_store",
       "spirallens.atlas.engineering_protocol",
       "spirallens.atlas.engineering_receipt",
+      "spirallens.atlas.engineering_run",
       "spirallens.atlas.id_sweep",
       "spirallens.atlas.store",
       "spirallens.audit_output",
@@ -162,8 +163,7 @@
     ],
     "models_extra_missing_torch": [
       "spirallens.adapters",
-      "spirallens.adapters.pythia",
-      "spirallens.atlas.engineering_run"
+      "spirallens.adapters.pythia"
     ]
   }
 }

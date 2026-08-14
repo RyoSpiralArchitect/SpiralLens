@@ -117,8 +117,8 @@ INSTALLED_IMPORT_PROJECT_OPTIONAL_DEPENDENCIES = (
     ("witness", ("cryptography>=42",)),
 )
 INSTALLED_IMPORT_BLOCKED_OPTIONAL_PREFIXES = _POLICY["BLOCKED"]
-INSTALLED_IMPORT_SUCCESS_COUNT = 130
-INSTALLED_IMPORT_MISSING_TORCH_COUNT = 3
+INSTALLED_IMPORT_SUCCESS_COUNT = 131
+INSTALLED_IMPORT_MISSING_TORCH_COUNT = 2
 INSTALLED_IMPORT_SUCCESSFUL_INITIALIZER_COUNT = 23
 INSTALLED_IMPORT_SUCCESSFUL_RUNTIME_EXPORT_COUNT = 554
 INSTALLED_IMPORT_UNAVAILABLE_RUNTIME_EXPORT_COUNT = 5
@@ -842,7 +842,7 @@ def _load_installed_import_classification(
         or len(missing_torch) != INSTALLED_IMPORT_MISSING_TORCH_COUNT
     ):
         raise DistributionValidationError(
-            "installed import outcomes differ from the exact 130/3 inventory"
+            "installed import outcomes differ from the exact 131/2 inventory"
         )
     packages = ordered_export_classification.get("packages")
     if not isinstance(packages, tuple):
@@ -2399,9 +2399,12 @@ def matches_prefix(name, prefix):
     return name == prefix or name.startswith(prefix + ".")
 
 
+tracked_import_prefixes = blocked_optional_prefixes
+if module_name in ("spirallens.atlas.id_sweep", "spirallens.atlas.engineering_run"):
+    tracked_import_prefixes += ("spirallens.adapters",)
 preloaded_optional = sorted(
     prefix
-    for prefix in blocked_optional_prefixes
+    for prefix in tracked_import_prefixes
     if any(matches_prefix(name, prefix) for name in sys.modules)
 )
 if preloaded_optional:
@@ -2409,11 +2412,14 @@ if preloaded_optional:
         f"installed import probe began with optional modules: {preloaded_optional}"
     )
 
+blocked_optional_import_attempts = []
+
 
 class OptionalImportBlocker(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        for prefix in blocked_optional_prefixes:
+        for prefix in tracked_import_prefixes:
             if matches_prefix(fullname, prefix):
+                blocked_optional_import_attempts.append(fullname)
                 raise ModuleNotFoundError(
                     f"blocked optional dependency: {fullname}",
                     name=fullname,
@@ -2602,7 +2608,9 @@ else:
             f"{module_name} origin is not an exact SpiralLens wheel file"
         )
     runtime_value = getattr(module, "__all__", None)
-    if expected_initializer_exports is None:
+    if expected_initializer_exports is None or module_name == (
+        "spirallens.atlas.engineering_run"
+    ):
         runtime_exports = None
     else:
         if (
@@ -2614,6 +2622,38 @@ else:
                 f"{module_name} runtime __all__ differs from its literal inventory"
             )
         runtime_exports = runtime_value
+
+
+def require_exact_blocked_torch(function, label):
+    try:
+        function()
+    except ModuleNotFoundError as error:
+        if (
+            error.name != "torch"
+            or str(error) != "blocked optional dependency: torch"
+            or error.__cause__ is not None
+            or error.__context__ is not None
+            or blocked_optional_import_attempts != ["torch"]
+        ):
+            raise RuntimeError(f"{label} call did not fail at exact torch") from error
+    else:
+        raise RuntimeError(f"{label} call crossed the blocked torch boundary")
+
+
+def has_exact_signature(function, names, annotations, kind):
+    signature = inspect.signature(function)
+    parameters = tuple(signature.parameters.values())
+    return (
+        tuple(parameter.name for parameter in parameters) == names
+        and all(
+            parameter.kind is kind
+            and parameter.default is inspect.Parameter.empty
+            for parameter in parameters
+        )
+        and signature.return_annotation == annotations["return"]
+        and function.__annotations__ == annotations
+    )
+
 
 if module_name == "spirallens.atlas.id_sweep":
     neutral_names = (
@@ -2639,17 +2679,11 @@ if module_name == "spirallens.atlas.id_sweep":
         "config": "SweepConfig",
         "return": "dict[str, object]",
     }
-    signature = inspect.signature(module.run_id_sweep)
-    parameters = tuple(signature.parameters.values())
-    if (
-        tuple(parameter.name for parameter in parameters) != ("adapter", "config")
-        or any(
-            parameter.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD
-            or parameter.default is not inspect.Parameter.empty
-            for parameter in parameters
-        )
-        or signature.return_annotation != "dict[str, object]"
-        or module.run_id_sweep.__annotations__ != expected_annotations
+    if not has_exact_signature(
+        module.run_id_sweep,
+        ("adapter", "config"),
+        expected_annotations,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
     ):
         raise RuntimeError("id_sweep run signature or raw annotations differ")
     for neutral in (
@@ -2679,18 +2713,68 @@ if module_name == "spirallens.atlas.id_sweep":
         def __getattribute__(self, name):
             raise RuntimeError(f"id_sweep bomb attribute accessed: {name}")
 
-    try:
-        module.run_id_sweep(Bomb(), Bomb())
-    except ModuleNotFoundError as error:
-        if (
-            error.name != "torch"
-            or str(error) != "blocked optional dependency: torch"
-            or error.__cause__ is not None
-            or error.__context__ is not None
-        ):
-            raise RuntimeError("id_sweep call did not fail at exact torch") from error
-    else:
-        raise RuntimeError("id_sweep call crossed the blocked torch boundary")
+    require_exact_blocked_torch(
+        lambda: module.run_id_sweep(Bomb(), Bomb()), "id_sweep"
+    )
+
+if module_name == "spirallens.atlas.engineering_run":
+    atlas = importlib.import_module("spirallens.atlas")
+    error_type = module.PublicExamplePlumbingRunError
+    run = module.run_public_example_plumbing
+    star = {}
+    exec("from spirallens.atlas import *", star)
+    if (
+        type(expected_initializer_exports) is not list
+        or len(expected_initializer_exports) != 20
+        or atlas.__all__ != expected_initializer_exports
+        or set(star) != {"__builtins__", *expected_initializer_exports}
+        or any(star[name] is not getattr(atlas, name) for name in atlas.__all__)
+        or atlas.PublicExamplePlumbingRunError is not error_type
+        or atlas.run_public_example_plumbing is not run
+        or error_type.__module__ != module_name
+        or run.__module__ != module_name
+    ):
+        raise RuntimeError("engineering_run Atlas star/root identities differ")
+    expected_names = tuple(
+        "protocol_path output_dir receipt_path expected_protocol_source_sha256 "
+        "expected_protocol_canonical_sha256 repository_root".split()
+    )
+    path_arguments = {*expected_names[:3], expected_names[-1]}
+    expected_annotations = {
+        name: "str | Path" if name in path_arguments else "str"
+        for name in expected_names
+    }
+    expected_annotations["return"] = "dict[str, object]"
+    resolved_hints = typing.get_type_hints(run)
+    expected_hints = dict.fromkeys(expected_names, str)
+    expected_hints.update(dict.fromkeys(path_arguments, str | Path))
+    expected_hints["return"] = dict[str, object]
+    if (
+        not has_exact_signature(
+            run,
+            expected_names,
+            expected_annotations,
+            inspect.Parameter.KEYWORD_ONLY,
+        )
+        or resolved_hints != expected_hints
+    ):
+        raise RuntimeError("engineering_run public signature or hints differ")
+    if blocked_optional_import_attempts or any(
+        matches_prefix(name, "spirallens.adapters") for name in sys.modules
+    ):
+        raise RuntimeError("engineering_run neutral surface loaded a model module")
+
+    class Bomb:
+        def __getattribute__(self, name):
+            raise RuntimeError(f"engineering_run bomb attribute accessed: {name}")
+
+    bomb = Bomb()
+    bomb_kwargs = {name: bomb for name in expected_names}
+    require_exact_blocked_torch(
+        lambda: run(**bomb_kwargs), "engineering_run"
+    )
+    if any(matches_prefix(name, "spirallens.adapters") for name in sys.modules):
+        raise RuntimeError("engineering_run call retained a model module")
 
 loaded_optional = sorted(
     prefix
@@ -3410,6 +3494,9 @@ def _probe_installed_import_outcomes(
     def run_module(module: str) -> dict[str, object]:
         expected_outcome = expected_by_module[module]
         expected_exports = initializer_exports.get(module)
+        probe_exports = expected_exports
+        if module == "spirallens.atlas.engineering_run":
+            probe_exports = initializer_exports["spirallens.atlas"]
         try:
             completed = subprocess.run(
                 (
@@ -3421,7 +3508,7 @@ def _probe_installed_import_outcomes(
                     _INSTALLED_IMPORT_MODULE_PROBE,
                     module,
                     expected_outcome,
-                    json.dumps(expected_exports),
+                    json.dumps(probe_exports),
                     _INSTALLED_IMPORT_WORKER_POLICY,
                     json.dumps(explicit_import_roots),
                     expected_member_by_module[module],
