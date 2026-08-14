@@ -4,6 +4,21 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Graph source/direct-wheel observation
+
+- SHA-256 values `9ad18632b54b6db4e466f9f9eb553ad230da35f0ed9f672c75c356417186e6ef`,
+  `c534109088ce3741eaf7b57372387868a80b5ca0d25b8dd5f944824c674d9c3c`, and
+  `1851676629aea6131a38b36ade08b81807e39ec4366ef4aec13b999b3dbc90bb` fix
+  exact 6 + 10 + 11 full-file graph nodes; workflow SHA-256 is `4826377b4f2c318ca3e7f2faf3fde3bf438b36873fa56dc199b82e82ed4f6bb7`.
+- Exact three-coordinate source/direct-wheel execution binds exact seven operation
+  identities, exact nine origins, zero attempts across exact nine blocked prefixes,
+  and the package-internal `constructors.py` source-byte digest recorded by construction.
+- One qualification vertical consumer establishes no independence. This grants no
+  full graph/library-test ownership, persistence, graph equivalence/replication/homology,
+  namespace admission/promotion, sdist/portability/compatibility/API/support/release, science,
+  authority, D7, or `LIB-L0` completion. Production, exports, dependencies, manifests,
+  validator, report schema, and historical receipts remain unchanged.
+
 ## 2026-08-14 — Contracts source-static consumer-independence audit
 
 - SHA-256 `f67507db283bfad06d93776f675aa94e76a75f004917665b7919e714175a8929`

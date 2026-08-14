@@ -945,6 +945,25 @@ ownership, portability, support/API/compatibility/release, or schema evidence.
 PR109 leaves production, exports, dependencies, manifests, validator, and report
 schema unchanged; `LIB-L0`, science, authority, historical receipts, and D7 do not change.
 
+A third bounded observation fixes SHA-256 `9ad18632b54b6db4e466f9f9eb553ad230da35f0ed9f672c75c356417186e6ef` for `tests/test_graph_diversity.py`
+and `c534109088ce3741eaf7b57372387868a80b5ca0d25b8dd5f944824c674d9c3c` for `tests/test_discrete_domain.py`,
+plus `1851676629aea6131a38b36ade08b81807e39ec4366ef4aec13b999b3dbc90bb` for `tests/test_cycle_class_binding.py`; workflow SHA-256 is `4826377b4f2c318ca3e7f2faf3fde3bf438b36873fa56dc199b82e82ed4f6bb7`.
+Each exact three-coordinate job runs all 6 diversity + 10 discrete-domain + 11
+cycle-binding nodes by full-file execution in source and a neutral direct wheel.
+The probe binds exact 41 graph-root exports and the defining identities of exact
+seven operations: `bind_cycle_class`, `build_discrete_domain_complex`, the three
+`construct_*` functions, `define_boundary_cycle_class`, and `measure_graph_diversity`.
+It fixes the exact nine loaded source/installed origins for `spirallens`, its
+`core`/`core.canonical`, and `graphs` plus `graphs/{common,constructors,contracts,diversity,domain}`;
+the exact nine blocked optional/repository prefixes have zero attempted imports. It joins the construction receipt to its intentionally read
+package-internal `spirallens/graphs/constructors.py` source-byte digest. The exact
+seven operations feed one `spirallens.qualification.crossed` vertical lane, not two independent consumers.
+This is selected graph behavior/failure and origin evidence only, not full graph or
+library-test ownership, persistence round-trip, graph equivalence, replication,
+homology, winding, namespace admission/promotion, sdist behavior, portability,
+compatibility, API/support/stability/typing/release, science/authority/D7 change, or `LIB-L0` completion.
+Production, exports, dependencies, manifests, validator, and report schema are unchanged.
+
 Exit criteria:
 
 - every promoted common primitive has two independent consumers and materially
