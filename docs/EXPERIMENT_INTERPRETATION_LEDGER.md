@@ -1061,6 +1061,89 @@ subject, execution, topology, integer, or semantic authority is added.
 The legacy summary below uses “terminal outcome” for the pre-existing ledger
 scope; it does not reclassify verified B as a D7 terminal.
 
+### 3.29 Claim-ineligible Pythia-70M gate-state development freeze
+
+**Decision source and timing**
+
+On 2026-08-14 the operator attested that no value at the exact new observation
+keys had been read and that prior Pythia-70M outcomes did not select the new
+numeric contexts, F2/F4 formulas, graph parameters, address rings, thresholds,
+or GateState cells. The operator had prior Pythia-70M outcome exposure, and the
+attestation is not cryptographic unseen proof or independent outcome blindness.
+
+The versioned route record
+`protocols/pythia70_gate_state_reconnaissance_route_v0_1.json`,
+`pythia70-claim-ineligible-gate-state-reconnaissance-v0.1`, opens one parallel
+development lane with no strict-route progress or reinterpretation. It is not
+the model-free exploratory alternative rejected in section 3.15. This is a
+prospective amendment recorded under the Fundamental Frame's change control;
+the canonical Frame remains byte-identical at SHA-256
+`f4f7e27f6b40c6951b9b29a2003543bee4283e28690ac09ec44695a0cb013d2d`,
+and the public-example integrity-only allowlist is unchanged.
+
+**Frozen route and roughness boundary**
+
+`pythia70-gate-state-development-v0.1` binds a separate frozen
+`role=discovery`, `claim_eligible=false` ContextBank whose exact eight numeric
+inputs do not duplicate the public-example bank. Here `ContextRole.DISCOVERY`
+is a non-scientific storage and access classification, not `SCI-S2` admission.
+The freeze fixes ordered token addresses 0–48, all six layers, residual pre/post
+capture, four fit and four evaluation contexts, full 512-coordinate development
+arithmetic, F2 and F4 without a winner, three field-estimation graphs, three
+explicitly artificial 7x7 address-ring nulls, and 894 exact GateState cells.
+
+The terminal persists raw-capture provenance, graph receipts, and bounded drift,
+support, consistency, Jaccard, negative-control, low-amplitude-set, holonomy,
+and unrounded phase aggregates. Per-token F2/F4 derived values are computed but
+not persisted. The rings are not graph-derived or graph-selected, model-native
+geometry, homology, or topology.
+Each graph-family cell only asks whether every adjacency of its independently
+frozen path exists in that CandidateGraph; one missing edge is `insufficient`,
+and no alternative cycle is searched. Full O(2) reflection behavior is
+retained, and unresolved orientation becomes `insufficient` rather than being
+forced into SO(2). No `OrderParameterField`, `CoreScore`,
+`CoreCandidate`, `SampledWinding`, or `WindingEstimate` is constructed; only the
+nearest-integer residual is stored, never the nearest-integer value.
+
+Every cell is one of `pass`, `fail`, `insufficient`, or `not_run`. A
+development `pass` means only that its frozen diagnostic threshold was met.
+The terminal fold is fail first, otherwise insufficient when any cell is
+insufficient/not-run, otherwise pass. Infrastructure error is a separate
+attempt terminal and is never converted into a scientific state. A preflight
+may repeat only while the external stage and store remain absent, model bytes
+remain unread, and every input is unchanged.
+
+A separately dated launch must bind the route, Frame, merged policy documents,
+freeze, bank, exact runner bytes, argv, runtime, model identities, resource
+budget, and every artifact coordinate. In one process it must observe the
+honest-quiescent-local absence of the external stage and store, exclusively
+create and fsync the stage and its canonical attempt record, and only then hash
+model files or load the model. Stage absent/store absent means `unopened`;
+stage present/store absent means consumed unresolved or partial; stage
+absent/store present means terminal consumed; both present means invalid
+quarantine.
+
+For either a complete attempt or a catchable infrastructure error, the terminal
+record is written and fsynced in the stage and the stage is promoted to the
+store with native no-replace rename. An uncatchable post-start failure retains
+the start-only stage as consumed unresolved evidence, not a result. No cleanup,
+retry, resume, rescue, relabel, or outcome-conditioned tuning is allowed. A
+result-bound next-hypothesis record is outside the terminal store and may be
+published only later with no replacement; it cannot change the frozen result
+and remains claim-ineligible.
+
+**Exclusions and claim delta**
+
+The public-example atlas and receipt, verified-B values, reconstructed missing
+D7 scalar, Pythia-160M identity or values, subject data, semantics, SAE data,
+and network results are forbidden inputs. Verified B remains closed as the
+existing descriptive `insufficient`; it is not rerun or repaired. F2/F4 remain
+competing Level-0 pointwise development derivations with no selected winner. At
+freeze, model access and execution remain unauthorized until the separate
+launch binding. Claim delta and milestone credit are `none`; VOY, D7, D8,
+SCI-S1, SCI-S2, Pythia-160M, subject, topology, integer, semantic, publication,
+API, support, compatibility, and release states do not advance.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

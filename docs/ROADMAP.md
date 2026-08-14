@@ -312,6 +312,64 @@ route requires a separate V4 readiness and authority decision. Bending the
 route requires a new reviewed route version and a dated Ledger entry before
 any affected input is consumed.
 
+### Bounded Pythia-70M GateState reconnaissance (2026-08-14)
+
+The next development action is the versioned
+`protocols/pythia70_gate_state_reconnaissance_route_v0_1.json`, a separate
+`claim_ineligible_gate_state_reconnaissance` route frozen at `not_run` for one
+exact Pythia-70M attempt. It is parallel to the strict route and is not the
+model-free exploratory alternative rejected by Ledger section 3.15. The
+canonical Fundamental Frame remains byte-identical, and the public-example
+consumer allowlist is unchanged.
+
+The route uses a new frozen `ContextRole.DISCOVERY` bank, not the public-example
+atlas or receipt. That role is a non-scientific storage/access classification,
+not `SCI-S2` admission. The freeze fixes 49 ordered token addresses, eight
+paired-but-nonindependent contexts, six layers, both residual stages, full
+512-coordinate arithmetic, competing F2/F4 pointwise derivations, exact three
+field-estimation graphs, and artificial address-ring nulls. Its 894 gate cells
+preserve `pass`, `fail`, `insufficient`, and `not_run`; pass carries no
+scientific or milestone credit. The terminal persists raw-capture provenance,
+graph receipts, and bounded drift, support, consistency, Jaccard,
+negative-control, low-amplitude-set, holonomy, and unrounded phase aggregates.
+Per-token F2/F4 derived values are computed but not persisted. It constructs no
+`OrderParameterField`, `CoreScore`,
+`CoreCandidate`, `SampledWinding`, or `WindingEstimate`, persists no nearest
+integer, establishes no field-by-cycle crossed design, and makes no discovered
+or selected graph-cycle, model-native-topology, homology, or topology claim.
+Each graph-family cell tests only whether its independently frozen path is
+supported by every declared CandidateGraph adjacency; it neither discovers nor
+selects a cycle, and one missing adjacency makes that cell `insufficient`
+without an alternative-cycle search.
+
+This freeze does not authorize access by itself. The immediate successor must
+first add and validate one repository-only runner, bind its commit/path/SHA,
+the route and freeze SHAs, Frame and merged policy documents, exact argv and
+runtime, model identities, resource budget, and every artifact coordinate. A
+preflight may repeat only while stage/store are absent, model bytes are unread,
+and all inputs remain unchanged. The launch process then observes coordinate
+absence, exclusively creates and fsyncs the durable external stage and attempt
+record, and only afterward may hash cached model files or load the model.
+
+The lifecycle is exact: absent stage/absent store is unopened; present
+stage/absent store is consumed unresolved or partial; absent stage/present store
+is terminal consumed; both present is invalid quarantine. Complete and catchable
+infrastructure-error terminals are written and fsynced in the stage and promoted
+with native no-replace rename. An uncatchable post-start failure leaves the
+start-only stage as consumed unresolved evidence, not a result. Retry, resume,
+cleanup, rescue, relabel, and same-result threshold tuning are forbidden. Any
+next-hypothesis record is outside the terminal store, binds the terminal result,
+and may be published only later with no replacement as claim-ineligible planning
+input.
+
+The roadmap schedules the runner and bounded launch as the immediate successor;
+that schedule is not execution authority. Verified B remains closed
+`insufficient` without scalar reconstruction or rerun, and Pythia-160M remains
+blocked. This lane grants no VOY-V4, D7/D8, SCI-S1/S2, subject
+preparation/execution, candidate selection, topology/integer/semantic claim,
+publication, support, compatibility, portability, API promotion, release, or
+library milestone.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer

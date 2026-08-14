@@ -1,0 +1,95 @@
+# Claim-ineligible discovery addresses for one bounded Pythia-70M
+# gate-state reconnaissance. Token IDs are addresses, not semantic labels.
+schema_version: spirallens.context-bank.v1
+bank_id: pythia70-gate-state-development-v0.1
+status: frozen
+license: Apache-2.0
+claim_eligible: false
+sweep_domain: model_embedding_rows
+source:
+  kind: project_authored_synthetic
+  source_id: spirallens-gate-state-development-v0.1
+model:
+  id: EleutherAI/pythia-70m
+  requested_revision: main
+  resolved_revision: a39f36b100fe8a5377810d56c3f4789b9c53ac42
+  vocab_size: 50304
+tokenizer:
+  id: EleutherAI/pythia-70m
+  requested_revision: main
+  resolved_revision: a39f36b100fe8a5377810d56c3f4789b9c53ac42
+  tokenizer_class: GPTNeoXTokenizerFast
+  implementation: fast
+  transformers_version: 4.57.6
+  tokenizers_version: 0.22.2
+  addressable_size: 50277
+  add_special_tokens: false
+  files:
+    tokenizer.json: c24618a1b3e6a38167beff1c72cffd126c3a66254347304b50547d12c5f25624
+    tokenizer_config.json: 70e38394e494931c6f773ba41e19460dd4436526b852207367f04341b4066d3f
+    special_tokens_map.json: 6f50ab5a5a509a1c309d6171f339b196a900dc9c99ad0408ff23bb615fdae7ad
+contexts:
+  - context_id: gate-fit-bracket-a
+    role: discovery
+    family_id: bracket-pair-a
+    source_id: project-synthetic-gate-fit
+    template_id: bracket-101-103
+    template_ids: [101, null, 103]
+    attention_mask: [1, 1, 1]
+    observation_position: 1
+  - context_id: gate-eval-bracket-a
+    role: discovery
+    family_id: bracket-pair-a
+    source_id: project-synthetic-gate-eval
+    template_id: bracket-107-109
+    template_ids: [107, null, 109]
+    attention_mask: [1, 1, 1]
+    observation_position: 1
+  - context_id: gate-fit-prefix-b
+    role: discovery
+    family_id: prefix-pair-b
+    source_id: project-synthetic-gate-fit
+    template_id: prefix-113-127
+    template_ids: [113, 127, null]
+    attention_mask: [1, 1, 1]
+    observation_position: 2
+  - context_id: gate-eval-prefix-b
+    role: discovery
+    family_id: prefix-pair-b
+    source_id: project-synthetic-gate-eval
+    template_id: prefix-131-137
+    template_ids: [131, 137, null]
+    attention_mask: [1, 1, 1]
+    observation_position: 2
+  - context_id: gate-fit-suffix-c
+    role: discovery
+    family_id: suffix-pair-c
+    source_id: project-synthetic-gate-fit
+    template_id: suffix-139-149
+    template_ids: [null, 139, 149]
+    attention_mask: [1, 1, 1]
+    observation_position: 0
+  - context_id: gate-eval-suffix-c
+    role: discovery
+    family_id: suffix-pair-c
+    source_id: project-synthetic-gate-eval
+    template_id: suffix-151-157
+    template_ids: [null, 151, 157]
+    attention_mask: [1, 1, 1]
+    observation_position: 0
+  - context_id: gate-fit-bracket-d
+    role: discovery
+    family_id: bracket-pair-d
+    source_id: project-synthetic-gate-fit
+    template_id: bracket-163-167-173
+    template_ids: [163, null, 167, 173]
+    attention_mask: [1, 1, 1, 1]
+    observation_position: 1
+  - context_id: gate-eval-bracket-d
+    role: discovery
+    family_id: bracket-pair-d
+    source_id: project-synthetic-gate-eval
+    template_id: bracket-179-181-191
+    template_ids: [179, null, 181, 191]
+    attention_mask: [1, 1, 1, 1]
+    observation_position: 1
