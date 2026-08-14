@@ -4,6 +4,17 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Bounded generated LIB-L0 status view
+
+- Added non-authoritative `docs/generated/lib_l0_status_v0_1.json`, schema
+  `spirallens.lib-l0-status-view.v0.1`, with a stdout/`--check` generator binding
+  the Frame, Ledger, Roadmap, validator, three classification manifests, and
+  generator bytes. Owner documents record no view hash.
+- README/API link to the view instead of a current snapshot; dated receipts remain unchanged.
+- Freshness is not a validation pass or runtime-artifact schema/API change and
+  grants no support, compatibility, portability, library maturity, `LIB-L0`
+  completion, release, science, authority, or D7 readiness/re-anchor.
+
 ## 2026-08-14 — Bounded qualification-state conformance diagnostic
 
 - The validator advances to `spirallens.distribution-validation.v0.10` and adds the bounded report view `spirallens.qualification-state-conformance.v0.1`.

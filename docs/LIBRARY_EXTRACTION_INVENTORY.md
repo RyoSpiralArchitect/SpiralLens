@@ -21,6 +21,9 @@ remain authoritative for those boundaries.
   `distribution/spirallens_installed_imports_v0_1.json`, schema
   `spirallens.installed-import-conformance.v0.1`, 6,497 bytes, SHA-256
   `e40d942728bb2f2625ff0a0d49876fceab14ca4a3527a01dcf4d922868fbb9fb`;
+- current generated navigation/freshness view:
+  `docs/generated/lib_l0_status_v0_1.json`, schema
+  `spirallens.lib-l0-status-view.v0.1`, non-authoritative;
 - current `src/**/*.py` partition: 182 modules = 133 wheel-present modules
   (24 package initializers + 2 console-entrypoint runtime + 107 shipped
   runtime) + 49 repository-only modules;
@@ -44,6 +47,12 @@ remain authoritative for those boundaries.
 Artifact records, documentation projections, tests, CLI wrappers, and members
 of one experiment chronology do not count as independent library consumers.
 A physically installed module is not thereby a public or stable API.
+
+The generator binds the Frame, Ledger, Roadmap, validator, three manifests,
+and its own bytes. `--check` observes committed/rendered equality for bounded
+reads during its invocation, writes nothing, and owner docs record no view hash.
+Freshness is not validation and grants no API, support, compatibility,
+portability, library maturity, `LIB-L0`, science, authority, or D7 readiness.
 
 ## Distribution-boundary observation
 
