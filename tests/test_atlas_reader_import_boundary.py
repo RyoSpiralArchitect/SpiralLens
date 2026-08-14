@@ -423,8 +423,8 @@ print(json.dumps({{
     }
 
 
-def test_id_sweep_neutral_exports_stop_at_the_torch_call_boundary() -> None:
-    """Keep neutral sweep contracts importable without widening the Atlas edge."""
+def test_atlas_neutral_exports_stop_at_model_execution_boundaries() -> None:
+    """Keep Atlas declarations importable while model execution stays blocked."""
 
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = f"""
@@ -436,6 +436,7 @@ import sys
 from typing import get_type_hints
 sys.path.insert(0, {str(source_root)!r})
 forbidden = "torch transformers huggingface_hub safetensors spirallens.adapters".split()
+expected_exports = {EXPECTED_ATLAS_EXPORTS!r}
 attempts = []
 def matches(name, prefix):
     return name == prefix or name.startswith(prefix + ".")
@@ -450,6 +451,7 @@ class Blocker(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, Blocker())
 atlas = importlib.import_module("spirallens.atlas")
 sweep = importlib.import_module("spirallens.atlas.id_sweep")
+runner = importlib.import_module("spirallens.atlas.engineering_run")
 neutral_exports = (
     "ATLAS_CONTEXT_BINDING_SCHEMA_VERSION ContextBankBinding SweepConfig "
     "select_token_ids run_id_sweep"
@@ -457,7 +459,7 @@ neutral_exports = (
 root_identities = all(
     getattr(atlas, name) is getattr(sweep, name) for name in neutral_exports
 )
-hints_resolved = all(
+sweep_hints_resolved = all(
     get_type_hints(getattr(sweep, name))
     for name in ("ContextBankBinding", "SweepConfig", "select_token_ids")
 )
@@ -466,7 +468,19 @@ signature_parameters = [
     [item.name, item.kind.name, item.default is inspect.Parameter.empty, item.annotation]
     for item in signature.parameters.values()
 ]
-attempts_before_run = list(attempts)
+runner_signature = str(inspect.signature(runner.run_public_example_plumbing))
+runner_annotations = runner.run_public_example_plumbing.__annotations__
+runner_hints = get_type_hints(runner.run_public_example_plumbing)
+runner_hints_resolved = set(runner_hints) == set(runner_annotations) and all(not isinstance(value, str) for value in runner_hints.values())
+star_namespace = {{}}
+exec("from spirallens.atlas import *", star_namespace)
+star_identities = (
+    set(star_namespace) == {{"__builtins__", *expected_exports}}
+    and all(star_namespace[name] is getattr(atlas, name) for name in expected_exports)
+    and atlas.PublicExamplePlumbingRunError is runner.PublicExamplePlumbingRunError
+    and atlas.run_public_example_plumbing is runner.run_public_example_plumbing
+)
+attempts_after_star = list(attempts)
 touched = []
 class Untouched:
     def __init__(self, label):
@@ -479,16 +493,33 @@ class Untouched:
 try:
     sweep.run_id_sweep(Untouched("adapter"), Untouched("config"))
 except ModuleNotFoundError as error:
-    run_failure = [error.name, str(error)]
+    sweep_failure = [
+        error.name,
+        str(error),
+        error.__cause__ is None,
+        error.__context__ is None,
+    ]
 else:
     raise AssertionError("run_id_sweep crossed the blocked torch boundary")
-attempts_after_run = list(attempts)
+attempts_after_sweep = list(attempts)
 try:
-    exec("from spirallens.atlas import *", {{}})
+    runner.run_public_example_plumbing(
+        protocol_path=Untouched("protocol_path"),
+        output_dir=Untouched("output_dir"),
+        receipt_path=Untouched("receipt_path"),
+        expected_protocol_source_sha256=Untouched("source_sha256"),
+        expected_protocol_canonical_sha256=Untouched("canonical_sha256"),
+        repository_root=Untouched("repository_root"),
+    )
 except ModuleNotFoundError as error:
-    star_failure = [error.name, str(error)]
+    runner_failure = [
+        error.name,
+        str(error),
+        error.__cause__ is None,
+        error.__context__ is None,
+    ]
 else:
-    raise AssertionError("Atlas star import crossed the engineering model edge")
+    raise AssertionError("public-example runner crossed the blocked torch boundary")
 blocked_loaded = sorted(
     prefix
     for prefix in forbidden
@@ -496,17 +527,20 @@ blocked_loaded = sorted(
 )
 print(json.dumps({{
     "annotations": sweep.run_id_sweep.__annotations__,
-    "attempts_after_run": attempts_after_run,
-    "attempts_after_star": attempts,
-    "attempts_before_run": attempts_before_run,
+    "attempts_after_star": attempts_after_star,
+    "attempts_after_sweep": attempts_after_sweep,
+    "attempts_after_runner": attempts,
     "blocked_loaded": blocked_loaded,
-    "engineering_run_loaded": "spirallens.atlas.engineering_run" in sys.modules,
-    "hints_resolved": hints_resolved,
+    "runner_annotations": runner_annotations,
+    "runner_failure": runner_failure,
+    "runner_hints_resolved": runner_hints_resolved,
+    "runner_signature": runner_signature,
     "return_annotation": signature.return_annotation,
     "root_identities": root_identities,
-    "run_failure": run_failure,
     "signature_parameters": signature_parameters,
-    "star_failure": star_failure,
+    "star_identities": star_identities,
+    "sweep_failure": sweep_failure,
+    "sweep_hints_resolved": sweep_hints_resolved,
     "touched": touched,
 }}, sort_keys=True))
 """
@@ -526,23 +560,44 @@ print(json.dumps({{
             "config": "SweepConfig",
             "return": "dict[str, object]",
         },
-        "attempts_after_run": ["torch"],
-        "attempts_after_star": ["torch", "spirallens.adapters"],
-        "attempts_before_run": [],
+        "attempts_after_runner": ["torch", "torch"],
+        "attempts_after_star": [],
+        "attempts_after_sweep": ["torch"],
         "blocked_loaded": [],
-        "engineering_run_loaded": False,
-        "hints_resolved": True,
+        "runner_annotations": {
+            "protocol_path": "str | Path",
+            "output_dir": "str | Path",
+            "receipt_path": "str | Path",
+            "expected_protocol_source_sha256": "str",
+            "expected_protocol_canonical_sha256": "str",
+            "repository_root": "str | Path",
+            "return": "dict[str, object]",
+        },
+        "runner_failure": [
+            "torch",
+            "blocked model dependency: torch",
+            True,
+            True,
+        ],
+        "runner_hints_resolved": True,
+        "runner_signature": (
+            "(*, protocol_path: 'str | Path', output_dir: 'str | Path', receipt_path: 'str | Path', expected_protocol_source_sha256: 'str', "
+            "expected_protocol_canonical_sha256: 'str', repository_root: 'str | Path') -> 'dict[str, object]'"
+        ),
         "return_annotation": "dict[str, object]",
         "root_identities": True,
-        "run_failure": ["torch", "blocked model dependency: torch"],
         "signature_parameters": [
             ["adapter", "POSITIONAL_OR_KEYWORD", True, "PythiaAdapter"],
             ["config", "POSITIONAL_OR_KEYWORD", True, "SweepConfig"],
         ],
-        "star_failure": [
-            "spirallens.adapters",
-            "blocked model dependency: spirallens.adapters",
+        "star_identities": True,
+        "sweep_failure": [
+            "torch",
+            "blocked model dependency: torch",
+            True,
+            True,
         ],
+        "sweep_hints_resolved": True,
         "touched": [],
     }
 

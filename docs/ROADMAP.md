@@ -356,7 +356,7 @@ The target is:
 | `calibration` | Analytic positive controls, negative controls, and instrument qualification | Core only |
 | `metrics`, `gauge`, `nulls` | Structural observables, alignment, and matched controls | Core by default |
 | `adapters` | Pythia, Hugging Face, and future model-family capture | Optional model extras |
-| `atlas` | Streaming observation storage, integrity journals, and replay | NumPy/PyYAML reader closure and the five `id_sweep` declaration/configuration bindings are importable without model frameworks; sweep execution and the engineering runner remain model extras, and the whole namespace remains provisional/model extra |
+| `atlas` | Streaming observation storage, integrity journals, and replay | NumPy/PyYAML reader closure and all exact 20 root/star bindings are importable without model frameworks; sweep and public-example execution remain model extras, and the whole namespace remains provisional/model extra |
 | `jacobians`, `factors` | JVP and architecture-component accounting | Core analytic paths plus optional autodiff |
 | `interventions` | Explicitly scoped activation interventions | Optional model extras |
 | `semantics` | Post-discovery annotation and held-out evaluation | Never imported by discovery |
@@ -1008,10 +1008,9 @@ outside those declared bases. The repository-only validator parent uses
 isolated children do not import it. The base runtime dependencies are
 unchanged, and installed metadata has the exact 13 normalized `Requires-Dist`
 records: three base and ten optional-extra requirements. The two routes have
-equal normalized startup receipts. Each route observes 130 base-import
-successes and three exact blocked-Torch model-extra outcomes:
-`spirallens.adapters`, `spirallens.adapters.pythia`, and
-`spirallens.atlas.engineering_run`. The sole
+equal normalized startup receipts. Each route observes 131 base-import
+successes and two exact blocked-Torch model-extra outcomes:
+`spirallens.adapters` and `spirallens.adapters.pythia`. The sole
 blocked undeclared attempt is `charset_normalizer`, which remains unloaded;
 the aggregate loaded third-party distributions remain the exact declared base
 three. Runtime
@@ -1039,14 +1038,16 @@ The report records
 strictly scoped
 `runtime_successful_package_export_values_established=true`.
 
-`spirallens.atlas.id_sweep` is the additional base-import success. A source
-probe and the direct-source and sdist-derived fresh-wheel workers resolve its exact five defining/root
-bindings with model prefixes blocked; the neutral class/function hints resolve.
-`run_id_sweep` retains its raw signature and annotation spellings, but imports
-Torch at call time before adapter/config access. Default runtime
-`get_type_hints(run_id_sweep)` is outside the claim, and Atlas star import still
-reaches the blocked engineering runner. This is a bounded framework import
-boundary, not operation portability, public API/protocol, support, or `LIB-L0` completion.
+`spirallens.atlas.id_sweep` and `spirallens.atlas.engineering_run` are the two
+later Atlas base-import successes. A source probe and both fresh-wheel workers
+resolve all exact 20 defining/root/star identities with model prefixes blocked.
+Neutral sweep hints and the public runner's exact model-free hints resolve; its
+root identity, structural signature, and raw annotations remain fixed. On call,
+the runner imports Torch and then the adapter before argument/root access;
+`run_id_sweep` still imports Torch before adapter/config access. Default
+resolved run-sweep hints, private-helper hints, and former private globals are
+outside the claim. This is a bounded framework import boundary, not operation
+portability, public API/protocol, support, release, D7 authority, or `LIB-L0` completion.
 
 The private `spirallens._model_observer.BatchObservationProtocol` seam
 separates the declared observation capability from the Atlas store's NumPy
@@ -1095,10 +1096,9 @@ operations and other open allowlist, compatibility, portability, and release
 gates keep the wheel from being library-grade. The report's authority,
 `lib_l0`, library, portability, public-API, and
 scientific grants all remain `false`, so `LIB-L0` remains in progress and
-VOY-V4 remains unauthorized. The repository tracks 116 Python files under
-`tests/`.
-The former sdist's 106-file test surface was an implicit partial subset: it
-omitted 10 tracked test/helper files while some carried tests still depended on
+VOY-V4 remains unauthorized. A current repository test-file count is
+intentionally not frozen here. The former sdist's 106-file test surface was an
+implicit partial subset: some carried tests depended on
 omitted helpers or deliberately repository-only experiment modules. It was not
 a self-contained replay, installed-wheel conformance suite, or maturity
 receipt. The v0.10 diagnostic now requires the sdist's top-level `tests` path to

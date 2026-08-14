@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
+from spirallens.adapters import CAPTURE_IMPLEMENTATION_VERSION, PythiaAdapter
 from spirallens.atlas import engineering_run
 from spirallens.atlas.engineering_protocol import (
     PublicExamplePlumbingProtocolIntegrityError,
@@ -155,7 +156,7 @@ def test_model_metadata_uses_the_closed_profile_layout() -> None:
     capture = {
         "capture_implementation": {
             "name": "PythiaAdapter.observe_batch.residual_hooks",
-            "version": engineering_run.CAPTURE_IMPLEMENTATION_VERSION,
+            "version": CAPTURE_IMPLEMENTATION_VERSION,
             "accelerator_to_cpu_copy": "synchronous",
             "activation_dtype": "float32",
         },
@@ -239,7 +240,7 @@ def test_public_runner_rejects_pythia160_before_model_context_or_output_io(
     ):
         monkeypatch.setattr(engineering_run, name, forbidden)
     monkeypatch.setattr(
-        engineering_run.PythiaAdapter,
+        PythiaAdapter,
         "from_pretrained",
         forbidden,
     )
