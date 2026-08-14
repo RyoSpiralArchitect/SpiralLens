@@ -3,10 +3,12 @@ from __future__ import annotations
 import ast
 import builtins
 import hashlib
+import importlib.metadata
 import importlib.util
 import io
 import json
 import runpy
+import shutil
 import stat
 import subprocess
 import sys
@@ -289,9 +291,9 @@ def test_installed_import_policy_is_stdlib_only_pure_metadata_projection() -> No
         "spirallens.adapters",
         "spirallens.adapters.pythia",
         "spirallens.atlas.engineering_run",
-        "spirallens.atlas.id_sweep",
     ]
     assert "spirallens.atlas._capture_store" not in first["models_extra_missing_torch"]
+    assert "spirallens.atlas.id_sweep" not in first["models_extra_missing_torch"]
     blocked = first["blocked_optional_prefixes"]
     assert isinstance(blocked, list)
     blocked.append("rogue")
@@ -359,9 +361,9 @@ def test_installed_import_manifest_freezes_exact_133_outcomes() -> None:
         INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION
     )
     assert classification["manifest_sha256"] == (
-        "e40d942728bb2f2625ff0a0d49876fceab14ca4a3527a01dcf4d922868fbb9fb"
+        "d49165d09e224d60c310c324f7a3ad94f4e39b93438e8daa0a4c39064de7f752"
     )
-    assert len(classification["outcomes"]["base_import_success"]) == 129
+    assert len(classification["outcomes"]["base_import_success"]) == 130
     assert (
         "spirallens._model_observer"
         in classification["outcomes"]["base_import_success"]
@@ -374,7 +376,9 @@ def test_installed_import_manifest_freezes_exact_133_outcomes() -> None:
         "spirallens.adapters",
         "spirallens.adapters.pythia",
         "spirallens.atlas.engineering_run",
-        "spirallens.atlas.id_sweep",
+    )
+    assert (
+        "spirallens.atlas.id_sweep" in classification["outcomes"]["base_import_success"]
     )
     assert classification["successful_package_modules"] == tuple(
         package["module"]
@@ -400,7 +404,7 @@ def test_installed_import_manifest_freezes_exact_133_outcomes() -> None:
         ("reorder_success", "sorted and unique"),
         ("overlap", "overlap"),
         ("missing_module", "exact shipped module set"),
-        ("stale_capture_store_negative", "129/4 inventory"),
+        ("stale_id_sweep_negative", "130/3 inventory"),
         ("wrong_negative", "overlap"),
         ("extra_dependency", "base dependencies differ"),
     ],
@@ -428,12 +432,10 @@ def test_installed_import_manifest_rejects_drift(
         document["outcomes"]["base_import_success"].sort()
     elif mutation == "missing_module":
         document["outcomes"]["base_import_success"].remove("spirallens._model_observer")
-    elif mutation == "stale_capture_store_negative":
-        document["outcomes"]["base_import_success"].remove(
-            "spirallens.atlas._capture_store"
-        )
+    elif mutation == "stale_id_sweep_negative":
+        document["outcomes"]["base_import_success"].remove("spirallens.atlas.id_sweep")
         document["outcomes"]["models_extra_missing_torch"].append(
-            "spirallens.atlas._capture_store"
+            "spirallens.atlas.id_sweep"
         )
         document["outcomes"]["models_extra_missing_torch"].sort()
     elif mutation == "wrong_negative":
@@ -480,7 +482,7 @@ def test_installed_import_manifest_accepts_pyproject_dependency_reordering(
     )
 
     assert classification["manifest_sha256"] == (
-        "e40d942728bb2f2625ff0a0d49876fceab14ca4a3527a01dcf4d922868fbb9fb"
+        "d49165d09e224d60c310c324f7a3ad94f4e39b93438e8daa0a4c39064de7f752"
     )
 
 
@@ -954,6 +956,78 @@ def test_installed_import_probe_has_no_site_no_preload_and_exact_owner_join() ->
     assert 'if ";" not in requirement' not in discovery
     assert 'site_initialization_enabled": False' in probe
     assert 'pth_startup_executed": False' in probe
+    id_sweep_branch = 'if module_name == "spirallens.atlas.id_sweep":'
+    assert probe.index(id_sweep_branch) < probe.rindex("loaded_optional = sorted(")
+    assert "typing.get_type_hints(neutral)" in probe
+    assert "module.run_id_sweep(Bomb(), Bomb())" in probe
+    assert "id_sweep bomb attribute accessed" in probe
+    assert "blocked optional dependency: torch" in probe
+
+
+def test_installed_import_worker_executes_id_sweep_neutral_boundary(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    site_packages = tmp_path / "site-packages"
+    shipped = _classification()["shipped_members"]
+    for member in shipped:
+        target = site_packages / member
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(repository / "src" / member, target)
+    dist_info = site_packages / "spirallens-0.2.0.dist-info"
+    dist_info.mkdir()
+    (dist_info / "METADATA").write_text(
+        "Metadata-Version: 2.4\nName: spirallens\nVersion: 0.2.0\n",
+        encoding="utf-8",
+    )
+    (dist_info / "top_level.txt").write_text("spirallens\n", encoding="utf-8")
+    (dist_info / "RECORD").write_text(
+        "".join(f"{member},,\n" for member in shipped),
+        encoding="utf-8",
+    )
+    explicit_roots = [site_packages]
+    for distribution_name, import_name in (
+        ("numpy", "numpy"),
+        ("PyYAML", "yaml"),
+        ("scipy", "scipy"),
+    ):
+        distribution = importlib.metadata.distribution(distribution_name)
+        initializer = next(
+            item
+            for item in distribution.files or ()
+            if Path(str(item)).as_posix() == f"{import_name}/__init__.py"
+        )
+        root = Path(distribution.locate_file(initializer)).resolve().parent.parent
+        if root not in explicit_roots:
+            explicit_roots.append(root)
+    completed = subprocess.run(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            _VALIDATOR._INSTALLED_IMPORT_MODULE_PROBE,
+            "spirallens.atlas.id_sweep",
+            "base_import_success",
+            "null",
+            _VALIDATOR._INSTALLED_IMPORT_WORKER_POLICY,
+            json.dumps([str(path) for path in explicit_roots]),
+            "spirallens/atlas/id_sweep.py",
+        ),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.stderr == ""
+    assert completed.returncode == 0
+    receipt = json.loads(completed.stdout)
+    assert receipt["module"] == "spirallens.atlas.id_sweep"
+    assert receipt["status"] == "base_import_success"
+    assert receipt["blocked_optional_prefixes_loaded"] == []
 
 
 def test_packaging_parser_stays_in_parent_build_validator_only() -> None:

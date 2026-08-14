@@ -4,6 +4,23 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Neutral Atlas ID-sweep import boundary
+
+- Without changing the v0.10 report shape or v0.1 installed-import schema,
+  `spirallens.atlas.id_sweep` moves to base-import success: 133 outcomes are now
+  130 successes plus exact blocked-Torch `spirallens.adapters`,
+  `spirallens.adapters.pythia`, and `spirallens.atlas.engineering_run`.
+- A source probe and the direct-source and sdist-derived fresh-wheel workers
+  resolve its exact five module/root
+  bindings under blocked model prefixes. Neutral class/function hints resolve;
+  `run_id_sweep` preserves raw signature/annotation spellings and fails on Torch
+  at call time before adapter/config access. Default runtime
+  `get_type_hints(run_id_sweep)` and whole-Atlas/star importability are nonclaims.
+- Modules, 24 / 559 static and 23 / 554 runtime declarations, dependencies, and
+  artifact schemas are unchanged. This grants no operation portability, public
+  adapter protocol/API promotion, support, `LIB-L0` completion, release, science,
+  authority, or D7 readiness/re-anchor; historical receipts remain unchanged.
+
 ## 2026-08-14 — Bounded generated LIB-L0 status view
 
 - Added non-authoritative `docs/generated/lib_l0_status_v0_1.json`, schema

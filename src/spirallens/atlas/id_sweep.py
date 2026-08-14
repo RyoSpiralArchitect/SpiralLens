@@ -7,12 +7,10 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 import numpy as np
-import torch
 
-from spirallens.adapters import PythiaAdapter
 from spirallens.contexts import (
     OBSERVATION_KEY_SCHEMA_VERSION,
     ContextContractError,
@@ -25,6 +23,9 @@ from spirallens.contexts import (
 from .engineering_protocol import validate_engineering_request_binding
 from ._capture_store import AtlasStore
 from .store import ATLAS_SCHEMA_VERSION, token_ids_sha256
+
+if TYPE_CHECKING:
+    from spirallens.adapters import PythiaAdapter
 
 
 ATLAS_CONTEXT_BINDING_SCHEMA_VERSION = "spirallens.atlas-context-binding.v1"
@@ -338,6 +339,8 @@ def _sha256_json(payload: dict[str, object]) -> str:
 
 def run_id_sweep(adapter: PythiaAdapter, config: SweepConfig) -> dict[str, object]:
     """Stream a fixed-context token-ID sweep to a resumable atlas directory."""
+
+    import torch
 
     context_binding = config.context_bank_binding
     selection_vocab_size = adapter.vocab_size

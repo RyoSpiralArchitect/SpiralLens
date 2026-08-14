@@ -32,7 +32,6 @@ MISSING_TORCH = (
     "spirallens.adapters",
     "spirallens.adapters.pythia",
     "spirallens.atlas.engineering_run",
-    "spirallens.atlas.id_sweep",
 )
 DENIED_AUDIT_EVENTS = tuple(
     (
