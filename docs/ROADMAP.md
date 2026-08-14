@@ -966,7 +966,7 @@ those files and additionally classifies the 27 formerly shipped
 `qualification/confirmation_*.py` modules as repository-only. It now
 partitions all 182 `src/**/*.py` module paths into 133 wheel-present modules
 (24 package initializers, two console-entrypoint runtime modules, and 107 other
-shipped runtime modules) and 49 repository-only modules. The v0.9 diagnostic
+shipped runtime modules) and 49 repository-only modules. The v0.10 diagnostic
 proves the exact 133-member set through the
 source tree, sdist, both wheel routes, and both fresh non-editable
 installations and records
@@ -976,7 +976,7 @@ A second versioned manifest,
 `distribution/spirallens_ordered_exports_v0_1.json`, schema
 `spirallens.ordered-package-exports.v0.1`, closes only the static literal
 ordered `__all__` declarations for all 24 classified package initializers: 559
-namespace-scoped entries. The v0.9 diagnostic proves the same initializer
+namespace-scoped entries. The v0.10 diagnostic proves the same initializer
 bytes and ordered declarations in the source tree, sdist, both wheel routes,
 and both fresh installs, parsing installed initializer bytes without importing
 `spirallens`. It records
@@ -986,7 +986,7 @@ A third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, closes the expected installed
 import outcomes for those exact 133 modules under one bounded host-projected
-environment contract. The v0.9 diagnostic applies that contract separately to
+environment contract. The v0.10 diagnostic applies that contract separately to
 the direct-source and sdist-derived non-editable wheels. This is a
 single-current-host observation, not a portability matrix. It uses one fresh
 `-I -S -B`, 30-second process per module, a neutral working directory, and no
@@ -1041,6 +1041,16 @@ runtime `isinstance` gate. This establishes no NumPy-owned or value-neutral
 observation record, public adapter protocol, portability result, or completion
 of `LIB-L0`.
 
+The v0.10 diagnostic runs one model-free probe against staged source and both
+fresh-install routes. It requires six root/core/qualification origins under the
+intended tree and equal canonical render, parse, `GateResult.from_dict()`, and
+rerender for `pass`, `fail`, `insufficient`, and `not_run`, preserving state and
+claim scope without negative-to-`pass` promotion. A passing report observes only
+the four-state fixture exit subgate and one origin-verified source/installed
+slice. It is not the full library-test exit, a runtime-artifact
+schema or API change, support, full compatibility, portability, science,
+authority, D7 readiness/re-anchor, release, or completion of `LIB-L0`.
+
 These are physical-placement, static-declaration, and installed-import
 closures, not a closed library allowlist or public API contract. The audit hook
 begins only after isolated interpreter and standard-library probe bootstrap
@@ -1073,7 +1083,7 @@ The former sdist's 106-file test surface was an implicit partial subset: it
 omitted 10 tracked test/helper files while some carried tests still depended on
 omitted helpers or deliberately repository-only experiment modules. It was not
 a self-contained replay, installed-wheel conformance suite, or maturity
-receipt. The v0.9 diagnostic now requires the sdist's top-level `tests` path to
+receipt. The v0.10 diagnostic now requires the sdist's top-level `tests` path to
 be absent and records `sdist_test_surface` as exact `absent / 0 / []`. This is a
 distribution-role boundary, not a full sdist inventory, replay result,
 compatibility or portability grant, API promotion, library milestone,

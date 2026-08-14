@@ -4,6 +4,18 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Bounded qualification-state conformance diagnostic
+
+- The validator advances to `spirallens.distribution-validation.v0.10` and adds the bounded report view `spirallens.qualification-state-conformance.v0.1`.
+- One model-free probe runs against staged source and both fresh-install routes,
+  verifying six exact root/core/qualification origins and canonical render,
+  parse, `GateResult.from_dict()`, and rerender equality for all four states;
+  state and claim scope survive without negative-to-`pass` promotion.
+- A passing report observes only the four-state fixture subgate and a bounded
+  source/install slice. It changes no Python API or production artifact schema,
+  export, dependency, support, compatibility/portability, science, authority,
+  D7 readiness/re-anchor, release, or `LIB-L0` completion; historical receipts retain their original coordinates.
+
 ## 2026-08-14 — Private model-observer import seam
 
 - Added private `spirallens._model_observer` as one shipped runtime module.

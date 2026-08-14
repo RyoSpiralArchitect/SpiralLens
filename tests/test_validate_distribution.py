@@ -39,6 +39,12 @@ ATLAS_READER_IMPORTS = _VALIDATOR.ATLAS_READER_IMPORTS
 ATLAS_READER_SYMBOL_MODULES = _VALIDATOR.ATLAS_READER_SYMBOL_MODULES
 DistributionValidationError = _VALIDATOR.DistributionValidationError
 REPORT_SCHEMA_VERSION = _VALIDATOR.REPORT_SCHEMA_VERSION
+QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION = (
+    _VALIDATOR.QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION
+)
+QUALIFICATION_STATE_ORDER = _VALIDATOR.QUALIFICATION_STATE_ORDER
+QUALIFICATION_STATE_CANONICAL_SHA256 = _VALIDATOR.QUALIFICATION_STATE_CANONICAL_SHA256
+QUALIFICATION_STATE_MODULE_ORIGINS = _VALIDATOR.QUALIFICATION_STATE_MODULE_ORIGINS
 REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES = (
     _VALIDATOR.REPOSITORY_EXPERIMENT_WHEEL_MEMBER_PREFIXES
 )
@@ -92,12 +98,18 @@ _parse_repository_experiment_absence_probe_output = (
     _VALIDATOR._parse_repository_experiment_absence_probe_output
 )
 _parse_atlas_reader_probe_output = _VALIDATOR._parse_atlas_reader_probe_output
+_parse_qualification_state_conformance_probe_output = (
+    _VALIDATOR._parse_qualification_state_conformance_probe_output
+)
 _parse_probe_output = _VALIDATOR._parse_probe_output
 _repository_experiment_source_report = _VALIDATOR._repository_experiment_source_report
 _require_zero_repository_experiment_members = (
     _VALIDATOR._require_zero_repository_experiment_members
 )
 _sha256_file = _VALIDATOR._sha256_file
+_QUALIFICATION_STATE_CONFORMANCE_PROBE = (
+    _VALIDATOR._QUALIFICATION_STATE_CONFORMANCE_PROBE
+)
 
 CURRENT_REPOSITORY_EXPERIMENT_WHEEL_MEMBERS = tuple(
     path.removeprefix("src/") for path in REPOSITORY_EXPERIMENT_SOURCE_PATHS
@@ -2105,7 +2117,7 @@ def test_private_strict_yaml_factory_is_an_explicit_wheel_member() -> None:
 
 
 def test_atlas_reader_probe_is_separate_from_dependency_free_imports() -> None:
-    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.9"
+    assert REPORT_SCHEMA_VERSION == "spirallens.distribution-validation.v0.10"
     assert set(ATLAS_READER_IMPORTS).isdisjoint(DEFAULT_IMPORTS)
     assert ATLAS_READER_IMPORTS == (
         "spirallens.atlas",
@@ -2269,6 +2281,179 @@ def test_atlas_reader_probe_rejects_public_export_reordering(
             environment_root=environment_root,
             required_imports=ATLAS_READER_IMPORTS,
         )
+
+
+@pytest.fixture(scope="module")
+def qualification_state_probe_document() -> dict[str, object]:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-P",
+            "-B",
+            "-c",
+            _QUALIFICATION_STATE_CONFORMANCE_PROBE,
+            "source",
+            str(repository / "src"),
+        ],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.stderr == ""
+    value = json.loads(completed.stdout)
+    assert isinstance(value, dict)
+    return value
+
+
+def _qualification_state_output(
+    document: dict[str, object],
+    import_root: Path,
+) -> str:
+    value = json.loads(json.dumps(document))
+    value["import_root"] = str(import_root)
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def _write_qualification_state_origins(import_root: Path) -> None:
+    for relative in QUALIFICATION_STATE_MODULE_ORIGINS.values():
+        origin = import_root / relative
+        origin.parent.mkdir(parents=True, exist_ok=True)
+        origin.write_text("# exact-origin fixture\n", encoding="utf-8")
+
+
+def test_qualification_state_conformance_receipt_is_exact_and_route_equal(
+    tmp_path: Path,
+    qualification_state_probe_document: dict[str, object],
+) -> None:
+    receipts = []
+    for route in ("source", "direct", "sdist"):
+        import_root = tmp_path / route
+        _write_qualification_state_origins(import_root)
+        receipts.append(
+            _parse_qualification_state_conformance_probe_output(
+                _qualification_state_output(
+                    qualification_state_probe_document,
+                    import_root,
+                ),
+                import_root=import_root,
+            )
+        )
+
+    assert receipts[0] == receipts[1] == receipts[2]
+    receipt = receipts[0]
+    assert set(receipt) == {"module_origins", "schema_version", "states"}
+    assert receipt["schema_version"] == QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION
+    assert receipt["module_origins"] == QUALIFICATION_STATE_MODULE_ORIGINS
+    states = receipt["states"]
+    assert isinstance(states, list)
+    assert [state["state"] for state in states] == list(QUALIFICATION_STATE_ORDER)
+    for expected_state, state in zip(QUALIFICATION_STATE_ORDER, states, strict=True):
+        assert set(state) == {
+            "canonical_json",
+            "canonical_sha256",
+            "claim_scope",
+            "state",
+        }
+        assert state["claim_scope"] == "engine-and-protocol-contracts"
+        assert (
+            state["canonical_sha256"]
+            == QUALIFICATION_STATE_CANONICAL_SHA256[expected_state]
+        )
+        canonical_json = state["canonical_json"]
+        assert (
+            hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+            == state["canonical_sha256"]
+        )
+        parsed = json.loads(canonical_json)
+        assert canonical_json == json.dumps(
+            parsed,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+        if expected_state != "pass":
+            assert state["state"] != "pass"
+
+
+def test_qualification_state_conformance_rejects_adversarial_receipts(
+    tmp_path: Path,
+    qualification_state_probe_document: dict[str, object],
+) -> None:
+    import_root = tmp_path / "route"
+    _write_qualification_state_origins(import_root)
+
+    def fresh() -> dict[str, object]:
+        value = json.loads(
+            _qualification_state_output(
+                qualification_state_probe_document,
+                import_root,
+            )
+        )
+        assert isinstance(value, dict)
+        return value
+
+    def encoded(value: dict[str, object]) -> str:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+    adversaries: list[tuple[str, Path]] = [("{", import_root)]
+    mutations = (
+        lambda value: value.pop("schema_version"),
+        lambda value: value.update({"unexpected": True}),
+        lambda value: value.update({"schema_version": "v0"}),
+        lambda value: value["module_origins"].pop("spirallens"),
+        lambda value: value["module_origins"].update({"x": "x.py"}),
+        lambda value: value["module_origins"].update(
+            {"spirallens": "spirallens/alias.py"}
+        ),
+        lambda value: value["states"].pop(),
+        lambda value: value["states"].append(value["states"][-1]),
+        lambda value: value["states"].__setitem__(1, value["states"][0]),
+        lambda value: value["states"][1].update({"state": "not_run"}),
+        lambda value: value["states"][0].update({"claim_scope": "scientific"}),
+        lambda value: value["states"][0].pop("claim_scope"),
+        lambda value: value["states"][0].update({"unexpected": True}),
+        lambda value: value["states"][0].update({"canonical_sha256": "0" * 64}),
+    )
+    for mutation in mutations:
+        document = fresh()
+        mutation(document)
+        adversaries.append((encoded(document), import_root))
+
+    duplicate_field = encoded(fresh()).replace(
+        '"import_root":',
+        '"import_root":"duplicate","import_root":',
+        1,
+    )
+    adversaries.append((duplicate_field, import_root))
+
+    tampered = fresh()
+    tampered_state = tampered["states"][0]
+    tampered_state["canonical_json"] += " "
+    tampered_state["canonical_sha256"] = hashlib.sha256(
+        tampered_state["canonical_json"].encode("utf-8")
+    ).hexdigest()
+    adversaries.append((encoded(tampered), import_root))
+
+    outside = tmp_path / "outside"
+    adversaries.append(
+        (
+            _qualification_state_output(qualification_state_probe_document, outside),
+            import_root,
+        )
+    )
+
+    for output, expected_root in adversaries:
+        with pytest.raises(
+            DistributionValidationError,
+            match="qualification state conformance",
+        ):
+            _parse_qualification_state_conformance_probe_output(
+                output,
+                import_root=expected_root,
+            )
 
 
 def _experiment_absence_probe(
@@ -2451,6 +2636,36 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     report = json.loads(completed.stdout)
     assert report["schema_version"] == REPORT_SCHEMA_VERSION
     assert report["status"] == "pass"
+    qualification = report["qualification_state_conformance"]
+    assert qualification["schema_version"] == (
+        QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION
+    )
+    assert qualification["observation"] == "exact-four-state-canonical-round-trip"
+    assert qualification["claim_boundary"] == (
+        "synthetic model-free state preservation only; no scientific, authority, "
+        "compatibility, portability, public API, or LIB-L0 grant"
+    )
+    assert qualification["equality"] == {
+        "direct_source_to_sdist_derived_install": True,
+        "source_to_direct_source_install": True,
+        "source_to_sdist_derived_install": True,
+    }
+    assert (
+        qualification["source_tree"]
+        == qualification["direct_source_install"]
+        == qualification["sdist_derived_install"]
+    )
+    qualification_receipt = qualification["source_tree"]
+    assert qualification_receipt["module_origins"] == (
+        QUALIFICATION_STATE_MODULE_ORIGINS
+    )
+    assert [state["state"] for state in qualification_receipt["states"]] == list(
+        QUALIFICATION_STATE_ORDER
+    )
+    assert {
+        state["state"]: state["canonical_sha256"]
+        for state in qualification_receipt["states"]
+    } == QUALIFICATION_STATE_CANONICAL_SHA256
     absent = {"observation": "absent", "count": 0, "members": []}
     assert report["sdist_test_surface"] == absent
     separation = report["library_separation"]

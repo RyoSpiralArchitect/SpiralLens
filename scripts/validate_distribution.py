@@ -35,7 +35,27 @@ from pathlib import Path, PurePosixPath
 from packaging.markers import Marker
 from packaging.requirements import InvalidRequirement, Requirement
 
-REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.9"
+REPORT_SCHEMA_VERSION = "spirallens.distribution-validation.v0.10"
+QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION = (
+    "spirallens.qualification-state-conformance.v0.1"
+)
+QUALIFICATION_STATE_ORDER = ("pass", "fail", "insufficient", "not_run")
+QUALIFICATION_STATE_CANONICAL_SHA256 = {
+    "pass": "5c231df1519e2d5021f14f548142d49152a6a8f8fd47e00394b52bd110363760",
+    "fail": "47b5b365a17dbab28f9f29dba249b423e42a89f209a594dcb37cde1cb00e6608",
+    "insufficient": (
+        "6467ca69869fbcf999e627beb0928cda1a9103307deab41ce8891d45b6544d34"
+    ),
+    "not_run": ("59916db9d25b90aa1fc15743abb2c104ce1e45bc559a901e37585ccc04f68600"),
+}
+QUALIFICATION_STATE_MODULE_ORIGINS = {
+    "spirallens": "spirallens/__init__.py",
+    "spirallens.core": "spirallens/core/__init__.py",
+    "spirallens.core.canonical": "spirallens/core/canonical.py",
+    "spirallens.qualification": "spirallens/qualification/__init__.py",
+    "spirallens.qualification.common": "spirallens/qualification/common.py",
+    "spirallens.qualification.contracts": ("spirallens/qualification/contracts.py"),
+}
 PYTHON_MEMBER_CLASSIFICATION_PATH = "distribution/spirallens_python_members_v0_1.json"
 PYTHON_MEMBER_CLASSIFICATION_SCHEMA_VERSION = (
     "spirallens.python-distribution-members.v0.1"
@@ -3489,6 +3509,137 @@ def _require_installed_import_outcome_equality(
     }
 
 
+_QUALIFICATION_STATE_CONFORMANCE_PROBE = r"""
+import importlib
+import importlib.metadata
+import json
+from pathlib import Path
+import sys
+
+mode = sys.argv[1]
+if mode == "source":
+    import_root = Path(sys.argv[2]).resolve(strict=True)
+    sys.path.insert(0, str(import_root))
+elif mode == "installed":
+    if sys.argv[2] != "-":
+        raise RuntimeError("installed qualification probe received an import root")
+    distribution = importlib.metadata.distribution("spirallens")
+    import_root = Path(distribution.locate_file("")).resolve(strict=True)
+else:
+    raise RuntimeError("qualification probe received an unknown mode")
+
+from spirallens.core import canonical_json_bytes, parse_canonical_json, sha256_bytes
+from spirallens.qualification import GateResult, QualificationGateId, QualificationState
+from spirallens.qualification.common import EvaluationUnit
+
+origin_modules = {
+    name: importlib.import_module(name)
+    for name in (
+        "spirallens",
+        "spirallens.core",
+        "spirallens.core.canonical",
+        "spirallens.qualification",
+        "spirallens.qualification.common",
+        "spirallens.qualification.contracts",
+    )
+}
+
+fixtures = (
+    ("pass", 1, 0, 0, 1, 0, 0, 0, ()),
+    ("fail", 1, 0, 0, 0, 1, 0, 0, ("synthetic-failure",)),
+    (
+        "insufficient",
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        ("synthetic-insufficient",),
+    ),
+    ("not_run", 0, 0, 1, 0, 0, 0, 1, ("synthetic-not-run",)),
+)
+
+states = []
+for (
+    state_name,
+    evaluable_count,
+    attempt_insufficient_count,
+    attempt_not_run_count,
+    pass_count,
+    fail_count,
+    insufficient_count,
+    not_run_count,
+    reason_codes,
+) in fixtures:
+    gate = GateResult(
+        gate_id=QualificationGateId.D0,
+        state=QualificationState(state_name),
+        evaluation_unit=EvaluationUnit.PHANTOM_INSTANCE,
+        attempted_count=1,
+        evaluable_count=evaluable_count,
+        attempt_insufficient_count=attempt_insufficient_count,
+        attempt_not_run_count=attempt_not_run_count,
+        pass_count=pass_count,
+        fail_count=fail_count,
+        fail_graph_dependence_count=0,
+        insufficient_count=insufficient_count,
+        not_run_count=not_run_count,
+        reason_codes=reason_codes,
+    )
+    canonical_bytes = canonical_json_bytes(gate.to_dict())
+    reparsed = parse_canonical_json(canonical_bytes)
+    reloaded = GateResult.from_dict(reparsed)
+    rerendered = canonical_json_bytes(reloaded.to_dict())
+    if (
+        type(reloaded) is not GateResult
+        or reloaded != gate
+        or rerendered != canonical_bytes
+        or reloaded.state.value != state_name
+        or reloaded.claim_scope.value != "engine-and-protocol-contracts"
+        or (state_name != "pass" and reloaded.state is QualificationState.PASS)
+    ):
+        raise RuntimeError("qualification state changed during canonical round trip")
+    states.append(
+        {
+            "canonical_json": canonical_bytes.decode("utf-8"),
+            "canonical_sha256": sha256_bytes(canonical_bytes),
+            "claim_scope": reloaded.claim_scope.value,
+            "state": reloaded.state.value,
+        }
+    )
+
+module_origins = {}
+for name, module in sorted(sys.modules.items()):
+    if name != "spirallens" and not name.startswith("spirallens."):
+        continue
+    origin_value = getattr(module, "__file__", None)
+    if not isinstance(origin_value, str):
+        raise RuntimeError(f"loaded SpiralLens module has no origin: {name}")
+    origin = Path(origin_value).resolve(strict=True)
+    if not origin.is_relative_to(import_root):
+        raise RuntimeError(f"loaded SpiralLens module escaped the intended root: {name}")
+for name, module in origin_modules.items():
+    module_origins[name] = (
+        Path(module.__file__).resolve(strict=True).relative_to(import_root).as_posix()
+    )
+
+print(
+    json.dumps(
+        {
+            "import_root": str(import_root),
+            "module_origins": module_origins,
+            "schema_version": "spirallens.qualification-state-conformance.v0.1",
+            "states": states,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+)
+"""
+
+
 _ATLAS_READER_PROBE = r"""
 import importlib
 import importlib.abc
@@ -3944,6 +4095,134 @@ def _parse_probe_output(
     }
 
 
+def _parse_qualification_state_conformance_probe_output(
+    output: str,
+    *,
+    import_root: Path,
+) -> dict[str, object]:
+    try:
+        value = json.loads(
+            output,
+            object_pairs_hook=_reject_duplicate_json_object,
+        )
+    except (json.JSONDecodeError, ValueError) as error:
+        raise DistributionValidationError(
+            "qualification state conformance probe did not emit canonical JSON"
+        ) from error
+    if not isinstance(value, dict) or set(value) != {
+        "import_root",
+        "module_origins",
+        "schema_version",
+        "states",
+    }:
+        raise DistributionValidationError(
+            "qualification state conformance probe returned invalid fields"
+        )
+    if value["schema_version"] != QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION:
+        raise DistributionValidationError(
+            "qualification state conformance probe returned the wrong schema"
+        )
+    observed_root_value = value["import_root"]
+    if not isinstance(observed_root_value, str):
+        raise DistributionValidationError(
+            "qualification state conformance probe omitted its import root"
+        )
+    observed_root = Path(observed_root_value).resolve()
+    import_root = import_root.resolve()
+    if observed_root != import_root and not observed_root.is_relative_to(import_root):
+        raise DistributionValidationError(
+            "qualification state conformance import root escaped its intended root"
+        )
+    origins = value["module_origins"]
+    if not isinstance(origins, dict) or any(
+        not isinstance(name, str) or not isinstance(origin, str)
+        for name, origin in origins.items()
+    ):
+        raise DistributionValidationError(
+            "qualification state conformance probe returned invalid origins"
+        )
+    if set(origins) != set(QUALIFICATION_STATE_MODULE_ORIGINS):
+        raise DistributionValidationError(
+            "qualification state conformance probe returned an unexpected origin set"
+        )
+    for module, relative in QUALIFICATION_STATE_MODULE_ORIGINS.items():
+        if origins.get(module) != relative:
+            raise DistributionValidationError(
+                f"qualification state conformance origin mismatch: {module}"
+            )
+    if any(
+        not (observed_root / relative).resolve().is_relative_to(observed_root)
+        or not (observed_root / relative).is_file()
+        for relative in origins.values()
+    ):
+        raise DistributionValidationError(
+            "qualification state conformance origin escaped its intended root"
+        )
+    states = value["states"]
+    if not isinstance(states, list) or len(states) != len(QUALIFICATION_STATE_ORDER):
+        raise DistributionValidationError(
+            "qualification state conformance probe returned the wrong state count"
+        )
+    normalized_states: list[dict[str, str]] = []
+    for expected_state, state in zip(QUALIFICATION_STATE_ORDER, states, strict=True):
+        if not isinstance(state, dict) or set(state) != {
+            "canonical_json",
+            "canonical_sha256",
+            "claim_scope",
+            "state",
+        }:
+            raise DistributionValidationError(
+                "qualification state conformance probe returned invalid state fields"
+            )
+        canonical_json = state["canonical_json"]
+        canonical_sha256 = state["canonical_sha256"]
+        if (
+            state["state"] != expected_state
+            or state["claim_scope"] != "engine-and-protocol-contracts"
+            or not isinstance(canonical_json, str)
+            or not isinstance(canonical_sha256, str)
+            or hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+            != canonical_sha256
+            or canonical_sha256 != QUALIFICATION_STATE_CANONICAL_SHA256[expected_state]
+        ):
+            raise DistributionValidationError(
+                "qualification state conformance probe changed state or canonical bytes"
+            )
+        try:
+            parsed = json.loads(
+                canonical_json,
+                object_pairs_hook=_reject_duplicate_json_object,
+            )
+        except (json.JSONDecodeError, ValueError) as error:
+            raise DistributionValidationError(
+                "qualification state conformance probe returned invalid state JSON"
+            ) from error
+        if (
+            not isinstance(parsed, dict)
+            or parsed.get("state") != expected_state
+            or parsed.get("claim_scope") != "engine-and-protocol-contracts"
+            or json.dumps(
+                parsed,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            != canonical_json
+        ):
+            raise DistributionValidationError(
+                "qualification state conformance probe returned noncanonical state JSON"
+            )
+        normalized_states.append(state)
+    return {
+        "module_origins": {
+            module: origins[module] for module in QUALIFICATION_STATE_MODULE_ORIGINS
+        },
+        "schema_version": QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION,
+        "states": normalized_states,
+    }
+
+
 def _parse_repository_experiment_absence_probe_output(
     output: str,
     *,
@@ -4386,6 +4665,25 @@ def validate_distribution(
                 source_root=staged_source,
             )
         )
+        source_qualification_probe = _run(
+            (
+                sys.executable,
+                "-P",
+                "-B",
+                "-c",
+                _QUALIFICATION_STATE_CONFORMANCE_PROBE,
+                "source",
+                str(staged_source / "src"),
+            ),
+            cwd=neutral_cwd,
+            env=_clean_subprocess_environment(exclude_user_site=False),
+        )
+        source_qualification_conformance = (
+            _parse_qualification_state_conformance_probe_output(
+                source_qualification_probe.stdout,
+                import_root=staged_source / "src",
+            )
+        )
         stale_build_rejection = _require_stale_build_rejected(
             staged_source,
             stale_wheel_artifact_dir,
@@ -4781,6 +5079,25 @@ def validate_distribution(
             ordered_export_classification=ordered_export_classification,
             artifact_kind="direct-source fresh install",
         )
+        direct_qualification_probe = _run(
+            (
+                str(direct_scientific_python),
+                "-P",
+                "-B",
+                "-c",
+                _QUALIFICATION_STATE_CONFORMANCE_PROBE,
+                "installed",
+                "-",
+            ),
+            cwd=neutral_cwd,
+            env=direct_scientific_environment,
+        )
+        direct_qualification_conformance = (
+            _parse_qualification_state_conformance_probe_output(
+                direct_qualification_probe.stdout,
+                import_root=direct_scientific_environment_root,
+            )
+        )
 
         venv.EnvBuilder(
             with_pip=True,
@@ -4834,6 +5151,49 @@ def validate_distribution(
             ordered_export_classification=ordered_export_classification,
             artifact_kind="sdist-derived fresh install",
         )
+        sdist_qualification_probe = _run(
+            (
+                str(scientific_python),
+                "-P",
+                "-B",
+                "-c",
+                _QUALIFICATION_STATE_CONFORMANCE_PROBE,
+                "installed",
+                "-",
+            ),
+            cwd=neutral_cwd,
+            env=scientific_environment,
+        )
+        sdist_qualification_conformance = (
+            _parse_qualification_state_conformance_probe_output(
+                sdist_qualification_probe.stdout,
+                import_root=scientific_environment_root,
+            )
+        )
+        if not (
+            source_qualification_conformance
+            == direct_qualification_conformance
+            == sdist_qualification_conformance
+        ):
+            raise DistributionValidationError(
+                "qualification state conformance differs across source and wheel routes"
+            )
+        qualification_state_conformance = {
+            "claim_boundary": (
+                "synthetic model-free state preservation only; no scientific, "
+                "authority, compatibility, portability, public API, or LIB-L0 grant"
+            ),
+            "direct_source_install": direct_qualification_conformance,
+            "equality": {
+                "direct_source_to_sdist_derived_install": True,
+                "source_to_direct_source_install": True,
+                "source_to_sdist_derived_install": True,
+            },
+            "observation": "exact-four-state-canonical-round-trip",
+            "schema_version": QUALIFICATION_STATE_CONFORMANCE_SCHEMA_VERSION,
+            "sdist_derived_install": sdist_qualification_conformance,
+            "source_tree": source_qualification_conformance,
+        }
         installed_import_equality = _require_installed_import_outcome_equality(
             direct_installed_import_outcomes,
             sdist_installed_import_outcomes,
@@ -5007,6 +5367,7 @@ def validate_distribution(
             "inspection": inspection,
             "installed_import_conformance": installed_import_conformance,
             "library_separation": library_separation,
+            "qualification_state_conformance": qualification_state_conformance,
             "repository_experiment_source_import_inspection": (
                 source_import_inspection
             ),
