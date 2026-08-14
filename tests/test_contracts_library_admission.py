@@ -5,6 +5,7 @@ import dataclasses
 import importlib
 import inspect
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -22,7 +23,11 @@ SIGNATURES = {
     "CalibrationCheck": "(name: 'str', observed: 'float', expected: 'float', tolerance: 'float', passed: 'bool', category: 'str', details: 'Mapping[str, Any]' = <factory>) -> None",
     "CalibrationReport": "(checks: 'tuple[CalibrationCheck, ...]', suite_name: 'str' = 'analytic_phantoms_v0_1') -> None",
     "ContinuousHolonomy": "(matrix: 'NDArray[np.generic]', edge_count: 'int', loop_name: 'str' = 'loop', convention: 'str' = 'column_vectors:left_path_ordered', metadata: 'Mapping[str, Any]' = <factory>) -> None",
-    "LoopOrientation": "(*values)",
+    "LoopOrientation": (
+        "(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)"
+        if sys.version_info < (3, 12)
+        else "(*values)"
+    ),
     "SampledLoop": "(points: 'NDArray[np.floating]', name: 'str' = 'loop', parameter_values: 'NDArray[np.floating] | None' = None, metadata: 'Mapping[str, Any]' = <factory>) -> None",
     "SampledWinding": "(charge: 'int', estimate: 'WindingEstimate') -> None",
     "WindingEstimate": "(closed_loop_angle_rad: 'float', nearest_integer: 'int', residual_cycles: 'float', minimum_amplitude: 'float', maximum_edge_angle_rad: 'float', sample_count: 'int', reliable: 'bool', failure_reasons: 'tuple[str, ...]' = (), loop_name: 'str' = 'loop') -> None",
@@ -56,6 +61,24 @@ def _estimate(**overrides: object) -> contracts.WindingEstimate:
     values.update(overrides)
     return contracts.WindingEstimate(**values)
 def test_exact_provisional_namespace_surface() -> None:
+    default_root = Path(__file__).resolve().parents[1] / "src"
+    expected_root = Path(
+        os.environ.get("SPIRALLENS_EXPECTED_IMPORT_ROOT", default_root)
+    ).resolve(strict=True)
+    expected_modules = {
+        sys.modules["spirallens"]: "spirallens/__init__.py",
+        contracts: "spirallens/contracts/__init__.py",
+        calibration: "spirallens/contracts/calibration.py",
+        math: "spirallens/contracts/math.py",
+    }
+    for module, relative in expected_modules.items():
+        expected = (expected_root / relative).resolve(strict=True)
+        assert Path(module.__file__).resolve(strict=True) == expected
+        assert Path(module.__spec__.origin).resolve(strict=True) == expected
+    for name, module in sys.modules.items():
+        if name == "spirallens" or name.startswith("spirallens."):
+            for origin in (module.__file__, module.__spec__.origin):
+                assert Path(origin).resolve(strict=True).is_relative_to(expected_root)
     assert contracts.__all__ == EXPORTS
     for name, defining_module in DEFINITIONS.items():
         value = getattr(contracts, name)
@@ -187,7 +210,7 @@ def test_isolated_import_needs_no_model_repository_or_external_action(tmp_path) 
     numpy_root = str(Path(np.__file__).resolve().parent.parent)
     probe = f"""
 import importlib.abc, pathlib, sys
-sys.path[:0] = sys.argv[1:]
+sys.path[:0] = [sys.argv[2], sys.argv[1]]
 import numpy
 assert pathlib.Path(numpy.__file__).resolve().is_relative_to(pathlib.Path(sys.argv[1]).resolve())
 blocked = ('torch', 'transformers', 'huggingface_hub', 'safetensors', 'faiss', 'spirallens._repository_context')

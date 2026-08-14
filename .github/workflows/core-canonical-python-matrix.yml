@@ -137,9 +137,25 @@ jobs:
           expected_test_sha="30d5088bfaf76639208c56b0201589b99a28c7656f382d431ddfb9c8f307ec1f"
           observed_test_sha="$(sha256sum tests/test_core_canonical_compatibility.py | cut -d' ' -f1)"
           test "$observed_test_sha" = "$expected_test_sha"
+          contracts_test="tests/test_contracts_library_admission.py"
+          expected_contracts_test_sha="864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0"
+          observed_contracts_test_sha="$(sha256sum "$contracts_test" | cut -d' ' -f1)"
+          test "$observed_contracts_test_sha" = "$expected_contracts_test_sha"
           cp .github/scripts/core_canonical_wheel_probe.py "$neutral/probe.py"
           cp tests/test_core_canonical_compatibility.py "$neutral/test_core_canonical_compatibility.py"
+          cp "$contracts_test" "$neutral/test_contracts_library_admission.py"
           site_packages="$("$test_venv/bin/python" -I -B -c 'import site; print(site.getsitepackages()[0])')"
+
+          env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+            PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+            SPIRALLENS_EXPECTED_IMPORT_ROOT="$GITHUB_WORKSPACE/src" \
+            "$test_venv/bin/python" -I -B -m pytest \
+            -c "$GITHUB_WORKSPACE/pyproject.toml" \
+            --rootdir "$GITHUB_WORKSPACE" \
+            --import-mode=prepend \
+            -p no:cacheprovider \
+            --basetemp "$RUNNER_TEMP/contracts-source-pytest" \
+            "$GITHUB_WORKSPACE/$contracts_test"
 
           (
             cd "$neutral"
@@ -161,6 +177,19 @@ jobs:
               -p no:cacheprovider \
               --basetemp "$neutral/pytest-temp" \
               "$neutral/test_core_canonical_compatibility.py"
+            env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+              PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+              SPIRALLENS_EXPECTED_IMPORT_ROOT="$site_packages" \
+              "$test_venv/bin/python" -I -B -m pytest \
+              -c /dev/null \
+              --rootdir "$neutral" \
+              --import-mode=importlib \
+              -p no:cacheprovider \
+              --basetemp "$neutral/contracts-pytest-temp" \
+              "$neutral/test_contracts_library_admission.py::test_exact_provisional_namespace_surface" \
+              "$neutral/test_contracts_library_admission.py::test_representative_value_behavior_is_copied_and_read_only" \
+              "$neutral/test_contracts_library_admission.py::test_constructor_failures_and_validation_order" \
+              "$neutral/test_contracts_library_admission.py::test_isolated_import_needs_no_model_repository_or_external_action"
           )
 
       - name: Run the full distribution validator once
