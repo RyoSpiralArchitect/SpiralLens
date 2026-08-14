@@ -4,6 +4,25 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Contracts direct-wheel library-admission observation
+
+- SHA-256 `864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0`
+  fixes the contracts test. Each exact CPython 3.11.16 / 3.12.14 / 3.13.15,
+  Ubuntu 24.04 x86_64, locked-dependency job runs all 42 source nodes and exact
+  41 neutral direct-wheel nodes; only the source manifest/consumer join is not a
+  wheel selector, with no deselection, skip, or xfail among those 41.
+- The test binds enumerated behavior and failures, root/defining identities, and
+  exact source/installed `__file__` and `__spec__.origin` values for
+  `spirallens`, `spirallens.contracts`, and its `calibration` and `math` defining
+  modules. Every loaded `spirallens` module must remain under the selected root.
+- This changes no production source, export, dependency, manifest, validator,
+  or report schema. It establishes neither full library-test ownership, behavior
+  for the other 552 exports or the sdist-derived route, installed deep-module or
+  per-name two-consumer admission, public API/promotion, support, stability,
+  compatibility, portability, typing, release, a closed library allowlist, nor
+  `LIB-L0` completion. Historical receipts remain unchanged; no science,
+  authority, D7 state, or re-anchor changes.
+
 ## 2026-08-14 — Contracts namespace-scoped library-admission observation
 
 - The existing ordered-export manifest remains the exact-name owner for the seven

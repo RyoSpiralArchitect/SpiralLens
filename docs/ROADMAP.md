@@ -895,16 +895,26 @@ release, science, authority, or D7 readiness/re-anchor.
 
 The first namespace-scoped provisional library-admission observation is the
 exact-seven `spirallens.contracts` root surface already owned by the ordered-export
-manifest. `tests/test_contracts_library_admission.py` binds only source behavior
-and root/defining identities; it supplies no installed identity, per-name
-two-consumer or deep-module admission, and no promotion.
+manifest. SHA-256
+`864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0`
+fixes `tests/test_contracts_library_admission.py`. The exact three CPython
+3.11.16 / 3.12.14 / 3.13.15, Ubuntu 24.04 x86_64, locked-dependency jobs run
+all 42 source nodes and exact 41 neutral direct-wheel nodes; only the
+source-owned manifest/consumer join is absent from the wheel selectors. The
+test binds the root/defining identities, enumerated behavior and failures, and
+exact source/installed origins for `spirallens`, `spirallens.contracts`, and
+its `calibration` and `math` defining modules.
 One provisional source line makes default-generated `SampledLoop.parameter_values`
 read-only like explicit inputs without a numeric value, signature, export, or
-dependency delta. Historical source/D7 receipts remain unchanged and unre-anchored;
-current readiness remains false.
+dependency delta. PR108 changes no production source, export, dependency,
+manifest, validator, or report schema. This is a bounded source/direct-wheel
+observation, not full library-test ownership, coverage of the other 552 exports
+or the sdist-derived behavior route, installed deep-module or per-name
+two-consumer admission, public API, or promotion. Historical source/D7 receipts
+remain unchanged and unre-anchored; current readiness remains false.
 `closed_library_allowlist_established=false` and
 `closed_public_api_contract_established=false`; all distribution grants remain
-false; support, stability, compatibility, portability, and release remain
+false; support, stability, compatibility, portability, typing, and release remain
 unestablished; `LIB-L0` remains in progress; no science, authority, or D7 state
 changes.
 
