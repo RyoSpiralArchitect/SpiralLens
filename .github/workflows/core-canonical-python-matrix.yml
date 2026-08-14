@@ -33,7 +33,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Install exact Python
         id: setup-python
@@ -141,6 +141,15 @@ jobs:
           expected_contracts_test_sha="f67507db283bfad06d93776f675aa94e76a75f004917665b7919e714175a8929"
           observed_contracts_test_sha="$(sha256sum "$contracts_test" | cut -d' ' -f1)"
           test "$observed_contracts_test_sha" = "$expected_contracts_test_sha"
+          freeze_test="tests/test_pythia70_gate_state_freeze.py"
+          expected_freeze_test_sha="02ded5aebb26938341768a7d98c4a002542e80de2ab1925d891fc3ccab6fc278"
+          test "$(sha256sum "$freeze_test" | cut -d' ' -f1)" = "$expected_freeze_test_sha"
+          runner_test="tests/test_pythia70_gate_state_runner.py"
+          expected_runner_test_sha="76f7a25fbd6cd26db521c27454c72081e0eb5b44fe96694c1d021b49582b45e5"
+          test "$(sha256sum "$runner_test" | cut -d' ' -f1)" = "$expected_runner_test_sha"
+          development_runner="scripts/run_pythia70_gate_state_development.py"
+          expected_development_runner_sha="fb92565229d75d0b4dd14c268db8091379b08dbcdec73dda033439aca3b00517"
+          test "$(sha256sum "$development_runner" | cut -d' ' -f1)" = "$expected_development_runner_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -180,6 +189,19 @@ jobs:
             --import-mode=importlib -p no:cacheprovider \
             --basetemp "$RUNNER_TEMP/library-source-pytest" \
             "${source_library_tests[@]}"
+
+          env -i HOME="$neutral/home" LANG=C.UTF-8 PATH=/usr/bin:/bin \
+            HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+            PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+            SPIRALLENS_EXPECTED_IMPORT_ROOT="$GITHUB_WORKSPACE/src" \
+            "$test_venv/bin/python" -I -B -m pytest \
+            -c "$GITHUB_WORKSPACE/pyproject.toml" \
+            --rootdir "$GITHUB_WORKSPACE" \
+            --import-mode=prepend \
+            -p no:cacheprovider \
+            --basetemp "$RUNNER_TEMP/gate-state-source-pytest" \
+            "$GITHUB_WORKSPACE/$freeze_test" \
+            "$GITHUB_WORKSPACE/$runner_test"
 
           (
             cd "$neutral"
