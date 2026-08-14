@@ -138,7 +138,7 @@ jobs:
           observed_test_sha="$(sha256sum tests/test_core_canonical_compatibility.py | cut -d' ' -f1)"
           test "$observed_test_sha" = "$expected_test_sha"
           contracts_test="tests/test_contracts_library_admission.py"
-          expected_contracts_test_sha="864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0"
+          expected_contracts_test_sha="f67507db283bfad06d93776f675aa94e76a75f004917665b7919e714175a8929"
           observed_contracts_test_sha="$(sha256sum "$contracts_test" | cut -d' ' -f1)"
           test "$observed_contracts_test_sha" = "$expected_contracts_test_sha"
           source_phantom_tests=()

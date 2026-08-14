@@ -99,27 +99,82 @@ def test_manifest_and_exact_production_consumer_namespaces_join() -> None:
     manifest = json.loads((repository / "distribution/spirallens_ordered_exports_v0_1.json").read_bytes())
     rows = [row for row in manifest["packages"] if row["module"] == "spirallens.contracts"]
     assert rows == [{"module": "spirallens.contracts", "initializer": "spirallens/contracts/__init__.py", "exports": EXPORTS}]
-    expected = {
-        "calibration": {"CalibrationCheck", "CalibrationReport", "SampledLoop"},
-        "holonomy": {"ContinuousHolonomy", "SampledLoop"},
-        "loops": {"LoopOrientation", "SampledLoop"},
-        "topology": {"SampledLoop", "SampledWinding", "WindingEstimate"},
+    expected_by_file = {
+        "calibration/phantoms.py": ("SampledLoop",),
+        "calibration/suite.py": ("CalibrationCheck", "CalibrationReport"),
+        "holonomy/connection.py": ("ContinuousHolonomy", "SampledLoop"),
+        "holonomy/discrete.py": ("ContinuousHolonomy",),
+        "holonomy/metrics.py": ("ContinuousHolonomy",),
+        "loops/sampled.py": ("LoopOrientation", "SampledLoop"),
+        "topology/winding.py": ("SampledLoop", "SampledWinding", "WindingEstimate"),
     }
-    observed: dict[str, set[str]] = {}
-    package_root = repository / "src" / "spirallens"
+    members = json.loads((repository / "distribution/spirallens_python_members_v0_1.json").read_bytes())
+    assert {f"spirallens/{relative}" for relative in expected_by_file} <= set(members["roles"]["shipped_runtime"])
+    expected_by_name = {
+        name: {f"spirallens.{module}" for module in modules.split()}
+        for name, modules in {
+            "CalibrationCheck": "calibration.suite",
+            "CalibrationReport": "calibration.suite",
+            "ContinuousHolonomy": "holonomy.connection holonomy.discrete holonomy.metrics",
+            "LoopOrientation": "loops.sampled",
+            "SampledLoop": "calibration.phantoms holonomy.connection loops.sampled topology.winding",
+            "SampledWinding": "topology.winding",
+            "WindingEstimate": "topology.winding",
+        }.items()
+    }
+    observed_by_file, observed_by_name = {}, {name: set() for name in EXPORTS}
+    trees_by_file, package_root = {}, repository / "src" / "spirallens"
     for path in package_root.rglob("*.py"):
-        tree = ast.parse(path.read_bytes())
-        imports = [node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module == "spirallens.contracts"]
+        relative = path.relative_to(package_root).as_posix()
+        trees_by_file[relative] = tree = ast.parse(path.read_bytes())
+        assert not any(
+            isinstance(node, ast.Import) and any(alias.name == "spirallens.contracts" for alias in node.names)
+            or isinstance(node, ast.ImportFrom)
+            and (
+                (node.level, node.module) == (0, "spirallens") and any(alias.name == "contracts" for alias in node.names)
+                or node.level == relative.count("/") + 1 and node.module == "contracts"
+                or node.level == relative.count("/") + 1 and node.module is None and any(alias.name == "contracts" for alias in node.names)
+            )
+            for node in ast.walk(tree)
+        )
+        imports = [node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module == "spirallens.contracts"]
         if not imports:
             continue
-        relative = path.relative_to(package_root).with_suffix("")
-        parts = relative.parts[:-1] if relative.name == "__init__" else relative.parts
-        module = importlib.import_module(".".join(("spirallens", *parts)))
-        for node in imports:
-            for alias in node.names:
-                observed.setdefault(relative.parts[0], set()).add(alias.name)
-                assert getattr(module, alias.asname or alias.name) is getattr(contracts, alias.name)
-    assert observed == expected
+        assert len(imports) == 1
+        aliases = imports[0].names
+        assert all(alias.asname is None and alias.name in EXPORTS for alias in aliases)
+        observed_by_file[relative] = names = tuple(alias.name for alias in aliases)
+        module_name = "spirallens." + relative.removesuffix(".py").replace("/", ".")
+        for name in names:
+            observed_by_name[name].add(module_name)
+    assert (observed_by_file, observed_by_name) == (expected_by_file, expected_by_name)
+    def calls(relative: str, name: str) -> list[ast.Call]:
+        return [
+            node
+            for node in ast.walk(trees_by_file[relative])
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) == name
+        ]
+    assert calls("holonomy/discrete.py", "ContinuousHolonomy")
+    assert not calls("holonomy/connection.py", "ContinuousHolonomy")
+    assert calls("loops/sampled.py", "SampledLoop")
+    assert any(
+        len(call.args) > 1 and getattr(call.args[1], "id", None) == "ContinuousHolonomy"
+        for call in calls("holonomy/metrics.py", "isinstance")
+    )
+    def loop_attrs(relative: str) -> set[str]:
+        return {
+            node.attr
+            for node in ast.walk(trees_by_file[relative])
+            if isinstance(node, ast.Attribute) and getattr(node.value, "id", None) == "loop"
+        }
+    assert loop_attrs("holonomy/connection.py") == loop_attrs("topology/winding.py") | {"ambient_dimension"}
+    assert loop_attrs("topology/winding.py") == {"name", "points", "vertex_count"}
+    # Direct-import module membership is not a consumer-independence decision.
+    for relative, names in expected_by_file.items():
+        module_name = "spirallens." + relative.removesuffix(".py").replace("/", ".")
+        module = importlib.import_module(module_name)
+        for name in names:
+            assert getattr(module, name) is getattr(contracts, name)
 
 
 def test_representative_value_behavior_is_copied_and_read_only() -> None:
