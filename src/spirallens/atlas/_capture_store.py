@@ -9,14 +9,16 @@ import os
 from pathlib import Path
 import platform
 import shutil
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 import uuid
 
 import numpy as np
 from numpy.lib.format import open_memmap
-import torch
 
-from spirallens.adapters import LOGIT_SUMMARY_COLUMNS, BatchObservation
+from spirallens._model_observer import (
+    LOGIT_SUMMARY_COLUMNS,
+    BatchObservationProtocol,
+)
 
 from .store import (
     ATLAS_SCHEMA_VERSION,
@@ -164,6 +166,7 @@ class AtlasStore:
         request: Mapping[str, Any],
         fingerprint_payload: Mapping[str, Any],
         capture_metadata: Mapping[str, Any],
+        torch_version: Callable[[], str],
         resume: bool,
         batch_size: int,
     ) -> "AtlasStore":
@@ -319,7 +322,7 @@ class AtlasStore:
                 "environment": {
                     "python": platform.python_version(),
                     "numpy": np.__version__,
-                    "torch": torch.__version__,
+                    "torch": torch_version(),
                 },
                 "storage": {
                     "estimated_array_bytes": estimated_array_bytes,
@@ -361,7 +364,9 @@ class AtlasStore:
     def is_complete(self) -> bool:
         return self.manifest["status"] == "complete"
 
-    def write_batch(self, start: int, observation: BatchObservation) -> None:
+    def write_batch(
+        self, start: int, observation: BatchObservationProtocol
+    ) -> None:
         batch_size = int(observation.resid_pre.shape[0])
         end = start + batch_size
         if start != self.completed_rows:

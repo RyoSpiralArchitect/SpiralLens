@@ -32,6 +32,7 @@
       "spirallens",
       "spirallens.__main__",
       "spirallens._held_file",
+      "spirallens._model_observer",
       "spirallens._repository_context",
       "spirallens.access",
       "spirallens.access.contracts",
@@ -39,6 +40,7 @@
       "spirallens.access.lifecycle",
       "spirallens.access.lineage",
       "spirallens.atlas",
+      "spirallens.atlas._capture_store",
       "spirallens.atlas.engineering_protocol",
       "spirallens.atlas.engineering_receipt",
       "spirallens.atlas.store",
@@ -160,7 +162,6 @@
     "models_extra_missing_torch": [
       "spirallens.adapters",
       "spirallens.adapters.pythia",
-      "spirallens.atlas._capture_store",
       "spirallens.atlas.engineering_run",
       "spirallens.atlas.id_sweep"
     ]

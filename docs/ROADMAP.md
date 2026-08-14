@@ -964,10 +964,10 @@ coordinate the repository-only set was the exact 20 D7 v1
 and 19,190 physical lines. The current fail-closed versioned manifest retains
 those files and additionally classifies the 27 formerly shipped
 `qualification/confirmation_*.py` modules as repository-only. It now
-partitions all 181 `src/**/*.py` module paths into 132 wheel-present modules
-(24 package initializers, two console-entrypoint runtime modules, and 106 other
+partitions all 182 `src/**/*.py` module paths into 133 wheel-present modules
+(24 package initializers, two console-entrypoint runtime modules, and 107 other
 shipped runtime modules) and 49 repository-only modules. The v0.9 diagnostic
-proves the exact 132-member set through the
+proves the exact 133-member set through the
 source tree, sdist, both wheel routes, and both fresh non-editable
 installations and records
 `closed_wheel_python_module_inventory_established=true`.
@@ -985,7 +985,7 @@ and both fresh installs, parsing installed initializer bytes without importing
 A third versioned manifest,
 `distribution/spirallens_installed_imports_v0_1.json`, schema
 `spirallens.installed-import-conformance.v0.1`, closes the expected installed
-import outcomes for those exact 132 modules under one bounded host-projected
+import outcomes for those exact 133 modules under one bounded host-projected
 environment contract. The v0.9 diagnostic applies that contract separately to
 the direct-source and sdist-derived non-editable wheels. This is a
 single-current-host observation, not a portability matrix. It uses one fresh
@@ -999,10 +999,13 @@ outside those declared bases. The repository-only validator parent uses
 isolated children do not import it. The base runtime dependencies are
 unchanged, and installed metadata has the exact 13 normalized `Requires-Dist`
 records: three base and ten optional-extra requirements. The two routes have
-equal normalized startup receipts. Each route observes 127 base-import
-successes and five exact blocked-Torch model-extra outcomes. The sole blocked
-undeclared attempt is `charset_normalizer`, which remains unloaded; the aggregate loaded
-third-party distributions remain the exact declared base three. Runtime
+equal normalized startup receipts. Each route observes 129 base-import
+successes and four exact blocked-Torch model-extra outcomes:
+`spirallens.adapters`, `spirallens.adapters.pythia`,
+`spirallens.atlas.id_sweep`, and `spirallens.atlas.engineering_run`. The sole
+blocked undeclared attempt is `charset_normalizer`, which remains unloaded;
+the aggregate loaded third-party distributions remain the exact declared base
+three. Runtime
 list-valued `__all__` equals the static declaration for the 23 successfully
 imported initializers and 554 entries; `spirallens.adapters` and its five
 entries remain unavailable at the blocked Torch boundary. The historical
@@ -1026,6 +1029,17 @@ The report records
 `closed_installed_module_import_outcome_inventory_established=true` and the
 strictly scoped
 `runtime_successful_package_export_values_established=true`.
+
+The private `spirallens._model_observer.BatchObservationProtocol` seam
+separates the declared observation capability from the Atlas store's NumPy
+import. An internal offline conformance check carries a reference
+`PythiaAdapter` observation into `spirallens.atlas._capture_store`; those two
+modules account for the two new base-import successes. The Tensor-backed
+`BatchObservation`, public exports, artifact schema, and residual-hooks v2
+capture contract remain unchanged. Protocol satisfaction is structural, not a
+runtime `isinstance` gate. This establishes no NumPy-owned or value-neutral
+observation record, public adapter protocol, portability result, or completion
+of `LIB-L0`.
 
 These are physical-placement, static-declaration, and installed-import
 closures, not a closed library allowlist or public API contract. The audit hook

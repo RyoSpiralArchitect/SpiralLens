@@ -273,6 +273,13 @@ def test_installed_import_policy_is_stdlib_only_pure_metadata_projection() -> No
     assert first == second
     assert first is not second
     assert json.loads(json.dumps(first, sort_keys=True)) == first
+    assert first["models_extra_missing_torch"] == [
+        "spirallens.adapters",
+        "spirallens.adapters.pythia",
+        "spirallens.atlas.engineering_run",
+        "spirallens.atlas.id_sweep",
+    ]
+    assert "spirallens.atlas._capture_store" not in first["models_extra_missing_torch"]
     blocked = first["blocked_optional_prefixes"]
     assert isinstance(blocked, list)
     blocked.append("rogue")
@@ -333,20 +340,27 @@ def test_validator_policy_load_fails_closed(
         runpy.run_path(str(validator_path))
 
 
-def test_installed_import_manifest_freezes_exact_132_outcomes() -> None:
+def test_installed_import_manifest_freezes_exact_133_outcomes() -> None:
     classification = _installed_import_classification()
 
     assert classification["schema_version"] == (
         INSTALLED_IMPORT_CLASSIFICATION_SCHEMA_VERSION
     )
     assert classification["manifest_sha256"] == (
-        "eebf61d097db980fd9d239f002729386e9890ce3495022ddc453bf14bc63fa9d"
+        "e40d942728bb2f2625ff0a0d49876fceab14ca4a3527a01dcf4d922868fbb9fb"
     )
-    assert len(classification["outcomes"]["base_import_success"]) == 127
+    assert len(classification["outcomes"]["base_import_success"]) == 129
+    assert (
+        "spirallens._model_observer"
+        in classification["outcomes"]["base_import_success"]
+    )
+    assert (
+        "spirallens.atlas._capture_store"
+        in classification["outcomes"]["base_import_success"]
+    )
     assert classification["outcomes"]["models_extra_missing_torch"] == (
         "spirallens.adapters",
         "spirallens.adapters.pythia",
-        "spirallens.atlas._capture_store",
         "spirallens.atlas.engineering_run",
         "spirallens.atlas.id_sweep",
     )
@@ -374,6 +388,7 @@ def test_installed_import_manifest_freezes_exact_132_outcomes() -> None:
         ("reorder_success", "sorted and unique"),
         ("overlap", "overlap"),
         ("missing_module", "exact shipped module set"),
+        ("stale_capture_store_negative", "129/4 inventory"),
         ("wrong_negative", "overlap"),
         ("extra_dependency", "base dependencies differ"),
     ],
@@ -400,7 +415,15 @@ def test_installed_import_manifest_rejects_drift(
         )
         document["outcomes"]["base_import_success"].sort()
     elif mutation == "missing_module":
-        document["outcomes"]["base_import_success"].pop()
+        document["outcomes"]["base_import_success"].remove("spirallens._model_observer")
+    elif mutation == "stale_capture_store_negative":
+        document["outcomes"]["base_import_success"].remove(
+            "spirallens.atlas._capture_store"
+        )
+        document["outcomes"]["models_extra_missing_torch"].append(
+            "spirallens.atlas._capture_store"
+        )
+        document["outcomes"]["models_extra_missing_torch"].sort()
     elif mutation == "wrong_negative":
         document["outcomes"]["models_extra_missing_torch"][-1] = (
             "spirallens.synthetic.generators"
@@ -445,7 +468,7 @@ def test_installed_import_manifest_accepts_pyproject_dependency_reordering(
     )
 
     assert classification["manifest_sha256"] == (
-        "eebf61d097db980fd9d239f002729386e9890ce3495022ddc453bf14bc63fa9d"
+        "e40d942728bb2f2625ff0a0d49876fceab14ca4a3527a01dcf4d922868fbb9fb"
     )
 
 
@@ -1365,13 +1388,14 @@ def test_python_member_manifest_freezes_exact_roles_and_partition() -> None:
     assert {name: len(members) for name, members in roles.items()} == {
         "package_initializer": 24,
         "console_entrypoint_runtime": 2,
-        "shipped_runtime": 106,
+        "shipped_runtime": 107,
         "repository_only": 49,
     }
-    assert len(classification["shipped_members"]) == 132
-    assert len(classification["source_members"]) == 181
+    assert len(classification["shipped_members"]) == 133
+    assert len(classification["source_members"]) == 182
+    assert "spirallens/_model_observer.py" in classification["shipped_members"]
     assert classification["manifest_sha256"] == (
-        "81c7efba9d3084aafe3c49783ef5c338bc80ea303ab12ac730d99f1316e854d1"
+        "ca5e4b8523cd0c14cdbc0e846dbf9b5128ab29d51ffc4a4fd83f582b899c303a"
     )
 
 
@@ -1410,7 +1434,7 @@ def test_exact_27_confirmation_modules_remain_source_but_not_artifacts() -> None
     assert newly_repository_only_modules.isdisjoint(installable_modules)
 
 
-def test_source_python_inventory_is_exact_181_equals_132_plus_49_partition() -> None:
+def test_source_python_inventory_is_exact_182_equals_133_plus_49_partition() -> None:
     repository = Path(__file__).resolve().parents[1]
     classification = _classification()
 
@@ -1419,14 +1443,14 @@ def test_source_python_inventory_is_exact_181_equals_132_plus_49_partition() -> 
         classification=classification,
     )
 
-    assert receipt["count"] == 181
-    assert receipt["shipped_count"] == 132
+    assert receipt["count"] == 182
+    assert receipt["shipped_count"] == 133
     assert receipt["repository_only_count"] == 49
     assert receipt["manifest_sha256"] == (
-        "2a5e9db9541bb500829f555afd9ecc9307b6141f9fa49b9e9cf4b01b567d8e9a"
+        "5a2d1a5659130096b7d38dcba95eb05528ab79b94a5f3721ac36c4eaaaa78ff2"
     )
     assert receipt["shipped_manifest_sha256"] == (
-        "c8ddc9f9ae4c79e2b814f1da77faf61586ac75541c39b675bcc1c7ccc8e4b09a"
+        "14af4613ed6479b0bacfd5c1293a7c6c12ee9087e85c43adc771d2d2dd4e91f4"
     )
 
 
@@ -1523,12 +1547,25 @@ def test_exact_wheel_classifier_ignores_dist_info_but_rejects_extra_python(
         (*members, "spirallens-0.1.0.dist-info/METADATA"),
     )
     receipt = _classify_wheel_python_members(wheel, expected_members=members)
-    assert receipt["count"] == 132
+    assert receipt["count"] == 133
 
     rogue = tmp_path / "rogue.whl"
     _write_synthetic_wheel(rogue, (*members, "roguepkg/__init__.py"))
     with pytest.raises(DistributionValidationError, match="unclassified=.*roguepkg"):
         _classify_wheel_python_members(rogue, expected_members=members)
+
+    stale = tmp_path / "stale.whl"
+    _write_synthetic_wheel(
+        stale,
+        tuple(
+            member for member in members if member != "spirallens/_model_observer.py"
+        ),
+    )
+    with pytest.raises(
+        DistributionValidationError,
+        match=r"missing=.*_model_observer\.py",
+    ):
+        _classify_wheel_python_members(stale, expected_members=members)
 
     policy = tmp_path / "policy.whl"
     _write_synthetic_wheel(
@@ -1650,7 +1687,7 @@ def test_exact_sdist_classifier_ignores_egg_info_and_rejects_partial_package(
             sdist,
             expected_members=members,
         )["count"]
-        == 132
+        == 133
     )
 
     partial = tmp_path / "partial.tar.gz"
@@ -1842,7 +1879,7 @@ def test_installed_member_probe_excludes_metadata_and_rejects_pyc() -> None:
             expected_members=members,
             artifact_kind="fixture install",
         )["count"]
-        == 132
+        == 133
     )
 
     bad = json.dumps(
@@ -2452,10 +2489,10 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
     assert python_inventory["classification"]["role_counts"] == {
         "package_initializer": 24,
         "console_entrypoint_runtime": 2,
-        "shipped_runtime": 106,
+        "shipped_runtime": 107,
         "repository_only": 49,
     }
-    assert python_inventory["source_tree"]["count"] == 181
+    assert python_inventory["source_tree"]["count"] == 182
     newly_repository_only_confirmation_members = {
         member
         for member in python_inventory["source_tree"]["members"]
@@ -2470,12 +2507,12 @@ def test_validator_emits_machine_readable_internal_diagnostic() -> None:
         "direct_source_install",
         "sdist_derived_install",
     ):
-        assert python_inventory[artifact_kind]["count"] == 132
+        assert python_inventory[artifact_kind]["count"] == 133
         assert newly_repository_only_confirmation_members.isdisjoint(
             python_inventory[artifact_kind]["members"]
         )
         assert python_inventory[artifact_kind]["manifest_sha256"] == (
-            "c8ddc9f9ae4c79e2b814f1da77faf61586ac75541c39b675bcc1c7ccc8e4b09a"
+            "14af4613ed6479b0bacfd5c1293a7c6c12ee9087e85c43adc771d2d2dd4e91f4"
         )
     assert all(python_inventory["equality"].values())
     export_inventory = separation["ordered_package_export_inventory"]
