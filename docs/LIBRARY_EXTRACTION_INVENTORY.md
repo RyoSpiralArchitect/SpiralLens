@@ -90,7 +90,7 @@ proof. Matching stale `build/lib` outputs, including nested PEP-3147 bytecode,
 are rejected before wheel
 publication and are not deleted by the build.
 
-The successor v0.9 diagnostic retains the versioned physical manifest and
+The current v0.10 diagnostic retains the versioned physical manifest and
 closed wheel Python-module inventory. They fail closed over every
 `src/**/*.py` path and require the exact 133-member shipped set in the sdist,
 direct-source wheel, sdist-derived wheel, and both fresh non-editable
@@ -147,7 +147,7 @@ established; these later docs are outside the tested checkout.
 
 The installed-import manifest adds a distinct dynamic observation without
 changing those physical or static roles. For both the direct-source and
-sdist-derived wheels, the v0.9 diagnostic imports each of the exact 133 modules
+sdist-derived wheels, the v0.10 diagnostic imports each of the exact 133 modules
 in its own fresh `-I -S -B`, 30-second process from a neutral working
 directory and without `PYTHONPATH`. Site initialization is disabled and `.pth`
 startup is not executed. This is a single-current-host observation, not a
@@ -194,6 +194,19 @@ changed afterward, and `README.md` is embedded in distribution metadata, its
 artifact hashes do not attest artifacts rebuilt from the later documentation
 state.
 
+The v0.10 report adds `qualification_state_conformance`, schema
+`spirallens.qualification-state-conformance.v0.1`, from one identical
+model-free probe over staged source and both fresh-install routes. It requires
+the exact origins `spirallens`, `spirallens.core`, `spirallens.core.canonical`,
+`spirallens.qualification`, its `.common`, and its `.contracts` under each
+intended root. Exact `pass`, `fail`, `insufficient`, and `not_run` `GateResult`
+rows are canonically rendered, parsed, reconstructed with `from_dict()`, and
+rerendered; the report requires route equality, preserved state and claim scope,
+and no negative-to-`pass` change. A passing report observes only that fixture
+gate and a bounded origin slice, not a full library suite or API/runtime-artifact
+schema, support, compatibility, portability, science, authority, D7/re-anchor,
+release, or `LIB-L0` grant.
+
 The audit hook begins after isolated interpreter and standard-library probe
 bootstrap and observes zero denied events within its bounded policy for file
 writes, process creation, network access, and selected filesystem mutation.
@@ -239,7 +252,7 @@ former sdist carried only an implicit 106-file subset, omitting 10 tracked
 test/helper files while retaining tests that can depend on omitted helpers or
 the deliberately repository-only experiment modules. That subset was neither
 self-contained nor an installed-distribution conformance, replay, or maturity
-surface. The v0.9 diagnostic now requires exact absence of the top-level
+surface. The v0.10 diagnostic now requires exact absence of the top-level
 sdist `tests` path and records `observation="absent"`, `count=0`, and
 `members=[]`. This is explicit distribution-role separation, not a closed
 inventory of every sdist member, an installed test contract, experiment replay,
