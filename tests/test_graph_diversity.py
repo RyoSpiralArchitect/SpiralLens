@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -118,7 +122,9 @@ def _two_vertex_graphs(
     )
 
 
-def test_diversity_canonicalizes_three_families_and_measures_exact_edges() -> None:
+def test_diversity_canonicalizes_three_families_and_measures_exact_edges(
+    tmp_path: Path,
+) -> None:
     mutual, radius, shared = _grid_graphs()
 
     receipt = measure_graph_diversity((shared, mutual, radius))
@@ -164,6 +170,52 @@ def test_diversity_canonicalizes_three_families_and_measures_exact_edges() -> No
         assert comparison.two_core_jaccard_similarity == 1.0
         assert comparison.two_core_jaccard_defined
         assert comparison.two_core_jaccard_reason == "ok"
+
+    default_root = Path(__file__).resolve().parents[1] / "src"
+    expected_root = Path(
+        os.environ.get("SPIRALLENS_EXPECTED_IMPORT_ROOT", default_root)
+    ).resolve(strict=True)
+    numpy_root = Path(np.__file__).resolve(strict=True).parent.parent
+    probe = """
+import hashlib, importlib.abc, pathlib, sys
+numpy_root, expected_root = [pathlib.Path(item).resolve(strict=True) for item in sys.argv[1:]]
+sys.path[:0] = [str(expected_root), str(numpy_root)]; import numpy as np
+assert pathlib.Path(np.__file__).resolve().is_relative_to(numpy_root)
+blocked = 'scipy yaml torch transformers huggingface_hub safetensors faiss spirallens._repository_context spirallens.qualification'.split()
+attempts = []
+class Blocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(fullname == item or fullname.startswith(item + '.') for item in blocked):
+            attempts.append(fullname)
+            raise ModuleNotFoundError(fullname)
+sys.meta_path.insert(0, Blocker())
+import spirallens.graphs as graphs
+expected_exports = 'BOUNDARY_CYCLE_CLASS_SPEC_RECEIPT_VERSION BOUNDARY_REFINEMENT_RULE_RECEIPT_VERSION CYCLE_CLASS_BINDING_RECEIPT_VERSION CYCLE_CLASS_MATCH_ATTEMPT_RECEIPT_VERSION DISCRETE_DOMAIN_RECEIPT_VERSION GRAPH_CLAIM_CEILING GRAPH_CLAIM_SCOPE GRAPH_CONSTRUCTION_RECEIPT_VERSION GRAPH_DIVERSITY_RECEIPT_VERSION GRAPH_FAMILY_IDENTITY_RECEIPT_VERSION GRAPH_INPUT_RECEIPT_VERSION GRAPH_PAIR_DIVERSITY_RECEIPT_VERSION GRAPH_PERSISTENCE_ROUND_TRIP_SUPPORTED GRAPH_RECORD_SCOPE GRAPH_SPEC_RECEIPT_VERSION MAX_DOMAIN_ESTIMATED_PEAK_BYTES MAX_GRAPH_ESTIMATED_PEAK_BYTES BoundaryCycleClassSpec BoundaryRefinementRule CycleClassBinding CycleClassMatchAttempt DiscreteDomainComplex GraphConstructionReceipt GraphContractError GraphDiversityReceipt GraphFamily GraphFamilyIdentity GraphInput GraphPairDiversity GraphPurpose GraphSpecValue MutualKnnSpec RadiusGraphSpec SharedNeighborSpec bind_cycle_class build_discrete_domain_complex construct_mutual_knn construct_radius_graph construct_shared_neighbor_graph define_boundary_cycle_class measure_graph_diversity'.split()
+assert len(expected_exports) == 41 and graphs.__all__ == expected_exports
+operations = {'bind_cycle_class': 'spirallens.graphs.domain', 'build_discrete_domain_complex': 'spirallens.graphs.domain', 'construct_mutual_knn': 'spirallens.graphs.constructors', 'construct_radius_graph': 'spirallens.graphs.constructors', 'construct_shared_neighbor_graph': 'spirallens.graphs.constructors', 'define_boundary_cycle_class': 'spirallens.graphs.domain', 'measure_graph_diversity': 'spirallens.graphs.diversity'}
+assert len(operations) == 7
+for name, module_name in operations.items():
+    value = getattr(graphs, name); assert value is getattr(sys.modules[module_name], name) and value.__module__ == module_name
+graph_input = graphs.GraphInput(primary_unit_id='wheel-probe', vertex_ids=np.array([10, 20], dtype='<i8'), states=np.array([[0.0], [1.0]], dtype='<f8'))
+receipt = graphs.construct_radius_graph(graph_input, graphs.RadiusGraphSpec(spec_id='wheel-radius', purpose=graphs.GraphPurpose.FIELD_ESTIMATION, radius=1.0))
+constructors = (expected_root / 'spirallens/graphs/constructors.py').resolve(strict=True)
+assert receipt.family_identity.source_sha256 == hashlib.sha256(constructors.read_bytes()).hexdigest()
+packages = set('spirallens spirallens.core spirallens.graphs'.split())
+definitions = set('spirallens.core.canonical spirallens.graphs.common spirallens.graphs.constructors spirallens.graphs.contracts spirallens.graphs.diversity spirallens.graphs.domain'.split())
+loaded = {name for name in sys.modules if name.split('.')[0] == 'spirallens'}; assert loaded == packages | definitions
+for name in loaded:
+    module = sys.modules[name]; path = pathlib.Path(*name.split('.'))
+    relative = path / '__init__.py' if name in packages else path.with_suffix('.py')
+    expected = (expected_root / relative).resolve(strict=True)
+    assert {pathlib.Path(module.__file__).resolve(), pathlib.Path(module.__spec__.origin).resolve()} == {expected}
+assert attempts == [] and not any(name == item or name.startswith(item + '.') for name in sys.modules for item in blocked)
+"""
+    subprocess.run(
+        [sys.executable, "-I", "-B", "-c", probe, str(numpy_root), str(expected_root)],
+        cwd=tmp_path,
+        env={},
+        check=True,
+    )
 
 
 def test_undefined_metrics_are_typed_as_none_and_never_nan() -> None:
