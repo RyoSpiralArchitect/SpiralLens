@@ -362,13 +362,15 @@ next-hypothesis record is outside the terminal store, binds the terminal result,
 and may be published only later with no replacement as claim-ineligible planning
 input.
 
-The roadmap schedules the runner and bounded launch as the immediate successor;
-that schedule is not execution authority. Verified B remains closed
-`insufficient` without scalar reconstruction or rerun, and Pythia-160M remains
-blocked. This lane grants no VOY-V4, D7/D8, SCI-S1/S2, subject
-preparation/execution, candidate selection, topology/integer/semantic claim,
-publication, support, compatibility, portability, API promotion, release, or
-library milestone.
+The scheduled exact-one successor is now consumed. Its canonical attempt and
+terminal projections have SHA-256 `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59`
+and `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f`;
+the complete terminal folds `fail` across exact 10 gates and 894 cells (127
+pass, 6 fail, 761 insufficient). This is retained claim-ineligible Level-0
+roughness. No retry occurred or is authorized, and no next-hypothesis artifact is present. Verified B remains closed
+`insufficient`, Pythia-160M remains blocked, and no VOY-V4, D7/D8, SCI-S1/S2,
+subject, candidate, topology/integer/semantic, publication, support,
+compatibility, portability, API, release, or library milestone advances.
 
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no

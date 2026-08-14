@@ -4,6 +4,24 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Consumed exact-one Pythia-70M GateState reconnaissance
+
+- Runner SHA-256 `fb92565229d75d0b4dd14c268db8091379b08dbcdec73dda033439aca3b00517`
+  consumed launch SHA-256 `53cf93609a7cc9d54f36a823685ec4d2e28a667e78fe5605a13c5f9afdbc6fd1` exactly once. Canonical attempt and terminal projections are
+  `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59`
+  and `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f`;
+  durable-store copies match, and no next-hypothesis artifact exists.
+- Lifecycle-test SHA-256 values are `02ded5aebb26938341768a7d98c4a002542e80de2ab1925d891fc3ccab6fc278` and `76f7a25fbd6cd26db521c27454c72081e0eb5b44fe96694c1d021b49582b45e5`; workflow SHA-256 is `784ee35fe0d2236fa7b2fa4ad9d8199fa4f6ae53d3c16f4deca12a2bc54ac9fb`.
+- The complete terminal folds `fail`: exact 10 gates and 894 cells contain 127
+  pass, 6 fail, 761 insufficient, and zero not-run cells. Its bounded receipt
+  records 7.0474522080039605 seconds, one model load, 56 forward batches,
+  9,633,792 raw bytes, estimated-not-measured peak 1,073,741,824 bytes, and no
+  hard-limit breach.
+- This is an internal claim-ineligible Level-0 projection, not a public schema
+  or compatibility promise. It authorizes no retry and changes no API, support,
+  portability, release, library, VOY, D7/D8, SCI, Pythia-160M, scientific,
+  semantic, topology, integer, or milestone state.
+
 ## 2026-08-14 — Claim-ineligible Pythia-70M GateState reconnaissance freeze
 
 - ContextBank SHA-256 `2d16c7c77f8f39a4b89aa118c8f45eb567aa8ddd8c7f230167f17f3cb82e50df`,
