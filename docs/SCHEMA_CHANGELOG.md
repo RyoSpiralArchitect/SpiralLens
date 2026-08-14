@@ -4,6 +4,27 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Claim-ineligible Pythia-70M GateState reconnaissance freeze
+
+- ContextBank SHA-256 `2d16c7c77f8f39a4b89aa118c8f45eb567aa8ddd8c7f230167f17f3cb82e50df`,
+  route SHA-256 `300c55f5dff5419975ddcc10dd915068ee03e82c5097743a2e76937b2add9853`,
+  and freeze SHA-256 `fe85ebb15e0a9794a02d72b4fdefd0178b52662528e8e066530d873516b52452`
+  define an internal repository-only `frozen_not_run` decision. Test SHA-256
+  `367b823f9bb617284333dd0ec4b64984bb1f4c1c2c890fc101fcdf8c4f041724`
+  binds its strict bytes, source identities, exact 4,704 observation IDs, and
+  exact 894 GateState cells.
+- The freeze fixes both F2/F4 development derivations without selecting a
+  winner, exact three field-estimation graphs, independently predeclared
+  address paths, complete/`infrastructure_error` result schemas, and an
+  exact-one durable no-retry lifecycle. It authorizes neither execution nor
+  model access; a separate dated launch must bind the eventual runner bytes and
+  all absence, runtime, model, budget, and artifact coordinates first.
+- This creates no production loader, public API, support or compatibility
+  contract, scientific evidence, authority, milestone credit, VOY/D7/D8 or
+  SCI-S1/S2 progress, model-native topology, integer output, Pythia-160M access,
+  release, or `LIB-L0` completion. Verified B remains the existing closed
+  descriptive `insufficient`; it is neither rerun nor reconstructed.
+
 ## 2026-08-14 — Graph source/direct-wheel observation
 
 - SHA-256 values `9ad18632b54b6db4e466f9f9eb553ad230da35f0ed9f672c75c356417186e6ef`,

@@ -1249,6 +1249,34 @@ cannot enter candidate, neighbor, instrument, graph, field, core, loop,
 semantic, SAE, or integer consumers. This lane neither prepares nor executes a
 subject experiment and does not advance D0-D8.
 
+The separately versioned
+`protocols/pythia70_gate_state_reconnaissance_route_v0_1.json` adds one
+repository-only, claim-ineligible Pythia-70M development lane without changing
+that public-example allowlist. Its frozen `ContextRole.DISCOVERY` bank is a
+non-scientific storage/access classification, not `SCI-S2` admission. The
+route-local F2/F4 pointwise derivations, graph parameters, low-amplitude address
+sets, continuous-holonomy check, artificial address rings, and unrounded phase
+residual thresholds are a one-identity diagnostic exception only. They do not
+select a qualification or scientific field, graph, estimator, threshold,
+trivialization, reference, core, loop, winding, or topology convention; every
+choice listed in section 11 remains unresolved outside that identity. No
+`OrderParameterField`, `CoreScore`, `CoreCandidate`, `SampledWinding`, or
+`WindingEstimate` is constructed.
+
+The freeze itself grants no model-access or execution authority. A separately
+dated launch must bind the exact route, Frame and policy documents, freeze,
+bank, runner, runtime, model files, resource caps, and artifact coordinates.
+Preflight may repeat only before any stage exists or model byte is read and only
+with unchanged inputs. The same process must join an absence observation to an
+exclusive, fsynced external start before model hashing or loading. A complete or
+catchable infrastructure-error terminal is promoted no-replace; an uncatchable
+post-start failure leaves consumed unresolved start-only evidence, not a result.
+No cleanup, retry, resume, or rescue is allowed. Any next-hypothesis record is
+published later, outside the terminal store, no-replace, and remains
+claim-ineligible. Nothing in this lane advances VOY, D7/D8, SCI-S1/S2,
+Pythia-160M, subject, scientific, semantic, topology, integer, publication,
+public-API, release, or library state.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:

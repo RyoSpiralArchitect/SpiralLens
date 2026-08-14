@@ -1,0 +1,72 @@
+{
+  "schema_version": "spirallens.pythia70-gate-state-reconnaissance-route.v0.1",
+  "route_id": "pythia70-claim-ineligible-gate-state-reconnaissance-v0.1",
+  "status": "frozen_not_authorized",
+  "decision_date": "2026-08-14",
+  "execution_class": "claim_ineligible_gate_state_reconnaissance",
+  "base_strict_route": {
+    "path": "protocols/voy_v1_v9_strict_successor_route_v0_1.json",
+    "source_sha256": "c8d28138c95d16ab96f508c2386de1d62360e1659057e0b8f7cbe8a380a90e35",
+    "relationship": "parallel_development_lane_no_route_progress_or_reinterpretation"
+  },
+  "fundamental_frame": {
+    "path": "docs/FUNDAMENTAL_FRAME.md",
+    "source_sha256": "f4f7e27f6b40c6951b9b29a2003543bee4283e28690ac09ec44695a0cb013d2d",
+    "canonical_bytes_rewritten": false,
+    "ledger_amendment_path": "docs/EXPERIMENT_INTERPRETATION_LEDGER.md",
+    "ledger_amendment_anchor": "3.29 Claim-ineligible Pythia-70M gate-state development freeze",
+    "ledger_source_sha256": "dad3f152d09ccef998cc8b347093dffc1b1ee020b8e93f0c111b5afe31d803a2"
+  },
+  "frozen_surface": {
+    "freeze_path": "protocols/pythia70_gate_state_development_freeze_v0_1.json",
+    "freeze_id": "pythia70-gate-state-development-v0.1",
+    "context_bank_path": "protocols/context_bank_pythia70_gate_state_v0_1.yaml",
+    "context_bank_id": "pythia70-gate-state-development-v0.1",
+    "context_role": "discovery",
+    "claim_eligible": false,
+    "model_id": "EleutherAI/pythia-70m",
+    "resolved_model_revision": "a39f36b100fe8a5377810d56c3f4789b9c53ac42",
+    "numeric_observation_cells": 4704,
+    "gate_state_cells": 894,
+    "gate_ids": ["capture_integrity", "measurable_drift", "f2_section_support", "f4_tensor_support", "low_amplitude_set_repeatability", "address_loop_support", "continuous_holonomy_consistency", "address_ring_phase_resolution", "graph_family_agreement", "negative_controls"],
+    "maximum_attempts": 1,
+    "network_access": false
+  },
+  "route_semantics": {
+    "ledger_3_15_rejected_model_free_exploratory_alternative_reinterpreted": false,
+    "discovery_role_is_a_non_scientific_storage_and_access_classification": true,
+    "discovery_role_is_SCI_S2_admission": false,
+    "route_local_diagnostic_exception_only": true,
+    "qualification_and_scientific_graph_estimator_threshold_lift_trivialization_and_reference_choices_remain_unresolved_outside_this_identity": true,
+    "public_example_consumer_allowlist_changed": false,
+    "public_example_artifact_reuse_allowed": false
+  },
+  "authorization": {
+    "execution_authorized_by_route_freeze": false,
+    "model_access_authorized_by_route_freeze": false,
+    "separate_dated_launch_authorization_required": true,
+    "launch_must_bind_runner_freeze_bank_route_frame_policy_docs_runtime_model_and_artifact_coordinates": true,
+    "launch_must_join_quiescent_absence_observation_to_exclusive_start_in_one_process": true
+  },
+  "forbidden_progress": {
+    "VOY": true,
+    "D7": true,
+    "D8": true,
+    "SCI_S1": true,
+    "SCI_S2": true,
+    "Pythia160": true,
+    "subject_preparation_or_execution": true,
+    "candidate_winner_selection": true,
+    "topology_or_integer_authority": true,
+    "semantic_authority": true,
+    "publication_or_release": true
+  },
+  "claim_boundary": {
+    "claim_ceiling": "level_0",
+    "claim_delta": "none",
+    "milestone_credit": "none",
+    "evidence_eligible": false,
+    "development_pass_has_scientific_effect": false,
+    "negative_space_map_is_next_hypothesis_input_only": true
+  }
+}
