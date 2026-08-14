@@ -896,7 +896,7 @@ release, science, authority, or D7 readiness/re-anchor.
 The first namespace-scoped provisional library-admission observation is the
 exact-seven `spirallens.contracts` root surface already owned by the ordered-export
 manifest. SHA-256
-`864092553149e4226ca5cc25675085c1e3bb9a724d23ed6d884419cb367bb4f0`
+`f67507db283bfad06d93776f675aa94e76a75f004917665b7919e714175a8929`
 fixes `tests/test_contracts_library_admission.py`. The exact three CPython
 3.11.16 / 3.12.14 / 3.13.15, Ubuntu 24.04 x86_64, locked-dependency jobs run
 all 42 source nodes and exact 41 neutral direct-wheel nodes; only the
@@ -904,13 +904,23 @@ source-owned manifest/consumer join is absent from the wheel selectors. The
 test binds the root/defining identities, enumerated behavior and failures, and
 exact source/installed origins for `spirallens`, `spirallens.contracts`, and
 its `calibration` and `math` defining modules.
+The same test freezes the exact source-static direct-root graph across
+`calibration/{phantoms,suite}`, `holonomy/{connection,discrete,metrics}`,
+`loops/sampled`, and `topology/winding`; direct-import module membership is not
+itself a consumer-independence decision. Per-name review records
+`ContinuousHolonomy=established` from discrete construction
+and independent metrics matrix/polar consumer, excluding connection
+annotation/delegation, and `SampledLoop=established` from
+sampled construction, connection integration, and independent winding field
+sampling. `CalibrationCheck`, `CalibrationReport`, `LoopOrientation`,
+`SampledWinding`, and `WindingEstimate` are each `not_established`.
 One provisional source line makes default-generated `SampledLoop.parameter_values`
 read-only like explicit inputs without a numeric value, signature, export, or
-dependency delta. PR108 changes no production source, export, dependency,
+dependency delta. PR110 changes no production source, export, dependency,
 manifest, validator, or report schema. This is a bounded source/direct-wheel
-observation, not full library-test ownership, coverage of the other 552 exports
-or the sdist-derived behavior route, installed deep-module or per-name
-two-consumer admission, public API, or promotion. Historical source/D7 receipts
+observation and source-static per-name review, not runtime/installed consumer
+evidence, full library-test ownership, coverage of the other 552 exports or the
+sdist-derived behavior route, namespace admission, public API, or promotion. Historical source/D7 receipts
 remain unchanged and unre-anchored; current readiness remains false.
 `closed_library_allowlist_established=false` and
 `closed_public_api_contract_established=false`; all distribution grants remain
@@ -922,7 +932,7 @@ A second bounded vertical observation fixes the exact analytic test files at
 SHA-256 `7b94e888b01f3d5170762b840f65268a2cdccd829cfac9797f72b910c0bbc385`,
 `a16f76461d90dd33a43236dee47562eb77164dfb729fcab770be27bfe7acc19b`, and
 `54aa348ff65da9b00b2433e23e833dcbd0c1a4667924ab1cb241876e4a66e160`;
-workflow SHA-256 is `8ee6a44e36f9a9e6f350cec1d95592aef87e03ada45f3e9cfb9d0b543f28b5a4`.
+workflow SHA-256 is `9b9e786a4ca39091260c93c8ed4fc4f29e4997ffac80bbeb2b6198ff082511f5`.
 Each exact CPython 3.11.16 / 3.12.14 / 3.13.15, Ubuntu 24.04 x86_64,
 locked-dependency job runs exact 25 source/direct-wheel nodes: 1 calibration +
 10 holonomy + 14 winding by full-file execution without node-id selectors,

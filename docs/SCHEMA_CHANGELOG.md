@@ -4,6 +4,24 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-14 — Contracts source-static consumer-independence audit
+
+- SHA-256 `f67507db283bfad06d93776f675aa94e76a75f004917665b7919e714175a8929`
+  fixes the contracts test and
+  `9b9e786a4ca39091260c93c8ed4fc4f29e4997ffac80bbeb2b6198ff082511f5`
+  fixes the workflow. Exact 42 source and 41 neutral direct-wheel nodes remain
+  unchanged at the exact three locked CPython / Ubuntu coordinates.
+- The source-static direct-root graph is frozen per file and per name; module
+  membership alone does not decide consumer independence. `ContinuousHolonomy`
+  and `SampledLoop` are `established`; `CalibrationCheck`, `CalibrationReport`,
+  `LoopOrientation`, `SampledWinding`, and `WindingEstimate` are
+  `not_established`.
+- These are per-name source-static decisions only, not runtime or installed
+  consumer evidence, namespace admission/promotion, API/support, compatibility,
+  portability, release, full library-test ownership, science, authority, D7,
+  or `LIB-L0` completion. Production, exports, dependencies, manifests,
+  validator, report schema, and historical receipts remain unchanged.
+
 ## 2026-08-14 — Analytic calibration direct-wheel observation
 
 - SHA-256 values `7b94e888b01f3d5170762b840f65268a2cdccd829cfac9797f72b910c0bbc385`,
