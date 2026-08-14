@@ -20,139 +20,15 @@ scientific `fail` or `insufficient` outcome does not block library maturation,
 and a positive scientific result does not stabilize an API. The
 [Research-to-Library Roadmap](docs/ROADMAP.md#3-two-independent-maturity-axes)
 governs lane states, canonical IDs, cross-lane dependencies, and historical
-aliases. Implementation summaries in this README are non-normative snapshots;
-if they drift, the Roadmap and canonical artifacts prevail until `LIB-L0`
-generated views replace them.
-
-The distribution gate now establishes two narrow static facts and one bounded
-installed-import observation. The versioned
-physical-placement manifest partitions all 182 `src/**/*.py` module paths into
-133 wheel-present modules (24 package initializers, two console-entrypoint
-runtime modules, and 107 other shipped runtime modules) and 49 repository-only
-modules. A separate versioned ordered-export manifest records the exact
-literal ordered `__all__` declaration in each of those 24 package initializers,
-for 559 namespace-scoped entries. The v0.9 distribution diagnostic verifies
-both exact inventories through the source tree, sdist, both wheel routes, and
-both fresh non-editable installations; the installed-artifact export probe
-does so without importing `spirallens` modules. It records
-`closed_wheel_python_module_inventory_established=true` and
-`closed_ordered_package_export_inventory_established=true`.
-
-The third versioned manifest,
-`distribution/spirallens_installed_imports_v0_1.json`, schema
-`spirallens.installed-import-conformance.v0.1`, classifies the expected fresh
-non-editable-wheel import outcome for the same exact 133 modules. This is a
-single-current-host observation, not a portability matrix. Each child
-starts with `-I -S -B`: site initialization is disabled, `.pth` startup is not
-executed, and only the fresh-wheel root plus the exact NumPy, SciPy, and PyYAML
-host-distribution roots are added explicitly. The six optional prefixes are
-blocked, and a separate generic blocker rejects distributions outside those
-three declared base dependencies. The repository-only validator parent uses
-`packaging` supplied by the already-declared dev `build` toolchain; the
-isolated children do not import it, and the base runtime dependencies remain
-unchanged. The full installed `Requires-Dist` contract is the exact 13 records:
-three base and ten optional-extra requirements. The direct-source and
-sdist-derived install contracts require equal normalized startup receipts and
-129 successful imports plus four exact
-`ModuleNotFoundError.name == "torch"` outcomes for `spirallens.adapters`,
-`spirallens.adapters.pythia`, `spirallens.atlas.id_sweep`, and
-`spirallens.atlas.engineering_run`.
-Each module runs in its own fresh process with a neutral working directory,
-no `PYTHONPATH`, and a 30-second bound. The sole observed undeclared import
-attempt, `charset_normalizer`, is blocked and not loaded; the loaded
-third-party distributions remain the exact three declared bases. Of the 24
-package initializers, 23 import successfully and their runtime list-valued `__all__`
-values reproduce 554 declared entries; `spirallens.adapters` and its five
-entries remain unavailable at the blocked Torch boundary. This establishes
-`closed_installed_module_import_outcome_inventory_established=true` and the
-narrow
-`runtime_successful_package_export_values_established=true`, not all-package
-runtime export closure. The new private `spirallens._model_observer` and
-`spirallens.atlas._capture_store` successes bind an offline reference
-`PythiaAdapter` observation to the store. Tensor-backed `BatchObservation`,
-artifact schemas, and residual-hooks v2 remain unchanged; this establishes
-neither a NumPy-owned/value-neutral record nor a public protocol. The historical
-pre-boundary live validation receipt
-for the former 159-member wheel has SHA-256
-`2ce75371e7a8f39db66c136cf64c039f6f76fcbdf84b6f6b76b6bdf5f0b502b4`.
-The separately retained preA/preB/post invariants bind that receipt to
-validator SHA-256
-`a08ddf98f8d7da985f0ed5029b999c0ab40d6b37a250e450a8df51a38a89575c`,
-setup SHA-256
-`da83e2ad642bef085948571a26bef52030abadc91f0cb5d8d3a2450160b0079f`,
-manifest SHA-256
-`d9a90a30514a64d561e3caaa5ab6309b5c205efa12a91bb93ec07cebe83c6795`,
-and unchanged `src` inputs before this receipt-projection documentation was
-added. Because the documentation
-changed afterward, and `README.md` is embedded in distribution metadata, its
-artifact hashes do not attest artifacts rebuilt from the later documentation
-state.
-
-The physical roles, static declarations, and installed-import expectations
-remain separate classification axes. The bounded audit hook starts only after isolated
-interpreter and standard-library probe bootstrap. It reports zero denied
-events for its listed write, process, network, and selected filesystem
-operations, but it is not an exhaustive side-effect monitor and deliberately
-does not deny `ctypes.dlopen`, `os.putenv`, or `os.unsetenv`. Per-module process
-isolation also does not establish combined import-order or concurrent-import
-behavior. The probes never invoke exported operations or import every named
-export. Their explicit dependency roots still share host directories; the
-base dependencies are not freshly installed and do not form an isolated
-dependency environment. Accordingly
-`runtime_export_values_established`,
-`all_package_runtime_export_values_established`,
-`export_symbol_importability_established`,
-`side_effect_free_imports_established`,
-`closed_public_api_contract_established`, and
-`closed_library_allowlist_established` remain `false`, as do the authority,
-`lib_l0`, library, portability, public-API, and scientific grants. Optional
-dependency extras are not module roles, and installed presence does not make
-an operation portable. The wheel now retains the exact 19 model-free D0-D6
-qualification modules and all 115 ordered `spirallens.qualification` exports,
-while every one of the 47 `qualification/confirmation_*.py` source modules is
-repository-only. This removes the D7 confirmation implementation family from
-the distribution without changing its source or history. Legacy
-repository-inferred operations and other open allowlist, compatibility,
-portability, and release gates remain, so the wheel is still not library-grade
-and `LIB-L0` remains in progress. The repository tracks 116 Python files
-under `tests/`. The former sdist carried an implicit partial 106-file subset:
-10 tracked test/helper files were omitted, while some carried tests depended
-on omitted helpers or deliberately repository-only experiment modules. That
-subset was never a self-contained experiment replay, installed-wheel
-conformance suite, or maturity receipt. The v0.9 diagnostic now requires the
-sdist to omit the top-level `tests` path entirely and records the bounded
-`sdist_test_surface` receipt as `observation="absent"`, `count=0`, and
-`members=[]`. This is distribution-role separation only, not a complete sdist
-inventory or evidence of replay, compatibility, portability, API, library, or
-scientific maturity. The Python-member manifest schema admits regular Python
-modules only; package data, extension or namespace modules, and
-generated-module support require an explicit versioned classification/schema
-change before they may ship.
-
-The required anti-bloat consolidation is now complete in the private,
-repository/build-only `distribution/_installed_import_policy.py` seam. It owns
-only immutable installed-import metadata and a standard-library-only, no-I/O
-worker-policy projection; it performs no manifest or TOML parsing and imports
-neither `packaging`, setuptools, subprocess machinery, nor `spirallens`.
-`setup.py` and the repository validator path-load that reviewed file but retain
-independent fail-closed manifest and `pyproject.toml` parsers, validation, and
-mutation adversaries. The validator parent serializes one deterministic
-canonical JSON projection; an isolated worker imports no policy module and
-independently rejects missing, extra, mistyped, empty, or outcome-inconsistent
-fields. One generic validator reader now enforces exact sdist-file identity.
-The sdist must contain exactly one regular byte-identical policy file, while
-the wheel must contain none.
-
-Against baseline `ef84d7e2107fb4ff9d931e34523f3e942e9244ad`, the four
-production paths `setup.py`, `scripts/validate_distribution.py`, the policy
-file, and `MANIFEST.in` change from 6,130 to 6,098 physical lines (`-32`). The
-four exact duplicated policy-literal blocks change from 66 physical
-occurrences, including 33 redundant lines, to zero setup/validator duplicate
-excess (`33 -> 0`, 100 percent). This is still only an internal maintenance
-ratchet: it changes no installed-import schema, expected outcome, diagnostic
-report semantics, `src/spirallens` runtime, export, dependency, public API,
-portability result, library or `LIB-L0` status, scientific claim, or authority
-record.
+aliases. See the non-authoritative
+[generated LIB-L0 status view](docs/generated/lib_l0_status_v0_1.json), schema
+`spirallens.lib-l0-status-view.v0.1`; run `python3 scripts/generate_lib_l0_status_view.py --source-root . --check` to
+observe committed/rendered byte equality for bounded input reads during that
+invocation without writing. It is not validation and grants no API/support,
+compatibility/portability, library or `LIB-L0` completion, release, science,
+authority, or D7 readiness/re-anchor.
+Historical receipts remain in the [extraction inventory](docs/LIBRARY_EXTRACTION_INVENTORY.md)
+and [schema change record](docs/SCHEMA_CHANGELOG.md).
 
 The project now separates two deliberately narrow questions:
 

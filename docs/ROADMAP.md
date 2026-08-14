@@ -883,6 +883,15 @@ Deliverables:
 - a public-surface budget and promotion rule that prevents experiment-specific
   helpers from becoming provisional exports by default.
 
+The first bounded mechanism renders `docs/generated/lib_l0_status_v0_1.json`,
+schema `spirallens.lib-l0-status-view.v0.1`, from the Frame, Ledger, Roadmap,
+validator, three classification manifests, and generator bytes. Default output
+is canonical JSON on stdout; `--check` observes committed/rendered byte equality
+for bounded reads during that invocation and writes nothing. The view is
+non-authoritative, and owner documents record no view hash. Freshness establishes no validation pass,
+API/support, compatibility/portability, library maturity, `LIB-L0` completion,
+release, science, authority, or D7 readiness/re-anchor.
+
 Exit criteria:
 
 - every promoted common primitive has two independent consumers and materially
