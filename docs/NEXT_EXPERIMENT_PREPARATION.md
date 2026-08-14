@@ -1277,6 +1277,14 @@ claim-ineligible. Nothing in this lane advances VOY, D7/D8, SCI-S1/S2,
 Pythia-160M, subject, scientific, semantic, topology, integer, publication,
 public-API, release, or library state.
 
+The exact-one lane is now consumed: attempt SHA-256 `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59`
+and terminal SHA-256 `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f`
+bind a complete `fail` fold over exact 10 gates and 894 cells. The 127 pass,
+6 fail, and 761 insufficient cells are intentional claim-ineligible Level-0
+roughness, not a selection or scientific interpretation. No retry occurred or
+is authorized, and no next-hypothesis artifact is present; all unresolved decisions
+below remain unresolved.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:

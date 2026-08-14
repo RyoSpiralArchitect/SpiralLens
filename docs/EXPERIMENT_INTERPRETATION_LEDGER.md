@@ -1144,6 +1144,19 @@ launch binding. Claim delta and milestone credit are `none`; VOY, D7, D8,
 SCI-S1, SCI-S2, Pythia-160M, subject, topology, integer, semantic, publication,
 API, support, compatibility, and release states do not advance.
 
+### 3.30 Consumed exact-one Pythia-70M GateState reconnaissance
+
+**Terminal observation**
+
+The separately authorized exact-one attempt ran from `2026-08-14T14:34:10.995807Z` to `2026-08-14T14:34:18.043270Z` and emitted `execution_terminal=complete`, `terminal_fold=fail`, and no error. Canonical repository projections are attempt SHA-256 `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59` (6,826 bytes) and terminal SHA-256 `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f` (619,570 bytes); their durable-store copies are byte-identical.
+The terminal contains exact 16 capture records, 18 graph receipts, 10 gate records, and 894 cells: 127 `pass`, 6 `fail`, and 761 `insufficient`, with no `not_run` cell. `capture_integrity` (48/48) and `measurable_drift` (12/12) fold `pass`; F2 and F4 support each contain 18 pass/18 insufficient, low-amplitude repeatability 29 pass/7 insufficient, address-loop 216 insufficient, continuous-holonomy 54 insufficient, address-ring phase 216 insufficient, graph-family agreement 2 pass/6 fail/16 insufficient and folds `fail`, and negative controls 216 insufficient.
+The resource receipt records 7.0474522080039605 wall-clock seconds, one model load, 56 forward batches, 9,633,792 raw-capture bytes, estimated-not-measured peak 1,073,741,824 bytes, terminal size below its 1,048,576-byte hard limit, and zero hard-limit breaches.
+
+**Intentional roughness and retained boundary**
+
+This is claim-ineligible Level-0 reconnaissance: half-supported F2/F4 cells, below-floor declared ring support, unresolved orientation, unavailable negative-control prerequisites, and the failing graph-family-agreement cells are retained as rough diagnostic outcomes, not repaired, retried, tuned, or interpreted as model geometry or topology. No next-hypothesis artifact exists, and the exact-one attempt is consumed.
+The terminal itself retains `claim_ceiling=level_0`, `claim_delta=none`, `milestone_credit=none`, and `evidence_eligible=false`. It creates no field/core/loop/winding/integer/scientific/semantic authority and no VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support, compatibility, portability, release, or library-state delta.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

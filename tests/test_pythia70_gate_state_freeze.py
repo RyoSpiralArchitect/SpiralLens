@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import itertools
 import json
+import os
+import re
 import subprocess
+from datetime import date
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
+import pytest
 import yaml
 
 from spirallens.contexts import CaptureStage, ContextRole, load_context_bank
@@ -17,6 +23,34 @@ FREEZE_PATH = ROOT / "protocols/pythia70_gate_state_development_freeze_v0_1.json
 BANK_PATH = ROOT / "protocols/context_bank_pythia70_gate_state_v0_1.yaml"
 PUBLIC_BANK_PATH = ROOT / "protocols/context_bank_example_v0_1.yaml"
 ROUTE_PATH = ROOT / "protocols/pythia70_gate_state_reconnaissance_route_v0_1.json"
+LAUNCH_PATH = (
+    ROOT / "experiments/pythia/gate_state_development_v0_1/launch-authorization.json"
+)
+ATTEMPT_PATH = ROOT / "experiments/pythia/gate_state_development_v0_1/attempt.json"
+TERMINAL_PATH = (
+    ROOT / "experiments/pythia/gate_state_development_v0_1/terminal-result.json"
+)
+NEXT_HYPOTHESES_PATH = (
+    ROOT / "experiments/pythia/gate_state_development_v0_1/next-hypotheses.json"
+)
+REPOSITORY_STATE_PATHS = (
+    ("launch_authorization", LAUNCH_PATH),
+    ("attempt_record", ATTEMPT_PATH),
+    ("terminal_result", TERMINAL_PATH),
+    ("next_hypotheses", NEXT_HYPOTHESES_PATH),
+)
+ALLOWED_REPOSITORY_STATES = {
+    "0000": "unlaunched",
+    "1000": "authorized_not_started",
+    "1110": "terminal_projected_without_next_hypotheses",
+}
+POLICY_DOCUMENT_PATHS = frozenset(
+    {
+        "docs/EXPERIMENT_INTERPRETATION_LEDGER.md",
+        "docs/ROADMAP.md",
+        "docs/NEXT_EXPERIMENT_PREPARATION.md",
+    }
+)
 EXPECTED_BANK_SOURCE = (
     3200,
     "2d16c7c77f8f39a4b89aa118c8f45eb567aa8ddd8c7f230167f17f3cb82e50df",
@@ -73,6 +107,17 @@ EXPECTED_GATES = (
     "graph_family_agreement",
     "negative_controls",
 )
+EXPECTED_RUNTIME_DEPENDENCIES = frozenset(
+    {
+        "huggingface_hub",
+        "numpy",
+        "safetensors",
+        "scipy",
+        "spirallens",
+        "torch",
+        "transformers",
+    }
+)
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -84,7 +129,8 @@ def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def _load_json(path: Path) -> dict[str, object]:
+def _load_json(path: Path, *, canonical: bool = False) -> dict[str, object]:
+    assert not path.is_symlink() and path.is_file()
     raw = path.read_bytes()
     assert raw.endswith(b"\n") and raw.count(b"\x00") == 0
     value = json.loads(
@@ -95,11 +141,595 @@ def _load_json(path: Path) -> dict[str, object]:
         ),
     )
     assert isinstance(value, dict)
+    if canonical:
+        rerendered = (
+            json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            + "\n"
+        ).encode("utf-8")
+        assert raw == rerendered
     return value
 
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _git_blob(commit: str, path: str) -> bytes:
+    return subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _assert_commit(commit: object) -> str:
+    assert isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit)
+    subprocess.run(
+        ["git", "cat-file", "-e", f"{commit}^{{commit}}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return commit
+
+
+def _assert_ancestor(ancestor: str, descendant: str) -> None:
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def _deep_exact_equal(left: object, right: object) -> bool:
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        assert isinstance(right, dict)
+        return set(left) == set(right) and all(
+            _deep_exact_equal(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list):
+        assert isinstance(right, list)
+        return len(left) == len(right) and all(
+            _deep_exact_equal(one, two) for one, two in zip(left, right, strict=True)
+        )
+    return bool(left == right)
+
+
+def _assert_exact(left: object, right: object) -> None:
+    assert _deep_exact_equal(left, right)
+
+
+def _validate_launch_document(
+    freeze: dict[str, object], launch: dict[str, object]
+) -> tuple[str, str]:
+    contract = freeze["launch_authorization_contract"]
+    bindings = freeze["bindings"]
+    artifacts = freeze["artifact_coordinates"]
+    budget = freeze["resource_budget"]
+    claim = freeze["claim_boundary"]
+    route = freeze["route_amendment"]
+    assert all(
+        isinstance(item, dict)
+        for item in (contract, bindings, artifacts, budget, claim, route)
+    )
+    assert isinstance(contract, dict)
+    assert isinstance(bindings, dict)
+    assert isinstance(artifacts, dict)
+    assert isinstance(budget, dict)
+    assert isinstance(claim, dict)
+    assert isinstance(route, dict)
+
+    root_fields = contract["required_root_fields"]
+    fixed = contract["required_fixed_values"]
+    required_bindings = contract["required_bindings"]
+    assert isinstance(root_fields, list)
+    assert isinstance(fixed, dict)
+    assert isinstance(required_bindings, dict)
+    assert set(launch) == set(root_fields)
+    for name, fields in required_bindings.items():
+        value = launch[name]
+        assert isinstance(value, dict) and isinstance(fields, list)
+        assert set(value) == set(fields)
+    for name in ("schema_version", "launch_id", "attempt_id", "status"):
+        _assert_exact(launch[name], fixed[name])
+
+    decision_date = launch["decision_date"]
+    freeze_decision = freeze["decision"]
+    assert isinstance(decision_date, str) and isinstance(freeze_decision, dict)
+    parsed_launch_date = date.fromisoformat(decision_date)
+    assert parsed_launch_date.isoformat() == decision_date
+    assert parsed_launch_date >= date.fromisoformat(freeze_decision["decision_date"])
+
+    _assert_exact(launch["execution_class"], route["execution_class"])
+    _assert_exact(
+        launch["freeze"],
+        {
+            "path": FREEZE_PATH.relative_to(ROOT).as_posix(),
+            "source_sha256": _sha256(FREEZE_PATH),
+            "freeze_id": freeze["freeze_id"],
+        },
+    )
+    _assert_exact(launch["context_bank"], bindings["context_bank"])
+    _assert_exact(
+        launch["route"],
+        {
+            key: route[key]
+            for key in ("path", "source_sha256", "route_id", "execution_class")
+        },
+    )
+    frame = bindings["fundamental_frame"]
+    policy = bindings["policy_documents"]
+    assert isinstance(frame, dict)
+    assert isinstance(policy, list) and len(policy) == 3
+    assert all(isinstance(item, dict) for item in policy)
+    _assert_exact(
+        launch["frame"],
+        {
+            key: frame[key]
+            for key in ("path", "source_sha256", "ledger_amendment_anchor")
+        },
+    )
+    _assert_exact(
+        launch["merged_policy_docs"],
+        {
+            "ledger_path": policy[0]["path"],
+            "ledger_sha256": policy[0]["source_sha256"],
+            "roadmap_path": policy[1]["path"],
+            "roadmap_sha256": policy[1]["source_sha256"],
+            "next_experiment_preparation_path": policy[2]["path"],
+            "next_experiment_preparation_sha256": policy[2]["source_sha256"],
+        },
+    )
+
+    runner = launch["runner"]
+    command = launch["command"]
+    runtime = launch["runtime"]
+    assert isinstance(runner, dict)
+    assert isinstance(command, dict)
+    assert isinstance(runtime, dict)
+    runner_path = runner["path"]
+    assert runner_path == artifacts["prospective_runner_path"]
+    assert isinstance(runner_path, str)
+    current_runner = ROOT / runner_path
+    assert not current_runner.is_symlink() and current_runner.is_file()
+    assert runner["source_sha256"] == _sha256(current_runner)
+    implementation_commit = _assert_commit(runner["implementation_commit"])
+    _assert_ancestor(implementation_commit, "HEAD")
+    assert _git_blob(implementation_commit, runner_path) == current_runner.read_bytes()
+
+    python_executable = runtime["python_executable"]
+    python_version = runtime["python_version"]
+    dependencies = runtime["dependency_versions"]
+    assert isinstance(python_executable, str) and Path(python_executable).is_absolute()
+    assert os.path.normpath(python_executable) == python_executable
+    assert isinstance(python_version, str)
+    version_match = re.fullmatch(r"(3)\.(11|12|13)\.[0-9]+", python_version)
+    assert version_match is not None
+    assert isinstance(dependencies, dict)
+    assert set(dependencies) == EXPECTED_RUNTIME_DEPENDENCIES
+    assert all(type(value) is str and value for value in dependencies.values())
+    working_directory = command["working_directory"]
+    assert isinstance(working_directory, str) and Path(working_directory).is_absolute()
+    assert os.path.normpath(working_directory) == working_directory
+    _assert_exact(
+        command,
+        {
+            "exact_argv": [
+                python_executable,
+                "-B",
+                runner_path,
+            ],
+            "working_directory": working_directory,
+        },
+    )
+
+    model = bindings["model"]
+    assert isinstance(model, dict)
+    _assert_exact(
+        launch["model"],
+        {
+            "id": model["id"],
+            "revision": model["revision"],
+            "file_sha256_and_sizes": model["files"],
+        },
+    )
+    repository_projections = [
+        artifacts["attempt_record"],
+        artifacts["terminal_result"],
+        artifacts["next_hypotheses"],
+    ]
+    required_absence = [
+        artifacts["external_staging_path"],
+        artifacts["external_store_path"],
+        artifacts["external_next_hypotheses_path"],
+        *repository_projections,
+    ]
+    _assert_exact(
+        launch["artifacts"],
+        {
+            "external_staging_path": artifacts["external_staging_path"],
+            "external_store_path": artifacts["external_store_path"],
+            "external_next_hypotheses_path": artifacts["external_next_hypotheses_path"],
+            "repository_projection_paths": repository_projections,
+        },
+    )
+    _assert_exact(
+        launch["absence_precondition"],
+        {
+            "coordinates_required_absent": required_absence,
+            "runner_must_observe_absence_and_exclusively_start_in_same_process": True,
+        },
+    )
+    _assert_exact(
+        launch["resource_budget"],
+        {
+            "wall_clock_seconds_hard": budget["wall_clock_seconds_hard"],
+            "model_loads_maximum": budget["model_loads_maximum"],
+            "forward_batches_maximum": budget["forward_batches_maximum"],
+            "byte_limits": {
+                key: budget[key]
+                for key in (
+                    "raw_capture_bytes_hard",
+                    "terminal_result_bytes_hard",
+                    "next_hypotheses_bytes_hard",
+                    "max_estimated_peak_bytes",
+                )
+            },
+        },
+    )
+    _assert_exact(
+        launch["authorizations"],
+        {
+            "operator_authorized_exact_one_attempt": True,
+            "execution_authorized": True,
+            "model_access_authorized": True,
+        },
+    )
+    _assert_exact(
+        launch["claim_boundary"],
+        {
+            key: claim[key]
+            for key in (
+                "claim_ceiling",
+                "claim_delta",
+                "milestone_credit",
+                "evidence_eligible",
+            )
+        },
+    )
+    return runner_path, implementation_commit
+
+
+def _synthetic_launch_document(freeze: dict[str, object]) -> dict[str, object]:
+    contract = freeze["launch_authorization_contract"]
+    bindings = freeze["bindings"]
+    artifacts = freeze["artifact_coordinates"]
+    route = freeze["route_amendment"]
+    budget = freeze["resource_budget"]
+    claim = freeze["claim_boundary"]
+    assert all(
+        isinstance(item, dict)
+        for item in (contract, bindings, artifacts, route, budget, claim)
+    )
+    assert isinstance(contract, dict)
+    assert isinstance(bindings, dict)
+    assert isinstance(artifacts, dict)
+    assert isinstance(route, dict)
+    assert isinstance(budget, dict)
+    assert isinstance(claim, dict)
+    frame = bindings["fundamental_frame"]
+    policy = bindings["policy_documents"]
+    model = bindings["model"]
+    assert isinstance(frame, dict)
+    assert isinstance(policy, list) and len(policy) == 3
+    assert all(isinstance(item, dict) for item in policy)
+    assert isinstance(model, dict)
+    runner_path = artifacts["prospective_runner_path"]
+    assert isinstance(runner_path, str)
+    python_executable = "/opt/spirallens-python/bin/python3"
+    working_directory = "/opt/spirallens-repository"
+    fixed = contract["required_fixed_values"]
+    assert isinstance(fixed, dict)
+    return {
+        "schema_version": fixed["schema_version"],
+        "launch_id": fixed["launch_id"],
+        "attempt_id": fixed["attempt_id"],
+        "decision_date": freeze["decision"]["decision_date"],
+        "status": fixed["status"],
+        "execution_class": route["execution_class"],
+        "freeze": {
+            "path": FREEZE_PATH.relative_to(ROOT).as_posix(),
+            "source_sha256": _sha256(FREEZE_PATH),
+            "freeze_id": freeze["freeze_id"],
+        },
+        "context_bank": copy.deepcopy(bindings["context_bank"]),
+        "route": {
+            key: route[key]
+            for key in ("path", "source_sha256", "route_id", "execution_class")
+        },
+        "frame": {
+            key: frame[key]
+            for key in ("path", "source_sha256", "ledger_amendment_anchor")
+        },
+        "merged_policy_docs": {
+            "ledger_path": policy[0]["path"],
+            "ledger_sha256": policy[0]["source_sha256"],
+            "roadmap_path": policy[1]["path"],
+            "roadmap_sha256": policy[1]["source_sha256"],
+            "next_experiment_preparation_path": policy[2]["path"],
+            "next_experiment_preparation_sha256": policy[2]["source_sha256"],
+        },
+        "runner": {
+            "path": runner_path,
+            "source_sha256": _sha256(ROOT / runner_path),
+            "implementation_commit": "a" * 40,
+        },
+        "command": {
+            "exact_argv": [python_executable, "-B", runner_path],
+            "working_directory": working_directory,
+        },
+        "runtime": {
+            "python_executable": python_executable,
+            "python_version": "3.13.0",
+            "dependency_versions": {
+                name: f"synthetic-{index}"
+                for index, name in enumerate(sorted(EXPECTED_RUNTIME_DEPENDENCIES))
+            },
+        },
+        "model": {
+            "id": model["id"],
+            "revision": model["revision"],
+            "file_sha256_and_sizes": copy.deepcopy(model["files"]),
+        },
+        "artifacts": {
+            "external_staging_path": artifacts["external_staging_path"],
+            "external_store_path": artifacts["external_store_path"],
+            "external_next_hypotheses_path": artifacts["external_next_hypotheses_path"],
+            "repository_projection_paths": [
+                artifacts["attempt_record"],
+                artifacts["terminal_result"],
+                artifacts["next_hypotheses"],
+            ],
+        },
+        "absence_precondition": {
+            "coordinates_required_absent": [
+                artifacts["external_staging_path"],
+                artifacts["external_store_path"],
+                artifacts["external_next_hypotheses_path"],
+                artifacts["attempt_record"],
+                artifacts["terminal_result"],
+                artifacts["next_hypotheses"],
+            ],
+            "runner_must_observe_absence_and_exclusively_start_in_same_process": True,
+        },
+        "resource_budget": {
+            "wall_clock_seconds_hard": budget["wall_clock_seconds_hard"],
+            "model_loads_maximum": budget["model_loads_maximum"],
+            "forward_batches_maximum": budget["forward_batches_maximum"],
+            "byte_limits": {
+                key: budget[key]
+                for key in (
+                    "raw_capture_bytes_hard",
+                    "terminal_result_bytes_hard",
+                    "next_hypotheses_bytes_hard",
+                    "max_estimated_peak_bytes",
+                )
+            },
+        },
+        "authorizations": {
+            "operator_authorized_exact_one_attempt": True,
+            "execution_authorized": True,
+            "model_access_authorized": True,
+        },
+        "claim_boundary": {
+            key: claim[key]
+            for key in (
+                "claim_ceiling",
+                "claim_delta",
+                "milestone_credit",
+                "evidence_eligible",
+            )
+        },
+    }
+
+
+def _mutate_launch_document(document: dict[str, object], case: str) -> None:
+    if case == "missing_root":
+        document.pop("status")
+    elif case == "unknown_root":
+        document["unknown"] = False
+    elif case == "status":
+        document["status"] = "authorized"
+    elif case == "decision_date":
+        document["decision_date"] = "2026-8-14"
+    elif case == "execution_class":
+        document["execution_class"] = "other"
+    elif case == "freeze":
+        document["freeze"]["source_sha256"] = "0" * 64
+    elif case == "context_bank_type":
+        document["context_bank"]["claim_eligible"] = 0
+    elif case == "route":
+        document["route"]["route_id"] = "other"
+    elif case == "frame":
+        document["frame"]["source_sha256"] = "0" * 64
+    elif case == "policy":
+        document["merged_policy_docs"]["roadmap_sha256"] = "0" * 64
+    elif case == "runner_path":
+        document["runner"]["path"] = "scripts/other.py"
+    elif case == "runner_sha":
+        document["runner"]["source_sha256"] = "0" * 64
+    elif case == "runner_commit":
+        document["runner"]["implementation_commit"] = "b" * 40
+    elif case == "argv":
+        document["command"]["exact_argv"] = []
+    elif case == "working_directory":
+        document["command"]["working_directory"] = "/tmp/../tmp"
+    elif case == "python":
+        document["runtime"]["python_executable"] = "/tmp/python"
+    elif case == "python_alias":
+        document["runtime"]["python_executable"] = "/usr/bin/../bin/python"
+    elif case == "python_version":
+        document["runtime"]["python_version"] = "0.0.0"
+    elif case == "dependency":
+        document["runtime"]["dependency_versions"]["unknown"] = "1"
+    elif case == "model":
+        document["model"]["revision"] = "0" * 40
+    elif case == "artifacts":
+        document["artifacts"]["repository_projection_paths"].reverse()
+    elif case == "absence":
+        document["absence_precondition"]["coordinates_required_absent"].reverse()
+    elif case == "budget":
+        document["resource_budget"]["model_loads_maximum"] = 2
+    elif case == "authorization_type":
+        document["authorizations"]["execution_authorized"] = 1
+    elif case == "claim":
+        document["claim_boundary"]["evidence_eligible"] = True
+    else:
+        raise AssertionError(case)
+
+
+@lru_cache
+def _runtime_source_commit() -> str | None:
+    state = "".join(
+        "1" if os.path.lexists(path) else "0"
+        for _coordinate, path in REPOSITORY_STATE_PATHS
+    )
+    assert state in ALLOWED_REPOSITORY_STATES
+    if state == "0000":
+        return None
+
+    freeze = _load_json(FREEZE_PATH)
+    launch = _load_json(LAUNCH_PATH, canonical=True)
+    runner_path, implementation_commit = _validate_launch_document(freeze, launch)
+    if state == "1000":
+        return None
+
+    attempt = _load_json(ATTEMPT_PATH, canonical=True)
+    terminal = _load_json(TERMINAL_PATH, canonical=True)
+    lifecycle = freeze["lifecycle"]
+    launch_contract = freeze["launch_authorization_contract"]
+    terminal_contract = freeze["terminal_result_contract"]
+    assert isinstance(lifecycle, dict)
+    assert isinstance(launch_contract, dict)
+    assert isinstance(terminal_contract, dict)
+
+    assert set(launch) == set(launch_contract["required_root_fields"])
+    assert set(attempt) == set(lifecycle["attempt_record_contract"]["root_fields"])
+    assert set(terminal) == set(terminal_contract["root_fields"])
+    assert (
+        attempt["schema_version"]
+        == lifecycle["attempt_record_contract"]["schema_version"]
+    )
+    assert attempt["attempt_id"] == launch_contract["attempt_id"]
+    assert attempt["launch_id"] == launch_contract["launch_id"]
+    _assert_exact(attempt["artifact_coordinates"], freeze["artifact_coordinates"])
+    _assert_exact(attempt["resource_budget"], freeze["resource_budget"])
+    _assert_exact(attempt["claim_boundary"], freeze["claim_boundary"])
+
+    bindings = attempt["bindings"]
+    assert isinstance(bindings, dict)
+    assert set(bindings) == set(lifecycle["attempt_record_required_bindings"])
+    runtime_commit = _assert_commit(bindings["runtime_source_commit"])
+    _assert_ancestor(runtime_commit, "HEAD")
+    assert bindings["launch_authorization_sha256"] == _sha256(LAUNCH_PATH)
+    assert bindings["freeze_source_sha256"] == _sha256(FREEZE_PATH)
+    assert bindings["context_bank_source_sha256"] == _sha256(BANK_PATH)
+    assert (
+        bindings["context_bank_canonical_sha256"]
+        == freeze["bindings"]["context_bank"]["canonical_sha256"]
+    )
+    assert bindings["route_source_sha256"] == _sha256(ROUTE_PATH)
+    _assert_exact(bindings["exact_argv"], launch["command"]["exact_argv"])
+    _assert_exact(bindings["runtime_versions"], launch["runtime"])
+    _assert_exact(
+        bindings["expected_model_file_sha256_and_sizes"],
+        launch["model"]["file_sha256_and_sizes"],
+    )
+    _assert_exact(
+        bindings["all_external_and_repository_coordinates"],
+        freeze["artifact_coordinates"],
+    )
+    _assert_exact(bindings["resource_budget"], freeze["resource_budget"])
+    _assert_exact(bindings["claim_boundary"], freeze["claim_boundary"])
+
+    runner = launch["runner"]
+    assert isinstance(runner, dict)
+    current_runner = ROOT / runner_path
+    runner_sha256 = _sha256(current_runner)
+    _assert_ancestor(implementation_commit, runtime_commit)
+    assert bindings["runner_source_sha256"] == runner_sha256
+    assert bindings["runner_implementation_commit"] == implementation_commit
+    assert _git_blob(implementation_commit, runner_path) == current_runner.read_bytes()
+    assert _git_blob(runtime_commit, runner_path) == current_runner.read_bytes()
+
+    launch_relative = LAUNCH_PATH.relative_to(ROOT).as_posix()
+    assert _git_blob(runtime_commit, launch_relative) == LAUNCH_PATH.read_bytes()
+    for _coordinate, path in REPOSITORY_STATE_PATHS[1:]:
+        assert not _git_blob_exists(runtime_commit, path.relative_to(ROOT).as_posix())
+    provenance = terminal["provenance"]
+    assert isinstance(provenance, dict)
+    assert set(provenance) == set(terminal_contract["provenance_fields"])
+    assert terminal["schema_version"] == terminal_contract["schema_version"]
+    assert terminal["freeze_id"] == freeze["freeze_id"]
+    assert terminal["launch_id"] == launch_contract["launch_id"]
+    assert terminal["attempt_id"] == launch_contract["attempt_id"]
+    _assert_exact(terminal["claim_boundary"], freeze["claim_boundary"])
+    assert provenance["runtime_source_commit"] == runtime_commit
+    assert provenance["runner_path"] == runner_path
+    assert provenance["runner_source_sha256"] == runner_sha256
+    assert provenance["launch_authorization_sha256"] == _sha256(LAUNCH_PATH)
+    assert provenance["attempt_record_sha256"] == _sha256(ATTEMPT_PATH)
+    assert provenance["freeze_source_sha256"] == _sha256(FREEZE_PATH)
+    assert provenance["context_bank_source_sha256"] == _sha256(BANK_PATH)
+    assert (
+        provenance["context_bank_canonical_sha256"]
+        == freeze["bindings"]["context_bank"]["canonical_sha256"]
+    )
+    assert provenance["route_source_sha256"] == _sha256(ROUTE_PATH)
+    assert provenance["model_id"] == launch["model"]["id"]
+    assert provenance["model_revision"] == launch["model"]["revision"]
+    _assert_exact(
+        provenance["expected_model_file_sha256_and_sizes"],
+        launch["model"]["file_sha256_and_sizes"],
+    )
+    _assert_exact(
+        provenance["python_executable"], launch["runtime"]["python_executable"]
+    )
+    _assert_exact(provenance["python_version"], launch["runtime"]["python_version"])
+    _assert_exact(
+        provenance["dependency_versions"],
+        launch["runtime"]["dependency_versions"],
+    )
+    _assert_exact(provenance["exact_argv"], launch["command"]["exact_argv"])
+    _assert_exact(
+        provenance["working_directory"], launch["command"]["working_directory"]
+    )
+    return runtime_commit
+
+
+def _binding_sha256(path: Path) -> str:
+    live = path.read_bytes()
+    runtime_commit = _runtime_source_commit()
+    if runtime_commit is None:
+        return hashlib.sha256(live).hexdigest()
+    relative = path.relative_to(ROOT).as_posix()
+    historical = _git_blob(runtime_commit, relative)
+    if relative in POLICY_DOCUMENT_PATHS:
+        return hashlib.sha256(historical).hexdigest()
+    assert live == historical
+    return hashlib.sha256(live).hexdigest()
 
 
 def _git_blob_exists(commit: str, path: str) -> bool:
@@ -135,14 +765,16 @@ def _fold_cells(states: tuple[str, ...]) -> str:
     return "insufficient"
 
 
-def test_freeze_binds_new_discovery_inputs_and_pre_access_history() -> None:
+def test_freeze_binds_new_discovery_inputs_and_pre_access_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     for path, (size, digest) in (
         (BANK_PATH, EXPECTED_BANK_SOURCE),
         (ROUTE_PATH, EXPECTED_ROUTE_SOURCE),
         (FREEZE_PATH, EXPECTED_FREEZE_SOURCE),
     ):
         assert path.stat().st_size == size
-        assert _sha256(path) == digest
+        assert _binding_sha256(path) == digest
     freeze = _load_json(FREEZE_PATH)
     assert set(freeze) == EXPECTED_ROOT_KEYS
     assert freeze["schema_version"] == (
@@ -215,7 +847,7 @@ def test_freeze_binds_new_discovery_inputs_and_pre_access_history() -> None:
     }
     assert freeze["route_amendment"] == {
         "path": "protocols/pythia70_gate_state_reconnaissance_route_v0_1.json",
-        "source_sha256": _sha256(ROUTE_PATH),
+        "source_sha256": _binding_sha256(ROUTE_PATH),
         "route_id": "pythia70-claim-ineligible-gate-state-reconnaissance-v0.1",
         "execution_class": "claim_ineligible_gate_state_reconnaissance",
         "relationship_to_voy_strict_route": (
@@ -257,24 +889,28 @@ def test_freeze_binds_new_discovery_inputs_and_pre_access_history() -> None:
     for key, relative in expected_sources.items():
         binding = bindings[key]
         assert isinstance(binding, dict) and binding["path"] == relative
-        assert binding["source_sha256"] == _sha256(ROOT / relative)
+        assert binding["source_sha256"] == _binding_sha256(ROOT / relative)
     assert bindings["policy_documents"] == [
         {
             "path": "docs/EXPERIMENT_INTERPRETATION_LEDGER.md",
-            "source_sha256": _sha256(ROOT / "docs/EXPERIMENT_INTERPRETATION_LEDGER.md"),
+            "source_sha256": _binding_sha256(
+                ROOT / "docs/EXPERIMENT_INTERPRETATION_LEDGER.md"
+            ),
         },
         {
             "path": "docs/ROADMAP.md",
-            "source_sha256": _sha256(ROOT / "docs/ROADMAP.md"),
+            "source_sha256": _binding_sha256(ROOT / "docs/ROADMAP.md"),
         },
         {
             "path": "docs/NEXT_EXPERIMENT_PREPARATION.md",
-            "source_sha256": _sha256(ROOT / "docs/NEXT_EXPERIMENT_PREPARATION.md"),
+            "source_sha256": _binding_sha256(
+                ROOT / "docs/NEXT_EXPERIMENT_PREPARATION.md"
+            ),
         },
     ]
     assert bindings["public_example_comparator"] == {
         "path": "protocols/context_bank_example_v0_1.yaml",
-        "source_sha256": _sha256(PUBLIC_BANK_PATH),
+        "source_sha256": _binding_sha256(PUBLIC_BANK_PATH),
         "canonical_sha256": load_context_bank(
             PUBLIC_BANK_PATH,
             allowed_roles={ContextRole.EXAMPLE},
@@ -299,7 +935,7 @@ def test_freeze_binds_new_discovery_inputs_and_pre_access_history() -> None:
         "src/spirallens/topology/winding.py",
     ]
     for binding in reference_bindings:
-        assert binding["source_sha256"] == _sha256(ROOT / binding["path"])
+        assert binding["source_sha256"] == _binding_sha256(ROOT / binding["path"])
 
     assert bindings["model"] == {
         "id": "EleutherAI/pythia-70m",
@@ -339,6 +975,82 @@ def test_freeze_binds_new_discovery_inputs_and_pre_access_history() -> None:
     assert bindings["candidate_registry"]["winner_selected"] is False
     assert bindings["candidate_registry"]["candidate_advance_authorized"] is False
 
+    synthetic_launch = _synthetic_launch_document(freeze)
+
+    def synthetic_commit(value: object) -> str:
+        assert value == "a" * 40
+        assert isinstance(value, str)
+        return value
+
+    def synthetic_blob(commit: str, path: str) -> bytes:
+        assert commit == "a" * 40
+        assert path == freeze["artifact_coordinates"]["prospective_runner_path"]
+        return (ROOT / path).read_bytes()
+
+    monkeypatch.setitem(globals(), "_assert_commit", synthetic_commit)
+    monkeypatch.setitem(globals(), "_assert_ancestor", lambda _one, _two: None)
+    monkeypatch.setitem(globals(), "_git_blob", synthetic_blob)
+    assert _validate_launch_document(freeze, synthetic_launch) == (
+        freeze["artifact_coordinates"]["prospective_runner_path"],
+        "a" * 40,
+    )
+    launch_adversaries = (
+        "missing_root",
+        "unknown_root",
+        "status",
+        "decision_date",
+        "execution_class",
+        "freeze",
+        "context_bank_type",
+        "route",
+        "frame",
+        "policy",
+        "runner_path",
+        "runner_sha",
+        "runner_commit",
+        "argv",
+        "working_directory",
+        "python",
+        "python_alias",
+        "python_version",
+        "dependency",
+        "model",
+        "artifacts",
+        "absence",
+        "budget",
+        "authorization_type",
+        "claim",
+    )
+    for case in launch_adversaries:
+        forged = copy.deepcopy(synthetic_launch)
+        _mutate_launch_document(forged, case)
+        with pytest.raises((AssertionError, KeyError, TypeError, ValueError)):
+            _validate_launch_document(freeze, forged)
+
+    junk_launch = tmp_path / "junk-launch.json"
+    junk_launch.write_bytes(b"{}\n")
+    launch_target = tmp_path / "launch-target.json"
+    launch_target.write_bytes(b"{}\n")
+    symlink_launch = tmp_path / "symlink-launch.json"
+    symlink_launch.symlink_to(launch_target)
+    missing = tuple(tmp_path / f"missing-{index}.json" for index in range(3))
+    for candidate in (junk_launch, symlink_launch):
+        monkeypatch.setitem(globals(), "LAUNCH_PATH", candidate)
+        monkeypatch.setitem(
+            globals(),
+            "REPOSITORY_STATE_PATHS",
+            (
+                ("launch_authorization", candidate),
+                ("attempt_record", missing[0]),
+                ("terminal_result", missing[1]),
+                ("next_hypotheses", missing[2]),
+            ),
+        )
+        _runtime_source_commit.cache_clear()
+        with pytest.raises(AssertionError):
+            _runtime_source_commit()
+    _runtime_source_commit.cache_clear()
+
 
 def test_route_amendment_is_versioned_and_grants_no_execution_or_stage_credit() -> None:
     route = _load_json(ROUTE_PATH)
@@ -365,11 +1077,11 @@ def test_route_amendment_is_versioned_and_grants_no_execution_or_stage_credit() 
     assert route["status"] == "frozen_not_authorized"
     assert route["execution_class"] == ("claim_ineligible_gate_state_reconnaissance")
     base = route["base_strict_route"]
-    assert base["source_sha256"] == _sha256(ROOT / base["path"])
+    assert base["source_sha256"] == _binding_sha256(ROOT / base["path"])
     frame = route["fundamental_frame"]
-    assert frame["source_sha256"] == _sha256(ROOT / frame["path"])
+    assert frame["source_sha256"] == _binding_sha256(ROOT / frame["path"])
     assert frame["canonical_bytes_rewritten"] is False
-    assert frame["ledger_source_sha256"] == _sha256(
+    assert frame["ledger_source_sha256"] == _binding_sha256(
         ROOT / frame["ledger_amendment_path"]
     )
     surface = route["frozen_surface"]
