@@ -142,7 +142,7 @@ jobs:
           observed_contracts_test_sha="$(sha256sum "$contracts_test" | cut -d' ' -f1)"
           test "$observed_contracts_test_sha" = "$expected_contracts_test_sha"
           freeze_test="tests/test_pythia70_gate_state_freeze.py"
-          expected_freeze_test_sha="02ded5aebb26938341768a7d98c4a002542e80de2ab1925d891fc3ccab6fc278"
+          expected_freeze_test_sha="7cd3abbf7b1bce0ca1638a1727a8ea20091227ef594fa597a8f147c4195b5347"
           test "$(sha256sum "$freeze_test" | cut -d' ' -f1)" = "$expected_freeze_test_sha"
           runner_test="tests/test_pythia70_gate_state_runner.py"
           expected_runner_test_sha="76f7a25fbd6cd26db521c27454c72081e0eb5b44fe96694c1d021b49582b45e5"
@@ -150,6 +150,12 @@ jobs:
           development_runner="scripts/run_pythia70_gate_state_development.py"
           expected_development_runner_sha="fb92565229d75d0b4dd14c268db8091379b08dbcdec73dda033439aca3b00517"
           test "$(sha256sum "$development_runner" | cut -d' ' -f1)" = "$expected_development_runner_sha"
+          next_hypotheses_test="tests/test_pythia70_gate_state_next_hypotheses.py"
+          expected_next_hypotheses_test_sha="442b2c25a2c19e3ea0302d3e0decfed395311deb70ede2e76553dc1561fa9909"
+          test "$(sha256sum "$next_hypotheses_test" | cut -d' ' -f1)" = "$expected_next_hypotheses_test_sha"
+          next_hypotheses_publisher="scripts/publish_pythia70_gate_state_next_hypotheses.py"
+          expected_next_hypotheses_publisher_sha="40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57"
+          test "$(sha256sum "$next_hypotheses_publisher" | cut -d' ' -f1)" = "$expected_next_hypotheses_publisher_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -201,7 +207,8 @@ jobs:
             -p no:cacheprovider \
             --basetemp "$RUNNER_TEMP/gate-state-source-pytest" \
             "$GITHUB_WORKSPACE/$freeze_test" \
-            "$GITHUB_WORKSPACE/$runner_test"
+            "$GITHUB_WORKSPACE/$runner_test" \
+            "$GITHUB_WORKSPACE/$next_hypotheses_test"
 
           (
             cd "$neutral"
