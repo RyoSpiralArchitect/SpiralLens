@@ -1316,6 +1316,126 @@ milestone credit remain `none`, and all scientific, topology, integer, model,
 subject, VOY, D7/D8, SCI-S1/S2, Pythia-160M, API, support, compatibility,
 portability, release, and library states remain unchanged.
 
+### 3.34 Consumed invalid P4 v0.1 terminal
+
+**Official execution and durable boundary**
+
+On 2026-08-24 the corrected source was followed by committed launch
+`940d67ab1a61e53653e0ad7f85999ac6a4bec43e`. Its canonical launch is 28,506
+bytes with SHA-256
+`31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944`.
+The ready preflight still had no attempt, selector execution, official phantom,
+or confirmation access. The exact authorized `--run` command was then invoked
+once and only once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+at 657 bytes records `identity_consumed=true`, no official input access before
+the attempt, and `retry_resume_rescue_authorized=false`.
+
+The resulting 9,141-byte terminal has SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`.
+It is authoritatively `execution_terminal=caught_error`,
+`terminal_state=invalid`, and `reason=caught-execution-error`; it is not a
+scientific `pass`, `fail`, `insufficient`, or null result. External manifest
+SHA-256
+`9108469722123fd1fbf57b1e6fbb1bd4c27d67c8ee6d1cd21c3c657106d71eaa`
+binds the attempt, three decision/access seals, and terminal. Repository attempt
+and terminal projections were verified byte-identical to that store.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` is the last exact
+live-v0.1 closure checkpoint: `source_commit..HEAD` contained only launch,
+attempt, and terminal, and projection-only validation returned no projected
+paths with `scientific_execution_performed=false`. Later post-terminal test,
+workflow, and interpretation commits do not change the frozen runner,
+protocol, launch, attempt, terminal, or external store. They intentionally fall
+outside the runner's post-source path allowlist, so a live closure invocation
+from a later HEAD is expected to reject that HEAD; this is not artifact
+corruption and grants no repair or rerun authority.
+
+**Sealed Level-0 intermediate observations**
+
+Before confirmation access, graph-selection seal SHA-256
+`ce07a92617f66b54fc997f0a6f4590fc67acb87ac7c12dbf9df3f879c6b9936b`
+recorded selector `pass`. The field-blind selector considered exact 158 graph
+candidates: 15 mutual-kNN, 8 fixed-radius, and 135 shared-neighbor candidates.
+Exact per-family eligible counts were 4, 8, and 1; 32 triplets were considered
+and 7 were eligible. The selected triplet was:
+
+- mutual-kNN `k=7`: 147 edges, mean degree 6.0, cycle rank 99;
+- fixed radius `r=0.4788290448167926`: 156 edges, mean degree
+  6.36734693877551, cycle rank 108;
+- shared neighbor `k=8, min_shared=4`: 158 edges, mean degree
+  6.448979591836735, cycle rank 110.
+
+Their common two-core contained all 49 rows. Pairwise edge Jaccard values were
+approximately 0.78235, 0.58854, and 0.65263, each within the frozen structural
+gate. These observations select only a model-free calibration triplet; they do
+not select F2 or F4, a scientific graph, a core, or a topology convention.
+
+Threshold-decision seal SHA-256
+`a8c80ff720dc5c38c363687010115a967850144b37a67d71b6575898c1f9df01`
+then recorded `pass` over a 62-scalar inventory: 54 declared finite absolute
+errors, 6 graph-family spans, and 2 algebraic diagnostics. Both frozen
+selection worst errors were 0.0; effective oracle/null and graph-span
+thresholds were each `1e-8`, with no clamping. This is a sealed aggregate
+calibration decision, not a recoverable full calibration matrix or a scientific
+result. Its chronology records `confirmation_accessed_before_seal=false`.
+
+Confirmation-access seal SHA-256
+`35e8edce3f605e3578887bc11b5966804819a7c9edd21c1379a9fddc00a9954f`
+then crossed the held-out access boundary after both prior seals. Frozen-source
+chronology plus the terminal error path establishes that the confirmation
+substrate was instantiated and its fixed-triplet structural assessment
+returned. It does not establish what that assessment returned.
+
+**Post-outcome diagnosis and unavailable outcome**
+
+The terminal stores only error class `__main__.P4ProtocolError` and message
+SHA-256
+`87a33ed056891afa3ba25effd7b9d55a259e271e5673e305dd0551c8d2cf410c`.
+Post-outcome source diagnosis matched that digest exactly to:
+`selector triplet measurements keys differ: missing=['jaccard_used_as_objective', 'lexicographic_objective'], unknown=[]`.
+The frozen selector decorates the base 13 structural measurement keys with
+those two selector-only objective fields. The fixed-triplet confirmation
+producer persists only the base 13, while its terminal validator reuses the
+selector-oriented exact-15-key validator. Normal terminal construction
+therefore rejected the confirmation projection and published the caught-error
+terminal.
+
+Both the confirmation-structural `insufficient` branch and the structural
+`pass` branch reach that same validator. The persisted terminal therefore
+cannot distinguish them. Confirmation structural state, confirmation matrix
+or cells, full calibration matrix, effective-threshold projection, and control
+execution/results are unavailable. The terminal projects all 16 controls as
+`attempted=false`, `raw_state=not_run`, and `control_verdict=not_run`; no
+confirmation state, matrix/cell value, or control execution/result may be
+reconstructed behind that authoritative projection.
+
+**Claim boundary and successor handoff**
+
+The terminal remains development-only Level 0. Scientific and topology
+authority are false; integer output is absent; model, network, cache, Pythia raw
+capture, Python bytecode-cache, and subject-data access are false. It supplies
+neither a positive nor a null statement about large drift, phase, transition,
+loops, holonomy, winding, or charge. It identifies no F2/F4 winner and creates
+no order parameter or verified core. Claim delta and milestone credit remain
+`none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support,
+compatibility, portability, release, and library states remain unchanged.
+
+P4 v0.1 is consumed. It may not be patched, retried, resumed, rescued, cleaned
+up, or relabeled. A possible v0.2 is a new Level-0 successor, not a retry. It
+requires a new dated decision, experiment and schema identity, source freeze,
+launch, attempt, terminal, store, stage, and cache coordinates, with explicit
+predecessor binding to the v0.1 attempt and terminal. Its minimum code gate is
+to separate exact-13 fixed-triplet confirmation measurements from exact-15
+selector measurements and to freeze producer-to-validator round-trip plus
+adversarial tests before a new launch. Because the v0.1 confirmation input was
+accessed, a fresh held-out claim requires a disjoint frozen confirmation input;
+reuse of the old input must instead be labeled exposed, non-independent,
+non-preregistered, and regression-only. A disjoint input removes only direct
+input reuse; it does not by itself restore independence, preregistration,
+cryptographic-unseen proof, or scientific authority. No such successor or
+execution is yet authorized.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

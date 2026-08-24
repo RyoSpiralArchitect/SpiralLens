@@ -4,6 +4,61 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-24 — Consumed invalid P4 v0.1 lifecycle projections
+
+- Added the canonical internal launch instance
+  `experiments/qualification/p4_graph_evaluability_calibration_v0_1/launch.json`,
+  schema `spirallens.p4-graph-evaluability-launch.v0.1`, at 28,506 bytes and
+  SHA-256
+  `31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944`.
+  Launch commit `940d67ab1a61e53653e0ad7f85999ac6a4bec43e` predates the one official
+  execution.
+- Added repository projections for internal attempt schema
+  `spirallens.p4-exact-one-attempt.v0.1` at 657 bytes and SHA-256
+  `2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`,
+  and internal terminal schema
+  `spirallens.p4-graph-evaluability-terminal.v0.1` at 9,141 bytes and SHA-256
+  `28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`.
+  They were committed together at evidence-only checkpoint
+  `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee`, after byte equality with the
+  authoritative external store was established.
+- External manifest SHA-256
+  `9108469722123fd1fbf57b1e6fbb1bd4c27d67c8ee6d1cd21c3c657106d71eaa`
+  binds the attempt, graph-selection seal
+  `ce07a92617f66b54fc997f0a6f4590fc67acb87ac7c12dbf9df3f879c6b9936b`,
+  threshold-decision seal
+  `a8c80ff720dc5c38c363687010115a967850144b37a67d71b6575898c1f9df01`,
+  confirmation-access seal
+  `35e8edce3f605e3578887bc11b5966804819a7c9edd21c1379a9fddc00a9954f`,
+  and terminal. The seals and manifest remain external and are not copied into
+  Git.
+- The terminal is `caught_error` / `invalid`; attempt identity is consumed and
+  retry, resume, or rescue is false. Its outcome projections are unavailable,
+  all 16 controls are `not_run`, and confirmation access is true after both
+  decision seals while its structural state, matrix, and outcome are
+  unavailable. Scientific/topology authority and all
+  model/network/cache/raw/subject access fields are false. This is not a
+  scientific pass, fail, insufficient, or null result.
+- Post-terminal commit `71140f974ad6e30d80495d0552b5ade384e56a71`
+  replaced a phase-stale permanent-absence unit assertion with isolated-import
+  state preservation for the exact launch, attempt, and terminal bytes. The
+  resulting test is 95,409 bytes with SHA-256
+  `a8e146f8b3b943817bf3a2bea97b9d4cca8ff522edbcdbf4bba0329cd25a64f0`;
+  workflow SHA-256
+  `3ffde48202c3fc28b48ca6045db6a66740a952558e8c613dbcb153f370cfad50`
+  pins all three artifact digests and runs that conformance test.
+- The post-terminal test and workflow are not a source re-freeze and do not
+  reinterpret the official attempt. Checkpoint `f0f6c3a` remains the last HEAD
+  accepted by the frozen live-v0.1 post-source path allowlist. Later
+  conformance and documentation paths make live validation reject by design;
+  the frozen protocol, runner, launch, attempt, terminal, and external store
+  remain byte-unchanged.
+- No public persistence schema, loader, writer, migration, API, support,
+  compatibility, portability, release, library, VOY, D7/D8, SCI,
+  Pythia-160M, subject, scientific, semantic, topology, integer, or milestone
+  state changes. A possible v0.2 requires a new identity and is not authorized
+  by this record.
+
 ## 2026-08-24 — Corrective P4 pre-launch process-identity re-freeze
 
 - The exact `--prepare-launch` invocation after source-freeze commit

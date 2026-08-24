@@ -436,6 +436,47 @@ exact-one lifecycle, and claim boundary are unchanged. D7/D8, SCI-S1/S2,
 Pythia-160M, topology/integer/semantic claims, and all library milestones
 remain unchanged.
 
+### Consumed invalid P4 v0.1 terminal (2026-08-24)
+
+The separately committed launch was executed exactly once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+records `identity_consumed=true` and prohibits retry, resume, or rescue.
+Terminal SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`
+is authoritatively `caught_error` / `invalid`, not scientific `pass`, `fail`,
+`insufficient`, or null. The live lifecycle is now consumed-invalid; the
+protocol's `frozen_not_run` value records its issue-time state rather than the
+current repository lifecycle.
+
+Two pre-confirmation decisions remain useful Level-0 negative-space evidence.
+The graph seal selected one of 7 eligible triplets from 158 candidates:
+mutual-kNN `k=7`, radius `r=0.4788290448167926`, and shared-neighbor
+`k=8, min_shared=4`. The later threshold seal records a 62-scalar
+aggregate, zero selection-worst errors, effective thresholds `1e-8`, and
+no clamping. Both were durable before confirmation access. They are
+model-free evaluability receipts, not a scientific graph/core/topology result.
+
+Confirmation was accessed only after both seals. A terminal-validation schema
+mismatch then rejected the normal result: the fixed-triplet confirmation
+producer emitted the exact 13 base structural keys while the reused selector
+validator required two additional selector-only objective keys. The artifact
+cannot distinguish confirmation structural `pass` from `insufficient`, and it
+contains no confirmation matrix or final crossed result. All 16 terminal
+controls are `not_run`; no positive/null outcome or control execution may be
+reconstructed.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` remains the last exact
+live-v0.1 closure checkpoint. Later post-terminal conformance and documentation
+commits preserve its frozen bytes but fall outside the runner's post-source
+path allowlist. Any successor must use a new v0.2 identity and coordinates,
+separate confirmation and selector measurement schemas, and a new exact-one
+authorization. Fresh held-out use also requires a disjoint confirmation input;
+that is necessary but does not by itself restore independence, preregistration,
+cryptographic-unseen proof, or scientific authority. The accessed v0.1
+confirmation is regression-only. D7/D8, SCI-S1/S2, Pythia-160M,
+scientific/topology/integer authority, and every library milestone remains
+unchanged.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer

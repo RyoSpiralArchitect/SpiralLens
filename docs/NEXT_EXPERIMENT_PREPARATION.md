@@ -1329,6 +1329,59 @@ and test SHA-256
 P4 remains `frozen_not_run`, its one future attempt is unconsumed, and the
 scientific design and all successor gates remain unchanged.
 
+That final sentence preserves the corrective source-freeze event. A later
+committed launch was run exactly once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+is consumed and terminal SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`
+is `caught_error` / `invalid`. P4 v0.1 is therefore no longer runnable; retry,
+resume, rescue, cleanup, source patching under the same identity, and result
+relabeling remain prohibited.
+
+The v0.1 negative-space handoff is intentionally narrower than a result. A
+sealed field-blind selector found 7 eligible graph triplets and fixed
+mutual-kNN `k=7`, fixed radius `r=0.4788290448167926`, and shared-neighbor
+`k=8, min_shared=4`. A sealed 62-scalar threshold aggregate then
+recorded zero selection-worst errors and effective `1e-8` thresholds
+before confirmation access. Confirmation was accessed only after both seals,
+but the persisted artifact cannot recover its structural state, matrix, or
+controls. The terminal projects every one of the 16 controls as `not_run`.
+These facts do not select F2/F4, a graph for model use, an order parameter, a
+core, loop, holonomy, winding, charge, or a positive/null phase interpretation.
+
+The exact post-outcome diagnosis is a confirmation/selector schema mismatch:
+the confirmation fixed-triplet producer emits 13 base structural keys while
+the terminal validator requires the selector's 15-key form, including two
+selector-only objective keys. That diagnosis explains terminal invalidity; it
+does not reveal whether confirmation structural support passed or stopped.
+
+A possible P4 v0.2 remains `planned_not_frozen_not_run`. Before any new launch,
+all of the following are required:
+
+1. freeze a new experiment and schema identity with new source, launch,
+   attempt, terminal, store, stage, and cache coordinates, bound to the v0.1
+   attempt and terminal as its predecessor;
+2. define separate exact-13 confirmation-measurement and exact-15
+   selector-measurement schemas, then freeze producer-to-validator round-trip,
+   missing/unknown-key, branch, and caught-terminal tests;
+3. if fresh held-out interpretation is wanted, freeze a disjoint confirmation
+   input; otherwise mark reuse of the accessed v0.1 input as exposed,
+   non-independent, non-preregistered, and regression-only Level 0. A disjoint
+   input is necessary but not sufficient: it removes only direct reuse and
+   does not by itself restore independence, preregistration,
+   cryptographic-unseen proof, or scientific authority;
+4. make a new dated authorization, source commit, and separate launch commit
+   before one new exact-one successor attempt.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` remains the last exact
+live-v0.1 closure checkpoint. Later conformance and documentation commits do
+not alter its runner, protocol, launch, attempt, terminal, or external store,
+but their additional paths are intentionally outside the frozen runner's
+post-source validator allowlist. No v0.2 source or execution authority exists,
+and D7/D8, SCI-S1/S2, Pythia-160M, subject, scientific, semantic, topology,
+integer, publication-authority, publication-milestone, or library state
+advances.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:
