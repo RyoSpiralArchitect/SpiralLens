@@ -1217,6 +1217,225 @@ planning-authority fields remain false. The record constructs no
 D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support, compatibility,
 portability, release, or library authority.
 
+### 3.32 Frozen model-free P4 graph-evaluability calibration source
+
+**Decision source and timing**
+
+On 2026-08-24 a later dated decision used the unchanged post-outcome planning
+record at SHA-256
+`eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
+as the bound planning input for one bounded source freeze. It advances only the live state of
+the proposed model-free P4 calibration from historical
+`planned_not_frozen_not_run` to `frozen_not_run`; it does not rewrite the
+chronology recorded in section 3.31. The decision remains post-outcome,
+non-independent, non-preregistered, without cryptographic unseen proof, and
+with operator exposure to the earlier model-free development outcome.
+
+**Frozen source/protocol boundary**
+
+Protocol
+`protocols/p4_graph_evaluability_calibration_v0_1.json`, schema
+`spirallens.p4-graph-evaluability-protocol.v0.1`, is 30,074 bytes with SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`.
+It binds experiment `p4-graph-evaluability-calibration-v0.1`, exact calibration
+and held-out synthetic substrates, a field-blind deterministic three-family
+selector, 108 crossed base cells, 16 aggregate controls with 46 declared
+subobservations, threshold stop rules, and the Level-0 claim ceiling. Runner
+`scripts/run_p4_graph_evaluability_calibration.py` is 319,303 bytes with
+SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`;
+its focused test is 84,478 bytes with SHA-256
+`5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`.
+The clean-wheel workflow pins all three byte identities and runs the focused
+test from source.
+
+The lifecycle permits exactly one future attempt but guarantees at most one
+terminal, not exactly one terminal. A persistence failure may leave a durable
+unresolved stage that consumes the attempt; terminalization, retry, resume,
+rescue, and cleanup of that execution identity remain unauthorized. Exact
+manifest and seal-chain validation, deterministic selector recomputation,
+semantic terminal refolding, pre/post source closure, sanitized absolute Git,
+and a separately observed Python bytecode-cache boundary are integrity
+conditions, not positive scientific observations.
+
+**Execution and claim boundary**
+
+This source freeze created no launch, attempt, terminal, graph-selection
+result, threshold result, confirmation result, or model result. It accessed no
+Pythia raw capture, subject data, model, network, or model/subject cache. A
+separately committed launch is still required before the one official
+model-free attempt. `frozen_not_run` is therefore not a qualification result,
+an order parameter, a verified core, a graph-family invariance finding, a null
+about phase or topology, or evidence for later model behavior. Claim delta and
+milestone credit remain `none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject,
+scientific, semantic, topology, integer, API, support, compatibility,
+portability, release, and library states are unchanged.
+
+### 3.33 Corrective pre-launch P4 source re-freeze
+
+**Observed obstruction and chronology**
+
+After source-freeze commit
+`e2300e921aa012ee49d6ea09f1e96b13c40e88d7`, the exact
+`--prepare-launch` invocation stopped in the pre-import Python process guard.
+The initial guard had equated the operator's lexical `.venv/bin/python` path
+with `sys.orig_argv[0]`; macOS framework Python instead reported its physical
+`Python.app` launcher there. The guard observed only that the dedicated Python
+bytecode-cache prefix was absent by `lstat`. It stopped before NumPy or
+SpiralLens import, protocol validation, `prepare_launch()`, launch identity
+construction, or the protocol's official-coordinate absence checks.
+
+Consequently no launch, attempt, external stage, external store, terminal,
+selector result, threshold result, confirmation access, phantom input, model,
+network, raw capture, subject data, or model/subject cache was created or
+accessed. This was a pre-launch bootstrap compatibility obstruction, not an
+experiment attempt or a scientific terminal. Status remains exactly
+`frozen_not_run`, and the one permitted future attempt remains wholly
+unconsumed.
+
+**Corrected source identity**
+
+The corrective source re-freeze keeps the protocol schema, experiment ID,
+calibration and confirmation substrates, selector, matrix, controls,
+thresholds, coordinates, persistence rules, exact-one lifecycle, and claim
+boundary unchanged. It changes only the runner binding and bootstrap process
+identity. Protocol SHA-256 is now
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`
+at 30,074 bytes; runner SHA-256 is
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`
+at 324,250 bytes; and focused-test SHA-256 is
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`
+at 89,836 bytes.
+
+The corrected guard separately fixes the lexical virtual-environment
+executable, resolved base executable and digest, macOS physical launcher and
+digest, exact original-argument tail, script arguments, isolation flags, and
+bytecode-cache boundary. These current pins supersede section 3.32 only for a
+future launch; they do not rewrite that earlier freeze event. Claim delta and
+milestone credit remain `none`, and all scientific, topology, integer, model,
+subject, VOY, D7/D8, SCI-S1/S2, Pythia-160M, API, support, compatibility,
+portability, release, and library states remain unchanged.
+
+### 3.34 Consumed invalid P4 v0.1 terminal
+
+**Official execution and durable boundary**
+
+On 2026-08-24 the corrected source was followed by committed launch
+`940d67ab1a61e53653e0ad7f85999ac6a4bec43e`. Its canonical launch is 28,506
+bytes with SHA-256
+`31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944`.
+The ready preflight still had no attempt, selector execution, official phantom,
+or confirmation access. The exact authorized `--run` command was then invoked
+once and only once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+at 657 bytes records `identity_consumed=true`, no official input access before
+the attempt, and `retry_resume_rescue_authorized=false`.
+
+The resulting 9,141-byte terminal has SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`.
+It is authoritatively `execution_terminal=caught_error`,
+`terminal_state=invalid`, and `reason=caught-execution-error`; it is not a
+scientific `pass`, `fail`, `insufficient`, or null result. External manifest
+SHA-256
+`9108469722123fd1fbf57b1e6fbb1bd4c27d67c8ee6d1cd21c3c657106d71eaa`
+binds the attempt, three decision/access seals, and terminal. Repository attempt
+and terminal projections were verified byte-identical to that store.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` is the last exact
+live-v0.1 closure checkpoint: `source_commit..HEAD` contained only launch,
+attempt, and terminal, and projection-only validation returned no projected
+paths with `scientific_execution_performed=false`. Later post-terminal test,
+workflow, and interpretation commits do not change the frozen runner,
+protocol, launch, attempt, terminal, or external store. They intentionally fall
+outside the runner's post-source path allowlist, so a live closure invocation
+from a later HEAD is expected to reject that HEAD; this is not artifact
+corruption and grants no repair or rerun authority.
+
+**Sealed Level-0 intermediate observations**
+
+Before confirmation access, graph-selection seal SHA-256
+`ce07a92617f66b54fc997f0a6f4590fc67acb87ac7c12dbf9df3f879c6b9936b`
+recorded selector `pass`. The field-blind selector considered exact 158 graph
+candidates: 15 mutual-kNN, 8 fixed-radius, and 135 shared-neighbor candidates.
+Exact per-family eligible counts were 4, 8, and 1; 32 triplets were considered
+and 7 were eligible. The selected triplet was:
+
+- mutual-kNN `k=7`: 147 edges, mean degree 6.0, cycle rank 99;
+- fixed radius `r=0.4788290448167926`: 156 edges, mean degree
+  6.36734693877551, cycle rank 108;
+- shared neighbor `k=8, min_shared=4`: 158 edges, mean degree
+  6.448979591836735, cycle rank 110.
+
+Their common two-core contained all 49 rows. Pairwise edge Jaccard values were
+approximately 0.78235, 0.58854, and 0.65263, each within the frozen structural
+gate. These observations select only a model-free calibration triplet; they do
+not select F2 or F4, a scientific graph, a core, or a topology convention.
+
+Threshold-decision seal SHA-256
+`a8c80ff720dc5c38c363687010115a967850144b37a67d71b6575898c1f9df01`
+then recorded `pass` over a 62-scalar inventory: 54 declared finite absolute
+errors, 6 graph-family spans, and 2 algebraic diagnostics. Both frozen
+selection worst errors were 0.0; effective oracle/null and graph-span
+thresholds were each `1e-8`, with no clamping. This is a sealed aggregate
+calibration decision, not a recoverable full calibration matrix or a scientific
+result. Its chronology records `confirmation_accessed_before_seal=false`.
+
+Confirmation-access seal SHA-256
+`35e8edce3f605e3578887bc11b5966804819a7c9edd21c1379a9fddc00a9954f`
+then crossed the held-out access boundary after both prior seals. Frozen-source
+chronology plus the terminal error path establishes that the confirmation
+substrate was instantiated and its fixed-triplet structural assessment
+returned. It does not establish what that assessment returned.
+
+**Post-outcome diagnosis and unavailable outcome**
+
+The terminal stores only error class `__main__.P4ProtocolError` and message
+SHA-256
+`87a33ed056891afa3ba25effd7b9d55a259e271e5673e305dd0551c8d2cf410c`.
+Post-outcome source diagnosis matched that digest exactly to:
+`selector triplet measurements keys differ: missing=['jaccard_used_as_objective', 'lexicographic_objective'], unknown=[]`.
+The frozen selector decorates the base 13 structural measurement keys with
+those two selector-only objective fields. The fixed-triplet confirmation
+producer persists only the base 13, while its terminal validator reuses the
+selector-oriented exact-15-key validator. Normal terminal construction
+therefore rejected the confirmation projection and published the caught-error
+terminal.
+
+Both the confirmation-structural `insufficient` branch and the structural
+`pass` branch reach that same validator. The persisted terminal therefore
+cannot distinguish them. Confirmation structural state, confirmation matrix
+or cells, full calibration matrix, effective-threshold projection, and control
+execution/results are unavailable. The terminal projects all 16 controls as
+`attempted=false`, `raw_state=not_run`, and `control_verdict=not_run`; no
+confirmation state, matrix/cell value, or control execution/result may be
+reconstructed behind that authoritative projection.
+
+**Claim boundary and successor handoff**
+
+The terminal remains development-only Level 0. Scientific and topology
+authority are false; integer output is absent; model, network, cache, Pythia raw
+capture, Python bytecode-cache, and subject-data access are false. It supplies
+neither a positive nor a null statement about large drift, phase, transition,
+loops, holonomy, winding, or charge. It identifies no F2/F4 winner and creates
+no order parameter or verified core. Claim delta and milestone credit remain
+`none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support,
+compatibility, portability, release, and library states remain unchanged.
+
+P4 v0.1 is consumed. It may not be patched, retried, resumed, rescued, cleaned
+up, or relabeled. A possible v0.2 is a new Level-0 successor, not a retry. It
+requires a new dated decision, experiment and schema identity, source freeze,
+launch, attempt, terminal, store, stage, and cache coordinates, with explicit
+predecessor binding to the v0.1 attempt and terminal. Its minimum code gate is
+to separate exact-13 fixed-triplet confirmation measurements from exact-15
+selector measurements and to freeze producer-to-validator round-trip plus
+adversarial tests before a new launch. Because the v0.1 confirmation input was
+accessed, a fresh held-out claim requires a disjoint frozen confirmation input;
+reuse of the old input must instead be labeled exposed, non-independent,
+non-preregistered, and regression-only. A disjoint input removes only direct
+input reuse; it does not by itself restore independence, preregistration,
+cryptographic-unseen proof, or scientific authority. No such successor or
+execution is yet authorized.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

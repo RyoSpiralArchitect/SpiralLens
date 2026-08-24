@@ -510,8 +510,12 @@ Prepare genuinely distinct same-vertex constructions:
 The first three deterministic constructors and a structural-diversity receipt
 now exist as a model-free foundation. Their family labels and measured
 adjacency differences are not an adequacy decision or evidence of independent
-failure modes. The qualification thresholds, scale selection, crossed cells,
-and required-family gate in this stage remain unimplemented.
+failure modes. A later 2026-08-24 source freeze now fixes the model-free scale
+selector, qualification thresholds, crossed cells, controls, held-out
+confirmation, and required-family stop gates in protocol
+`protocols/p4_graph_evaluability_calibration_v0_1.json`. Its current state is
+exactly `frozen_not_run`: no launch, attempt, terminal, or qualification result
+exists, and the freeze supplies no scientific or successor authority.
 
 Metric changes, such as cosine versus frozen-whitened Euclidean distance, form
 a separate null.
@@ -1297,6 +1301,86 @@ authorization. Calibration remains `planned_not_frozen_not_run`; exact
 confirmation inputs, protocol, launch, and execution require a separate dated
 decision. No Pythia raw capture, model, network, or subject access is
 authorized, and all unresolved decisions below remain unresolved.
+
+That paragraph preserves the state at publication of the planning record. A
+later dated 2026-08-24 decision now freezes protocol SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`
+and runner SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`,
+so the current P4 source state is `frozen_not_run`. That forward transition
+does not create a launch, execute either substrate, resolve any decision in
+section 11 for model use, or authorize a Pythia, SCI, D7/D8, topology, or
+integer claim.
+
+An exact `--prepare-launch` invocation against source-freeze commit
+`e2300e921aa012ee49d6ea09f1e96b13c40e88d7` then stopped in the pre-import
+Python process guard: macOS framework Python normalized `sys.orig_argv[0]` to
+its physical `Python.app` launcher rather than the frozen lexical
+`.venv/bin/python` path. Before the mismatch comparison, the pre-import guard
+performed the dedicated Python bytecode-cache-prefix absence `lstat`;
+protocol validation, official-coordinate checks, launch construction,
+attempt creation, and input access were not reached. A corrective re-freeze
+now binds protocol SHA-256
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`,
+runner SHA-256
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+and test SHA-256
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+P4 remains `frozen_not_run`, its one future attempt is unconsumed, and the
+scientific design and all successor gates remain unchanged.
+
+That final sentence preserves the corrective source-freeze event. A later
+committed launch was run exactly once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+is consumed and terminal SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`
+is `caught_error` / `invalid`. P4 v0.1 is therefore no longer runnable; retry,
+resume, rescue, cleanup, source patching under the same identity, and result
+relabeling remain prohibited.
+
+The v0.1 negative-space handoff is intentionally narrower than a result. A
+sealed field-blind selector found 7 eligible graph triplets and fixed
+mutual-kNN `k=7`, fixed radius `r=0.4788290448167926`, and shared-neighbor
+`k=8, min_shared=4`. A sealed 62-scalar threshold aggregate then
+recorded zero selection-worst errors and effective `1e-8` thresholds
+before confirmation access. Confirmation was accessed only after both seals,
+but the persisted artifact cannot recover its structural state, matrix, or
+controls. The terminal projects every one of the 16 controls as `not_run`.
+These facts do not select F2/F4, a graph for model use, an order parameter, a
+core, loop, holonomy, winding, charge, or a positive/null phase interpretation.
+
+The exact post-outcome diagnosis is a confirmation/selector schema mismatch:
+the confirmation fixed-triplet producer emits 13 base structural keys while
+the terminal validator requires the selector's 15-key form, including two
+selector-only objective keys. That diagnosis explains terminal invalidity; it
+does not reveal whether confirmation structural support passed or stopped.
+
+A possible P4 v0.2 remains `planned_not_frozen_not_run`. Before any new launch,
+all of the following are required:
+
+1. freeze a new experiment and schema identity with new source, launch,
+   attempt, terminal, store, stage, and cache coordinates, bound to the v0.1
+   attempt and terminal as its predecessor;
+2. define separate exact-13 confirmation-measurement and exact-15
+   selector-measurement schemas, then freeze producer-to-validator round-trip,
+   missing/unknown-key, branch, and caught-terminal tests;
+3. if fresh held-out interpretation is wanted, freeze a disjoint confirmation
+   input; otherwise mark reuse of the accessed v0.1 input as exposed,
+   non-independent, non-preregistered, and regression-only Level 0. A disjoint
+   input is necessary but not sufficient: it removes only direct reuse and
+   does not by itself restore independence, preregistration,
+   cryptographic-unseen proof, or scientific authority;
+4. make a new dated authorization, source commit, and separate launch commit
+   before one new exact-one successor attempt.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` remains the last exact
+live-v0.1 closure checkpoint. Later conformance and documentation commits do
+not alter its runner, protocol, launch, attempt, terminal, or external store,
+but their additional paths are intentionally outside the frozen runner's
+post-source validator allowlist. No v0.2 source or execution authority exists,
+and D7/D8, SCI-S1/S2, Pythia-160M, subject, scientific, semantic, topology,
+integer, publication-authority, publication-milestone, or library state
+advances.
 
 ## 11. Decisions that remain unresolved
 

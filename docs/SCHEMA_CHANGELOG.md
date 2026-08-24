@@ -4,6 +4,133 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-24 — Consumed invalid P4 v0.1 lifecycle projections
+
+- Added the canonical internal launch instance
+  `experiments/qualification/p4_graph_evaluability_calibration_v0_1/launch.json`,
+  schema `spirallens.p4-graph-evaluability-launch.v0.1`, at 28,506 bytes and
+  SHA-256
+  `31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944`.
+  Launch commit `940d67ab1a61e53653e0ad7f85999ac6a4bec43e` predates the one official
+  execution.
+- Added repository projections for internal attempt schema
+  `spirallens.p4-exact-one-attempt.v0.1` at 657 bytes and SHA-256
+  `2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`,
+  and internal terminal schema
+  `spirallens.p4-graph-evaluability-terminal.v0.1` at 9,141 bytes and SHA-256
+  `28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`.
+  They were committed together at evidence-only checkpoint
+  `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee`, after byte equality with the
+  authoritative external store was established.
+- External manifest SHA-256
+  `9108469722123fd1fbf57b1e6fbb1bd4c27d67c8ee6d1cd21c3c657106d71eaa`
+  binds the attempt, graph-selection seal
+  `ce07a92617f66b54fc997f0a6f4590fc67acb87ac7c12dbf9df3f879c6b9936b`,
+  threshold-decision seal
+  `a8c80ff720dc5c38c363687010115a967850144b37a67d71b6575898c1f9df01`,
+  confirmation-access seal
+  `35e8edce3f605e3578887bc11b5966804819a7c9edd21c1379a9fddc00a9954f`,
+  and terminal. The seals and manifest remain external and are not copied into
+  Git.
+- The terminal is `caught_error` / `invalid`; attempt identity is consumed and
+  retry, resume, or rescue is false. Its outcome projections are unavailable,
+  all 16 controls are `not_run`, and confirmation access is true after both
+  decision seals while its structural state, matrix, and outcome are
+  unavailable. Scientific/topology authority and all
+  model/network/cache/raw/subject access fields are false. This is not a
+  scientific pass, fail, insufficient, or null result.
+- Post-terminal commit `71140f974ad6e30d80495d0552b5ade384e56a71`
+  replaced a phase-stale permanent-absence unit assertion with isolated-import
+  state preservation for the exact launch, attempt, and terminal bytes. The
+  resulting test at that commit is 95,409 bytes with SHA-256
+  `a8e146f8b3b943817bf3a2bea97b9d4cca8ff522edbcdbf4bba0329cd25a64f0`;
+  workflow SHA-256
+  `3ffde48202c3fc28b48ca6045db6a66740a952558e8c613dbcb153f370cfad50`
+  pins all three artifact digests and runs that conformance test.
+- The first clean-wheel matrix exposed a second phase-stale test assumption:
+  its raw bootstrap-guard subprocess hard-coded a repository `.venv` that does
+  not exist in the clean-wheel jobs. All three jobs stopped in the test step
+  before the full distribution validator; this was CI plumbing failure, not an
+  official execution or scientific result. Post-terminal portability commit
+  `52a0bfb12e39b27181bfca3ea57c201f30204e39` changes only that test launcher to
+  the active test interpreter and rebinds the workflow pin. The current test is
+  95,385 bytes with SHA-256
+  `f05e618b8493f1572c44d7befad5f04b8c2e0805a0a49dbabad2a4bbfabc216f`;
+  current workflow SHA-256 is
+  `267d122eba4a3890032cae0e5e26c77ea17d4c14bcab7c3f2d8c2412a227f0ac`.
+  The frozen bootstrap guard still rejects both nonconforming raw invocations
+  before NumPy or SpiralLens import and before lifecycle/store access.
+- The post-terminal test and workflow are not a source re-freeze and do not
+  reinterpret the official attempt. Checkpoint `f0f6c3a` remains the last HEAD
+  accepted by the frozen live-v0.1 post-source path allowlist. Later
+  conformance and documentation paths make live validation reject by design;
+  the frozen protocol, runner, launch, attempt, terminal, and external store
+  remain byte-unchanged.
+- No public persistence schema, loader, writer, migration, API, support,
+  compatibility, portability, release, library, VOY, D7/D8, SCI,
+  Pythia-160M, subject, scientific, semantic, topology, integer, or milestone
+  state changes. A possible v0.2 requires a new identity and is not authorized
+  by this record.
+
+## 2026-08-24 — Corrective P4 pre-launch process-identity re-freeze
+
+- The exact `--prepare-launch` invocation after source-freeze commit
+  `e2300e921aa012ee49d6ea09f1e96b13c40e88d7` stopped in the pre-import
+  process guard because macOS framework Python exposed its physical
+  `Python.app` launcher in `sys.orig_argv[0]`. The guard performed only the
+  dedicated bytecode-cache-prefix absence `lstat`; protocol validation,
+  launch construction, and protocol official-coordinate checks were not
+  reached. No launch, attempt, stage, store, terminal, or input access was
+  created, and the future attempt remains unconsumed.
+- Re-froze internal protocol
+  `protocols/p4_graph_evaluability_calibration_v0_1.json` at 30,074 bytes and
+  SHA-256
+  `e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`.
+  Its schema version, experiment ID, scientific design, coordinates,
+  persistence rules, exact-one lifecycle, and claim boundary are unchanged;
+  only its runner source binding changed.
+- Re-froze runner `scripts/run_p4_graph_evaluability_calibration.py` at
+  324,250 bytes and SHA-256
+  `8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+  plus focused test `tests/test_p4_graph_evaluability_calibration.py` at
+  89,836 bytes and SHA-256
+  `469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+  Workflow SHA-256
+  `4be35df9473597baa1bc030cf9d18150051d5a4b50319be89d35701c6e799175`
+  pins and runs the corrected source surface.
+- P4 remains claim-ineligible Level 0 and exactly `frozen_not_run`. No public
+  schema, API, support, compatibility, portability, release, library, VOY,
+  D7/D8, SCI, Pythia-160M, subject, scientific, semantic, topology, integer,
+  or milestone state changes.
+
+## 2026-08-24 — Frozen model-free P4 graph-evaluability calibration source
+
+- Added internal protocol
+  `protocols/p4_graph_evaluability_calibration_v0_1.json`, schema
+  `spirallens.p4-graph-evaluability-protocol.v0.1`, at 30,074 bytes and
+  SHA-256
+  `9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`.
+  It binds experiment `p4-graph-evaluability-calibration-v0.1` at status
+  `frozen_not_run` to the unchanged post-outcome planning record.
+- Added runner `scripts/run_p4_graph_evaluability_calibration.py` at 319,303
+  bytes and SHA-256
+  `8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`,
+  plus focused test `tests/test_p4_graph_evaluability_calibration.py` at
+  84,478 bytes and SHA-256
+  `5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`.
+  Workflow SHA-256
+  `96442c9b73073e0da281812bd38c498c754d835ab773054ab2f8db27699c5f87`
+  pins and runs this repository-only source surface.
+- The internal lifecycle permits exactly one future attempt and at most one terminal;
+  a persistence failure may leave a consumed unresolved stage, and no retry,
+  resume, rescue, cleanup, or post-failure terminalization is authorized. The
+  source freeze itself creates no launch, attempt, terminal, confirmation
+  access, or scientific result.
+- This is a claim-ineligible Level-0 source-only freeze. It changes no public
+  schema, API, support, compatibility, portability, release, library, VOY,
+  D7/D8, SCI, Pythia-160M, subject, scientific, semantic, topology, integer,
+  or milestone state.
+
 ## 2026-08-24 — Published Pythia-70M GateState next-hypothesis record
 
 - A canonical internal planning record now exists at

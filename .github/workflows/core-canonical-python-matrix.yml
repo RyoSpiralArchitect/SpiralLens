@@ -156,6 +156,24 @@ jobs:
           next_hypotheses_publisher="scripts/publish_pythia70_gate_state_next_hypotheses.py"
           expected_next_hypotheses_publisher_sha="40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57"
           test "$(sha256sum "$next_hypotheses_publisher" | cut -d' ' -f1)" = "$expected_next_hypotheses_publisher_sha"
+          p4_graph_evaluability_protocol="protocols/p4_graph_evaluability_calibration_v0_1.json"
+          expected_p4_graph_evaluability_protocol_sha="e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33"
+          test "$(sha256sum "$p4_graph_evaluability_protocol" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_protocol_sha"
+          p4_graph_evaluability_runner="scripts/run_p4_graph_evaluability_calibration.py"
+          expected_p4_graph_evaluability_runner_sha="8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1"
+          test "$(sha256sum "$p4_graph_evaluability_runner" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_runner_sha"
+          p4_graph_evaluability_test="tests/test_p4_graph_evaluability_calibration.py"
+          expected_p4_graph_evaluability_test_sha="f05e618b8493f1572c44d7befad5f04b8c2e0805a0a49dbabad2a4bbfabc216f"
+          test "$(sha256sum "$p4_graph_evaluability_test" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_test_sha"
+          p4_graph_evaluability_launch="experiments/qualification/p4_graph_evaluability_calibration_v0_1/launch.json"
+          expected_p4_graph_evaluability_launch_sha="31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944"
+          test "$(sha256sum "$p4_graph_evaluability_launch" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_launch_sha"
+          p4_graph_evaluability_attempt="experiments/qualification/p4_graph_evaluability_calibration_v0_1/attempt.json"
+          expected_p4_graph_evaluability_attempt_sha="2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615"
+          test "$(sha256sum "$p4_graph_evaluability_attempt" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_attempt_sha"
+          p4_graph_evaluability_terminal="experiments/qualification/p4_graph_evaluability_calibration_v0_1/terminal-result.json"
+          expected_p4_graph_evaluability_terminal_sha="28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf"
+          test "$(sha256sum "$p4_graph_evaluability_terminal" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_terminal_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -208,7 +226,8 @@ jobs:
             --basetemp "$RUNNER_TEMP/gate-state-source-pytest" \
             "$GITHUB_WORKSPACE/$freeze_test" \
             "$GITHUB_WORKSPACE/$runner_test" \
-            "$GITHUB_WORKSPACE/$next_hypotheses_test"
+            "$GITHUB_WORKSPACE/$next_hypotheses_test" \
+            "$GITHUB_WORKSPACE/$p4_graph_evaluability_test"
 
           (
             cd "$neutral"

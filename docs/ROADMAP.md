@@ -394,6 +394,89 @@ evaluability calibration, but that calibration remains
 model/raw/network/subject access, or later Pythia run is authorized. All
 scientific and library milestones remain unchanged.
 
+### Frozen model-free P4 source (2026-08-24)
+
+A later dated source-only decision now advances the proposed P4
+graph-evaluability calibration from `planned_not_frozen_not_run` to
+`frozen_not_run`. Protocol SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`
+binds runner SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`
+and the exact model-free calibration/confirmation design. Test SHA-256
+`5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`
+guards the strict selector, crossed matrix, controls, seal chain, terminal
+refold, source closure, and at-most-one terminal lifecycle.
+
+This is a source freeze, not an execution or result. No launch, attempt,
+terminal, model/raw/network/subject access, automatic successor, or scientific
+authority is created. A separate committed launch remains mandatory. D7/D8,
+SCI-S1/S2, Pythia-160M, topology/integer/semantic claims, and every library
+milestone remain unchanged.
+
+### Corrective pre-launch P4 source re-freeze (2026-08-24)
+
+The exact `--prepare-launch` invocation against the initial source freeze
+stopped in its pre-import process guard because macOS framework Python reports
+its physical `Python.app` launcher, not the operator's lexical
+`.venv/bin/python` path, in `sys.orig_argv[0]`. Only the dedicated Python
+bytecode-cache-prefix absence was observed by `lstat`; protocol validation,
+launch construction, and official-coordinate checks were not reached. No
+launch, attempt, stage, store, terminal, input access, or result exists, so P4
+remains `frozen_not_run` and the one permitted future attempt is unconsumed.
+
+A corrective source-only re-freeze supersedes the old pins for future launch:
+protocol SHA-256
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`,
+runner SHA-256
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+and test SHA-256
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+The protocol's scientific design, schema version, experiment ID, coordinates,
+exact-one lifecycle, and claim boundary are unchanged. D7/D8, SCI-S1/S2,
+Pythia-160M, topology/integer/semantic claims, and all library milestones
+remain unchanged.
+
+### Consumed invalid P4 v0.1 terminal (2026-08-24)
+
+The separately committed launch was executed exactly once. Attempt SHA-256
+`2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615`
+records `identity_consumed=true` and prohibits retry, resume, or rescue.
+Terminal SHA-256
+`28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf`
+is authoritatively `caught_error` / `invalid`, not scientific `pass`, `fail`,
+`insufficient`, or null. The live lifecycle is now consumed-invalid; the
+protocol's `frozen_not_run` value records its issue-time state rather than the
+current repository lifecycle.
+
+Two pre-confirmation decisions remain useful Level-0 negative-space evidence.
+The graph seal selected one of 7 eligible triplets from 158 candidates:
+mutual-kNN `k=7`, radius `r=0.4788290448167926`, and shared-neighbor
+`k=8, min_shared=4`. The later threshold seal records a 62-scalar
+aggregate, zero selection-worst errors, effective thresholds `1e-8`, and
+no clamping. Both were durable before confirmation access. They are
+model-free evaluability receipts, not a scientific graph/core/topology result.
+
+Confirmation was accessed only after both seals. A terminal-validation schema
+mismatch then rejected the normal result: the fixed-triplet confirmation
+producer emitted the exact 13 base structural keys while the reused selector
+validator required two additional selector-only objective keys. The artifact
+cannot distinguish confirmation structural `pass` from `insufficient`, and it
+contains no confirmation matrix or final crossed result. All 16 terminal
+controls are `not_run`; no positive/null outcome or control execution may be
+reconstructed.
+
+Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` remains the last exact
+live-v0.1 closure checkpoint. Later post-terminal conformance and documentation
+commits preserve its frozen bytes but fall outside the runner's post-source
+path allowlist. Any successor must use a new v0.2 identity and coordinates,
+separate confirmation and selector measurement schemas, and a new exact-one
+authorization. Fresh held-out use also requires a disjoint confirmation input;
+that is necessary but does not by itself restore independence, preregistration,
+cryptographic-unseen proof, or scientific authority. The accessed v0.1
+confirmation is regression-only. D7/D8, SCI-S1/S2, Pythia-160M,
+scientific/topology/integer authority, and every library milestone remains
+unchanged.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer
