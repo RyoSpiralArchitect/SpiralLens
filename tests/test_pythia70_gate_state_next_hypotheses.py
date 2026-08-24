@@ -17,6 +17,13 @@ ATTEMPT = ROOT / "experiments/pythia/gate_state_development_v0_1/attempt.json"
 TERMINAL = (
     ROOT / "experiments/pythia/gate_state_development_v0_1/terminal-result.json"
 )
+NEXT_HYPOTHESES = (
+    ROOT / "experiments/pythia/gate_state_development_v0_1/next-hypotheses.json"
+)
+EXPECTED_NEXT_HYPOTHESES_SHA256 = (
+    "eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c"
+)
+EXPECTED_NEXT_HYPOTHESES_BYTES = 13_337
 
 
 def _load_script():
@@ -502,7 +509,7 @@ def test_git_checks_ignore_caller_repository_environment(
     assert SCRIPT.read_text(encoding="utf-8").count("subprocess.run(") == 1
 
 
-def test_live_repository_projection_is_strict_when_present() -> None:
+def test_live_repository_projection_is_exact_published_state() -> None:
     module = _load_script()
     repository_output = ROOT / module.REPOSITORY_OUTPUT_RELATIVE
     state = "".join(
@@ -515,9 +522,11 @@ def test_live_repository_projection_is_strict_when_present() -> None:
             repository_output,
         )
     )
-    assert state in {"1110", "1111"}
-    if state == "1110":
-        return
+    assert repository_output == NEXT_HYPOTHESES
+    assert state == "1111"
+    source = repository_output.read_bytes()
+    assert len(source) == EXPECTED_NEXT_HYPOTHESES_BYTES
+    assert module._sha256(source) == EXPECTED_NEXT_HYPOTHESES_SHA256
     record, _source = module._load_canonical(
         repository_output,
         maximum_bytes=module.MAX_NEXT_HYPOTHESES_BYTES,

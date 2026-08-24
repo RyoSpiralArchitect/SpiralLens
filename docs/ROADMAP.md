@@ -372,6 +372,26 @@ roughness. No retry occurred or is authorized, and no next-hypothesis artifact i
 subject, candidate, topology/integer/semantic, publication, support,
 compatibility, portability, API, release, or library milestone advances.
 
+### Published Pythia-70M next-hypothesis map (2026-08-24)
+
+The absence statement above describes the terminal-publication state. A later
+no-replace planning record now exists at
+`experiments/pythia/gate_state_development_v0_1/next-hypotheses.json`, with
+exact SHA-256
+`eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
+and size 13,337 bytes; its external durable copy and repository projection were
+verified byte-identical. It binds the unchanged terminal and advances only the
+repository lifecycle from `1110` to `1111`.
+
+The record is post-outcome, non-independent, non-preregistered, and
+claim-ineligible. It preserves all six competing explanations and the F2/F4
+tie, and treats the 702 ring-prerequisite-cascade cells plus the separately
+derived graph cycle ranks as a negative-space map, not a null or topology
+result. It constrains a possible model-free P4 evaluability calibration, but
+that calibration remains `planned_not_frozen_not_run`: no protocol, launch,
+execution, model/raw/network/subject access, or later Pythia run is authorized.
+All scientific and library milestones remain unchanged.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer

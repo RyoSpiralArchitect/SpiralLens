@@ -151,7 +151,7 @@ jobs:
           expected_development_runner_sha="fb92565229d75d0b4dd14c268db8091379b08dbcdec73dda033439aca3b00517"
           test "$(sha256sum "$development_runner" | cut -d' ' -f1)" = "$expected_development_runner_sha"
           next_hypotheses_test="tests/test_pythia70_gate_state_next_hypotheses.py"
-          expected_next_hypotheses_test_sha="442b2c25a2c19e3ea0302d3e0decfed395311deb70ede2e76553dc1561fa9909"
+          expected_next_hypotheses_test_sha="31586985a48867ada4af744df261ff1428b4bbe7b91836ab3b8621f25609beaf"
           test "$(sha256sum "$next_hypotheses_test" | cut -d' ' -f1)" = "$expected_next_hypotheses_test_sha"
           next_hypotheses_publisher="scripts/publish_pythia70_gate_state_next_hypotheses.py"
           expected_next_hypotheses_publisher_sha="40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57"
