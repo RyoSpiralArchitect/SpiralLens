@@ -42,11 +42,24 @@ promote a claim.
 - Post-terminal commit `71140f974ad6e30d80495d0552b5ade384e56a71`
   replaced a phase-stale permanent-absence unit assertion with isolated-import
   state preservation for the exact launch, attempt, and terminal bytes. The
-  resulting test is 95,409 bytes with SHA-256
+  resulting test at that commit is 95,409 bytes with SHA-256
   `a8e146f8b3b943817bf3a2bea97b9d4cca8ff522edbcdbf4bba0329cd25a64f0`;
   workflow SHA-256
   `3ffde48202c3fc28b48ca6045db6a66740a952558e8c613dbcb153f370cfad50`
   pins all three artifact digests and runs that conformance test.
+- The first clean-wheel matrix exposed a second phase-stale test assumption:
+  its raw bootstrap-guard subprocess hard-coded a repository `.venv` that does
+  not exist in the clean-wheel jobs. All three jobs stopped in the test step
+  before the full distribution validator; this was CI plumbing failure, not an
+  official execution or scientific result. Post-terminal portability commit
+  `52a0bfb12e39b27181bfca3ea57c201f30204e39` changes only that test launcher to
+  the active test interpreter and rebinds the workflow pin. The current test is
+  95,385 bytes with SHA-256
+  `f05e618b8493f1572c44d7befad5f04b8c2e0805a0a49dbabad2a4bbfabc216f`;
+  current workflow SHA-256 is
+  `267d122eba4a3890032cae0e5e26c77ea17d4c14bcab7c3f2d8c2412a227f0ac`.
+  The frozen bootstrap guard still rejects both nonconforming raw invocations
+  before NumPy or SpiralLens import and before lifecycle/store access.
 - The post-terminal test and workflow are not a source re-freeze and do not
   reinterpret the official attempt. Checkpoint `f0f6c3a` remains the last HEAD
   accepted by the frozen live-v0.1 post-source path allowlist. Later
