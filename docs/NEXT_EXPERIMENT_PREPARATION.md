@@ -1312,6 +1312,23 @@ does not create a launch, execute either substrate, resolve any decision in
 section 11 for model use, or authorize a Pythia, SCI, D7/D8, topology, or
 integer claim.
 
+An exact `--prepare-launch` invocation against source-freeze commit
+`e2300e921aa012ee49d6ea09f1e96b13c40e88d7` then stopped in the pre-import
+Python process guard: macOS framework Python normalized `sys.orig_argv[0]` to
+its physical `Python.app` launcher rather than the frozen lexical
+`.venv/bin/python` path. Before the mismatch comparison, the pre-import guard
+performed the dedicated Python bytecode-cache-prefix absence `lstat`;
+protocol validation, official-coordinate checks, launch construction,
+attempt creation, and input access were not reached. A corrective re-freeze
+now binds protocol SHA-256
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`,
+runner SHA-256
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+and test SHA-256
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+P4 remains `frozen_not_run`, its one future attempt is unconsumed, and the
+scientific design and all successor gates remain unchanged.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:

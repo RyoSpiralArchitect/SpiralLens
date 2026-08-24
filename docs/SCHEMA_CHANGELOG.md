@@ -4,6 +4,37 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-24 — Corrective P4 pre-launch process-identity re-freeze
+
+- The exact `--prepare-launch` invocation after source-freeze commit
+  `e2300e921aa012ee49d6ea09f1e96b13c40e88d7` stopped in the pre-import
+  process guard because macOS framework Python exposed its physical
+  `Python.app` launcher in `sys.orig_argv[0]`. The guard performed only the
+  dedicated bytecode-cache-prefix absence `lstat`; protocol validation,
+  launch construction, and protocol official-coordinate checks were not
+  reached. No launch, attempt, stage, store, terminal, or input access was
+  created, and the future attempt remains unconsumed.
+- Re-froze internal protocol
+  `protocols/p4_graph_evaluability_calibration_v0_1.json` at 30,074 bytes and
+  SHA-256
+  `e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`.
+  Its schema version, experiment ID, scientific design, coordinates,
+  persistence rules, exact-one lifecycle, and claim boundary are unchanged;
+  only its runner source binding changed.
+- Re-froze runner `scripts/run_p4_graph_evaluability_calibration.py` at
+  324,250 bytes and SHA-256
+  `8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+  plus focused test `tests/test_p4_graph_evaluability_calibration.py` at
+  89,836 bytes and SHA-256
+  `469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+  Workflow SHA-256
+  `4be35df9473597baa1bc030cf9d18150051d5a4b50319be89d35701c6e799175`
+  pins and runs the corrected source surface.
+- P4 remains claim-ineligible Level 0 and exactly `frozen_not_run`. No public
+  schema, API, support, compatibility, portability, release, library, VOY,
+  D7/D8, SCI, Pythia-160M, subject, scientific, semantic, topology, integer,
+  or milestone state changes.
+
 ## 2026-08-24 — Frozen model-free P4 graph-evaluability calibration source
 
 - Added internal protocol

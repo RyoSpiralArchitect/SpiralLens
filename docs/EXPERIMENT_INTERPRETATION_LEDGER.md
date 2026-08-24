@@ -1271,6 +1271,51 @@ milestone credit remain `none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject,
 scientific, semantic, topology, integer, API, support, compatibility,
 portability, release, and library states are unchanged.
 
+### 3.33 Corrective pre-launch P4 source re-freeze
+
+**Observed obstruction and chronology**
+
+After source-freeze commit
+`e2300e921aa012ee49d6ea09f1e96b13c40e88d7`, the exact
+`--prepare-launch` invocation stopped in the pre-import Python process guard.
+The initial guard had equated the operator's lexical `.venv/bin/python` path
+with `sys.orig_argv[0]`; macOS framework Python instead reported its physical
+`Python.app` launcher there. The guard observed only that the dedicated Python
+bytecode-cache prefix was absent by `lstat`. It stopped before NumPy or
+SpiralLens import, protocol validation, `prepare_launch()`, launch identity
+construction, or the protocol's official-coordinate absence checks.
+
+Consequently no launch, attempt, external stage, external store, terminal,
+selector result, threshold result, confirmation access, phantom input, model,
+network, raw capture, subject data, or model/subject cache was created or
+accessed. This was a pre-launch bootstrap compatibility obstruction, not an
+experiment attempt or a scientific terminal. Status remains exactly
+`frozen_not_run`, and the one permitted future attempt remains wholly
+unconsumed.
+
+**Corrected source identity**
+
+The corrective source re-freeze keeps the protocol schema, experiment ID,
+calibration and confirmation substrates, selector, matrix, controls,
+thresholds, coordinates, persistence rules, exact-one lifecycle, and claim
+boundary unchanged. It changes only the runner binding and bootstrap process
+identity. Protocol SHA-256 is now
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`
+at 30,074 bytes; runner SHA-256 is
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`
+at 324,250 bytes; and focused-test SHA-256 is
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`
+at 89,836 bytes.
+
+The corrected guard separately fixes the lexical virtual-environment
+executable, resolved base executable and digest, macOS physical launcher and
+digest, exact original-argument tail, script arguments, isolation flags, and
+bytecode-cache boundary. These current pins supersede section 3.32 only for a
+future launch; they do not rewrite that earlier freeze event. Claim delta and
+milestone credit remain `none`, and all scientific, topology, integer, model,
+subject, VOY, D7/D8, SCI-S1/S2, Pythia-160M, API, support, compatibility,
+portability, release, and library states remain unchanged.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

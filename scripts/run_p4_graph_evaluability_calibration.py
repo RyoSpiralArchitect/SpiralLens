@@ -50,11 +50,27 @@ _BOOTSTRAP_PYCACHE_PREFIX = (
     _BOOTSTRAP_REPOSITORY.parent
     / ".spirallens-p4-graph-evaluability-calibration-v0-1-python-cache"
 ).absolute()
+_BOOTSTRAP_OFFICIAL_PLATFORM = "darwin"
+_BOOTSTRAP_LOGICAL_EXECUTABLE = (
+    _BOOTSTRAP_REPOSITORY / ".venv" / "bin" / "python"
+).absolute()
+_BOOTSTRAP_RESOLVED_BASE_EXECUTABLE = Path(
+    "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13"
+)
+_BOOTSTRAP_RESOLVED_BASE_EXECUTABLE_SHA256 = (
+    "bdc6b50ebbf1fa5d1fc4ed8f3ab7decb640e60b55088ae0be4bf63bb914a89d5"
+)
+_BOOTSTRAP_PHYSICAL_LAUNCHER = Path(
+    "/Library/Frameworks/Python.framework/Versions/3.13/"
+    "Resources/Python.app/Contents/MacOS/Python"
+)
+_BOOTSTRAP_PHYSICAL_LAUNCHER_SHA256 = (
+    "7ee125c1edcfa2d6404a28caaa5724b7b239da901c86bbc1eb91d6a784deeef3"
+)
 
 
-def _bootstrap_expected_python_argv(mode: str) -> list[str]:
+def _bootstrap_expected_orig_argv_tail(mode: str) -> list[str]:
     return [
-        str(_BOOTSTRAP_REPOSITORY / ".venv" / "bin" / "python"),
         "-I",
         "-B",
         "-X",
@@ -62,6 +78,57 @@ def _bootstrap_expected_python_argv(mode: str) -> list[str]:
         str(_BOOTSTRAP_RUNNER),
         mode,
     ]
+
+
+def _bootstrap_expected_python_argv(mode: str) -> list[str]:
+    """Return the lexical operator argv, not CPython's physical orig_argv."""
+
+    return [
+        str(_BOOTSTRAP_LOGICAL_EXECUTABLE),
+        *_bootstrap_expected_orig_argv_tail(mode),
+    ]
+
+
+def _bootstrap_stable_regular_sha256(path: Path, *, label: str) -> str:
+    """Hash one exact early-process executable without following aliases."""
+
+    try:
+        if not path.is_absolute() or path.absolute() != path.resolve(strict=True):
+            raise RuntimeError(f"{label} must be an absolute non-symlink path")
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+        )
+    except OSError as error:
+        raise RuntimeError(f"cannot open {label}") from error
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise RuntimeError(f"{label} must be a regular nlink=1 file")
+        digest = hashlib.sha256()
+        while True:
+            block = os.read(descriptor, 65_536)
+            if not block:
+                break
+            digest.update(block)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    if (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+    ) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+    ):
+        raise RuntimeError(f"{label} changed while being hashed")
+    return digest.hexdigest()
 
 
 def _bootstrap_python_process_observation() -> dict[str, object]:
@@ -75,34 +142,87 @@ def _bootstrap_python_process_observation() -> dict[str, object]:
         ) from error
     else:
         prefix_absent = False
+    original_argv = list(getattr(sys, "orig_argv", ()))
+    effective_argv0 = original_argv[0] if original_argv else None
+    original_tail = original_argv[1:] if original_argv else []
+    try:
+        logical_resolved = Path(sys.executable).resolve(strict=True)
+    except OSError as error:
+        raise RuntimeError("cannot resolve the logical Python executable") from error
+    base_executable = getattr(sys, "_base_executable", None)
+    if not isinstance(base_executable, str) or not isinstance(
+        effective_argv0, str
+    ):
+        raise RuntimeError("Python executable/orig_argv0 coordinates are unavailable")
+    try:
+        base_resolved = Path(base_executable).resolve(strict=True)
+        launcher_resolved = Path(effective_argv0).resolve(strict=True)
+    except OSError as error:
+        raise RuntimeError("cannot resolve Python base/launcher coordinates") from error
     return {
+        "platform": sys.platform,
+        "logical_executable": sys.executable,
+        "logical_executable_resolved": str(logical_resolved),
+        "base_executable": base_executable,
+        "base_executable_sha256": _bootstrap_stable_regular_sha256(
+            base_resolved,
+            label="resolved base Python executable",
+        ),
+        "effective_orig_argv0": effective_argv0,
+        "physical_launcher_sha256": _bootstrap_stable_regular_sha256(
+            launcher_resolved,
+            label="effective physical Python launcher",
+        ),
+        "orig_argv_tail": original_tail,
+        "sys_argv": list(sys.argv),
         "isolated": sys.flags.isolated,
         "dont_write_bytecode_flag": sys.flags.dont_write_bytecode,
         "dont_write_bytecode_runtime": sys.dont_write_bytecode,
         "pycache_prefix": sys.pycache_prefix,
         "xoptions": dict(sys._xoptions),
-        "orig_argv": list(getattr(sys, "orig_argv", ())),
         "pycache_prefix_lstat_absent": prefix_absent,
     }
 
 
-def _bootstrap_validate_python_process(mode: str) -> dict[str, object]:
+def _bootstrap_expected_python_process_observation(mode: str) -> dict[str, object]:
     expected_prefix = str(_BOOTSTRAP_PYCACHE_PREFIX)
-    expected = {
+    return {
+        "platform": _BOOTSTRAP_OFFICIAL_PLATFORM,
+        "logical_executable": str(_BOOTSTRAP_LOGICAL_EXECUTABLE),
+        "logical_executable_resolved": str(
+            _BOOTSTRAP_RESOLVED_BASE_EXECUTABLE
+        ),
+        "base_executable": str(_BOOTSTRAP_RESOLVED_BASE_EXECUTABLE),
+        "base_executable_sha256": _BOOTSTRAP_RESOLVED_BASE_EXECUTABLE_SHA256,
+        "effective_orig_argv0": str(_BOOTSTRAP_PHYSICAL_LAUNCHER),
+        "physical_launcher_sha256": _BOOTSTRAP_PHYSICAL_LAUNCHER_SHA256,
+        "orig_argv_tail": _bootstrap_expected_orig_argv_tail(mode),
+        "sys_argv": [str(_BOOTSTRAP_RUNNER), mode],
         "isolated": 1,
         "dont_write_bytecode_flag": 1,
         "dont_write_bytecode_runtime": True,
         "pycache_prefix": expected_prefix,
         "xoptions": {"pycache_prefix": expected_prefix},
-        "orig_argv": _bootstrap_expected_python_argv(mode),
         "pycache_prefix_lstat_absent": True,
     }
-    observed = _bootstrap_python_process_observation()
-    if observed != expected:
+
+
+def _bootstrap_validate_python_process_observation(
+    mode: str,
+    observed: Mapping[str, object],
+) -> dict[str, object]:
+    expected = _bootstrap_expected_python_process_observation(mode)
+    materialized = dict(observed)
+    if materialized != expected:
         raise RuntimeError(
             f"P4 {mode} Python process flags/cache boundary differ from freeze"
         )
-    return observed
+    return materialized
+
+
+def _bootstrap_validate_python_process(mode: str) -> dict[str, object]:
+    observed = _bootstrap_python_process_observation()
+    return _bootstrap_validate_python_process_observation(mode, observed)
 
 
 _BOOTSTRAP_GUARDED_MODE = next(
@@ -3742,25 +3862,9 @@ def _expected_python_process_observation(
     *,
     mode: str,
 ) -> dict[str, object]:
-    prefix = str(_python_bytecode_cache_prefix(repo_root))
-    expected_argv = [
-        str(repo_root.resolve() / ".venv" / "bin" / "python"),
-        "-I",
-        "-B",
-        "-X",
-        f"pycache_prefix={prefix}",
-        str((repo_root.resolve() / REPOSITORY_RUNNER).resolve()),
-        mode,
-    ]
-    return {
-        "isolated": 1,
-        "dont_write_bytecode_flag": 1,
-        "dont_write_bytecode_runtime": True,
-        "pycache_prefix": prefix,
-        "xoptions": {"pycache_prefix": prefix},
-        "orig_argv": expected_argv,
-        "pycache_prefix_lstat_absent": True,
-    }
+    if repo_root.resolve() != _BOOTSTRAP_REPOSITORY:
+        raise P4ProtocolError("Python process expectation repository differs")
+    return _bootstrap_expected_python_process_observation(mode)
 
 
 def _validated_current_python_process(
@@ -3809,6 +3913,19 @@ def _runtime_binding(
         "python_version": platform.python_version(),
         "python_executable": str(executable),
         "python_executable_sha256": _sha256_file(executable),
+        "python_logical_executable": preparation["logical_executable"],
+        "python_resolved_base_executable": preparation[
+            "logical_executable_resolved"
+        ],
+        "python_resolved_base_executable_sha256": preparation[
+            "base_executable_sha256"
+        ],
+        "python_physical_launcher_argv0": preparation[
+            "effective_orig_argv0"
+        ],
+        "python_physical_launcher_sha256": preparation[
+            "physical_launcher_sha256"
+        ],
         "numpy_version": np.__version__,
         "platform_system": platform.system(),
         "platform_machine": platform.machine(),
@@ -6915,7 +7032,14 @@ def validate_committed_launch(
         launch.get("exact_argv"), repo_root=root, label="exact argv"
     )
     if require_exact_argv:
-        observed_argv = list(getattr(sys, "orig_argv", [sys.executable, *sys.argv]))
+        observed_process = _validated_current_python_process(root, mode="--run")
+        observed_argv = [
+            str(observed_process["logical_executable"]),
+            *_sequence(
+                observed_process["orig_argv_tail"],
+                label="observed run orig argv tail",
+            ),
+        ]
         _validate_exact_run_argv(
             observed_argv, repo_root=root, label="observed run argv"
         )

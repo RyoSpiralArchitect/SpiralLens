@@ -1737,13 +1737,159 @@ def test_expected_run_and_prepare_process_flags_are_exact() -> None:
         ROOT, mode="--prepare-launch"
     )
 
-    assert run["orig_argv"] == P4._exact_run_argv(ROOT)
+    assert [run["logical_executable"], *run["orig_argv_tail"]] == (
+        P4._exact_run_argv(ROOT)
+    )
+    assert run["platform"] == "darwin"
+    assert run["logical_executable"] == str(ROOT / ".venv" / "bin" / "python")
+    assert run["logical_executable_resolved"] == str(
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE
+    )
+    assert run["base_executable"] == str(
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE
+    )
+    assert run["base_executable_sha256"] == (
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE_SHA256
+    )
+    assert run["effective_orig_argv0"] == str(P4._BOOTSTRAP_PHYSICAL_LAUNCHER)
+    assert run["physical_launcher_sha256"] == (
+        P4._BOOTSTRAP_PHYSICAL_LAUNCHER_SHA256
+    )
+    assert run["sys_argv"] == [str(RUNNER_PATH), "--run"]
     assert run["isolated"] == 1
     assert run["dont_write_bytecode_flag"] == 1
     assert run["dont_write_bytecode_runtime"] is True
     assert run["xoptions"] == {"pycache_prefix": run["pycache_prefix"]}
-    assert prepare["orig_argv"][-1] == "--prepare-launch"
-    assert prepare["orig_argv"][1:5] == run["orig_argv"][1:5]
+    assert prepare["orig_argv_tail"][-1] == "--prepare-launch"
+    assert prepare["orig_argv_tail"][:4] == run["orig_argv_tail"][:4]
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="official launcher is Darwin-only")
+def test_live_macos_framework_python_coordinates_match_source_freeze() -> None:
+    assert sys.executable == str(P4._BOOTSTRAP_LOGICAL_EXECUTABLE)
+    assert Path(sys.executable).resolve(strict=True) == (
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE
+    )
+    assert sys._base_executable == str(P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE)
+    assert sys.orig_argv[0] == str(P4._BOOTSTRAP_PHYSICAL_LAUNCHER)
+    assert P4._bootstrap_stable_regular_sha256(
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE,
+        label="test resolved base executable",
+    ) == P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE_SHA256
+    assert P4._bootstrap_stable_regular_sha256(
+        P4._BOOTSTRAP_PHYSICAL_LAUNCHER,
+        label="test physical launcher",
+    ) == P4._BOOTSTRAP_PHYSICAL_LAUNCHER_SHA256
+
+
+def test_runtime_binding_seals_logical_base_and_physical_launcher(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closure = {"frozen": True}
+    monkeypatch.setattr(P4, "_source_closure_snapshot", lambda *_: closure)
+    monkeypatch.setattr(P4, "_sha256_file", lambda _path: "f" * 64)
+
+    runtime = P4._runtime_binding(ROOT, {})
+
+    assert runtime["python_logical_executable"] == str(
+        P4._BOOTSTRAP_LOGICAL_EXECUTABLE
+    )
+    assert runtime["python_resolved_base_executable"] == str(
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE
+    )
+    assert runtime["python_resolved_base_executable_sha256"] == (
+        P4._BOOTSTRAP_RESOLVED_BASE_EXECUTABLE_SHA256
+    )
+    assert runtime["python_physical_launcher_argv0"] == str(
+        P4._BOOTSTRAP_PHYSICAL_LAUNCHER
+    )
+    assert runtime["python_physical_launcher_sha256"] == (
+        P4._BOOTSTRAP_PHYSICAL_LAUNCHER_SHA256
+    )
+    assert runtime["source_closure"] == closure
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("platform", "linux"),
+        ("logical_executable", "/tmp/alternate-venv/bin/python"),
+        ("logical_executable_resolved", "/tmp/python3.13"),
+        ("base_executable", "/tmp/python3.13"),
+        ("base_executable_sha256", "0" * 64),
+        ("effective_orig_argv0", str(ROOT / ".venv" / "bin" / "python")),
+        (
+            "effective_orig_argv0",
+            "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+        ),
+        (
+            "effective_orig_argv0",
+            "/Library/Frameworks/Python.framework/Versions/3.12/"
+            "Resources/Python.app/Contents/MacOS/Python",
+        ),
+        ("effective_orig_argv0", "relative/Python.app/Contents/MacOS/Python"),
+        ("physical_launcher_sha256", "0" * 64),
+        ("sys_argv", [str(RUNNER_PATH), "--prepare-launch"]),
+        ("isolated", 0),
+        ("dont_write_bytecode_flag", 0),
+        ("dont_write_bytecode_runtime", False),
+        ("pycache_prefix", "/tmp/alternate-cache"),
+        ("xoptions", {}),
+        ("pycache_prefix_lstat_absent", False),
+    ],
+)
+def test_python_process_guard_rejects_identity_and_flag_mutations(
+    field: str,
+    replacement: object,
+) -> None:
+    observed = P4._expected_python_process_observation(ROOT, mode="--run")
+    observed[field] = replacement
+
+    with pytest.raises(RuntimeError, match="flags/cache boundary differ"):
+        P4._bootstrap_validate_python_process_observation("--run", observed)
+
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        "missing-I",
+        "missing-B",
+        "missing-X",
+        "wrong-cache",
+        "reordered-flags",
+        "wrong-runner",
+        "wrong-mode",
+        "extra-argument",
+        "truncated-tail",
+    ],
+)
+def test_python_process_guard_rejects_orig_argv_tail_mutations(
+    variant: str,
+) -> None:
+    observed = P4._expected_python_process_observation(ROOT, mode="--run")
+    tail = list(observed["orig_argv_tail"])
+    if variant == "missing-I":
+        tail.remove("-I")
+    elif variant == "missing-B":
+        tail.remove("-B")
+    elif variant == "missing-X":
+        tail.remove("-X")
+    elif variant == "wrong-cache":
+        tail[3] = "pycache_prefix=/tmp/alternate-cache"
+    elif variant == "reordered-flags":
+        tail[0], tail[1] = tail[1], tail[0]
+    elif variant == "wrong-runner":
+        tail[4] = str(ROOT / "scripts" / "alternate.py")
+    elif variant == "wrong-mode":
+        tail[5] = "--prepare-launch"
+    elif variant == "extra-argument":
+        tail.append("--extra")
+    else:
+        tail.pop()
+    observed["orig_argv_tail"] = tail
+
+    with pytest.raises(RuntimeError, match="flags/cache boundary differ"):
+        P4._bootstrap_validate_python_process_observation("--run", observed)
 
 
 @pytest.mark.parametrize("variant", ["omitted", "mismatched-prefix"])

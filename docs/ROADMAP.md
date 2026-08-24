@@ -413,6 +413,29 @@ authority is created. A separate committed launch remains mandatory. D7/D8,
 SCI-S1/S2, Pythia-160M, topology/integer/semantic claims, and every library
 milestone remain unchanged.
 
+### Corrective pre-launch P4 source re-freeze (2026-08-24)
+
+The exact `--prepare-launch` invocation against the initial source freeze
+stopped in its pre-import process guard because macOS framework Python reports
+its physical `Python.app` launcher, not the operator's lexical
+`.venv/bin/python` path, in `sys.orig_argv[0]`. Only the dedicated Python
+bytecode-cache-prefix absence was observed by `lstat`; protocol validation,
+launch construction, and official-coordinate checks were not reached. No
+launch, attempt, stage, store, terminal, input access, or result exists, so P4
+remains `frozen_not_run` and the one permitted future attempt is unconsumed.
+
+A corrective source-only re-freeze supersedes the old pins for future launch:
+protocol SHA-256
+`e5634ad221c263424f279896ca56d64edff52dbeba1edc280a0760f31df6ce33`,
+runner SHA-256
+`8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1`,
+and test SHA-256
+`469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379`.
+The protocol's scientific design, schema version, experiment ID, coordinates,
+exact-one lifecycle, and claim boundary are unchanged. D7/D8, SCI-S1/S2,
+Pythia-160M, topology/integer/semantic claims, and all library milestones
+remain unchanged.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer
