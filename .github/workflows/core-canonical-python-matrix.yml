@@ -163,7 +163,7 @@ jobs:
           expected_p4_graph_evaluability_runner_sha="8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1"
           test "$(sha256sum "$p4_graph_evaluability_runner" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_runner_sha"
           p4_graph_evaluability_test="tests/test_p4_graph_evaluability_calibration.py"
-          expected_p4_graph_evaluability_test_sha="a8e146f8b3b943817bf3a2bea97b9d4cca8ff522edbcdbf4bba0329cd25a64f0"
+          expected_p4_graph_evaluability_test_sha="f05e618b8493f1572c44d7befad5f04b8c2e0805a0a49dbabad2a4bbfabc216f"
           test "$(sha256sum "$p4_graph_evaluability_test" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_test_sha"
           p4_graph_evaluability_launch="experiments/qualification/p4_graph_evaluability_calibration_v0_1/launch.json"
           expected_p4_graph_evaluability_launch_sha="31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944"

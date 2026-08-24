@@ -1897,7 +1897,7 @@ def test_raw_run_guard_rejects_python_flag_bypass(
     tmp_path: Path,
     variant: str,
 ) -> None:
-    python = str(ROOT / ".venv" / "bin" / "python")
+    python = sys.executable
     if variant == "omitted":
         argv = [python, str(RUNNER_PATH), "--run"]
     else:
