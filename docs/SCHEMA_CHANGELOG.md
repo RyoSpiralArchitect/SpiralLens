@@ -4,6 +4,41 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-24 — Published Pythia-70M GateState next-hypothesis record
+
+- A canonical internal planning record now exists at
+  `experiments/pythia/gate_state_development_v0_1/next-hypotheses.json` with
+  schema version `spirallens.pythia70-gate-state-next-hypotheses.v0.1`,
+  exact SHA-256
+  `eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
+  and byte count 13,337. Its external durable record and repository projection
+  were verified byte-identical under the external-first, native-no-replace
+  publication contract. Only the repository coordinate state changes from
+  `1110` to `1111`; `terminal_lifecycle` remains `terminal_consumed`.
+- Publisher implementation commit
+  `eeb244cfb49f3f937b89e0c1d4bb595279e441ac` and publisher SHA-256
+  `40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57`
+  predate and are bound by the record. The exact repository-projection test is
+  SHA-256
+  `31586985a48867ada4af744df261ff1428b4bbe7b91836ab3b8621f25609beaf`;
+  workflow SHA-256 is
+  `2010908532d4f90fb6b4695a5cd4fb91838fcb64b6c84f9fd5698978234942f8`.
+- The record binds, but does not modify or refold, attempt SHA-256
+  `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59`,
+  terminal SHA-256
+  `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f`,
+  and freeze SHA-256
+  `fe85ebb15e0a9794a02d72b4fdefd0178b52662528e8e066530d873516b52452`.
+  It retains six competing hypotheses, no F2/F4 winner, and the exact terminal
+  negative-space diagnostics.
+- Chronology is post-outcome, non-independent, non-preregistered, and without
+  cryptographic unseen proof. The proposed model-free P4 calibration remains
+  `planned_not_frozen_not_run`; every execution and access authority is false.
+  This internal Level-0 record changes no public schema, API, support,
+  compatibility, portability, release, library, VOY, D7/D8, SCI,
+  Pythia-160M, subject, scientific, semantic, topology, integer, or milestone
+  state.
+
 ## 2026-08-14 — Consumed exact-one Pythia-70M GateState reconnaissance
 
 - Runner SHA-256 `fb92565229d75d0b4dd14c268db8091379b08dbcdec73dda033439aca3b00517`

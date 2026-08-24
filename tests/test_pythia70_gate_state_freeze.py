@@ -43,6 +43,7 @@ ALLOWED_REPOSITORY_STATES = {
     "0000": "unlaunched",
     "1000": "authorized_not_started",
     "1110": "terminal_projected_without_next_hypotheses",
+    "1111": "terminal_projected_with_next_hypotheses",
 }
 POLICY_DOCUMENT_PATHS = frozenset(
     {

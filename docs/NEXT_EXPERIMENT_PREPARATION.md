@@ -1282,8 +1282,21 @@ and terminal SHA-256 `ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff1
 bind a complete `fail` fold over exact 10 gates and 894 cells. The 127 pass,
 6 fail, and 761 insufficient cells are intentional claim-ineligible Level-0
 roughness, not a selection or scientific interpretation. No retry occurred or
-is authorized, and no next-hypothesis artifact is present; all unresolved decisions
-below remain unresolved.
+is authorized. At terminal publication no next-hypothesis artifact existed.
+
+The later no-replace planning record at
+`experiments/pythia/gate_state_development_v0_1/next-hypotheses.json` is now
+fixed at SHA-256
+`eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
+and 13,337 bytes. It is explicitly post-outcome, non-independent,
+non-preregistered, and evidence-ineligible. It preserves six competing
+hypotheses and no F2/F4 winner. The included field-blind selector, crossed
+controls, tolerances, and stop rules form a bounded proposal for a possible
+separate model-free P4 calibration, not a frozen protocol or execution
+authorization. Calibration remains `planned_not_frozen_not_run`; exact
+confirmation inputs, protocol, launch, and execution require a separate dated
+decision. No Pythia raw capture, model, network, or subject access is
+authorized, and all unresolved decisions below remain unresolved.
 
 ## 11. Decisions that remain unresolved
 

@@ -1157,6 +1157,66 @@ The resource receipt records 7.0474522080039605 wall-clock seconds, one model lo
 This is claim-ineligible Level-0 reconnaissance: half-supported F2/F4 cells, below-floor declared ring support, unresolved orientation, unavailable negative-control prerequisites, and the failing graph-family-agreement cells are retained as rough diagnostic outcomes, not repaired, retried, tuned, or interpreted as model geometry or topology. No next-hypothesis artifact exists, and the exact-one attempt is consumed.
 The terminal itself retains `claim_ceiling=level_0`, `claim_delta=none`, `milestone_credit=none`, and `evidence_eligible=false`. It creates no field/core/loop/winding/integer/scientific/semantic authority and no VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support, compatibility, portability, release, or library-state delta.
 
+### 3.31 Published post-outcome Pythia-70M GateState next-hypothesis record
+
+**Publication chronology**
+
+On 2026-08-24 the no-replace publisher at SHA-256
+`40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57`
+published
+`experiments/pythia/gate_state_development_v0_1/next-hypotheses.json`.
+The canonical record is 13,337 bytes with SHA-256
+`eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`;
+the external durable record and repository projection were verified
+byte-identical. Publisher implementation commit
+`eeb244cfb49f3f937b89e0c1d4bb595279e441ac` predates the record and is bound
+inside it. The record also binds the unchanged attempt, terminal, and freeze
+SHA-256 values `fc9139165888c705837a56d90f16cae542fb796b5907577d73e9ff75bee9af59`,
+`ccf0daf3ae4d826bdd35f0d16bb91381e79335aa727556535a4bf86ff14f001f`,
+and `fe85ebb15e0a9794a02d72b4fdefd0178b52662528e8e066530d873516b52452`.
+
+This later event supersedes only the live-existence wording in section 3.30:
+no next-hypothesis artifact existed when the terminal projection was recorded,
+and one now exists as a separate result-bound planning record. The consumed
+terminal was not retried, reconstructed, changed, or refolded. Chronology is
+explicitly `post_outcome=true`, `independent=false`, `preregistered=false`,
+`cryptographic_unseen_proof=false`, and
+`operator_prior_model_free_calibration_outcome_exposure=true`; no publication
+wall-clock attestation is claimed.
+
+**Negative-space map and next boundary**
+
+The record binds the unchanged terminal containing all 894 cells and projects
+their counts, including 702 ring-prerequisite-cascade `insufficient` cells,
+without treating them as null outcomes. It separately records that 16 of 18
+frozen candidate graphs have positive cycle rank, with total fundamental cycle
+rank 2,592. That contrast is
+a next-hypothesis input about artificial-address-ring reachability, not model
+geometry or topology. Six explanations remain competing: address-grid
+mismatch, graph-scale mismatch, frame/gauge instability,
+representation-graph sensitivity, genuine support scarcity, and no stable
+structure at the tested resolution. No layer or graph family is dropped, and
+neither F2 nor F4 is selected.
+
+The record contains a bounded proposal for a possible later model-free P4
+evaluability calibration: field-blind three-family scale selection, crossed
+graph/frame controls, held-out confirmation, and fail-closed stopping rules.
+It is not that calibration's protocol or launch. Its state is exactly
+`planned_not_frozen_not_run`; execution, model, network, raw-capture, and
+subject-data access all remain unauthorized and require a separate dated
+decision.
+
+**Claim boundary**
+
+Only the repository coordinate state changes from `1110` to `1111`;
+`terminal_lifecycle` remains `terminal_consumed`. Claim delta and milestone
+credit remain `none`, evidence eligibility remains false, and all
+planning-authority fields remain false. The record constructs no
+`OrderParameterField`, `CoreScore`, `CoreCandidate`, `SampledWinding`, or
+`WindingEstimate`; it grants no scientific, semantic, topology, integer, VOY,
+D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support, compatibility,
+portability, release, or library authority.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
