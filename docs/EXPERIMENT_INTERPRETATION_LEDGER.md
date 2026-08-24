@@ -1186,10 +1186,11 @@ wall-clock attestation is claimed.
 
 **Negative-space map and next boundary**
 
-The record retains all 894 terminal cells and identifies 702
-ring-prerequisite-cascade `insufficient` cells without treating them as null
-outcomes. It separately records that 16 of 18 frozen candidate graphs have
-positive cycle rank, with total fundamental cycle rank 2,592. That contrast is
+The record binds the unchanged terminal containing all 894 cells and projects
+their counts, including 702 ring-prerequisite-cascade `insufficient` cells,
+without treating them as null outcomes. It separately records that 16 of 18
+frozen candidate graphs have positive cycle rank, with total fundamental cycle
+rank 2,592. That contrast is
 a next-hypothesis input about artificial-address-ring reachability, not model
 geometry or topology. Six explanations remain competing: address-grid
 mismatch, graph-scale mismatch, frame/gauge instability,
@@ -1197,9 +1198,9 @@ representation-graph sensitivity, genuine support scarcity, and no stable
 structure at the tested resolution. No layer or graph family is dropped, and
 neither F2 nor F4 is selected.
 
-The record constrains a possible later model-free P4 evaluability calibration:
-field-blind three-family scale selection, crossed graph/frame controls,
-held-out confirmation, and fail-closed stopping rules are stated in advance.
+The record contains a bounded proposal for a possible later model-free P4
+evaluability calibration: field-blind three-family scale selection, crossed
+graph/frame controls, held-out confirmation, and fail-closed stopping rules.
 It is not that calibration's protocol or launch. Its state is exactly
 `planned_not_frozen_not_run`; execution, model, network, raw-capture, and
 subject-data access all remain unauthorized and require a separate dated
@@ -1207,8 +1208,9 @@ decision.
 
 **Claim boundary**
 
-The repository state advances only from `1110` to `1111`. Claim delta and
-milestone credit remain `none`, evidence eligibility remains false, and all
+Only the repository coordinate state changes from `1110` to `1111`;
+`terminal_lifecycle` remains `terminal_consumed`. Claim delta and milestone
+credit remain `none`, evidence eligibility remains false, and all
 planning-authority fields remain false. The record constructs no
 `OrderParameterField`, `CoreScore`, `CoreCandidate`, `SampledWinding`, or
 `WindingEstimate`; it grants no scientific, semantic, topology, integer, VOY,

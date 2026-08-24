@@ -380,17 +380,19 @@ no-replace planning record now exists at
 exact SHA-256
 `eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
 and size 13,337 bytes; its external durable copy and repository projection were
-verified byte-identical. It binds the unchanged terminal and advances only the
-repository lifecycle from `1110` to `1111`.
+verified byte-identical. It binds the unchanged terminal. Only the repository
+coordinate state changes from `1110` to `1111`; `terminal_lifecycle` remains
+`terminal_consumed`.
 
 The record is post-outcome, non-independent, non-preregistered, and
-claim-ineligible. It preserves all six competing explanations and the F2/F4
-tie, and treats the 702 ring-prerequisite-cascade cells plus the separately
-derived graph cycle ranks as a negative-space map, not a null or topology
-result. It constrains a possible model-free P4 evaluability calibration, but
-that calibration remains `planned_not_frozen_not_run`: no protocol, launch,
-execution, model/raw/network/subject access, or later Pythia run is authorized.
-All scientific and library milestones remain unchanged.
+claim-ineligible. It preserves all six competing explanations, records no
+F2/F4 winner, and treats the 702 ring-prerequisite-cascade cells plus the
+separately derived graph cycle ranks as a negative-space map, not a null or
+topology result. It records a bounded proposal for a possible model-free P4
+evaluability calibration, but that calibration remains
+`planned_not_frozen_not_run`: no protocol, launch, execution,
+model/raw/network/subject access, or later Pythia run is authorized. All
+scientific and library milestones remain unchanged.
 
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no

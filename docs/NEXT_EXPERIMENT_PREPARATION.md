@@ -1291,12 +1291,12 @@ fixed at SHA-256
 and 13,337 bytes. It is explicitly post-outcome, non-independent,
 non-preregistered, and evidence-ineligible. It preserves six competing
 hypotheses and no F2/F4 winner. The included field-blind selector, crossed
-controls, tolerances, and stop rules are constraints for a possible separate
-model-free P4 calibration freeze, not an execution authorization. Calibration
-remains `planned_not_frozen_not_run`; exact confirmation inputs, protocol,
-launch, and execution require a separate dated decision. No Pythia raw capture,
-model, network, or subject access is authorized, and all unresolved decisions
-below remain unresolved.
+controls, tolerances, and stop rules form a bounded proposal for a possible
+separate model-free P4 calibration, not a frozen protocol or execution
+authorization. Calibration remains `planned_not_frozen_not_run`; exact
+confirmation inputs, protocol, launch, and execution require a separate dated
+decision. No Pythia raw capture, model, network, or subject access is
+authorized, and all unresolved decisions below remain unresolved.
 
 ## 11. Decisions that remain unresolved
 

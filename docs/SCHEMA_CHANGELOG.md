@@ -13,8 +13,8 @@ promote a claim.
   `eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
   and byte count 13,337. Its external durable record and repository projection
   were verified byte-identical under the external-first, native-no-replace
-  publication contract, advancing the repository lifecycle from `1110` to
-  `1111`.
+  publication contract. Only the repository coordinate state changes from
+  `1110` to `1111`; `terminal_lifecycle` remains `terminal_consumed`.
 - Publisher implementation commit
   `eeb244cfb49f3f937b89e0c1d4bb595279e441ac` and publisher SHA-256
   `40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57`
