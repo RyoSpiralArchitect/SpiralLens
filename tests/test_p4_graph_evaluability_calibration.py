@@ -2171,10 +2171,174 @@ def test_collapsed_control_is_a_rank_one_radius_path() -> None:
     assert result["observations"][2]["matched"] is False
 
 
-def test_official_launch_and_terminal_are_not_created_by_unit_import() -> None:
-    assert not (ROOT / P4.REPOSITORY_LAUNCH).exists()
-    assert not (ROOT / P4.REPOSITORY_ATTEMPT).exists()
-    assert not (ROOT / P4.REPOSITORY_TERMINAL).exists()
+def test_unit_import_preserves_official_repository_artifact_state(
+    tmp_path: Path,
+) -> None:
+    script = r"""
+import hashlib
+import importlib.util
+import json
+import stat
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+bytecode_prefix = Path(sys.argv[2]).resolve()
+relative_paths = tuple(Path(value) for value in sys.argv[3:])
+
+
+def is_absent(path):
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return True
+    return False
+
+
+def snapshot(path):
+    try:
+        observed = path.lstat()
+    except FileNotFoundError:
+        return {"state": "absent"}
+    if not stat.S_ISREG(observed.st_mode) or observed.st_nlink != 1:
+        raise SystemExit(f"official artifact is not a singly linked regular file: {path}")
+    source = path.read_bytes()
+    if len(source) != observed.st_size:
+        raise SystemExit(f"official artifact changed during snapshot: {path}")
+    return {
+        "state": "regular",
+        "size": len(source),
+        "sha256": hashlib.sha256(source).hexdigest(),
+    }
+
+
+if not is_absent(bytecode_prefix):
+    raise SystemExit("dedicated bytecode prefix exists before isolated import")
+before = {str(path): snapshot(root / path) for path in relative_paths}
+runner = root / "scripts" / "run_p4_graph_evaluability_calibration.py"
+spec = importlib.util.spec_from_file_location("p4_fresh_side_effect_check", runner)
+if spec is None or spec.loader is None:
+    raise SystemExit("cannot construct fresh runner import")
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+declared_paths = (
+    module.REPOSITORY_LAUNCH,
+    module.REPOSITORY_ATTEMPT,
+    module.REPOSITORY_TERMINAL,
+)
+if declared_paths != relative_paths:
+    raise SystemExit("official repository artifact coordinates changed")
+after = {str(path): snapshot(root / path) for path in relative_paths}
+print(json.dumps({
+    "before": before,
+    "after": after,
+    "bytecode_prefix_absent_before": True,
+    "bytecode_prefix_absent_after": is_absent(bytecode_prefix),
+}, sort_keys=True))
+"""
+    bytecode_prefix = (tmp_path / "python-cache").resolve()
+    relative_paths = (
+        P4.REPOSITORY_LAUNCH,
+        P4.REPOSITORY_ATTEMPT,
+        P4.REPOSITORY_TERMINAL,
+    )
+    assert not bytecode_prefix.exists()
+    completed = subprocess.run(
+        (
+            sys.executable,
+            "-I",
+            "-B",
+            "-X",
+            f"pycache_prefix={bytecode_prefix}",
+            "-c",
+            script,
+            str(ROOT),
+            str(bytecode_prefix),
+            *(str(path) for path in relative_paths),
+        ),
+        check=True,
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert not bytecode_prefix.exists()
+    observed = json.loads(completed.stdout)
+    assert observed["bytecode_prefix_absent_before"] is True
+    assert observed["bytecode_prefix_absent_after"] is True
+    assert observed["before"] == observed["after"]
+    assert observed["before"] == {
+        str(P4.REPOSITORY_LAUNCH): {
+            "state": "regular",
+            "size": 28_506,
+            "sha256": "31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944",
+        },
+        str(P4.REPOSITORY_ATTEMPT): {
+            "state": "regular",
+            "size": 657,
+            "sha256": "2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615",
+        },
+        str(P4.REPOSITORY_TERMINAL): {
+            "state": "regular",
+            "size": 9_141,
+            "sha256": "28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf",
+        },
+    }
+
+    launch = json.loads((ROOT / P4.REPOSITORY_LAUNCH).read_bytes())
+    attempt = json.loads((ROOT / P4.REPOSITORY_ATTEMPT).read_bytes())
+    terminal = json.loads((ROOT / P4.REPOSITORY_TERMINAL).read_bytes())
+    assert launch["source_commit"] == attempt["source_commit"] == terminal["source_commit"]
+    assert attempt["identity_consumed"] is True
+    assert attempt["official_input_access_before_attempt"] is False
+    assert attempt["retry_resume_rescue_authorized"] is False
+    assert attempt["launch_sha256"] == terminal["launch_sha256"]
+    assert terminal["attempt_sha256"] == (
+        "2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615"
+    )
+    assert terminal["execution_terminal"] == "caught_error"
+    assert terminal["error"] == {
+        "class": "__main__.P4ProtocolError",
+        "message_sha256": (
+            "87a33ed056891afa3ba25effd7b9d55a259e271e5673e305dd0551c8d2cf410c"
+        ),
+    }
+    assert terminal["claim_ceiling"] == "level_0"
+    for key in (
+        "cache_accessed",
+        "integer_output_present",
+        "model_accessed",
+        "network_accessed",
+        "pythia_raw_capture_accessed",
+        "python_bytecode_cache_accessed",
+        "scientific_authority",
+        "subject_data_accessed",
+        "topology_authority",
+    ):
+        assert terminal[key] is False
+
+    result = terminal["result"]
+    assert result["terminal_state"] == "invalid"
+    assert result["reason"] == "caught-execution-error"
+    assert result["confirmation_accessed"] is True
+    assert result["graph_selection_sealed"] is True
+    assert result["threshold_decision_sealed"] is True
+    for key in (
+        "calibration_selector",
+        "calibration_matrix",
+        "calibration_algebraic_diagnostics",
+        "calibration_scalar_inventory",
+        "effective_thresholds",
+        "confirmation_structural",
+        "confirmation_matrix",
+    ):
+        assert result[key] is None
+    assert len(result["controls"]) == 16
+    assert all(control["attempted"] is False for control in result["controls"])
+    assert all(
+        control["control_verdict"] == control["raw_state"] == "not_run"
+        for control in result["controls"]
+    )
 
 
 def test_external_manifest_validates_exact_members_and_three_seal_chain(

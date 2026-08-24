@@ -163,8 +163,17 @@ jobs:
           expected_p4_graph_evaluability_runner_sha="8934bfff9c71edfbe02fa688dc0afb945da5fe96a3919fb27e3f2101d6e082c1"
           test "$(sha256sum "$p4_graph_evaluability_runner" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_runner_sha"
           p4_graph_evaluability_test="tests/test_p4_graph_evaluability_calibration.py"
-          expected_p4_graph_evaluability_test_sha="469f0c1e1b959734e0f9df5da72e9485f9f69d794a20f7a9f72c7918850b2379"
+          expected_p4_graph_evaluability_test_sha="a8e146f8b3b943817bf3a2bea97b9d4cca8ff522edbcdbf4bba0329cd25a64f0"
           test "$(sha256sum "$p4_graph_evaluability_test" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_test_sha"
+          p4_graph_evaluability_launch="experiments/qualification/p4_graph_evaluability_calibration_v0_1/launch.json"
+          expected_p4_graph_evaluability_launch_sha="31f6147046ebcab8b1b9c31c5a7ce46bb5d66a93ba3af139f3669082151e2944"
+          test "$(sha256sum "$p4_graph_evaluability_launch" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_launch_sha"
+          p4_graph_evaluability_attempt="experiments/qualification/p4_graph_evaluability_calibration_v0_1/attempt.json"
+          expected_p4_graph_evaluability_attempt_sha="2e3246d766c6372589f005dd9a4e31bfee44ebf63afefdf050160f08edd24615"
+          test "$(sha256sum "$p4_graph_evaluability_attempt" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_attempt_sha"
+          p4_graph_evaluability_terminal="experiments/qualification/p4_graph_evaluability_calibration_v0_1/terminal-result.json"
+          expected_p4_graph_evaluability_terminal_sha="28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf"
+          test "$(sha256sum "$p4_graph_evaluability_terminal" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_terminal_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
