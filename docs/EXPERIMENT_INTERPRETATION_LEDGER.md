@@ -1217,6 +1217,60 @@ planning-authority fields remain false. The record constructs no
 D7/D8, SCI-S1/S2, Pythia-160M, subject, API, support, compatibility,
 portability, release, or library authority.
 
+### 3.32 Frozen model-free P4 graph-evaluability calibration source
+
+**Decision source and timing**
+
+On 2026-08-24 a later dated decision used the unchanged post-outcome planning
+record at SHA-256
+`eededce1bf22e1adc34e9d7ec85a909695979fa18b7ab5e614ac78b50104f11c`
+as the bound planning input for one bounded source freeze. It advances only the live state of
+the proposed model-free P4 calibration from historical
+`planned_not_frozen_not_run` to `frozen_not_run`; it does not rewrite the
+chronology recorded in section 3.31. The decision remains post-outcome,
+non-independent, non-preregistered, without cryptographic unseen proof, and
+with operator exposure to the earlier model-free development outcome.
+
+**Frozen source/protocol boundary**
+
+Protocol
+`protocols/p4_graph_evaluability_calibration_v0_1.json`, schema
+`spirallens.p4-graph-evaluability-protocol.v0.1`, is 30,074 bytes with SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`.
+It binds experiment `p4-graph-evaluability-calibration-v0.1`, exact calibration
+and held-out synthetic substrates, a field-blind deterministic three-family
+selector, 108 crossed base cells, 16 aggregate controls with 46 declared
+subobservations, threshold stop rules, and the Level-0 claim ceiling. Runner
+`scripts/run_p4_graph_evaluability_calibration.py` is 319,303 bytes with
+SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`;
+its focused test is 84,478 bytes with SHA-256
+`5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`.
+The clean-wheel workflow pins all three byte identities and runs the focused
+test from source.
+
+The lifecycle permits exactly one future attempt but guarantees at most one
+terminal, not exactly one terminal. A persistence failure may leave a durable
+unresolved stage that consumes the attempt; terminalization, retry, resume,
+rescue, and cleanup of that execution identity remain unauthorized. Exact
+manifest and seal-chain validation, deterministic selector recomputation,
+semantic terminal refolding, pre/post source closure, sanitized absolute Git,
+and a separately observed Python bytecode-cache boundary are integrity
+conditions, not positive scientific observations.
+
+**Execution and claim boundary**
+
+This source freeze created no launch, attempt, terminal, graph-selection
+result, threshold result, confirmation result, or model result. It accessed no
+Pythia raw capture, subject data, model, network, or model/subject cache. A
+separately committed launch is still required before the one official
+model-free attempt. `frozen_not_run` is therefore not a qualification result,
+an order parameter, a verified core, a graph-family invariance finding, a null
+about phase or topology, or evidence for later model behavior. Claim delta and
+milestone credit remain `none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M, subject,
+scientific, semantic, topology, integer, API, support, compatibility,
+portability, release, and library states are unchanged.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

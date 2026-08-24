@@ -394,6 +394,25 @@ evaluability calibration, but that calibration remains
 model/raw/network/subject access, or later Pythia run is authorized. All
 scientific and library milestones remain unchanged.
 
+### Frozen model-free P4 source (2026-08-24)
+
+A later dated source-only decision now advances the proposed P4
+graph-evaluability calibration from `planned_not_frozen_not_run` to
+`frozen_not_run`. Protocol SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`
+binds runner SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`
+and the exact model-free calibration/confirmation design. Test SHA-256
+`5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`
+guards the strict selector, crossed matrix, controls, seal chain, terminal
+refold, source closure, and at-most-one terminal lifecycle.
+
+This is a source freeze, not an execution or result. No launch, attempt,
+terminal, model/raw/network/subject access, automatic successor, or scientific
+authority is created. A separate committed launch remains mandatory. D7/D8,
+SCI-S1/S2, Pythia-160M, topology/integer/semantic claims, and every library
+milestone remain unchanged.
+
 The library lane remains independent. Neither this documentation projection
 nor the artifact chain counts as either independent library consumer; no
 library-owned contract or maturity was promoted. The two-independent-consumer

@@ -510,8 +510,12 @@ Prepare genuinely distinct same-vertex constructions:
 The first three deterministic constructors and a structural-diversity receipt
 now exist as a model-free foundation. Their family labels and measured
 adjacency differences are not an adequacy decision or evidence of independent
-failure modes. The qualification thresholds, scale selection, crossed cells,
-and required-family gate in this stage remain unimplemented.
+failure modes. A later 2026-08-24 source freeze now fixes the model-free scale
+selector, qualification thresholds, crossed cells, controls, held-out
+confirmation, and required-family stop gates in protocol
+`protocols/p4_graph_evaluability_calibration_v0_1.json`. Its current state is
+exactly `frozen_not_run`: no launch, attempt, terminal, or qualification result
+exists, and the freeze supplies no scientific or successor authority.
 
 Metric changes, such as cosine versus frozen-whitened Euclidean distance, form
 a separate null.
@@ -1297,6 +1301,16 @@ authorization. Calibration remains `planned_not_frozen_not_run`; exact
 confirmation inputs, protocol, launch, and execution require a separate dated
 decision. No Pythia raw capture, model, network, or subject access is
 authorized, and all unresolved decisions below remain unresolved.
+
+That paragraph preserves the state at publication of the planning record. A
+later dated 2026-08-24 decision now freezes protocol SHA-256
+`9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`
+and runner SHA-256
+`8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`,
+so the current P4 source state is `frozen_not_run`. That forward transition
+does not create a launch, execute either substrate, resolve any decision in
+section 11 for model use, or authorize a Pythia, SCI, D7/D8, topology, or
+integer claim.
 
 ## 11. Decisions that remain unresolved
 

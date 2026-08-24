@@ -4,6 +4,34 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-24 — Frozen model-free P4 graph-evaluability calibration source
+
+- Added internal protocol
+  `protocols/p4_graph_evaluability_calibration_v0_1.json`, schema
+  `spirallens.p4-graph-evaluability-protocol.v0.1`, at 30,074 bytes and
+  SHA-256
+  `9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c`.
+  It binds experiment `p4-graph-evaluability-calibration-v0.1` at status
+  `frozen_not_run` to the unchanged post-outcome planning record.
+- Added runner `scripts/run_p4_graph_evaluability_calibration.py` at 319,303
+  bytes and SHA-256
+  `8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c`,
+  plus focused test `tests/test_p4_graph_evaluability_calibration.py` at
+  84,478 bytes and SHA-256
+  `5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea`.
+  Workflow SHA-256
+  `96442c9b73073e0da281812bd38c498c754d835ab773054ab2f8db27699c5f87`
+  pins and runs this repository-only source surface.
+- The internal lifecycle permits exactly one future attempt and at most one terminal;
+  a persistence failure may leave a consumed unresolved stage, and no retry,
+  resume, rescue, cleanup, or post-failure terminalization is authorized. The
+  source freeze itself creates no launch, attempt, terminal, confirmation
+  access, or scientific result.
+- This is a claim-ineligible Level-0 source-only freeze. It changes no public
+  schema, API, support, compatibility, portability, release, library, VOY,
+  D7/D8, SCI, Pythia-160M, subject, scientific, semantic, topology, integer,
+  or milestone state.
+
 ## 2026-08-24 — Published Pythia-70M GateState next-hypothesis record
 
 - A canonical internal planning record now exists at

@@ -156,6 +156,15 @@ jobs:
           next_hypotheses_publisher="scripts/publish_pythia70_gate_state_next_hypotheses.py"
           expected_next_hypotheses_publisher_sha="40cac9302b3e902ab93acad1cca706479feec53d8e3e505ba9ab53883ebdcb57"
           test "$(sha256sum "$next_hypotheses_publisher" | cut -d' ' -f1)" = "$expected_next_hypotheses_publisher_sha"
+          p4_graph_evaluability_protocol="protocols/p4_graph_evaluability_calibration_v0_1.json"
+          expected_p4_graph_evaluability_protocol_sha="9e9710e71561f09d2a353b1f6c3fc5b058861b008884c66d46c3a0f634c6aa5c"
+          test "$(sha256sum "$p4_graph_evaluability_protocol" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_protocol_sha"
+          p4_graph_evaluability_runner="scripts/run_p4_graph_evaluability_calibration.py"
+          expected_p4_graph_evaluability_runner_sha="8931d4457013d00b501b2790a709a105698e3303f62132885094cc6c30bdfa1c"
+          test "$(sha256sum "$p4_graph_evaluability_runner" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_runner_sha"
+          p4_graph_evaluability_test="tests/test_p4_graph_evaluability_calibration.py"
+          expected_p4_graph_evaluability_test_sha="5010ec514814bd32c9cc4dcabe7b99f059359f68350f9f7e34d291371ec6a9ea"
+          test "$(sha256sum "$p4_graph_evaluability_test" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -208,7 +217,8 @@ jobs:
             --basetemp "$RUNNER_TEMP/gate-state-source-pytest" \
             "$GITHUB_WORKSPACE/$freeze_test" \
             "$GITHUB_WORKSPACE/$runner_test" \
-            "$GITHUB_WORKSPACE/$next_hypotheses_test"
+            "$GITHUB_WORKSPACE/$next_hypotheses_test" \
+            "$GITHUB_WORKSPACE/$p4_graph_evaluability_test"
 
           (
             cd "$neutral"
