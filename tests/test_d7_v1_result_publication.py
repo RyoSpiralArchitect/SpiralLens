@@ -6,7 +6,10 @@ import importlib
 import inspect
 import os
 from pathlib import Path
+import shutil
 import stat
+import sys
+from collections.abc import Iterator
 from typing import NoReturn
 from unittest.mock import patch
 
@@ -14,6 +17,9 @@ import pytest
 
 from spirallens.core.canonical import sha256_bytes
 from spirallens.qualification import confirmation_v1_materialization as materialization
+from spirallens.qualification import (
+    confirmation_v1_full_design_referents as full_design_referents,
+)
 from spirallens.qualification import confirmation_v1_result_publication as publication
 from spirallens.qualification import confirmation_v1_records as records
 from spirallens.qualification.common import QualificationContractError
@@ -53,6 +59,36 @@ _TRUE_RECEIPT_AXES = (
     "parent_directory_fsync_completed",
     "structural_only",
 )
+
+
+@pytest.fixture(autouse=True)
+def _remove_test_repository_hardlinks(tmp_path: Path) -> Iterator[None]:
+    """Remove same-file test clones before a later live-repository check."""
+
+    def restore_authenticated_referent_documents_origin() -> None:
+        loaded = sys.modules.get(
+            "spirallens.qualification.confirmation_v1_design_referent_documents"
+        )
+        authenticated = getattr(
+            full_design_referents,
+            "_AUTHENTICATED_REFERENT_DOCUMENTS_MODULE",
+            None,
+        )
+        if loaded is not None and loaded is authenticated:
+            workspace_leaf = REPOSITORY / (
+                "src/spirallens/qualification/"
+                "confirmation_v1_design_referent_documents.py"
+            )
+            loaded.__file__ = str(workspace_leaf)
+            if loaded.__spec__ is not None:
+                loaded.__spec__.origin = str(workspace_leaf)
+
+    restore_authenticated_referent_documents_origin()
+    try:
+        yield
+    finally:
+        restore_authenticated_referent_documents_origin()
+        shutil.rmtree(tmp_path)
 
 
 def _result_path(case: _Case) -> Path:
