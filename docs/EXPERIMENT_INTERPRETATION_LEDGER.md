@@ -1434,7 +1434,88 @@ reuse of the old input must instead be labeled exposed, non-independent,
 non-preregistered, and regression-only. A disjoint input removes only direct
 input reuse; it does not by itself restore independence, preregistration,
 cryptographic-unseen proof, or scientific authority. No such successor or
-execution is yet authorized.
+execution was yet authorized at the v0.1 terminal checkpoint.
+
+### 3.35 Frozen P4 v0.2 source-only successor
+
+**Dated decision and predecessor boundary**
+
+On 2026-08-25 a new post-outcome Level-0 successor was frozen under experiment
+`p4-graph-evaluability-calibration-v0.2`. It is not a retry, repair,
+continuation, rescue, terminalization, cleanup, or relabeling of v0.1. The
+canonical predecessor binding fixes source commit
+`4875838eb64bff8f3bdb0f5ac26d47748be4e468`, evidence checkpoint
+`f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee`, the exact v0.1 protocol, runner,
+launch, consumed attempt, and invalid terminal. It rechecks the tracked v0.1
+attempt and terminal semantics without reading the external store. Authority
+transfer and outcome reconstruction are false.
+
+The new internal protocol
+`protocols/p4_graph_evaluability_calibration_v0_2.json`, schema
+`spirallens.p4-graph-evaluability-protocol.v0.2`, is 34,009 bytes with SHA-256
+`2ccea4e7e2c275c554bcdafddba0667af3da4c0411746de2140977dcb5240f3e`.
+It binds the versioned runner
+`scripts/run_p4_graph_evaluability_calibration_v0_2.py`, 336,991 bytes with
+SHA-256
+`1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27`,
+and focused test
+`tests/test_p4_graph_evaluability_calibration_v0_2.py`, 108,517 bytes with
+SHA-256
+`5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6`.
+Experiment, protocol, runner, future repository lifecycle, external stage/store,
+and Python bytecode-cache coordinates are all disjoint from v0.1. Attempt,
+seal, manifest, launch, and terminal lifecycle schemas advance to v0.2. The
+unchanged structural-candidate leaf schema remains v0.1 rather than being
+silently migrated.
+
+**Closed measurement correction and new nuisance**
+
+The successor separates two non-interchangeable measurement contracts. A
+confirmation fixed triplet has exactly the 13 base structural keys. A selector
+has those 13 plus only `lexicographic_objective` and
+`jaccard_used_as_objective`, for exactly 15. Separate validators recompute the
+common structural semantics; only the selector validator recomputes the
+objective fields. Producer-to-canonical-byte-to-validator tests cover both
+forms, missing and unknown keys, cross-schema injection, confirmation
+structural `pass` and `insufficient`, all not-run branches, complete attempted
+terminal construction, and caught-terminal/store-chain behavior. No fictional
+selector objective is inserted into a confirmation record.
+
+The calibration definition remains seed 314159 and density warp 0.0. It is
+explicitly classified as the same exposed definition used for
+successor-local regression/recomputation, not fresh calibration. The v0.2
+confirmation definition is seed 271829 and density warp 0.5. This was fixed
+without generation or screening by the mechanical rule “increment the
+predecessor seed by one and double its 0.25 density warp”; 0.5 remains below
+the generator's 0.9 monotonicity bound. Seed change alone would mainly alter a
+distance-preserving signed permutation at zero noise, so the stronger warp is
+the substantive new structural nuisance.
+
+At this source freeze the official v0.2 confirmation has not been constructed
+or observed. The protocol therefore claims definition-level disjointness only;
+it does not claim observed bytewise disjointness. Direct reuse of the accessed
+v0.1 confirmation definition is excluded, but independence, preregistration,
+cryptographic-unseen proof, and scientific authority are not restored.
+Chronology remains post-outcome with operator prior-outcome exposure.
+
+**Execution and claim boundary**
+
+Protocol validation reported `status=valid`,
+`official_phantom_constructed=false`, `selector_executed=false`, and
+`confirmation_accessed=false`. This source-only freeze creates no v0.2 launch,
+attempt, terminal, threshold decision, seal, stage, store, or cache, and no
+persisted official selector, confirmation, or model result, order parameter,
+verified core, or positive/null phase interpretation. A separately committed
+launch generated
+from the merged source identity remains mandatory before one possible
+successor attempt; no launch preparation or execution is part of this entry.
+
+Scientific and topology authority remain false and integer output remains
+unauthorized. Model, network, raw-capture, subject-data, and model/subject-cache
+access remain unauthorized. F2/F4 are not selected or promoted. Claim delta
+and milestone credit remain `none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M,
+subject, semantic, topology, integer, publication, API, support, compatibility,
+portability, release, and library states are unchanged.
 
 ## 4. Summary reclassification
 

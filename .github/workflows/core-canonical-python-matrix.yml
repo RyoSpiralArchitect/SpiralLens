@@ -174,6 +174,15 @@ jobs:
           p4_graph_evaluability_terminal="experiments/qualification/p4_graph_evaluability_calibration_v0_1/terminal-result.json"
           expected_p4_graph_evaluability_terminal_sha="28842e1f90823349d550c7d52921af424493794e676898c00aa41cdfaeeb55cf"
           test "$(sha256sum "$p4_graph_evaluability_terminal" | cut -d' ' -f1)" = "$expected_p4_graph_evaluability_terminal_sha"
+          p4_v02_protocol="protocols/p4_graph_evaluability_calibration_v0_2.json"
+          expected_p4_v02_protocol_sha="2ccea4e7e2c275c554bcdafddba0667af3da4c0411746de2140977dcb5240f3e"
+          test "$(sha256sum "$p4_v02_protocol" | cut -d' ' -f1)" = "$expected_p4_v02_protocol_sha"
+          p4_v02_runner="scripts/run_p4_graph_evaluability_calibration_v0_2.py"
+          expected_p4_v02_runner_sha="1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27"
+          test "$(sha256sum "$p4_v02_runner" | cut -d' ' -f1)" = "$expected_p4_v02_runner_sha"
+          p4_v02_test="tests/test_p4_graph_evaluability_calibration_v0_2.py"
+          expected_p4_v02_test_sha="5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6"
+          test "$(sha256sum "$p4_v02_test" | cut -d' ' -f1)" = "$expected_p4_v02_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -227,7 +236,8 @@ jobs:
             "$GITHUB_WORKSPACE/$freeze_test" \
             "$GITHUB_WORKSPACE/$runner_test" \
             "$GITHUB_WORKSPACE/$next_hypotheses_test" \
-            "$GITHUB_WORKSPACE/$p4_graph_evaluability_test"
+            "$GITHUB_WORKSPACE/$p4_graph_evaluability_test" \
+            "$GITHUB_WORKSPACE/$p4_v02_test"
 
           (
             cd "$neutral"
