@@ -1355,8 +1355,9 @@ the terminal validator requires the selector's 15-key form, including two
 selector-only objective keys. That diagnosis explains terminal invalidity; it
 does not reveal whether confirmation structural support passed or stopped.
 
-A possible P4 v0.2 remains `planned_not_frozen_not_run`. Before any new launch,
-all of the following are required:
+At the v0.1 terminal checkpoint, a possible P4 v0.2 remained
+`planned_not_frozen_not_run`. Before any new launch, the handoff required all
+of the following:
 
 1. freeze a new experiment and schema identity with new source, launch,
    attempt, terminal, store, stage, and cache coordinates, bound to the v0.1
@@ -1373,14 +1374,40 @@ all of the following are required:
 4. make a new dated authorization, source commit, and separate launch commit
    before one new exact-one successor attempt.
 
+The dated 2026-08-25 source-only decision now fulfills the source side of that
+handoff and advances P4 v0.2 to `frozen_not_run`. The protocol is 34,009 bytes
+at SHA-256
+`2ccea4e7e2c275c554bcdafddba0667af3da4c0411746de2140977dcb5240f3e`,
+the runner is 336,991 bytes at SHA-256
+`1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27`,
+and the focused test is 108,517 bytes at SHA-256
+`5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6`.
+This source identity binds new experiment/schema and
+repository/store/stage/cache coordinates, the v0.1 predecessor projections,
+and separate exact-13 confirmation versus exact-15 selector measurement
+contracts. The calibration definition is reused only as exposed
+successor-local regression. The confirmation definition is changed without
+generation or screening to seed 271829 and density warp 0.5 by incrementing the
+old seed and doubling its 0.25 warp. This is definition-level separation, not
+observed generated-input disjointness, independence, preregistration,
+cryptographic-unseen proof, or scientific authority.
+
+The remaining P4 step is deliberately narrow: merge and verify the source-only
+freeze, then create a separately committed v0.2 launch from that exact merged
+source identity. The present source change creates no launch, attempt,
+terminal, seal, stage, store, cache, official phantom, or threshold decision;
+it creates no persisted official selector or confirmation result and performs
+no official lifecycle entry. Launch preparation, preflight, and execution
+remain outside this source-only change.
+
 Evidence-only commit `f0f6c3a58108b585eaaf2e8f63fb68c72c6454ee` remains the last exact
 live-v0.1 closure checkpoint. Later conformance and documentation commits do
 not alter its runner, protocol, launch, attempt, terminal, or external store,
 but their additional paths are intentionally outside the frozen runner's
-post-source validator allowlist. No v0.2 source or execution authority exists,
-and D7/D8, SCI-S1/S2, Pythia-160M, subject, scientific, semantic, topology,
-integer, publication-authority, publication-milestone, or library state
-advances.
+post-source validator allowlist. The v0.2 source identity now exists, but no
+launch or execution authority has been exercised. D7/D8, SCI-S1/S2,
+Pythia-160M, subject, scientific, semantic, topology, integer,
+publication-authority, publication-milestone, and library state do not advance.
 
 ## 11. Decisions that remain unresolved
 

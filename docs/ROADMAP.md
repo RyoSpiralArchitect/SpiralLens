@@ -483,6 +483,41 @@ library-owned contract or maturity was promoted. The two-independent-consumer
 rule and the preservation of `blocked`, `insufficient`, and `not_run` states
 remain in force. No library milestone changes.
 
+### Frozen P4 v0.2 source-only successor (2026-08-25)
+
+The consumed-invalid v0.1 handoff now has a separately versioned Level-0
+successor at `frozen_not_run`. Its predecessor binding fixes the v0.1 source,
+launch, consumed attempt, invalid terminal, and last live evidence checkpoint;
+it transfers no authority and authorizes no reconstruction of the unavailable
+confirmation outcome. All repository lifecycle, external stage/store, cache,
+experiment, and lifecycle-schema coordinates are new v0.2 identities.
+The exact source identity is protocol 34,009 bytes at SHA-256
+`2ccea4e7e2c275c554bcdafddba0667af3da4c0411746de2140977dcb5240f3e`,
+runner 336,991 bytes at SHA-256
+`1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27`,
+and focused test 108,517 bytes at SHA-256
+`5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6`.
+
+The exact schema defect is closed without changing v0.1: confirmation persists
+the exact 13 base structural measurements, while selector persists those 13
+plus exactly two selector-only objective fields. Round-trip and adversarial
+tests close both schemas and their pass/insufficient/complete/caught boundaries.
+The reused calibration definition is exposed regression input. The new
+confirmation definition fixes seed 271829 and density warp 0.5 by a mechanical
+unscreened rule; it is definition-disjoint from the accessed v0.1 definition,
+but official generated-input disjointness remains unobserved. Independence,
+preregistration, cryptographic-unseen proof, and scientific authority remain
+false.
+
+This milestone is source-only. It creates no launch, attempt, terminal, seal,
+stage, store, cache, official phantom, or threshold decision, and no persisted
+official selector or confirmation result. The next permitted P4 action is a
+separate launch-only change from the merged exact source identity, followed by
+exact-head review;
+the source PR itself must not prepare or execute that launch. F2/F4, D7/D8,
+SCI-S1/S2, Pythia-160M, subject, scientific, topology, integer, publication,
+and library authority remain unchanged.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

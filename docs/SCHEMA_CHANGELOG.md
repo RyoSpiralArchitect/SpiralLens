@@ -4,6 +4,59 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-25 — Frozen P4 v0.2 source-only successor
+
+- Added internal protocol
+  `protocols/p4_graph_evaluability_calibration_v0_2.json`, schema
+  `spirallens.p4-graph-evaluability-protocol.v0.2`, at 34,009 bytes and SHA-256
+  `2ccea4e7e2c275c554bcdafddba0667af3da4c0411746de2140977dcb5240f3e`.
+  It binds experiment `p4-graph-evaluability-calibration-v0.2` at
+  `frozen_not_run` and fixes the exact tracked v0.1 protocol, runner, launch,
+  consumed attempt, invalid terminal, source commit, and evidence checkpoint as
+  a no-authority predecessor.
+- Added the self-contained versioned runner
+  `scripts/run_p4_graph_evaluability_calibration_v0_2.py` at 336,991 bytes and
+  SHA-256
+  `1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27`.
+  New internal lifecycle schemas are
+  `spirallens.p4-graph-evaluability-launch.v0.2`,
+  `spirallens.p4-exact-one-attempt.v0.2`,
+  `spirallens.p4-graph-selection-seal.v0.2`,
+  `spirallens.p4-threshold-decision-seal.v0.2`,
+  `spirallens.p4-confirmation-access-seal.v0.2`,
+  `spirallens.p4-external-store-manifest.v0.2`, and
+  `spirallens.p4-graph-evaluability-terminal.v0.2`. No instances of those
+  lifecycle schemas are created by this source freeze.
+- Added selector projection schema
+  `spirallens.p4-selector-projection.v0.2` with exactly 15 triplet-measurement
+  keys, and confirmation structural projection schema
+  `spirallens.p4-confirmation-structural-projection.v0.2` with exactly 13 base
+  triplet-measurement keys. The two selector-only fields are validated only in
+  the selector contract. The unchanged structural-candidate leaf retains
+  `spirallens.p4-structural-candidate-projection.v0.1`; no historical artifact
+  is migrated.
+- Added focused test
+  `tests/test_p4_graph_evaluability_calibration_v0_2.py` at 108,517 bytes and
+  SHA-256
+  `5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6`.
+  It covers exact 13/15 producer and canonical round trips, missing/unknown and
+  cross-schema rejection, confirmation pass/insufficient, complete/caught
+  terminal paths, predecessor tamper rejection, and lifecycle-state-preserving
+  isolated import.
+- Calibration remains the exposed seed-314159/warp-0.0 regression definition.
+  Confirmation is fixed before official construction at seed 271829 and warp
+  0.5 by an unscreened mechanical rule. This records definition-level
+  separation only; generated values and bytewise disjointness are unobserved,
+  and independence, preregistration, cryptographic-unseen proof, and scientific
+  authority remain false.
+- This is an internal source-only change, not a public persisted-schema
+  promotion or lifecycle execution. It creates no launch, attempt, terminal,
+  seal, stage, store, cache, official phantom, persisted official selector
+  result, or confirmation access. No API, support, compatibility, portability,
+  release, library, VOY,
+  D7/D8, SCI, Pythia-160M, subject, semantic, topology, integer, scientific, or
+  milestone state changes.
+
 ## 2026-08-24 — Consumed invalid P4 v0.1 lifecycle projections
 
 - Added the canonical internal launch instance
