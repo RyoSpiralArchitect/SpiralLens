@@ -1517,6 +1517,136 @@ and milestone credit remain `none`; VOY, D7/D8, SCI-S1/S2, Pythia-160M,
 subject, semantic, topology, integer, publication, API, support, compatibility,
 portability, release, and library states are unchanged.
 
+### 3.36 Consumed insufficient P4 v0.2 terminal
+
+**Official lifecycle and durable boundary**
+
+On 2026-08-27 the source-only successor was followed by launch commit
+`69470ba3e4786b11e8ca11ee22d6bfcacc3fcd82`, merged as
+`2d15ec72a56c009d8894889cca5795f9ff026fef`. The canonical 29,364-byte
+launch has SHA-256
+`c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac`
+and binds source commit `e25e6da1fea3ce3f09cd4745f6b08bb47f528d70`.
+Its issue-time chronology records no official phantom construction, selector
+execution, or confirmation access. After exact-head review, the launch's exact
+authorized `--run` command was invoked once and only once.
+
+The 657-byte attempt has SHA-256
+`cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576`.
+It records `identity_consumed=true`,
+`official_input_access_before_attempt=false`, and
+`retry_resume_rescue_authorized=false`. The resulting 59,677-byte terminal has
+SHA-256
+`606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0`.
+It is authoritatively `execution_terminal=complete`, `error=null`,
+`terminal_state=insufficient`, and
+`reason=held-out-confirmation-structural-gate`. It is not an invalid execution,
+but neither is it a scientific positive or qualified null.
+
+External manifest SHA-256
+`46c2fe6942bd4271121f3cf56b43d53d960857acc6c7bb952083792662b0e70a`
+binds the attempt, graph-selection seal
+`70475db97470217903ff5875a09e532d0dad3c1ab6a0afe102746893c8d07153`,
+threshold-decision seal
+`f989579ade7db07231826ce26ab29ad5c3c352719d563f7c9f609ddb516ed55a`,
+confirmation-access seal
+`aab9fbba07a18d7f0a031334c5ddb66bdf97ad661d1596a78b9660446105426a`,
+and terminal. Repository attempt and terminal projections were verified
+byte-identical to the authoritative external store before evidence commit
+`e4b06a8256b60c59453f9ba04fb59fa3159ffd62`, merged as
+`e85fddebc8271660633764f3e0a2e137d1700e60`.
+
+That evidence commit is the last exact live-v0.2 closure checkpoint. Later
+post-terminal test, workflow, and interpretation changes do not alter the
+frozen protocol, runner, launch, attempt, terminal, or external store. They
+intentionally add paths outside the frozen runner's post-source allowlist, so
+a later live closure invocation is expected to reject the changed HEAD. This
+does not indicate artifact corruption and grants no repair or rerun authority.
+
+**Sealed calibration observations**
+
+The field-blind calibration selector passed before confirmation access. It
+audited 158 candidates—15 mutual-kNN, 8 fixed-radius, and 135 shared-neighbor
+graphs—considered 32 triplets, and found 7 eligible triplets. The fixed selected
+triplet was:
+
+- mutual-kNN `k=7`, with 147 edges;
+- fixed radius `r=0.4788290448167926`, with 156 edges;
+- shared neighbor `k=8, min_shared=4`, with 158 edges.
+
+All three calibration graphs had one 49-row component, a 49-row two-core, and
+both central and wide boundary matches. Their edge-count ratio was
+`1.0748299319727892`; all pairwise edge sets differed and all pairwise Jaccard
+values were at most 0.85. This is selection of a model-free development
+triplet, not selection of F2/F4, a scientific graph, an order parameter, a
+verified core, or a topology convention.
+
+The sealed calibration matrix contains all 54 declared cells and 6 graph-family
+spans. Worst oracle/null error and every graph-family span were 0.0; both
+effective error thresholds were the frozen `1e-8`, and both algebraic checks
+passed. The scalar inventory contains 62 values. These exact calibration
+observations are Level-0 instrument evidence from an exposed regression
+definition. Perfect calibration values do not supply scientific or held-out
+authority.
+
+**Held-out structural stop and control boundary**
+
+Confirmation was accessed only after graph and threshold seals. The fixed
+triplet was applied without selector rerun. On the seed-271829, warp-0.5
+confirmation nuisance, its structural projection was `insufficient` with
+`reason=fixed-triplet-failed-confirmation-support`:
+
+- mutual-kNN retained 148 edges, one 49-row component, a 49-row two-core, and
+  both boundary matches;
+- fixed radius retained 116 edges, one 49-row component, a 49-row two-core, and
+  both boundary matches;
+- shared neighbor had 156 edges but split into two components, reduced its
+  largest component and two-core to 48 rows, and matched neither boundary.
+
+The confirmation edge-count ratio was `1.3448275862068966`, above the frozen
+maximum 1.25. Common two-core size was 48; largest-component and two-core
+spreads were each 1; all three edge sets remained distinct and their pairwise
+Jaccards remained at most 0.85. Thus the stop is not generic graph collapse:
+the calibration-fixed scale balance and shared-neighbor boundary support did
+not transport together to the held-out nuisance.
+
+The confirmation matrix is absent. All 16 downstream controls have
+`attempted=false`, `raw_state=not_run`, and `control_verdict=not_run`, with the
+structural gate as their upstream reason. No control outcome may be inferred
+or reconstructed. In particular, this attempt supplies no positive or null
+statement about large drift, phase, transition, loops, holonomy, winding,
+charge, or the relative standing of F2 and F4.
+
+**Failed hypothesis, claim boundary, and successor input**
+
+The bounded hypothesis tested here was that the calibration-selected fixed
+graph triplet would remain structurally evaluable under the predeclared
+definition-disjoint seed and density-warp nuisance. That hypothesis failed at
+the held-out structural gate. The useful negative-space result is therefore
+about nuisance robustness of the graph/scale reception layer, before field or
+topology controls—not about absence of the phenomena those controls would
+have tested.
+
+The terminal remains development-only Level 0. Scientific and topology
+authority are false; integer output is absent; model, network, model/subject
+cache, Pythia raw-capture, Python bytecode-cache, and subject-data access are
+false. Operator prior-outcome exposure is true; independence, preregistration,
+and cryptographic-unseen proof are not established. No order parameter or
+verified core is created. Claim delta and milestone credit remain `none`; VOY,
+D7/D8, SCI-S1/S2, Pythia-160M, subject, semantic, publication, API, support,
+compatibility, portability, release, and library states remain unchanged.
+
+P4 v0.2 is consumed and may not be patched, retried, resumed, rescued, or
+relabelled. It does not authorize post-hoc widening of the 1.25 gate, selector
+rerun on confirmation, or tuning against the accessed confirmation input. A
+possible v0.3 remains only `planned_not_frozen_not_run`. Its design question is
+whether graph-scale reception can be made nuisance-robust by either
+multi-nuisance calibration or a predeclared field-blind parameter-transport
+rule. Any such successor requires a new identity and exact-one lifecycle,
+pre-outcome tests of the transport rule, and a fresh held-out confirmation
+definition. The accessed v0.2 confirmation is regression-only. None of these
+successor choices is frozen or authorized by this entry.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

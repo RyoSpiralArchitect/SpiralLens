@@ -1215,19 +1215,13 @@ def test_selector_and_confirmation_measurement_keysets_are_exact_15_and_13() -> 
 def test_selector_producer_canonical_round_trip_emits_exact_15_keys() -> None:
     side = 7
     coordinates = np.asarray(
-        [
-            (x / 3.0 - 1.0, y / 3.0 - 1.0)
-            for y in range(side)
-            for x in range(side)
-        ],
+        [(x / 3.0 - 1.0, y / 3.0 - 1.0) for y in range(side) for x in range(side)],
         dtype="<f8",
     )
     states = np.zeros((side * side, 12), dtype="<f8")
     states[:, :2] = coordinates
     for column in range(2, states.shape[1]):
-        states[:, column] = 0.01 * np.sin(
-            (column - 1) * coordinates[:, column % 2]
-        )
+        states[:, column] = 0.01 * np.sin((column - 1) * coordinates[:, column % 2])
     graph_input = P4.GraphInput(
         primary_unit_id="synthetic-v0-2-selector-round-trip",
         vertex_ids=np.arange(side * side, dtype="<i8"),
@@ -2676,6 +2670,159 @@ print(json.dumps({
     assert all(
         control["control_verdict"] == control["raw_state"] == "not_run"
         for control in result["controls"]
+    )
+
+
+def test_v02_official_terminal_projection_is_consumed_insufficient() -> None:
+    expected_artifact_sha256 = {
+        P4.REPOSITORY_LAUNCH: (
+            "c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac"
+        ),
+        P4.REPOSITORY_ATTEMPT: (
+            "cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576"
+        ),
+        P4.REPOSITORY_TERMINAL: (
+            "606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0"
+        ),
+    }
+    for relative_path, expected_sha256 in expected_artifact_sha256.items():
+        assert P4._sha256_file(ROOT / relative_path) == expected_sha256
+
+    launch = json.loads((ROOT / P4.REPOSITORY_LAUNCH).read_bytes())
+    attempt = json.loads((ROOT / P4.REPOSITORY_ATTEMPT).read_bytes())
+    terminal = json.loads((ROOT / P4.REPOSITORY_TERMINAL).read_bytes())
+
+    source_commit = "e25e6da1fea3ce3f09cd4745f6b08bb47f528d70"
+    assert launch["source_commit"] == attempt["source_commit"] == source_commit
+    assert terminal["source_commit"] == source_commit
+    assert launch["status"] == "launch_prepared_not_run"
+    assert launch["authorizations"]["execution_authorized"] is True
+    assert launch["chronology"]["official_phantom_constructed"] is False
+    assert launch["chronology"]["selector_executed"] is False
+    assert launch["chronology"]["confirmation_accessed"] is False
+
+    assert attempt["identity_consumed"] is True
+    assert attempt["attempt_exactly_one"] is True
+    assert attempt["retry_resume_rescue_authorized"] is False
+    assert attempt["official_input_access_before_attempt"] is False
+    assert attempt["launch_sha256"] == expected_artifact_sha256[P4.REPOSITORY_LAUNCH]
+
+    assert terminal["execution_terminal"] == "complete"
+    assert terminal["error"] is None
+    assert terminal["attempt_sha256"] == expected_artifact_sha256[P4.REPOSITORY_ATTEMPT]
+    assert terminal["launch_sha256"] == expected_artifact_sha256[P4.REPOSITORY_LAUNCH]
+    assert terminal["claim_ceiling"] == "level_0"
+    assert terminal["development_only"] is True
+    assert terminal["operator_prior_outcome_exposure"] is True
+    assert terminal["independent"] is False
+    assert terminal["cryptographic_unseen"] is False
+    for key in (
+        "cache_accessed",
+        "integer_output_present",
+        "model_accessed",
+        "network_accessed",
+        "pythia_raw_capture_accessed",
+        "python_bytecode_cache_accessed",
+        "scientific_authority",
+        "subject_data_accessed",
+        "topology_authority",
+    ):
+        assert terminal[key] is False
+
+    result = terminal["result"]
+    assert result["terminal_state"] == "insufficient"
+    assert result["reason"] == "held-out-confirmation-structural-gate"
+    assert result["confirmation_accessed"] is True
+    assert result["graph_selection_sealed"] is True
+    assert result["threshold_decision_sealed"] is True
+    assert result["graph_selection_seal_sha256"] == (
+        "70475db97470217903ff5875a09e532d0dad3c1ab6a0afe102746893c8d07153"
+    )
+    assert result["threshold_seal_sha256"] == (
+        "f989579ade7db07231826ce26ab29ad5c3c352719d563f7c9f609ddb516ed55a"
+    )
+    assert result["confirmation_access_seal_sha256"] == (
+        "aab9fbba07a18d7f0a031334c5ddb66bdf97ad661d1596a78b9660446105426a"
+    )
+
+    selector = result["calibration_selector"]
+    assert selector["state"] == "pass"
+    assert selector["reason"] == "ok"
+    assert selector["selector_audit"]["per_graph_decision_count"] == 158
+    assert selector["selector_audit"]["triplets_considered"] == 32
+    assert selector["selector_audit"]["eligible_triplets"] == 7
+    assert [
+        (candidate["family"], candidate["parameters"], candidate["edge_count"])
+        for candidate in selector["selected"]
+    ] == [
+        ("mutual-knn", {"neighbor_count": 7}, 147),
+        ("fixed-radius", {"radius": 0.4788290448167926}, 156),
+        (
+            "shared-neighbor",
+            {"minimum_shared_neighbors": 4, "neighbor_count": 8},
+            158,
+        ),
+    ]
+    assert selector["triplet_measurements"]["edge_count_ratio"] == (1.0748299319727892)
+    assert selector["triplet_measurements"]["common_two_core_intersection_count"] == 49
+
+    assert result["calibration_matrix"]["cell_count"] == 54
+    assert len(result["calibration_matrix"]["cells"]) == 54
+    assert result["calibration_matrix"]["worst_oracle_or_null_error_cycles"] == 0.0
+    assert all(
+        item["graph_family_span_cycles"] == 0.0
+        for item in result["calibration_matrix"]["graph_family_spans"]
+    )
+    assert result["calibration_scalar_inventory"] == {
+        "absolute_oracle_or_null_error_cycles": 54,
+        "graph_family_span_cycles": 6,
+        "orientation_reversal_error_cycles": 1,
+        "pure_so2_gauge_error_cycles": 1,
+        "total": 62,
+    }
+    assert result["effective_thresholds"] == {
+        "algebraic_gauge_and_reversal_error_cycles": 1e-8,
+        "graph_family_span_cycles": 1e-8,
+        "graph_family_span_selection_worst_error_cycles": 0.0,
+        "oracle_and_null_cycles": 1e-8,
+        "oracle_and_null_selection_worst_error_cycles": 0.0,
+    }
+
+    confirmation = result["confirmation_structural"]
+    assert confirmation["state"] == "insufficient"
+    assert confirmation["reason"] == "fixed-triplet-failed-confirmation-support"
+    assert confirmation["selector_rerun"] is False
+    assert [
+        (
+            candidate["family"],
+            candidate["edge_count"],
+            candidate["component_count"],
+            candidate["largest_component_vertex_count"],
+            candidate["two_core_vertex_count"],
+            candidate["matched_cycle_classes"],
+        )
+        for candidate in confirmation["selected"]
+    ] == [
+        ("mutual-knn", 148, 1, 49, 49, ["central", "wide"]),
+        ("fixed-radius", 116, 1, 49, 49, ["central", "wide"]),
+        ("shared-neighbor", 156, 2, 48, 48, []),
+    ]
+    assert confirmation["triplet_measurements"]["edge_count_ratio"] == (
+        1.3448275862068966
+    )
+    assert (
+        confirmation["triplet_measurements"]["common_two_core_intersection_count"] == 48
+    )
+    assert result["confirmation_matrix"] is None
+
+    controls = result["controls"]
+    assert len(controls) == 16
+    assert all(control["attempted"] is False for control in controls)
+    assert all(control["raw_state"] == "not_run" for control in controls)
+    assert all(control["control_verdict"] == "not_run" for control in controls)
+    assert all(
+        control["upstream_reason"] == "held-out-confirmation-structural-gate"
+        for control in controls
     )
 
 
