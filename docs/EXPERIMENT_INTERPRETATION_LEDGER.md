@@ -1647,6 +1647,116 @@ pre-outcome tests of the transport rule, and a fresh held-out confirmation
 definition. The accessed v0.2 confirmation is regression-only. None of these
 successor choices is frozen or authorized by this entry.
 
+### 3.37 Design-only P4 phase-capture measurement chain
+
+**Dated decision and predecessor boundary**
+
+On 2026-08-27 a post-terminal design record was added at
+`experiments/qualification/p4_phase_capture_measurement_chain_v0_1/design.json`,
+schema `spirallens.p4-phase-capture-measurement-chain-design.v0.1`, with human
+reading in `docs/P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md`. Its state is exactly
+`planned_not_frozen_not_run`. It binds the consumed P4 v0.2 launch, attempt,
+terminal, source commit, and interpretation merge without transferring
+authority or reconstructing any unavailable outcome.
+
+The record turns the v0.2 structural stop into an end-to-end measurement-chain
+constraint. It does not choose between multi-nuisance selection and
+field-blind scale transport: a future v0.3 must combine a dimensionless,
+predeclared transport law with worst-case calibration across multiple nuisance
+definitions, then apply the sealed law to a fresh held-out nuisance without
+reselection. F2/F4, amplitude, direction, core, loop, holonomy, winding,
+charge, controls, and subject outcomes are forbidden selector reads.
+
+**Observable chain and branch separation**
+
+The design fixes this ordering at the structural level while leaving all
+numeric inputs, grids, thresholds, and budgets unresolved:
+
+1. freeze identities, roles, resources, and no-read chronology;
+2. qualify graph-scale reception;
+3. construct F2 and F4 as co-primary cross-fitted sections;
+4. bind each eligible branch to its own substrate/interpolation/gauge-aware
+   `OrderParameterSpec` and `OrderParameterField`;
+5. seal a charge-blind same-field `CoreScore`/`CoreCandidate` set before loop
+   readout;
+6. bind nested, reverse, off-core, deformation, and refinement loops to
+   predeclared intervention-domain classes;
+7. compute continuous relative holonomy on the geometry branch and sampled
+   winding on each boundary-eligible defect branch;
+8. gate the field/phase-like, geometry, and defect branches independently under
+   the full graph/gauge/architecture/deformation/null control matrix;
+9. qualify the end-to-end synthetic detection-limit surface; and
+10. only under a later subject protocol, test a held-out training-checkpoint
+    regime/transition candidate, followed still later by a Level-3 causal
+    bridge.
+
+Graphs validate support for the same domain boundary/class; a graph-specific
+cycle index cannot define cross-family loop identity. Geometry and defect
+remain separate claim branches. Relative holonomy is continuous and supplies
+no integer. F2 uses its vector-section angle; F4 retains a doubled-angle
+spin-two coordinate and cannot be assigned ordinary-vector charge.
+An unavailable geometry or defect branch remains explicit and does not erase or
+block another eligible branch.
+
+F2 and F4 have no selected winner. Their allowed comparative outcomes are
+`both-qualified`, `f2-only`, `f4-only`, `neither-qualified`, and
+`insufficient-support`; none permits erasing the other branch after
+observation. Core multiplicity retains zero, one, many, or unresolved. A core
+cannot be selected by maximizing later winding.
+
+At each future checkpoint and required context stratum, F2 and F4 separately
+return `operational-phase-like-regime-candidate`,
+`qualified-no-phase-like-regime-detected`, or `insufficient`. The statistic is
+bound to the same-field eligible amplitude/angular distribution and is frozen
+before model access. A candidate must depart from matched nulls and survive
+graph/gauge/architecture/context controls inside the qualified detection region;
+a qualified non-detection is bounded by that same sensitivity and coverage.
+F2/F4 pooling and selection by core, holonomy, winding, or transition outcomes
+are forbidden. This is not a thermodynamic, semantic, or global `phase` claim.
+
+Each checkpoint also retains a complete partial-pattern record spanning F2/F4
+section and order-parameter eligibility, per-branch core multiplicity, relative
+holonomy, per-branch phase-like regime and winding, and transition status. Every
+slot retains its gate, finding state, value reference, coverage, uncertainty,
+strata, and reason even when unresolved or not applicable. A qualified
+non-detection requires a passing control gate inside the M9 qualified region;
+`fail`, `insufficient`, and `not_run` never mean absence. Co-occurrence is
+descriptive and cannot select later instrumentation or hypotheses.
+
+**Transition and claim boundary**
+
+The design separates an instrument detection boundary, an operational
+phase-like-regime outcome, and a model transition.
+Synthetic injection amplitude, noise, sampling/local density, dipole
+separation, graph, and architecture nuisances first define where a later null
+could be qualified. A sharp boundary on that surface is not a model phase
+transition.
+
+The primary future model-transition axis is ordered training checkpoint.
+Layer remains architectural depth, not time; intervention strength is reserved
+as a later causal-probe axis. Exact checkpoint hashes/training steps, a common
+model/tokenizer/context/address contract, and common intervention coordinates
+must be sealed first. Comparisons use gauge-invariant quantities or alignment
+fit only on the fit partition; outcome-selected basis/alignment is forbidden,
+and optimizer/data-mixture/schedule discontinuities are declared covariates.
+Discovery may fit one bounded change-point window, but hidden confirmation
+cannot move it. A transition candidate requires a held-out change in at least
+one field/core observable and one independently computed geometry or defect
+observable, overlapping change-point uncertainty, required graph robustness,
+adequate sensitivity, replication across required context strata, and complete
+required strata. Single spikes, coverage loss, smooth drift, or post-outcome
+hypothesis/graph/layer/alignment/checkpoint selection do not qualify.
+
+This is a design record, not a protocol or source freeze. It constructs no F2
+or F4 model field, order parameter, core, holonomy, winding, phase-like regime,
+transition, or qualified null. All execution, model, network, raw-capture,
+subject, Pythia-70M, and Pythia-160M authorities are false. Scientific,
+topology, integer, semantic, publication, VOY, D7/D8, SCI-S1/S2, API, support,
+compatibility, portability, release, and library states remain unchanged. The
+next safe implementation candidate is model-free graph-scale transport and
+multi-nuisance selector plumbing under a separate dated decision; no v0.3
+freeze or launch is authorized here.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

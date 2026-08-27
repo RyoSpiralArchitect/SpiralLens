@@ -1,0 +1,610 @@
+{
+  "schema_version": "spirallens.p4-phase-capture-measurement-chain-design.v0.1",
+  "design_id": "p4-phase-capture-measurement-chain-v0.1",
+  "decision_date": "2026-08-27",
+  "status": "planned_not_frozen_not_run",
+  "predecessor_binding": {
+    "experiment_id": "p4-graph-evaluability-calibration-v0.2",
+    "source_commit": "e25e6da1fea3ce3f09cd4745f6b08bb47f528d70",
+    "launch": {
+      "path": "experiments/qualification/p4_graph_evaluability_calibration_v0_2/launch.json",
+      "sha256": "c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac"
+    },
+    "attempt": {
+      "path": "experiments/qualification/p4_graph_evaluability_calibration_v0_2/attempt.json",
+      "sha256": "cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576",
+      "identity_consumed": true
+    },
+    "terminal": {
+      "path": "experiments/qualification/p4_graph_evaluability_calibration_v0_2/terminal-result.json",
+      "sha256": "606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0",
+      "execution_terminal": "complete",
+      "terminal_state": "insufficient",
+      "reason": "held-out-confirmation-structural-gate"
+    },
+    "interpretation_merge_commit": "9cf7e79b6f723dfd5832697d5e45e9e4e24ca8d4",
+    "authority_transfer": false,
+    "outcome_reconstruction_authorized": false
+  },
+  "target_observables": [
+    "f2-local-covariant-section",
+    "f4-spin-two-anisotropy-section",
+    "substrate-bound-order-parameter-field",
+    "charge-blind-core-candidate",
+    "relative-holonomy",
+    "sampled-winding",
+    "operational-phase-like-regime",
+    "training-checkpoint-transition-candidate"
+  ],
+  "claim_boundary": {
+    "claim_ceiling": "level_0",
+    "design_only": true,
+    "unqualified_phase_field_forbidden": true,
+    "thermodynamic_phase_claimed": false,
+    "semantic_or_causal_claimed": false,
+    "order_parameter_field_constructed": false,
+    "core_score_or_candidate_constructed": false,
+    "holonomy_observed": false,
+    "sampled_winding_observed": false,
+    "phase_like_regime_observed": false,
+    "transition_observed": false,
+    "integer_output_authority": false,
+    "scientific_authority": false,
+    "topology_authority": false,
+    "semantic_authority": false,
+    "claim_delta": "none",
+    "milestone_credit": "none"
+  },
+  "graph_reception": {
+    "strategy": "dimensionless-field-blind-scale-transport-plus-multi-nuisance-worst-case-calibration",
+    "transport_rule_family": {
+      "vertex_count_symbol": "n",
+      "mutual_knn_neighbor_count": "ceil-kappa-times-n-minus-one",
+      "local_scale": "median-declared-k-scale-neighbor-distance",
+      "fixed_radius": "rho-times-local-scale",
+      "shared_neighbor_count": "same-transported-neighbor-count",
+      "minimum_shared_neighbors": "ceil-tau-times-neighbor-count",
+      "exact_tie_clipping_and_float_rules_required_at_future_freeze": true,
+      "concrete_hyperparameters_selected": false
+    },
+    "permitted_reads": [
+      "ordered-row-identity",
+      "vertex-count",
+      "declared-metric-distance-and-order-statistics",
+      "field-blind-domain-support",
+      "component-coverage",
+      "two-core-and-cycle-coverage",
+      "declared-edge-or-degree-budget",
+      "pairwise-graph-diversity"
+    ],
+    "forbidden_reads": [
+      "f2-values",
+      "f4-values",
+      "amplitude",
+      "direction",
+      "core",
+      "loop-readout",
+      "holonomy",
+      "winding",
+      "charge",
+      "phase-like-aggregate",
+      "control-outcome",
+      "subject-outcome"
+    ],
+    "calibration_nuisance_axes": [
+      "seed",
+      "density-warp",
+      "noise",
+      "sampling-density"
+    ],
+    "calibration_rule": "select-one-transport-law-by-lexicographic-worst-case-over-all-predeclared-calibration-nuisance-definitions",
+    "required_graph_families": [
+      "mutual-knn",
+      "fixed-radius",
+      "shared-neighbor"
+    ],
+    "required_structural_properties": [
+      "genuinely-distinct-edge-sets",
+      "common-vertex-support",
+      "component-coverage",
+      "two-core-coverage",
+      "same-declared-boundary-class-support",
+      "declared-edge-or-degree-budget"
+    ],
+    "held_out_confirmation_rule": "apply-sealed-transport-law-to-fresh-nuisance-without-reselection",
+    "post_confirmation_threshold_widening_authorized": false,
+    "selector_rerun_on_confirmation_authorized": false
+  },
+  "domain_cycle_contract": {
+    "primary_domain": "predeclared-two-dimensional-intervention-coordinate-domain",
+    "domain_fixed_before_graph_construction": true,
+    "cycle_identity": "oriented-domain-boundary-class",
+    "graphs_validate_support_for_same_class": true,
+    "graph_specific_cycle_index_may_define_cross_family_identity": false,
+    "required_loop_relations": [
+      "nested-core-centered",
+      "reverse-orientation",
+      "off-core",
+      "multi-core-when-present",
+      "deformation-companion",
+      "sampling-refinement-companion"
+    ]
+  },
+  "field_hypotheses": {
+    "co_primary": [
+      "f2_local_covariant_section",
+      "f4_spin_two_anisotropy"
+    ],
+    "winner_selected": false,
+    "outcome_selected_winner_authorized": false,
+    "branch_outcomes": [
+      "both-qualified",
+      "f2-only",
+      "f4-only",
+      "neither-qualified",
+      "insufficient-support"
+    ],
+    "f2": {
+      "pointwise_formula": "z-equals-u-transpose-s",
+      "amplitude_formula": "l2-norm-of-z",
+      "gauge_law": "z-prime-equals-g-transpose-z",
+      "gauge_group": "local_o2",
+      "fit_evaluation_rule": "cross_fit_required",
+      "angle_coordinate": "arg-z-where-same-object-amplitude-is-eligible",
+      "charge_convention": "conditional_vector_integer"
+    },
+    "f4": {
+      "pointwise_formula": "w-equals-half-diagonal-difference-and-offdiagonal",
+      "amplitude_formula": "l2-norm-of-w-equals-frobenius-over-root-two",
+      "gauge_law": "t-prime-equals-g-transpose-t-g",
+      "gauge_group": "local_o2",
+      "fit_evaluation_rule": "cross_fit_required",
+      "angle_coordinate": "arg-w-in-doubled-angle-space",
+      "director_coordinate": "half-arg-w-modulo-pi",
+      "charge_convention": "doubled_angle_integer",
+      "ordinary_vector_charge_forbidden": true
+    },
+    "same_object_amplitude_and_direction_required": true,
+    "cross_fit_required": true,
+    "separate_order_parameter_spec_per_branch_required": true,
+    "selection_by_core_holonomy_winding_or_transition_forbidden": true
+  },
+  "phase_like_regime_contract": {
+    "unit_of_evaluation": "per-field-branch-per-checkpoint-per-required-context-stratum",
+    "prerequisites": [
+      "eligible-m3-order-parameter-field",
+      "completed-m8-required-controls",
+      "qualified-m9-detection-region",
+      "separate-subject-protocol-freeze-and-authority"
+    ],
+    "same_field_observables": [
+      "eligible-amplitude",
+      "eligible-angular-coordinate",
+      "declared-domain-coordinate",
+      "support-mask"
+    ],
+    "branch_coordinate_bindings": {
+      "f2": "vector-angle-arg-z",
+      "f4": "doubled-angle-arg-w-with-director-angle-separate"
+    },
+    "required_statistic_families": [
+      "amplitude-conditioned-circular-concentration-under-sealed-trivialization",
+      "transport-corrected-domain-coordinate-angular-correlation",
+      "coherent-support-coverage"
+    ],
+    "gauge_comparison_rule": "declared-trivialization-or-relative-transport-with-pure-gauge-control",
+    "summary_statistics_and_numeric_thresholds_selected": false,
+    "outcomes": [
+      "operational-phase-like-regime-candidate",
+      "qualified-no-phase-like-regime-detected",
+      "insufficient"
+    ],
+    "candidate_requires": [
+      "held-out-departure-from-matched-nulls",
+      "adequate-detection-sensitivity",
+      "required-graph-gauge-architecture-and-context-robustness",
+      "no-support-or-coverage-artifact"
+    ],
+    "qualified_non_detection_limited_to_detection_and_coverage_region": true,
+    "f2_f4_pooling_authorized": false,
+    "selection_by_core_holonomy_winding_or_transition_authorized": false,
+    "single_global_phase_scalar_authorized": false,
+    "thermodynamic_semantic_or_causal_interpretation_authorized": false
+  },
+  "pattern_registry_contract": {
+    "purpose": "retain-qualified-absence-and-partial-cooccurrence-without-imputation",
+    "record_unit": "per-checkpoint-with-declared-inter-checkpoint-transition-boundary-window",
+    "pattern_axes": [
+      "f2-section-eligibility",
+      "f4-section-eligibility",
+      "f2-order-parameter-field",
+      "f4-order-parameter-field",
+      "f2-core-multiplicity",
+      "f4-core-multiplicity",
+      "geometry-relative-holonomy",
+      "f2-operational-phase-like-regime",
+      "f4-operational-phase-like-regime",
+      "f2-sampled-winding",
+      "f4-sampled-winding",
+      "training-checkpoint-transition"
+    ],
+    "required_per_axis_fields": [
+      "measurement-gate-state",
+      "finding-state",
+      "typed-value-or-value-reference",
+      "support-and-coverage",
+      "uncertainty",
+      "graph-gauge-architecture-and-context-strata",
+      "reason"
+    ],
+    "measurement_gate_states": [
+      "pass",
+      "fail",
+      "insufficient",
+      "not_run"
+    ],
+    "finding_states": [
+      "candidate-present",
+      "qualified-not-detected",
+      "unresolved",
+      "not-applicable"
+    ],
+    "every_axis_slot_required_in_record": true,
+    "all_axes_required_to_be_evaluable": false,
+    "qualified_non_detection_requires_pass_and_m9_region": true,
+    "fail_means_measurement_contract_failure_not_absence": true,
+    "insufficient_or_not_run_may_be_relabelled_absent": false,
+    "partial_patterns_retained": true,
+    "cross_observable_cooccurrence_claim_ceiling": "descriptive-until-separate-held-out-protocol",
+    "pattern_may_select_graph_field_core_loop_threshold_or_checkpoint": false,
+    "available_in_current_design": false
+  },
+  "core_contract": {
+    "charge_blind": true,
+    "bound_to_same_order_parameter_field": true,
+    "inputs": [
+      "same-field-amplitude",
+      "same-field-direction-identifiability-or-frame-conditioning",
+      "independent-measurement-support-at-candidate"
+    ],
+    "exact_scalar_and_threshold_deferred_to_future_calibration": true,
+    "nested_radius_profile_required": true,
+    "multiplicity_states": [
+      "zero",
+      "one",
+      "many",
+      "unresolved"
+    ],
+    "sealed_before_loop_readout": true,
+    "ground_truth_anchor_is_separate": true,
+    "select_candidate_by_observed_winding_authorized": false,
+    "no_core_allows_geometry_branch": true,
+    "no_core_allows_core_centered_defect_claim": false
+  },
+  "measurement_chain": [
+    {
+      "stage_id": "M0",
+      "name": "freeze-identities-roles-budgets-and-no-read-chronology",
+      "requires": [],
+      "outputs": [
+        "future-freeze-manifest"
+      ],
+      "downstream_selection_reads_forbidden": true
+    },
+    {
+      "stage_id": "M1",
+      "name": "qualify-field-blind-graph-scale-transport",
+      "requires": [
+        "M0"
+      ],
+      "outputs": [
+        "calibration-selection-decision",
+        "held-out-transport-confirmation"
+      ],
+      "blocks_all_downstream_on_required-insufficient-or-fail": true
+    },
+    {
+      "stage_id": "M2",
+      "name": "construct-co-primary-cross-fitted-f2-and-f4-sections",
+      "requires": [
+        "M1"
+      ],
+      "outputs": [
+        "f2-section-observation",
+        "f4-spin-two-observation",
+        "per-branch-support-state"
+      ],
+      "winner_selection_permitted": false
+    },
+    {
+      "stage_id": "M3",
+      "name": "bind-eligible-sections-as-order-parameter-fields",
+      "requires": [
+        "M2"
+      ],
+      "outputs": [
+        "per-branch-order-parameter-spec",
+        "per-branch-order-parameter-field"
+      ],
+      "unrelated-amplitude_join_forbidden": true
+    },
+    {
+      "stage_id": "M4",
+      "name": "seal-charge-blind-same-field-core-candidates",
+      "requires": [
+        "M3"
+      ],
+      "outputs": [
+        "per-branch-core-score",
+        "per-branch-core-candidate-set",
+        "core-seal"
+      ],
+      "loop_readout_before_seal_forbidden": true
+    },
+    {
+      "stage_id": "M5",
+      "name": "bind-declared-loop-class-ensemble",
+      "requires": [
+        "M1",
+        "M4"
+      ],
+      "outputs": [
+        "matched-domain-loop-ensemble",
+        "graph-support-receipts"
+      ],
+      "recenter_or_replace_after_readout_forbidden": true
+    },
+    {
+      "stage_id": "M6",
+      "name": "geometry-branch-relative-holonomy",
+      "requires": [
+        "M5"
+      ],
+      "outputs": [
+        "continuous-relative-holonomy-observations"
+      ],
+      "integer_output": false
+    },
+    {
+      "stage_id": "M7",
+      "name": "defect-branch-boundary-eligible-sampled-winding",
+      "requires": [
+        "M3",
+        "M4",
+        "M5"
+      ],
+      "outputs": [
+        "unrounded-winding-totals",
+        "proximity-to-integer-residuals",
+        "sampling-and-nested-loop-stability"
+      ],
+      "nearest_integer_label_authorized": false
+    },
+    {
+      "stage_id": "M8",
+      "name": "crossed-graph-gauge-architecture-deformation-and-null-controls",
+      "requires": [
+        "M3",
+        "M5"
+      ],
+      "conditional_branch_inputs": {
+        "geometry": "M6-if-geometry-eligible",
+        "defect": "M7-if-defect-eligible"
+      },
+      "outputs": [
+        "per-field-phase-like-regime-control-gates",
+        "geometry-branch-gate",
+        "defect-branch-gate",
+        "coverage-and-abstention-receipts"
+      ],
+      "independent_branch_gating": true,
+      "required_insufficient_cells_may_be_dropped": false
+    },
+    {
+      "stage_id": "M9",
+      "name": "end-to-end-synthetic-detection-limit-surface",
+      "requires": [
+        "M8"
+      ],
+      "outputs": [
+        "detection-probability-and-uncertainty-surface",
+        "qualified-null-region",
+        "worst-case-coverage-and-specificity"
+      ],
+      "instrument_detection_boundary_is_model_transition": false
+    },
+    {
+      "stage_id": "M10",
+      "name": "held-out-training-checkpoint-phase-like-regime-and-transition-confirmation",
+      "requires": [
+        "M9",
+        "separate-subject-protocol-freeze-and-authority"
+      ],
+      "outputs": [
+        "per-branch-operational-phase-like-regime-outcome",
+        "per-checkpoint-partial-cooccurrence-pattern-record",
+        "operational-model-regime-transition-candidate-or-bounded-null"
+      ],
+      "available_in_current_design": false
+    },
+    {
+      "stage_id": "M11",
+      "name": "later-semantic-and-causal-intervention-bridge",
+      "requires": [
+        "M10",
+        "separate-level-3-protocol"
+      ],
+      "outputs": [
+        "held-out-causal-semantic-evidence-if-any"
+      ],
+      "available_in_current_design": false
+    }
+  ],
+  "control_contract": {
+    "crossed_axes": [
+      "field-estimation-graph-x-cycle-support-graph",
+      "core-graph-x-field-graph-x-cycle-graph-when-core-is-independent",
+      "common-graph-x-varying-frame",
+      "common-frame-x-varying-graph"
+    ],
+    "required_control_families": [
+      "known-positive",
+      "fixed-null",
+      "no-core-null",
+      "pure-gauge",
+      "reflection-and-orientation",
+      "ambient-basis",
+      "degree-preserving-rewire",
+      "field-only-shuffle",
+      "global-norm",
+      "architecture-factor",
+      "collapsed-support",
+      "zero-amplitude",
+      "low-coherence",
+      "non-orientable-bundle",
+      "loop-deformation",
+      "nested-radius",
+      "sampling-refinement",
+      "opposite-sign-dipole"
+    ],
+    "gate_states": [
+      "pass",
+      "fail",
+      "insufficient",
+      "not_run"
+    ],
+    "worst_case_aggregation_required": true,
+    "post_outcome_family_drop_authorized": false
+  },
+  "detection_limit_contract": {
+    "full_pipeline_required": true,
+    "axes": [
+      "injected-same-object-amplitude",
+      "declared-perturbation-or-noise",
+      "sampling-density",
+      "local-candidate-density",
+      "opposite-sign-core-separation",
+      "graph-and-architecture-nuisance"
+    ],
+    "outputs": [
+      "detection-probability",
+      "uncertainty",
+      "coverage",
+      "abstention",
+      "false-positive-rate",
+      "qualified-null-region"
+    ],
+    "per_target_and_branch_surfaces_required": true,
+    "joint_partial_pattern_surface_required": true,
+    "unavailable_branch_may_be_imputed": false,
+    "detection_boundary_is_scientific_transition": false,
+    "complete_before_claim_bearing_model_run": true
+  },
+  "transition_contract": {
+    "primary_future_axis": "ordered-training-checkpoint",
+    "exact_checkpoint_identities_selected": false,
+    "intervention_strength_role": "later-causal-probe-axis",
+    "layer_role": "architectural-depth-profile-not-time",
+    "checkpoint_identity_and_alignment_requirements": [
+      "exact-checkpoint-hash-and-training-step",
+      "common-model-family-architecture-tokenizer-context-and-address-domain",
+      "common-intervention-domain-coordinates",
+      "declared-gauge-invariant-comparison-or-fit-only-alignment",
+      "no-outcome-selected-basis-or-alignment",
+      "optimizer-data-mixture-and-schedule-discontinuities-declared-as-covariates"
+    ],
+    "observable_panel": [
+      "f2-and-f4-field-eligibility-and-support",
+      "same-object-angular-order-parameter-distributions",
+      "same-object-amplitude-distributions",
+      "per-branch-operational-phase-like-regime-outcomes",
+      "charge-blind-core-profiles",
+      "relative-holonomy-distributions",
+      "unrounded-winding-and-stability-distributions",
+      "graph-family-agreement-coverage-abstention-and-controls"
+    ],
+    "discovery_may_fit_bounded_change_point": true,
+    "held_out_confirmation_may_move_change_point_window": false,
+    "candidate_requires": [
+      "held-out-change-in-at-least-one-field-or-core-observable",
+      "held-out-change-in-at-least-one-independent-geometry-or-defect-observable",
+      "overlapping-change-point-uncertainty",
+      "required-graph-family-robustness",
+      "adequate-detection-sensitivity",
+      "replication-across-required-context-strata",
+      "no-omitted-required-stratum"
+    ],
+    "single_spike_or_coverage_loss_is_transition": false,
+    "outcome_selected_hypothesis_graph_layer_alignment_or_checkpoint_range_authorized": false,
+    "qualified_null_scope": "frozen-checkpoint-range-intersect-qualified-detection-region"
+  },
+  "chronology": {
+    "required_seal_order": [
+      "identities-roles-budgets-and-input-definitions",
+      "graph-transport-rule-and-hyperparameters",
+      "f2-f4-specifications-and-fit-evaluation-partitions",
+      "amplitude-identifiability-and-core-rules",
+      "core-candidates",
+      "loop-and-class-ensemble",
+      "control-matrix-and-numeric-thresholds",
+      "checkpoint-identity-common-coordinates-alignment-covariates-transition-axis-observable-panel-and-change-point-rule",
+      "calibration-selection-decision",
+      "hidden-confirmation-access"
+    ],
+    "operator_prior_p4_v02_outcome_exposure": true,
+    "independent": false,
+    "preregistered": false,
+    "cryptographic_unseen": false,
+    "dynamic_timestamp_present": false
+  },
+  "stop_rules": [
+    "stop-insufficient-before-field-readout-if-graph-reception-is-not-jointly-evaluable",
+    "stop-or-branch-explicitly-on-field-amplitude-orientation-core-loop-sensitivity-or-coverage-insufficiency",
+    "stop-fail-on-evaluable-known-positive-required-null-covariance-graph-invariance-or-held-out-transition-error",
+    "never-convert-fail-to-insufficient-by-post-outcome-floor-change",
+    "never-drop-required-family-hypothesis-context-or-checkpoint-after-observation"
+  ],
+  "future_freeze_requirements": {
+    "new_experiment_and_schema_identity": true,
+    "concrete_nuisance_definitions": true,
+    "concrete_transport_hyperparameter_grid": true,
+    "exact_tie_clipping_float_rules": true,
+    "numeric_thresholds_and_coverage_gates": true,
+    "finite_revision_and_resource_budget": true,
+    "fresh_held_out_confirmation_definition": true,
+    "adversarial_round_trip_and_branch_tests": true,
+    "phase_like_regime_statistics_and_outcome_thresholds": true,
+    "exact_checkpoint_identity_and_common_address_contract_before_m10": true,
+    "gauge_invariant_or_fit_only_alignment_before_m10": true,
+    "training_process_discontinuities_declared_before_m10": true,
+    "separate_source_commit": true,
+    "separate_launch_commit": true,
+    "new_exact_one_lifecycle": true,
+    "subject_protocol_required_before_m10": true
+  },
+  "authority": {
+    "design_record_write_authorized": true,
+    "p4_v03_source_freeze_authorized": false,
+    "launch_preparation_authorized": false,
+    "execution_authorized": false,
+    "model_access_authorized": false,
+    "network_access_authorized": false,
+    "raw_capture_reuse_authorized": false,
+    "subject_data_access_authorized": false,
+    "pythia70_access_authorized": false,
+    "pythia160_access_authorized": false,
+    "f2_or_f4_winner_selected": false,
+    "sci_s1_advanced": false,
+    "sci_s2_advanced": false
+  },
+  "nonclaims": [
+    "no-p4-v03-protocol-or-run-exists",
+    "no-graph-transport-rule-has-been-calibrated",
+    "no-f2-or-f4-model-field-has-been-observed",
+    "no-order-parameter-or-core-has-been-constructed",
+    "no-holonomy-or-winding-has-been-observed",
+    "no-phase-like-regime-or-transition-has-been-observed",
+    "no-qualified-null-has-been-established",
+    "no-scientific-topology-semantic-or-publication-authority-is-granted"
+  ]
+}
