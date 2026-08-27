@@ -1409,6 +1409,45 @@ launch or execution authority has been exercised. D7/D8, SCI-S1/S2,
 Pythia-160M, subject, scientific, semantic, topology, integer,
 publication-authority, publication-milestone, and library state do not advance.
 
+### P4 v0.2 terminal handoff
+
+The later 2026-08-27 launch and exact-one attempt supersede the source-only
+future-action paragraph above as current lifecycle state. Launch, attempt, and
+terminal SHA-256 values are respectively
+`c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac`,
+`cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576`,
+and
+`606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0`.
+The terminal is complete and `insufficient` at the held-out confirmation
+structural gate. The attempt is consumed, and retry, resume, rescue,
+terminalization, threshold widening, and selector rerun are not authorized.
+
+The calibration-fixed triplet passed on the exposed calibration definition but
+did not transport to the seed-271829, warp-0.5 nuisance as a jointly evaluable
+reception layer. Confirmation edge-count ratio was
+`1.3448275862068966`, above the frozen 1.25 maximum, while the fixed
+shared-neighbor graph split into two components, retained a 48-row largest
+component/two-core, and lost both boundary matches. No confirmation matrix was
+constructed and all 16 controls remained `not_run`. This localizes the next
+preparation question before any field or topology result.
+
+The allowed next action is planning only. A possible P4 v0.3 must remain
+`planned_not_frozen_not_run` until a separate dated decision chooses and tests
+one of these field-blind reception hypotheses:
+
+1. select one triplet against multiple predeclared calibration nuisance
+   definitions, requiring joint structural eligibility before sealing; or
+2. freeze a parameter-transport law from declared substrate geometry statistics
+   and test its covariance without reading field, phase, core, holonomy,
+   winding, charge, or subject values.
+
+Neither option may be selected by optimizing on the accessed v0.2 confirmation.
+That input is regression-only. Any new claim-bearing confirmation requires a
+fresh definition fixed before construction or screening, plus a new protocol,
+runner, launch, attempt, terminal, store, stage, cache, and exact-one authority.
+This planning lane does not choose F2/F4, construct an order parameter or
+verified core, touch Pythia-160M, or advance D7/D8 or SCI-S1/S2.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:

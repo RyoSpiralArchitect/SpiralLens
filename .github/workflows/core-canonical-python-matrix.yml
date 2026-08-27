@@ -181,8 +181,17 @@ jobs:
           expected_p4_v02_runner_sha="1c91447ab0d593ca2bf4356143cc9ebaa8e14a6a2d8a766bf02fea6ebb98dc27"
           test "$(sha256sum "$p4_v02_runner" | cut -d' ' -f1)" = "$expected_p4_v02_runner_sha"
           p4_v02_test="tests/test_p4_graph_evaluability_calibration_v0_2.py"
-          expected_p4_v02_test_sha="5c2c3a5745743a4d82a0a9cbc828d984cab7e4b28c5f0d1670ba29d3551035e6"
+          expected_p4_v02_test_sha="062e90ff1538d76f538743ebecb249b6200478dfe98bcdb32b9145e5a9502358"
           test "$(sha256sum "$p4_v02_test" | cut -d' ' -f1)" = "$expected_p4_v02_test_sha"
+          p4_v02_launch="experiments/qualification/p4_graph_evaluability_calibration_v0_2/launch.json"
+          expected_p4_v02_launch_sha="c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac"
+          test "$(sha256sum "$p4_v02_launch" | cut -d' ' -f1)" = "$expected_p4_v02_launch_sha"
+          p4_v02_attempt="experiments/qualification/p4_graph_evaluability_calibration_v0_2/attempt.json"
+          expected_p4_v02_attempt_sha="cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576"
+          test "$(sha256sum "$p4_v02_attempt" | cut -d' ' -f1)" = "$expected_p4_v02_attempt_sha"
+          p4_v02_terminal="experiments/qualification/p4_graph_evaluability_calibration_v0_2/terminal-result.json"
+          expected_p4_v02_terminal_sha="606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0"
+          test "$(sha256sum "$p4_v02_terminal" | cut -d' ' -f1)" = "$expected_p4_v02_terminal_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

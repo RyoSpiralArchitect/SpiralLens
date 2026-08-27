@@ -4,6 +4,59 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-27 — Consumed insufficient P4 v0.2 lifecycle projections
+
+- Added the canonical internal launch instance
+  `experiments/qualification/p4_graph_evaluability_calibration_v0_2/launch.json`,
+  schema `spirallens.p4-graph-evaluability-launch.v0.2`, at 29,364 bytes and
+  SHA-256
+  `c6bfb9edf4f8ff22aaf2df8badcb137fb780158edf229543fc337e8e9400aeac`.
+  Launch commit `69470ba3e4786b11e8ca11ee22d6bfcacc3fcd82`, merged as
+  `2d15ec72a56c009d8894889cca5795f9ff026fef`, predates the one official
+  execution. Its `launch_prepared_not_run` value is issue-time chronology, not
+  the current lifecycle state.
+- Added repository projections for internal attempt schema
+  `spirallens.p4-exact-one-attempt.v0.2` at 657 bytes and SHA-256
+  `cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576`,
+  and internal terminal schema
+  `spirallens.p4-graph-evaluability-terminal.v0.2` at 59,677 bytes and SHA-256
+  `606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0`.
+  They were committed together at evidence-only checkpoint
+  `e4b06a8256b60c59453f9ba04fb59fa3159ffd62`, merged as
+  `e85fddebc8271660633764f3e0a2e137d1700e60`, after byte equality with the
+  authoritative external store was established.
+- External manifest SHA-256
+  `46c2fe6942bd4271121f3cf56b43d53d960857acc6c7bb952083792662b0e70a`
+  binds the attempt, graph-selection seal
+  `70475db97470217903ff5875a09e532d0dad3c1ab6a0afe102746893c8d07153`,
+  threshold-decision seal
+  `f989579ade7db07231826ce26ab29ad5c3c352719d563f7c9f609ddb516ed55a`,
+  confirmation-access seal
+  `aab9fbba07a18d7f0a031334c5ddb66bdf97ad661d1596a78b9660446105426a`,
+  and terminal. The seals and manifest remain external and are not copied into
+  Git.
+- The terminal is `complete` / `insufficient` at
+  `held-out-confirmation-structural-gate`. The calibration matrix has 54 cells;
+  the confirmation structural projection is present, the confirmation matrix
+  is absent, and all 16 controls are `not_run`. Attempt identity is consumed;
+  retry, resume, rescue, and post-hoc selector rerun are false or unauthorized.
+- Post-terminal focused test
+  `tests/test_p4_graph_evaluability_calibration_v0_2.py` is 115,031 bytes with
+  SHA-256
+  `062e90ff1538d76f538743ebecb249b6200478dfe98bcdb32b9145e5a9502358`.
+  It preserves lifecycle bytes on isolated import and pins the official
+  launch/attempt/terminal linkage, consumed identity, selector/calibration
+  projection, held-out structural stop, not-run controls, and authority-false
+  boundary. Workflow SHA-256
+  `2ee85f0d682270c0b1a4e653698b9db8796d5f74b120db5a25190d3650a898ad`
+  pins all three official artifact digests and runs that conformance test.
+- This post-terminal conformance and interpretation change is not a source
+  re-freeze and does not alter or migrate any official lifecycle instance or
+  public persistence schema. It creates no API, support, compatibility,
+  portability, release, library, VOY, D7/D8, SCI, Pythia-160M, subject,
+  scientific, semantic, topology, integer, publication, or milestone state
+  change.
+
 ## 2026-08-25 — Frozen P4 v0.2 source-only successor
 
 - Added internal protocol

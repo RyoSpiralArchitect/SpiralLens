@@ -518,6 +518,46 @@ the source PR itself must not prepare or execute that launch. F2/F4, D7/D8,
 SCI-S1/S2, Pythia-160M, subject, scientific, topology, integer, publication,
 and library authority remain unchanged.
 
+### Consumed insufficient P4 v0.2 terminal (2026-08-27)
+
+The separate launch was committed and the exact authorized command was
+executed once. Attempt SHA-256
+`cce96c962ae3fd62b9eff75bc1205edde08f5943ee3a1ce63dc858fa7638e576`
+records `identity_consumed=true` and no retry, resume, or rescue authority.
+Terminal SHA-256
+`606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0`
+is `complete` / `insufficient` at
+`held-out-confirmation-structural-gate`, not invalid, positive, or a qualified
+null.
+
+The calibration selector passed: 7 of 32 considered triplets were eligible,
+and the fixed choice was mutual-kNN `k=7`, radius
+`r=0.4788290448167926`, and shared-neighbor `k=8, min_shared=4`. All 54
+calibration cells and 6 graph-family spans were evaluable with zero recorded
+error/span under effective `1e-8` thresholds. These are exposed Level-0
+calibration observations only.
+
+The same fixed triplet did not remain structurally evaluable on the predeclared
+seed-271829, warp-0.5 confirmation nuisance. Its edge counts became 148, 116,
+and 156, for ratio `1.3448275862068966` above the frozen 1.25 maximum; the
+shared-neighbor graph split into two components, reduced its largest component
+and two-core to 48 rows, and lost both boundary matches. The selector was not
+rerun. The confirmation matrix is absent and all 16 downstream controls are
+`not_run`.
+
+The failed bounded hypothesis is graph/scale nuisance robustness, before field
+and topology evaluation. No conclusion follows about drift, phase,
+transition, loops, holonomy, winding, charge, F2 versus F4, an order parameter,
+or a verified core. P4 v0.2 is consumed; widening gates, tuning on the accessed
+confirmation, or rerunning the selector is unauthorized.
+
+A possible P4 v0.3 remains `planned_not_frozen_not_run`. Before any new launch,
+it must decide between multi-nuisance graph calibration and a predeclared
+field-blind parameter-transport rule, bind a new exact-one identity, and reserve
+a fresh held-out confirmation definition. This handoff does not authorize that
+successor and changes no VOY, D7/D8, SCI-S1/S2, Pythia-160M, scientific,
+topology, integer, publication, or library milestone.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.
