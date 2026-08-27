@@ -558,6 +558,68 @@ a fresh held-out confirmation definition. This handoff does not authorize that
 successor and changes no VOY, D7/D8, SCI-S1/S2, Pythia-160M, scientific,
 topology, integer, publication, or library milestone.
 
+### P4 phase-capture measurement-chain design (2026-08-27)
+
+The design-only [phase-capture measurement chain](P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md)
+now resolves the former reception choice structurally: a future P4 v0.3 must
+combine a dimensionless, field-blind graph-scale transport rule with
+multi-nuisance worst-case calibration and fresh held-out confirmation. Concrete
+transport hyperparameters, nuisance definitions, thresholds, budgets, source,
+launch, and exact-one lifecycle remain unfrozen.
+
+The downstream goal is fixed by reverse design rather than by graph hardening
+alone. F2 and F4 remain co-primary; each eligible section must acquire its own
+substrate, interpolation, gauge, and same-object amplitude binding before it is
+an order-parameter field. A charge-blind same-field core set is sealed before
+loop readout. Declared intervention-domain loop classes precede graph
+construction; graph families test support for those same classes rather than
+supplying construction-specific loop identities.
+
+Relative holonomy proceeds on the geometry branch and stays continuous.
+Sampled winding proceeds separately on boundary-eligible F2/F4 defect branches,
+retaining F4's doubled-angle convention. Nested, reverse, off-core,
+deformation, refinement, graph, gauge, architecture, and null controls precede
+any Level 2T reading. The exact comparative F2/F4 outcomes are
+`both-qualified`, `f2-only`, `f4-only`, `neither-qualified`, and
+`insufficient-support`; no winner is selected after observation.
+Field/phase-like, geometry, and defect controls gate their branches
+independently; an unavailable branch remains visible but cannot erase or block
+another eligible branch.
+
+At each future checkpoint/context stratum, each branch separately returns
+`operational-phase-like-regime-candidate`,
+`qualified-no-phase-like-regime-detected`, or `insufficient`, using a
+pre-access same-field amplitude/angular statistic. Candidate and qualified
+non-detection outcomes are restricted by matched nulls, the full control matrix,
+and the qualified detection region. They do not assert a thermodynamic or
+semantic phase, and F2/F4 may not be pooled.
+
+A complete per-checkpoint pattern record keeps explicit slots for all F2/F4,
+order-parameter, core, holonomy, phase-like, winding, and transition outcomes,
+including unresolved and not-applicable states. `qualified-not-detected` requires
+a passing gate inside the qualified detection region; `fail`, `insufficient`,
+and `not_run` are never rewritten as absence. Partial co-occurrence remains
+descriptive and cannot select later instrumentation.
+
+Per-target/branch and joint partial-pattern detection surfaces must precede any
+claim-bearing model run, without imputing unavailable branches. They are
+explicitly not a model transition. A later transition design
+uses ordered training checkpoint as its primary axis; layer is depth rather
+than time, and intervention strength is a later causal probe. Hidden
+confirmation cannot move a discovery-fitted change-point window, and a
+candidate needs concordant field/core plus independent geometry/defect change
+with graph robustness, adequate sensitivity, and required-context replication.
+Exact checkpoint hashes/training steps and a common model/tokenizer/context/
+address contract must be sealed first. Comparison is gauge-invariant or uses
+fit-only alignment; outcome-selected basis/alignment is forbidden, while
+optimizer/data-mixture/schedule discontinuities remain declared covariates.
+
+This addition remains `planned_not_frozen_not_run`, Level 0, and design-only.
+It authorizes no P4 v0.3 source freeze, execution, model/subject access,
+Pythia-70M/160M use, F2/F4 winner, order parameter, core, holonomy, winding,
+transition, qualified null, or milestone change. The next possible code step
+is a separately reviewed model-free graph-scale-transport prototype.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

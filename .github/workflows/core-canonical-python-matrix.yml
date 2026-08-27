@@ -192,6 +192,15 @@ jobs:
           p4_v02_terminal="experiments/qualification/p4_graph_evaluability_calibration_v0_2/terminal-result.json"
           expected_p4_v02_terminal_sha="606893f6cfeb31fac476fd0658a6f1c9dab7ade4d40c7ba3c40f71c754fdfed0"
           test "$(sha256sum "$p4_v02_terminal" | cut -d' ' -f1)" = "$expected_p4_v02_terminal_sha"
+          p4_phase_capture_design="experiments/qualification/p4_phase_capture_measurement_chain_v0_1/design.json"
+          expected_p4_phase_capture_design_sha="8346dab963b8efac8a8afdc343453a7f84cc5c5b2c3a490ee3a5abb3b63b3283"
+          test "$(sha256sum "$p4_phase_capture_design" | cut -d' ' -f1)" = "$expected_p4_phase_capture_design_sha"
+          p4_phase_capture_doc="docs/P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md"
+          expected_p4_phase_capture_doc_sha="866f3b6c3536a5eb0f62db290803ad1d5791aa5965aee2cc37d55bb730f697ce"
+          test "$(sha256sum "$p4_phase_capture_doc" | cut -d' ' -f1)" = "$expected_p4_phase_capture_doc_sha"
+          p4_phase_capture_test="tests/test_p4_phase_capture_measurement_chain_design.py"
+          expected_p4_phase_capture_test_sha="e71274980ca14f2943cc1f89379076b2c2d6dbf918bbdceb4b24743f7cf7b2a6"
+          test "$(sha256sum "$p4_phase_capture_test" | cut -d' ' -f1)" = "$expected_p4_phase_capture_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -246,7 +255,8 @@ jobs:
             "$GITHUB_WORKSPACE/$runner_test" \
             "$GITHUB_WORKSPACE/$next_hypotheses_test" \
             "$GITHUB_WORKSPACE/$p4_graph_evaluability_test" \
-            "$GITHUB_WORKSPACE/$p4_v02_test"
+            "$GITHUB_WORKSPACE/$p4_v02_test" \
+            "$GITHUB_WORKSPACE/$p4_phase_capture_test"
 
           (
             cd "$neutral"

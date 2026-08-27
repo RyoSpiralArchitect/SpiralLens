@@ -1448,6 +1448,69 @@ runner, launch, attempt, terminal, store, stage, cache, and exact-one authority.
 This planning lane does not choose F2/F4, construct an order parameter or
 verified core, touch Pythia-160M, or advance D7/D8 or SCI-S1/S2.
 
+### P4 phase-capture design decision
+
+The 2026-08-27 design-only record now resolves the former either/or planning
+choice without freezing an executable successor. A future P4 v0.3 must combine:
+
+1. a predeclared dimensionless graph-scale transport law based only on vertex
+   count, declared metric distance/order statistics, and field-blind domain
+   support; and
+2. worst-case selection of that law's hyperparameters across multiple
+   predeclared seed, density-warp, noise, and sampling-density calibration
+   nuisances, followed by application to a fresh held-out nuisance without
+   reselection.
+
+The complete target chain is documented in
+[`P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md`](P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md)
+and projected at
+`experiments/qualification/p4_phase_capture_measurement_chain_v0_1/design.json`.
+It keeps F2 and F4 co-primary, binds separate same-object order-parameter fields,
+seals charge-blind core candidates before loop readout, separates continuous
+relative holonomy from defect-branch sampled winding, and requires a full
+synthetic detection-limit surface before any claim-bearing model run.
+Field/phase-like, geometry, and defect branches are control-gated independently;
+one unavailable branch stays explicit without blocking another eligible branch.
+
+The loop identity is a predeclared two-dimensional intervention-domain boundary
+or class, not a graph-specific cycle index. The three graph families test
+whether that same class has support. This directly targets the v0.2 failure
+mode while preserving graph-family disagreement as an observable rather than
+repairing it away.
+
+The phase/transition target is also split. Same-object F2/F4 angular coordinates
+may define operational phase-like regimes only under their declared gauge,
+amplitude, and support contracts. Each branch/checkpoint/context returns exactly
+`operational-phase-like-regime-candidate`,
+`qualified-no-phase-like-regime-detected`, or `insufficient`; the first two are
+bounded by matched nulls, required controls, and the qualified detection region.
+The branches may not be pooled, and these outcomes are not thermodynamic or
+semantic phase claims. The instrument detection boundary is not a model
+transition. A later model transition uses ordered training checkpoint as
+its primary axis; layer remains architectural depth and intervention strength
+is reserved for a causal probe. Discovery may fit a bounded change-point
+window, but hidden confirmation cannot move it. Exact checkpoint hashes/training
+steps, a common model/tokenizer/context/address contract, and common intervention
+coordinates must be sealed first. Comparison is gauge-invariant or uses
+alignment fit only on the fit partition; outcome-selected basis/alignment is
+forbidden, and optimizer/data-mixture/schedule discontinuities remain declared
+covariates. Required context strata must replicate before a transition can
+qualify.
+
+Every checkpoint must also preserve the full partial pattern across F2/F4,
+order parameter, core multiplicity, holonomy, phase-like regime, winding, and
+transition slots. Gate failure is not absence, and `insufficient`/`not_run`
+cannot be rewritten as absence. Qualified non-detection requires a passing gate
+inside the per-target/branch M9 region; the joint pattern surface may not impute
+one unavailable branch from another.
+
+This design is still exactly `planned_not_frozen_not_run`. Numeric transport
+parameters, nuisance definitions, thresholds, coverage gates, budgets, inputs,
+source, launch, and exact-one lifecycle are unresolved. The next allowed
+implementation candidate is only a model-free scale-transport and
+multi-nuisance-selector prototype with adversarial tests. It may not prepare a
+launch, construct official inputs, access a model, or select F2/F4.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:

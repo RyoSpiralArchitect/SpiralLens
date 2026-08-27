@@ -4,6 +4,69 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-27 — Design-only P4 phase-capture measurement chain
+
+- Added internal design projection
+  `experiments/qualification/p4_phase_capture_measurement_chain_v0_1/design.json`,
+  schema `spirallens.p4-phase-capture-measurement-chain-design.v0.1`, at
+  21,455 bytes and SHA-256
+  `8346dab963b8efac8a8afdc343453a7f84cc5c5b2c3a490ee3a5abb3b63b3283`.
+  Its exact state is `planned_not_frozen_not_run`; it binds the consumed P4
+  v0.2 launch, attempt, terminal, source commit, and interpretation merge with
+  authority transfer and outcome reconstruction false.
+- Added the 18,026-byte human-owned measurement-chain reading at
+  `docs/P4_PHASE_CAPTURE_MEASUREMENT_CHAIN.md`, SHA-256
+  `866f3b6c3536a5eb0f62db290803ad1d5791aa5965aee2cc37d55bb730f697ce`.
+  It orders graph reception, co-primary F2/F4 construction, separate
+  order-parameter binding, pre-loop charge-blind core sealing, matched domain
+  loops, geometry/defect branches, crossed controls, the end-to-end detection
+  surface, held-out checkpoint transition confirmation, and a later causal
+  bridge. Checkpoint comparison requires exact identity and common address/
+  intervention contracts plus gauge-invariant or fit-only alignment; training
+  process discontinuities remain declared covariates.
+- Each future branch/checkpoint/context regime readout has exactly
+  `operational-phase-like-regime-candidate`,
+  `qualified-no-phase-like-regime-detected`, or `insufficient`. It is a
+  same-field amplitude/angular outcome bounded by matched nulls, the full
+  controls, and the qualified detection region; it is not a global,
+  thermodynamic, semantic, or causal `phase` scalar.
+- Added a complete per-checkpoint partial-pattern contract across F2/F4,
+  order-parameter, core, holonomy, phase-like, winding, and transition slots.
+  Each slot retains gate/finding/value/coverage/uncertainty/strata/reason;
+  `fail`, `insufficient`, and `not_run` are not absence. Both per-target/branch
+  and joint-pattern detection surfaces are required without branch imputation.
+- The graph-reception design combines a predeclared dimensionless field-blind
+  scale-transport law with multi-nuisance worst-case calibration and fresh
+  held-out application without reselection. Concrete hyperparameters, nuisance
+  definitions, thresholds, budgets, and official inputs are deliberately
+  absent and required only in a future new-identity freeze.
+- F2 and F4 remain co-primary, with exact comparative outcomes
+  `both-qualified`, `f2-only`, `f4-only`, `neither-qualified`, and
+  `insufficient-support`. Graph-specific cycle indices cannot define
+  cross-family loop identity; geometry holonomy remains continuous; F4 retains
+  its doubled-angle convention; no later core, holonomy, winding, or transition
+  value may select a winner.
+- Field/phase-like, geometry, and defect branches are gated independently. An
+  unavailable branch remains explicit and cannot erase or block another
+  eligible branch; required insufficient cells remain in worst-case summaries.
+- Added focused conformance test
+  `tests/test_p4_phase_capture_measurement_chain_design.py` at 22,441 bytes and
+  SHA-256
+  `e71274980ca14f2943cc1f89379076b2c2d6dbf918bbdceb4b24743f7cf7b2a6`.
+  It checks the consumed-v0.2 binding, authority-false surface, graph reception,
+  domain-class identity, live F2/F4 referent alignment, core chronology,
+  ordered branch chain, per-branch phase-like regime outcomes,
+  detection/transition separation, future-freeze gates, and human/machine
+  reading consistency. Workflow SHA-256
+  `ed90795e139dea25f23de68bd38acf25adf2a5ab452e8d45ef24209e57d1e8f0`
+  pins and runs the new design surface in the clean-wheel matrix.
+- This is not a P4 v0.3 protocol, source freeze, launch, execution, or public
+  persisted-schema promotion. It creates no F2/F4 model field, order parameter,
+  core, holonomy, winding, phase-like regime, transition, qualified null, model
+  or subject access, scientific/topology/integer/semantic/publication authority,
+  or VOY, D7/D8, SCI-S1/S2, Pythia-70M/160M, API, support, compatibility,
+  portability, release, library, or milestone state change.
+
 ## 2026-08-27 — Consumed insufficient P4 v0.2 lifecycle projections
 
 - Added the canonical internal launch instance
