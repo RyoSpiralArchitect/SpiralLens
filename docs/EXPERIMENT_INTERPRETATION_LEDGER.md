@@ -1757,6 +1757,71 @@ next safe implementation candidate is model-free graph-scale transport and
 multi-nuisance selector plumbing under a separate dated decision; no v0.3
 freeze or launch is authorized here.
 
+### 3.38 P4 M1 graph-scale transport synthetic development observation
+
+**Instrument and chronology**
+
+On 2026-08-28 a separate Level-0 development instrument was added at
+`scripts/prototype_p4_graph_scale_transport_v0_1.py`, with human reading at
+`docs/P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md`. It implements only M1 reception
+plumbing from the 2026-08-27 design. It does not modify the consumed P4 v0.2
+protocol, launch, attempt, terminal, or evidence, and it does not create a P4
+v0.3 protocol, input, launch, attempt, terminal, stage, or store.
+
+Before its own synthetic held-out case was applied, the selector received only
+54 dimensionless candidate laws, four synthetic calibration cases varying
+seed/density-warp/noise/sampling-density, and one broad development gate set.
+It could read only vertex identity/count, numerical substrate coordinates,
+distance/order statistics, and declared boundary identities. Its function
+surface carried no F2/F4, amplitude, direction, core, loop, holonomy, winding,
+phase, charge, control, or subject outcome. Eligible laws had to pass every
+calibration nuisance across mutual-kNN, fixed-radius, and shared-neighbor
+graphs; ranking used coordinatewise worst-case values rather than averages.
+
+The produced selection decision binds the selected immutable law, gates,
+calibration report, and canonical report digest. Held-out application accepts
+that decision, one `held-out-confirmation` case, and the same gates; it accepts
+neither a candidate set nor a reselection instruction. Gate widening, report
+mutation, wrong roles, duplicate parameterizations, zero scale, boundary
+failure, and an empty eligible set are retained as errors or `insufficient`.
+
+**Bounded observation**
+
+The deterministic model-free fixture returned `synthetic-plumbing-pass`:
+six of 54 laws passed all four calibration cases, development law
+`m1-development-law-046` with ((\kappa,\sigma,\rho,\tau)) =
+((1/4,1/6,1,1/2)) was selected, and the fresh 8 by 8 synthetic held-out case
+returned structural `pass` under the unchanged gates. The selected-law, gate,
+and selection-decision fingerprints are respectively
+`ee546f8fcf17d212d317958a4f1a31f5f06b467e1945295b0fed40a4291581d4`,
+`27044d1f5cfbc29f0c0e99d17a18e3146159180685a9a87e48c63b39f0e74a54`,
+and `1cf86cdda8de347313737c581eaa9295d03b314da274376cffcf5b5924504a03`.
+No persistent run artifact was written.
+
+The development grid, nuisance cases, gates, and selected law are not frozen
+P4 values and were not prospective official calibration. The observed `pass`
+means only that the software plumbing carried a deterministic all-nuisance
+selection into one no-reselection synthetic application. It is not evidence
+that graph reception is qualified on model activations or across a declared
+detection surface.
+
+`boundary_supported` means that successive predeclared boundary identities
+have bounded graph paths. Those paths may traverse the interior or overlap and
+do not bind an oriented simple cycle, preserve homology, establish an
+inside/outside relation, or compute holonomy or winding. Cycle rank and
+two-core coverage remain structural receipts rather than topology evidence.
+
+**Claim and authority boundary**
+
+P4 v0.3 remains exactly `planned_not_frozen_not_run`. No model, tokenizer,
+activation, subject, network, Pythia-70M, or Pythia-160M access occurred. F2,
+F4, an order parameter, a core, holonomy, winding, phase-like regime,
+transition, control outcome, qualified positive, and qualified null remain
+unevaluated. Scientific, topology, integer, semantic, publication, VOY,
+D7/D8, SCI-S1/S2, API, support, compatibility, release, and library states do
+not change. A future source freeze requires a separate prospective decision;
+this development outcome cannot silently supply its thresholds or authority.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

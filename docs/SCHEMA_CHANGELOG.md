@@ -4,6 +4,40 @@ SpiralLens records public and provisional persistence changes separately from
 scientific results. Entries describe software contracts only; they do not
 promote a claim.
 
+## 2026-08-28 — P4 M1 graph-scale transport development prototype
+
+- Added the 51,792-byte single-file model-free development instrument
+  `scripts/prototype_p4_graph_scale_transport_v0_1.py`, SHA-256
+  `05cba8a7de365357a33a613efa4720489368ed44dc86f2f89c25498384482516`.
+  It implements exact-rational dimensionless coefficients with deterministic
+  float64 scale transport, three canonical graph families,
+  all-calibration-case eligibility, coordinatewise worst-case lexicographic
+  selection, and one same-gate held-out application without a candidate-set or
+  reselection input.
+- The program emits only an in-memory or stdout development view under schemas
+  `spirallens.p4-graph-scale-transport-development-report.v0.1`,
+  `spirallens.p4-graph-scale-transport-selection-decision.v0.1`,
+  `spirallens.p4-graph-scale-transport-case-evaluation.v0.1`, and
+  `spirallens.p4-graph-scale-transport-held-out-confirmation.v0.1`. No
+  persisted or official-result schema is introduced.
+- Added the 21,241-byte adversarial test owner
+  `tests/test_p4_graph_scale_transport_prototype_v0_1.py`, SHA-256
+  `5b0e279fcf037fa716498656916c9c13c9a878b1cba797f37e67a7d952fae072`,
+  and the 7,982-byte human reading
+  `docs/P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md`, SHA-256
+  `58867f9fb8c1dfa9be584238964f8d5b10ae3ded0c56b9eb3bb38475cb7dd9c0`.
+- The deterministic fixture returned synthetic plumbing `pass`: 54 candidate
+  laws, four calibration nuisance cases, six jointly eligible laws, selected
+  development law `m1-development-law-046`, and a passing fresh 8 by 8
+  synthetic held-out structural application. The grid, gates, selected law,
+  and outcome are development observations, not a P4 v0.3 freeze or graph
+  qualification.
+- Boundary support means only bounded graph-path support between successive
+  declared boundary identities. It is not an oriented loop, homology,
+  holonomy, winding, or topology result. P4 v0.3 remains exactly
+  `planned_not_frozen_not_run`; every execution/model/subject/Pythia and
+  scientific authority remains false.
+
 ## 2026-08-27 — Design-only P4 phase-capture measurement chain
 
 - Added internal design projection

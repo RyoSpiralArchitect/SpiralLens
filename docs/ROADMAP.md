@@ -620,6 +620,34 @@ Pythia-70M/160M use, F2/F4 winner, order parameter, core, holonomy, winding,
 transition, qualified null, or milestone change. The next possible code step
 is a separately reviewed model-free graph-scale-transport prototype.
 
+### M1 graph-scale transport development prototype (2026-08-28)
+
+The separate [M1 development prototype](P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md)
+now makes the reception strategy executable without changing P4 v0.3's state.
+One
+dimensionless law transports ((\kappa,\sigma,\rho,\tau)) into mutual-kNN,
+fixed-radius, and shared-neighbor parameters using vertex count and a robust
+local distance scale. A law must pass every predeclared synthetic calibration
+nuisance; eligible laws are ranked by a coordinatewise worst-case
+lexicographic objective, then the sealed winner is applied once to a fresh
+synthetic held-out case with unchanged gates and no candidate-set input.
+
+The deterministic fixture exercised 54 laws across four calibration cases,
+retained six, selected development law `m1-development-law-046`, and returned
+`pass` on the fresh 8 by 8 held-out structural case. This is a plumbing result,
+not prospective P4 calibration: the fixture grid, nuisance definitions, gates,
+and selected law were not frozen before an official access and may not be
+copied into P4 v0.3 as if qualified.
+
+The prototype's `boundary_supported` check only establishes bounded endpoint
+path support for successive declared boundary identities. It does not bind an
+oriented simple loop, a homology class, an inside/outside relation, holonomy,
+winding, or topology. P4 v0.3 remains `planned_not_frozen_not_run`; no launch,
+official input, model/subject/Pythia access, F2/F4 read, order parameter, core,
+phase-like regime, transition, scientific claim, or milestone is authorized.
+A later freeze still requires a new dated decision with prospective nuisance,
+gate, held-out, detection-surface, resource, and exact-one lifecycle contracts.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

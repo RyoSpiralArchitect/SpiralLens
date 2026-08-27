@@ -201,6 +201,15 @@ jobs:
           p4_phase_capture_test="tests/test_p4_phase_capture_measurement_chain_design.py"
           expected_p4_phase_capture_test_sha="e71274980ca14f2943cc1f89379076b2c2d6dbf918bbdceb4b24743f7cf7b2a6"
           test "$(sha256sum "$p4_phase_capture_test" | cut -d' ' -f1)" = "$expected_p4_phase_capture_test_sha"
+          p4_scale_transport_source="scripts/prototype_p4_graph_scale_transport_v0_1.py"
+          expected_p4_scale_transport_source_sha="05cba8a7de365357a33a613efa4720489368ed44dc86f2f89c25498384482516"
+          test "$(sha256sum "$p4_scale_transport_source" | cut -d' ' -f1)" = "$expected_p4_scale_transport_source_sha"
+          p4_scale_transport_test="tests/test_p4_graph_scale_transport_prototype_v0_1.py"
+          expected_p4_scale_transport_test_sha="5b0e279fcf037fa716498656916c9c13c9a878b1cba797f37e67a7d952fae072"
+          test "$(sha256sum "$p4_scale_transport_test" | cut -d' ' -f1)" = "$expected_p4_scale_transport_test_sha"
+          p4_scale_transport_doc="docs/P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md"
+          expected_p4_scale_transport_doc_sha="58867f9fb8c1dfa9be584238964f8d5b10ae3ded0c56b9eb3bb38475cb7dd9c0"
+          test "$(sha256sum "$p4_scale_transport_doc" | cut -d' ' -f1)" = "$expected_p4_scale_transport_doc_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -256,7 +265,8 @@ jobs:
             "$GITHUB_WORKSPACE/$next_hypotheses_test" \
             "$GITHUB_WORKSPACE/$p4_graph_evaluability_test" \
             "$GITHUB_WORKSPACE/$p4_v02_test" \
-            "$GITHUB_WORKSPACE/$p4_phase_capture_test"
+            "$GITHUB_WORKSPACE/$p4_phase_capture_test" \
+            "$GITHUB_WORKSPACE/$p4_scale_transport_test"
 
           (
             cd "$neutral"

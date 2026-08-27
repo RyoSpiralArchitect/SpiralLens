@@ -1511,6 +1511,34 @@ implementation candidate is only a model-free scale-transport and
 multi-nuisance-selector prototype with adversarial tests. It may not prepare a
 launch, construct official inputs, access a model, or select F2/F4.
 
+### M1 development prototype handoff
+
+The allowed implementation candidate now exists at
+[`prototype_p4_graph_scale_transport_v0_1.py`](../scripts/prototype_p4_graph_scale_transport_v0_1.py),
+with its claim boundary and deterministic fixture reading in
+[`P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md`](P4_GRAPH_SCALE_TRANSPORT_PROTOTYPE.md).
+It realizes the combined hypothesis: exact-rational dimensionless coefficients
+with deterministic float64 scale transport, three canonical graph families,
+four jointly varied nuisance axes, all-calibration-case eligibility,
+coordinatewise worst-case ranking, and one same-gate held-out application with
+no selector-rerun input.
+
+On the synthetic fixture, 54 laws produced six jointly eligible laws;
+`m1-development-law-046` was selected and its fresh 8 by 8 held-out structural
+application returned `pass`. This closes only the executable-plumbing question.
+It does not freeze the observed law or gates, qualify graph reception for model
+activations, or establish sensitivity. In particular, bounded endpoint path
+support along the declared boundary is not an oriented loop or topology
+receipt.
+
+The next permitted step remains review and prospective design work. Before a
+P4 v0.3 source freeze, a separate dated decision must bind candidate bounds,
+nuisance definitions, structural gates, resource limits, a fresh official
+held-out identity, end-to-end detection-surface requirements, and the exact-one
+lifecycle. Until that decision, no official input construction, launch,
+execution, model/subject/Pythia access, or F2/F4/order-parameter/core/holonomy/
+winding/phase-like/transition evaluation is authorized.
+
 ## 11. Decisions that remain unresolved
 
 Until independent calibration, do not select:
