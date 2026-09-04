@@ -324,6 +324,18 @@ jobs:
           p4_strength_results="docs/P4_SIGNAL_STRENGTH_RESULTS.md"
           expected_p4_strength_results_sha="c2520daaf3853aef6c2edc54f2bb1157b10d0998b7a31051eb3d03243c9d7231"
           test "$(sha256sum "$p4_strength_results" | cut -d' ' -f1)" = "$expected_p4_strength_results_sha"
+          p4_zoom_plan="docs/P4_ONE_ARM_ZOOM_PLAN.md"
+          expected_p4_zoom_plan_sha="c26b3b6020d8a31e4d0568c61028a5805671924f732523c3ea5b7dd74309b8ba"
+          test "$(sha256sum "$p4_zoom_plan" | cut -d' ' -f1)" = "$expected_p4_zoom_plan_sha"
+          p4_zoom_kernel="scripts/prototype_p4_one_arm_zoom_v0_1.py"
+          expected_p4_zoom_kernel_sha="96918e3f4f40630e47d34fef85f2153f418699973c495c8cd04c50ce43d2779c"
+          test "$(sha256sum "$p4_zoom_kernel" | cut -d' ' -f1)" = "$expected_p4_zoom_kernel_sha"
+          p4_zoom_runner="scripts/run_p4_one_arm_zoom_v0_1.py"
+          expected_p4_zoom_runner_sha="a1c30ea164c8798e28a7efe4d831585a0edb9eaacb5cba5eaf1822ab2fef8ce6"
+          test "$(sha256sum "$p4_zoom_runner" | cut -d' ' -f1)" = "$expected_p4_zoom_runner_sha"
+          p4_zoom_test="tests/test_p4_one_arm_zoom_v0_1.py"
+          expected_p4_zoom_test_sha="0702ac1d4f29e932f2febdba58e29b3ab138968275a5f02df3fce780643bc55e"
+          test "$(sha256sum "$p4_zoom_test" | cut -d' ' -f1)" = "$expected_p4_zoom_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -389,7 +401,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_probe_sensitivity_test" \
             "$GITHUB_WORKSPACE/$p4_reference_test" \
             "$GITHUB_WORKSPACE/$p4_perturbation_test" \
-            "$GITHUB_WORKSPACE/$p4_strength_test"
+            "$GITHUB_WORKSPACE/$p4_strength_test" \
+            "$GITHUB_WORKSPACE/$p4_zoom_test"
 
           (
             cd "$neutral"
