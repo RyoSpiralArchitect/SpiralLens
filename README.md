@@ -1001,6 +1001,14 @@ reported separately from whole-pipeline time. Its fixed 8/32/128 probe-count
 and noise-role panel uses CPU reference measurements, not backend-selected
 scientific outcomes or a model run.
 
+The [independent reference validation](docs/P4_REFERENCE_VALIDATION_RESULTS.md)
+then compared 32 pre-registered A/B reference pairs against clean shared
+evaluation and a third held-out observation set. All quadratic controls
+retained residual +2, while coherent controls could disagree between
+references even as held-out prediction error decreased. Neither reference
+was selected after observation; prediction accuracy and residual-direction
+stability remain separate diagnostic questions.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

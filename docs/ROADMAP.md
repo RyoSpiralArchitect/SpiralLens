@@ -779,6 +779,37 @@ checks and explicit repeat/seed denominators. Profile the remaining CPU
 pipeline before promising faster end-to-end iteration. None of this selects
 a model, discovers model topology/phase, or changes SCI-S1/160M gates.
 
+### Independent references and held-out prediction (2026-09-04)
+
+The [prospectively committed A/B/V protocol](P4_REFERENCE_VALIDATION_PLAN.md)
+and [completed result record](P4_REFERENCE_VALIDATION_RESULTS.md) extend the
+same working PR. All 32 paired units / 64 arm measurements completed on CPU.
+Both independently noisy references were sealed before any held-out or
+evaluation moments. A third noisy observation set at eight disjoint
+coordinates measured prediction error without choosing or refitting an arm.
+
+All 16 quadratic pairs, including noiseless controls, retained outer residual
+F2/F4 +2 in both arms across all nine cells. The curved coherent controls did
+not acquire stable residual directions merely because predictions improved:
+at side65 P128, the four seed pairs contain 24/36 F2 graph comparisons with
+different admitted winding, and 18/36 F4 comparisons differ, with three
+additional A-only admissions. These are correlated graph measurements across
+four paired noise seeds, not independent discovery or failure-rate estimates.
+
+The residual A/B difference is explained by the reference-prediction
+difference to 5.56e-17 maximum absolute error on these fixed evaluation fields.
+This locates the instrument's subtraction sensitivity; it does not establish
+model topology or provide a new admission rule. Held-out RMSE alone is not
+a criterion for an identifiable near-zero residual direction, and the
+intentional quadratic excess need not be well fit by an affine reference.
+
+The next prospective diagnostic should compare reference perturbation with
+residual amplitude and angular stability along the same fixed loops, before
+designing any calibrated uncertainty/admission rule. Keep held-out prediction
+error, baseline sensitivity and geometric transport as separate measurements.
+No reference was selected, no missing value became zero, no model was accessed,
+and the existing scientific/model gates remain unchanged.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

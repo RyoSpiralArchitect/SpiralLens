@@ -291,6 +291,9 @@ jobs:
           p4_reference_test="tests/test_p4_reference_validation_v0_1.py"
           expected_p4_reference_test_sha="5a0ee59924e443d021d9d8ed0aca860040858e204b356b89966b6eb1c6f0562c"
           test "$(sha256sum "$p4_reference_test" | cut -d' ' -f1)" = "$expected_p4_reference_test_sha"
+          p4_reference_results_doc="docs/P4_REFERENCE_VALIDATION_RESULTS.md"
+          expected_p4_reference_results_doc_sha="ff74bf19a9f0ff9ef2270a76b2977d2c3163753b34c6a489739a2a8f88661c6f"
+          test "$(sha256sum "$p4_reference_results_doc" | cut -d' ' -f1)" = "$expected_p4_reference_results_doc_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

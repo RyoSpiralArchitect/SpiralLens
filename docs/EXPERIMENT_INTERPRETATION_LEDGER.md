@@ -2153,6 +2153,88 @@ The run used existing software without changing a managed runtime or another
 workload. See `docs/P4_CUDA_PROBE_SENSITIVITY.md` for the full outcome tables,
 receipts, resource scope and isolated checkout locations.
 
+### 3.45 Independent reference A/B and held-out V validation (2026-09-04)
+
+**Prospective commitment and implementation**
+
+The user requested opening a PR and continuing through incremental commits.
+Working PR #122 first recorded the preceding synthetic/CUDA experiments
+(`49501d7`), then the independent-reference protocol (`36f2de0`). A separate
+generated-view digest refresh (`5392938`) fixed the initial CI's stale
+documentation projection without changing a scientific gate. The new
+measurement implementation, tests and CI bindings were committed as
+`465238be0fe9b63bbe83fbd40408b2484d7d75e8` before Furnace execution.
+
+The fixed protocol contains 32 paired units: 24 side65 noisy units crossing
+two constructions, seeds 0–3 and P8/32/128; four side257 P128 sentinels crossing
+both constructions and seeds 0–1; and four side65 noiseless controls. Each
+unit has references A/B, identical clean plane/evaluation observations,
+and independent validation role V. Both three-row reference sets are sealed
+before either arm's evaluation or V moment reads. V uses eight registered
+coordinates disjoint from the original five-point fit stencil and never
+trains, selects, or admits either reference. Each arm retains all nine graph
+cells, ten oriented loop readouts, six estimands and the fixed core adjacency.
+
+The tagged A/B/V noise streams have nested per-vertex prefixes across probe
+counts; they are a new protocol, not a replay of the earlier P8 noise bytes.
+Sharing a seed across sizes does not pair noise at common coordinates.
+Noiseless duplicate references are controls, not independent noise draws.
+The whole screen uses the NumPy reference backend, not a newly qualified
+CUDA chain or model computation.
+
+**Observed**
+
+All 32 units / 64 arms completed in 181.703 seconds. All 16 quadratic pairs,
+14 noisy and two noiseless, retained outer affine-residual F2/F4 +2 in every
+cell of both arms. For the curved coherent primary panel, increasing P
+reduced held-out errors without ensuring reference-stable winding. Across
+the four paired seeds and nine correlated graph cells at each P, F2
+equal/different admitted counts were 18/18, 0/36, and 12/24 for P8/32/128.
+F4 counts were 0/36, 18/18, and 15/18, with three A-only admissions at P128.
+The denominator is four paired noise seeds per P, not 36 independent trials.
+
+Curved side65 held-out F2 RMSE ranges across arms/rows/seeds decreased from
+0.01739–0.02498 at P8 to 0.00455–0.00710 at P128. F4 ranges decreased from
+0.02869–0.05461 to 0.00592–0.01281. Those are descriptive ranges, not confidence
+intervals or admission thresholds. The quadratic construction intentionally
+contains a component an affine reference cannot fit; its nonzero held-out
+prediction error must not be used after the fact to discard the stable +2
+anchor or to choose a favorable reference.
+
+The high-resolution curved sentinels also separated the branches: at P128,
+seed0 had nine different admitted F2 values between A/B and nine equal F4
+comparisons; seed1 had nine equal F2 and nine different F4 comparisons.
+All residual-array differences satisfy
+`residual_A-residual_B = -(affine_A-affine_B)` to at most
+5.551115123125783e-17 absolute numerical error. This identifies the changed
+reference subtraction under fixed full fields; it is not a physical charge
+or topology validation. Cases where neither reference is admitted remain
+separate from admitted winding agreement.
+
+**Validation, retention and claim boundary**
+
+The new focused suite passed 42 tests on both Mac and Furnace before launch,
+including actual six-reference-seal chronology, V-isolation, B-to-A isolation,
+held-out replay, fixed denominators and failed/unrun preservation. The broader
+local targeted regression passed 564 tests with eight CUDA-only skips in
+104.90 seconds; this is not the full GitHub clean-wheel result. The earlier
+CI stale-view failure and its correction are separate from measurement data.
+
+Furnace ran a fresh, clean checkout of the exact pushed implementation
+commit. All 199 source/protocol/test hashes and 32 returned report hashes
+were checked; all 32 raw NPZ sizes/digests were verified on Furnace after
+completion. Raw arrays total 2,279,683,782 bytes and remain in that isolated
+Furnace campaign; compact reports were returned to the Mac. Peak reported
+RSS was 1,620,086,784 bytes. There was no resource-limit failure, GPU/model
+access, environment installation, or modification of another workload.
+
+The result adds a bounded reference-sensitivity observation and a tested
+independent-validation path. No reference selection, new uncertainty cutoff,
+verified core, model-derived order parameter, phase/transition finding or
+scientific-authority promotion occurred. See the immutable
+`docs/P4_REFERENCE_VALIDATION_PLAN.md` and separate
+`docs/P4_REFERENCE_VALIDATION_RESULTS.md` for all units and receipts.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
