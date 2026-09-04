@@ -294,6 +294,18 @@ jobs:
           p4_reference_results_doc="docs/P4_REFERENCE_VALIDATION_RESULTS.md"
           expected_p4_reference_results_doc_sha="ff74bf19a9f0ff9ef2270a76b2977d2c3163753b34c6a489739a2a8f88661c6f"
           test "$(sha256sum "$p4_reference_results_doc" | cut -d' ' -f1)" = "$expected_p4_reference_results_doc_sha"
+          p4_perturbation_plan="docs/P4_REFERENCE_PERTURBATION_PLAN.md"
+          expected_p4_perturbation_plan_sha="53fbfd1409d03de7fb6c8ee44361213a8b1574920ca2d8b89120b289fb37c202"
+          test "$(sha256sum "$p4_perturbation_plan" | cut -d' ' -f1)" = "$expected_p4_perturbation_plan_sha"
+          p4_perturbation_kernel="scripts/p4_reference_perturbation_diagnostics_v0_1.py"
+          expected_p4_perturbation_kernel_sha="d1d27e86607d0114337294cda6bde9c84f7f8e63c1df4285d3b20d0814a2043b"
+          test "$(sha256sum "$p4_perturbation_kernel" | cut -d' ' -f1)" = "$expected_p4_perturbation_kernel_sha"
+          p4_perturbation_analyzer="scripts/analyze_p4_reference_perturbation_v0_1.py"
+          expected_p4_perturbation_analyzer_sha="2834f2927d8634ff04889b986dcf7e865d6269a8bf90165576b8cf12cde29f1e"
+          test "$(sha256sum "$p4_perturbation_analyzer" | cut -d' ' -f1)" = "$expected_p4_perturbation_analyzer_sha"
+          p4_perturbation_test="tests/test_p4_reference_perturbation_v0_1.py"
+          expected_p4_perturbation_test_sha="d8978fbf512c50fce2d19935e191ef8ff7b39c645b1f4313816458e0fb9f5c39"
+          test "$(sha256sum "$p4_perturbation_test" | cut -d' ' -f1)" = "$expected_p4_perturbation_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -357,7 +369,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_furnace_preflight_test" \
             "$GITHUB_WORKSPACE/$p4_large_domain_test" \
             "$GITHUB_WORKSPACE/$p4_probe_sensitivity_test" \
-            "$GITHUB_WORKSPACE/$p4_reference_test"
+            "$GITHUB_WORKSPACE/$p4_reference_test" \
+            "$GITHUB_WORKSPACE/$p4_perturbation_test"
 
           (
             cd "$neutral"
