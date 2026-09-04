@@ -1822,6 +1822,337 @@ D7/D8, SCI-S1/S2, API, support, compatibility, release, and library states do
 not change. A future source freeze requires a separate prospective decision;
 this development outcome cannot silently supply its thresholds or authority.
 
+### 3.39 First synthetic representation-to-partial-pattern slice (2026-09-04)
+
+**Decision timing and scope**
+
+Following the M1 prototype, the next development decision is to exercise a
+complete synthetic measurement branch before any official P4 source freeze
+or model access. The development branch starts from main commit
+`7aa46fc2944c75e834079eafd80f414336a0cb7f` and adds
+`scripts/prototype_p4_partial_patterns_v0_1.py`, its tests, and
+`docs/P4_PARTIAL_PATTERN_PROTOTYPE.md`. Thresholds and fixtures are development
+choices, not prospectively qualified values. Furnace availability is noted
+but explicitly set aside: no remote execution or data transfer is introduced.
+
+**Bounded observation and exclusions**
+
+Twelve deterministic constructions exercise separate fit/evaluation probes,
+fit-only plane/reference estimation, co-primary F2/F4, same-field numerical
+amplitude and sampled depression components, exact directed boundaries, and
+independent geometry/defect readouts. Both core records precede winding reads.
+The curved-plane/coherent-field case has approximately 0.8054316832 rad
+continuous outer holonomy and zero sampled winding; a flat-plane identity
+fixture has winding +1 and flat geometry; a dipole has local +1/-1 with
+enclosing winding zero; a sampled depression without winding remains its own
+pattern. Zero fields and collapsed/undersampled prerequisites abstain rather
+than becoming negatives. F2-only and F4-only do not select a winning referent.
+
+The graph is one radius graph on declared coordinates, not an observed
+representation graph, the M1 law, or a 3-by-3 graph-family qualification.
+Sampled low-amplitude components are not verified continuous zeros or cores.
+Identity-induced winding is a deliberate instrument control, not evidence of
+learning. The amplitude/noise/density panel summarizes only outer sampled
+winding; the remaining trial-level branches are retained but do not yet have
+qualified sensitivity. No official result artifact or held-out calibration
+is created, and no development threshold transfers authority.
+
+The accompanying `docs/P4_70M_MINIMUM_OBSERVATION_PLAN.md` records intended
+single-checkpoint plumbing and later separately authorized exploration.
+Its model identities, observations, budget, freeze and launch remain unset.
+
+**Claim delta**
+
+None. This updates what the synthetic development implementation can measure,
+not what has been observed in a model. Earlier consumed evidence remains
+unchanged; missing D7 scalars are not reconstructed and D7 is not rerun.
+P4 v0.3 remains `planned_not_frozen_not_run`. No model-derived order parameter,
+verified core, model topology, phase-like regime, transition, semantic/causal
+effect, SCI-S1/S2, D7/D8, Pythia-160M access, scientific authority, or milestone
+is established. Future exploratory hypotheses require new versioned
+decisions and unused confirmation, not outcome-driven retuning here.
+
+### 3.40 Synthetic full/baseline/residual comparison (2026-09-04)
+
+**Decision timing and scope**
+
+The next user-approved local development step separates coordinate/capture
+structure from explicitly defined residuals. The predecessor script
+`scripts/prototype_p4_partial_patterns_v0_1.py` remains byte-identical at
+SHA-256 `753dafb9e58a6fb1fef478fd1dca92d6f92db3202284dc21136dfc9de4bc000b`.
+The new `scripts/prototype_p4_estimand_comparison_v0_1.py` and
+`docs/P4_ESTIMAND_COMPARISON_PROTOTYPE.md` are development additions on the
+same branch based on `7aa46fc2944c75e834079eafd80f414336a0cb7f`, not an official
+source freeze or extension of a consumed experiment. No model or Furnace
+access, transfer, launch, or persistent result publication is involved.
+
+**Bounded observation**
+
+Nine synthetic constructions use disjoint plane-fit, baseline-fit, and
+evaluation batches. A fixed five-point `[1,x,y]` affine fit at the origin and
+the four half-unit axial offsets is sealed before evaluation moments are
+read. Its outside-convex-hull predictions remain labeled extrapolations.
+F2 residuals subtract common-reference vectors; F4 residuals subtract
+common-reference traceless covariance tensors, not paired residual probes.
+Both sections are retained for full, pass-through, affine, and two residual
+estimands, plus a separately labeled evaluation-origin-centering control.
+Each receives its own numerical amplitude, support, core seal, and winding.
+The shared fit-plane geometry is not called residual-model geometry.
+
+An identity input has F2 winding +1 and isotropic, direction-ineligible F4;
+its affine residuals are numerically zero and abstain. For the constructed
+`z + 0.25 z^2` vector/tensor-coordinate fields, full and affine winding are
+both +1 while the recomputed affine residual winds +2. Subtracting the two
+integers would give the wrong result. Origin-centering `2+z` changes a full
+zero winding into an imposed +1 pattern. Conversely, a zero full field minus
+the nonzero pass-through comparator produces F2 winding +1: residual-positive
+alone is not evidence of nonlinear or learned structure. All such outcomes
+remain synthetic sampled construction recovery, not qualified positives.
+
+An internal dependency review also identified and corrected a control-path
+bug before final validation: an unsupported origin reference must invalidate
+the entire centered control, even if its outer boundary is supported. Full,
+pass-through, and independent geometry retain their own eligible boundary
+readouts. Unavailable baselines/controls emit missing fields, not fabricated
+zero arrays. This correction changes no consumed or frozen record.
+
+**Claim delta**
+
+None. The development comparison makes subtraction choices inspectable; it
+does not prove model nonlinearity, a model-derived order parameter, a verified
+core, a native manifold, a phase-like regime, a transition, semantics, or
+causality. The one declared-coordinate graph is not a representation-graph
+3-by-3 qualification. Existing P4 v0.3 `planned_not_frozen_not_run`, D7/D8,
+SCI-S1/S2 and Pythia-160M gates remain unchanged. Noise calibration and fresh
+per-branch sensitivity evidence remain future work.
+
+### 3.41 Synthetic field/loop graph cross (2026-09-04)
+
+**Decision timing and scope**
+
+The user approved the next local 3-by-3 comparison. The new
+`scripts/prototype_p4_graph_cross_v0_1.py` and
+`docs/P4_GRAPH_CROSS_PROTOTYPE.md` extend the same branch based on
+`7aa46fc2944c75e834079eafd80f414336a0cb7f`. Both predecessor scripts and their
+test/document bytes remain unchanged. This is a separate development version,
+not a revision of consumed evidence or an official source/protocol freeze.
+No model, Furnace, remote transfer, or external publication is involved.
+
+Before its first numerical readout, the implementation fixed three graph
+families, their field-blind support-state construction, `k=8`, median
+fourth-neighbor scale, radius multiplier `1.15`, and shared-neighbor minimum
+`3`. It also fixed self-plus-neighbor centered covariance pooling, minimum
+degree `2`, maximum domain distance `0.75`, exact boundary edges without path
+substitution, and geometry matrix-comparison tolerance `0.02`. These values
+are bounded development choices, not calibrated thresholds or a qualified
+replacement for the observed M1 v0.1 law. None was retuned after the outcomes.
+
+**Bounded observation**
+
+Each field graph determines the neighborhood used to pool the actual fit
+covariances. Its baseline is sealed before evaluation; all 36 F2/F4
+field/component seals exist before any loop
+readout. The three loop graphs separately test support for the same five
+predeclared boundaries. Columns that support the same boundary deliberately
+reuse its numeric result; unsupported cells are retained. Core connectivity
+uses one fixed declared triangulation, making this a `3 x 3 x 1` slice.
+
+The default quadratic construction has nine eligible affine-residual cells
+with winding +2 in each of F2 and F4. At warp `0.75`, four retain +2 and five
+are insufficient: the fixed-radius column lacks exact boundary support,
+and its field-estimation row lacks sufficient fitting support. Subset
+agreement is not complete graph-cross agreement. In the noisy curved-coherent
+control (`probe_noise=0.03`), all nine geometry cells are eligible but the
+three field rows differ, with maximum pairwise matrix distance approximately
+`0.164163`, above `0.02`. Its affine-residual F2 winds +1 in six eligible
+cells and F4 winds +1 in all nine. This nominal-null residual pattern is an
+estimation/noise/subtraction sensitivity warning, not discovered structure,
+even when all nine repeated graph measurements agree.
+
+A separate fixed 16-case curved-coherent panel crosses side `{9,17}`, warp
+`{0,0.75}`, graph noise `{0,0.2}`, and seed `{0,1}`, with probe noise zero.
+It completed with 14 geometry summaries having incomplete support and two
+having complete disagreement. The zero-noise seed labels duplicate inputs;
+neither these cases nor the nine graph cells provide independent replication
+or a false-positive rate. Compact records retain every outer-loop cell,
+graph-input identities, and neighborhood distance/mass/support diagnostics.
+
+**Claim delta**
+
+None. This exposes measured graph sensitivity, nominal-null residuals, and
+support failures instead of promoting any preferred graph or branch. It
+does not complete M8/M9, qualify M1, establish a model-derived order parameter,
+verified core, topology, phase, transition, semantics, or causality. Existing
+P4 v0.3 `planned_not_frozen_not_run`, D7/D8, SCI-S1/S2 and Pythia-160M gates
+remain unchanged. Further sensitivity/confirmation decisions require a new
+prospective development version; no missing D7 scalar is reconstructed.
+
+### 3.42 Furnace synthetic scaling preflight (2026-09-04)
+
+After the user proposed a larger synthetic Furnace run, the agent checked
+resources and transferred four fixed synthetic inputs to a new isolated
+Furnace checkout. The graph-cross, estimand-comparison and partial-pattern
+measurement scripts were not modified. No model or GPU was used.
+
+The strict cross-host comparison was fixed before readout: discrete values
+must match, floating values use `atol=rtol=1e-10`, and derived digests are
+retained but not required to match numerically. It returned `fail` with 228
+differences, all in the noisy curved-coherent pass-through F4 branch's
+supplementary diagnostics or additional reason tags. Both hosts marked all
+90 loop-direction cells in that branch `insufficient`, with null admitted
+values and amplitude-below-floor reasons. Its maximum amplitude was below
+`5e-16` on both hosts, compared with the fixed `1e-6` floor. Eligibility states
+and admitted numeric outputs matched; full diagnostic parity did not.
+
+This outcome is consistent with arbitrary directions in roundoff-scale
+isotropic-tensor residuals. It does not identify a real-model phenomenon or
+authorize silently ignoring mismatches. The failed report remains intact.
+The scale preference was left explicit: repeated-seed breadth with the
+unchanged kernel versus a larger single domain requiring new sparse machinery.
+No large campaign was launched. See `docs/P4_FURNACE_SCALE_PREFLIGHT.md` for
+runtime details, exact evidence paths and the distinction between a kernel
+without remote-call capability and its actual execution on Furnace.
+
+Claim delta: none. Model order parameters, verified cores, topology, phase,
+transition, GPU speedup and Mac-infeasibility remain unestablished. P4, D7/D8,
+SCI-S1/S2 and Pythia-160M scientific gates are unchanged.
+
+### 3.43 First large-domain synthetic Furnace warmup (2026-09-04)
+
+**Prospective decision and implementation boundary**
+
+The user clarified that the first Furnace warmup should increase the size of
+a single synthetic domain and graph matrices before any later model work.
+The new `p4_sparse_graph_backend_v0_1.py`,
+`prototype_p4_large_domain_v0_1.py` and
+`run_p4_large_domain_warmup_v0_1.py` are separate development scripts; all
+previous numerical kernels and the failed cross-host diagnostic preflight
+remain unchanged. A 27-case plan fixed sides 17/33/65/129/257 with k=8,
+plus k=16/32 at sides 65/257, each with quadratic clean, curved-coherent
+clean, and curved-coherent probe noise 0.03. All use seed 0 and warp 0.
+Source hashes and resource limits were recorded before the large campaign.
+
+Sparse boundary maps satisfy exact d1*d2=0 and the same five induced
+oriented boundaries. Graph candidates are found by an exact-query KD tree,
+then canonical distances and row-ID ties decide edges. All three baselines
+precede evaluation; all 36 component seals precede loops. The new isotropic
+pass-through F4 representation is analytically traceless(I2)=0, explicitly
+replacing roundoff-scale tensors for that declared comparator only. No
+threshold was raised or lowered. Small-case numerical/admission parity
+against the predecessor passed on both hosts under the declared successor
+contract; this is not a full-diagnostic or byte-parity claim.
+
+**Observed outcome**
+
+Furnace completed 27/27 cases in 63.7247 seconds, with zero failed, timed-out
+or not-run cases. The largest domain has 66,049 vertices. The largest
+shared-neighbor graph has 2,926,610 undirected edges. Maximum reported RSS
+was 590,352,384 bytes. All 27 full array artifacts remain on Furnace with
+verified sizes/digests; compact reports and source snapshots were returned
+to the Mac. No GPU, model, managed-runtime modification or hardware-limit
+failure occurred.
+
+Every quadratic configuration retained F2/F4 affine-residual winding +2 in
+all nine cells. At k=8, the clean curved-coherent geometry's maximum pairwise
+matrix discrepancy decreased from 0.165814 at side17 to 0.010801 at side257;
+only the latter crossed the fixed 0.02 descriptive agreement tolerance.
+At side257 k=32 the discrepancy was 0.030909, so simply adding neighbors
+did not ensure agreement. The noiseless residual amplitude shrank toward
+the fixed 1e-6 floor, causing amplitude-ineligible readouts.
+
+For probe noise 0.03 at k=8, side17 F2 had six eligible +1 readings and F4
+had nine. At side33 F4 remained eligible but differed between 0 and +1;
+from side65 onward both residual branches were ineligible in all nine
+outer cells due to branch-cut/undersampling ambiguity. These are distinct
+failure modes, not measured zeros or a qualified absence result.
+
+**Claim delta**
+
+None. Fixed-k refinement changes both resolution and physical locality;
+seed reuse at different sizes does not pair noise at common coordinates,
+and fixed eight probes per point do not increase per-point signal-to-noise
+ratio as n grows. The 243 graph cells are correlated measurements, not 243
+independent discoveries. Core connectivity is still one fixed triangulation
+(3-by-3-by-1). No model-derived order parameter, verified core, model phase,
+transition, topology, semantics, GPU speedup, or Mac-infeasibility was found.
+See `docs/P4_LARGE_DOMAIN_WARMUP.md` for the planned matrix, reports and exact
+resource/evidence scope. All prior model/scientific gates remain unchanged.
+
+### 3.44 Paired probe-count/noise-role panel and thin CUDA reductions (2026-09-04)
+
+**Decision and prospective boundary**
+
+The user approved continuing the per-point probe-count comparison and adding
+a thin CUDA adapter for faster iteration. Three new scripts separate the
+optional dense-moment backend, paired-input measurement successor, and bounded
+campaign executor; no predecessor bytes or scientific admission thresholds
+were changed. The plan fixed two sizes (65/257 per side), three probe counts
+(8/32/128), four noise-role settings (all/plane/baseline/evaluation), and four
+clean controls: 28 CPU reference conditions. Two full CPU/CUDA comparison
+pairs and one three-point warm benchmark bring the execution denominator to
+31 stages. CPU reference measurements were chosen before results; no speed-
+or outcome-dependent backend selection was performed.
+
+The new generator repeats the declared eight-point cube and takes the first
+P noisy probes from a per-role, per-vertex maximum-128 stream. This pairs
+inputs across P and role within a fixed domain, not across domain refinement.
+It deliberately differs from the old eight-probe RNG layout. Repeated cube
+directions, nested probes and nine graph cells are not independent experiments.
+
+CUDA receives identical host float64 inputs and returns host moment arrays.
+CPU graph construction, covariance pooling, eigensolvers, support checks,
+baseline/core sealing and exact-boundary loop readouts are unchanged. The
+comparison requires exact inputs/graphs/support/core membership, baseline and
+loop identities, admission states, reasons and coverage. Numerical arrays and
+every admitted value use atol=rtol=1e-9; provenance hashes and non-admitted
+supplemental directional values are not equated. This separately declared
+contract does not retroactively pass the earlier failed strict preflight.
+
+**Observed**
+
+All 31 stages completed in 180.23 seconds, including all 28 reference cases.
+Both complete CPU/CUDA comparisons passed; maximum absolute array differences
+were 6.88e-15 and 2.94e-15. The three-point warm benchmark, one covariance plus
+one moment reduction at 66,049 vertices, used three alternating-order timed
+repetitions after one warmup per backend. Every repetition was compared;
+validation, transfers and CUDA synchronization are inside the measured calls.
+CPU-over-CUDA ratios were 5.07, 8.16 and 9.30 for P=8,32,128. These exclude
+generation, graph/core work, hashes and output serialization. The single
+cold large-pipeline pair was 10.14 seconds CPU versus 8.94 CUDA; the small
+pair was 0.73 versus 1.38 seconds. These single pairs do not establish a
+stable end-to-end speedup or a faster model pipeline.
+
+Clean quadratic controls retained residual F2/F4 +2 in all nine cells at
+P=8 and P=128. Baseline-only noisy curved controls could also yield complete
+nonzero residual winding: at side257 P=8 and P=128, F2 was +1 and F4 -1 in
+all nine cells, while plane and evaluation probes were clean. At P=32 that
+same row instead gave F2 zero in all nine cells and F4 +1 in six eligible
+cells, with three abstentions. This is an explicit warning about baseline-
+subtraction artifacts and non-monotonic finite-noise realizations, not a
+new model defect or phase. Evaluation-only noise gave no eligible outer
+residual F2/F4 cells at either size for any P through 128. Most missing cells
+were branch-ambiguous; some plane-only cells also crossed the amplitude floor.
+Those states remain missing measurements, not measured zeros.
+
+**Validation, retention and claim delta**
+
+The final local targeted suite passed 508 tests with eight CUDA-only skips;
+the focused Furnace suite passed 90 with one CUDA-absence-only skip. The
+pre-launch focused Furnace draft had passed 78 with one skip; the additional
+runner-regression tests were transferred and rerun after launch without
+changing any launched numerical source. All 195 source locks, 31 result
+hashes, 28 reference report hashes and four parity report hashes were checked.
+All 28 raw array files (2,543,917,943 bytes) remain on Furnace and were verified
+there by digest and size. Compact reports were returned to the Mac.
+
+Claim delta is limited to this optional backend's bounded implementation
+parity and measured reduction timing, plus synthetic sensitivity observations.
+No model was accessed; no verified core, model-derived order parameter,
+phase, transition, semantics or scientific authority was established.
+The run used existing software without changing a managed runtime or another
+workload. See `docs/P4_CUDA_PROBE_SENSITIVITY.md` for the full outcome tables,
+receipts, resource scope and isolated checkout locations.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

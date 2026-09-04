@@ -648,6 +648,137 @@ phase-like regime, transition, scientific claim, or milestone is authorized.
 A later freeze still requires a new dated decision with prospective nuisance,
 gate, held-out, detection-surface, resource, and exact-one lifecycle contracts.
 
+### First synthetic partial-pattern measurement slice (2026-09-04)
+
+The [partial-pattern prototype](P4_PARTIAL_PATTERN_PROTOTYPE.md) now connects
+fit-only synthetic probe estimation to both F2/F4 fields, same-field sampled
+depression candidates, exact declared-boundary binding, and independent
+continuous-holonomy/sampled-winding readouts. Positive constructions, nulls,
+and abstentions are retained. It uses one declared-coordinate graph, not
+a qualified M1 law or the required 3-by-3 representation-graph cross.
+
+The next implementation steps are separate full/pass-through/local-linear/
+residual comparisons and exact-boundary reception under crossed nuisances,
+followed by fresh per-branch sensitivity qualification. The separate
+[70M minimum observation plan](P4_70M_MINIMUM_OBSERVATION_PLAN.md) is not frozen
+or run. Furnace is a future resource option, not current execution authority.
+P4 v0.3, D7/D8, SCI-S1/S2, Pythia-160M and scientific-claim gates are unchanged.
+
+### Synthetic baseline/residual comparison (2026-09-04)
+
+The separate [estimand-comparison prototype](P4_ESTIMAND_COMPARISON_PROTOTYPE.md)
+now implements the preceding full/pass-through/local-linear/residual step.
+Nine synthetic constructions use separate plane-fit, baseline-fit, and
+evaluation probes. A fixed five-point affine stencil is fit before evaluation
+moments; every F2 vector and F4 tensor contrast then receives a fresh same-field
+amplitude/core/loop readout. Extrapolation outside the stencil hull is explicit.
+
+The observations distinguish identity winding explained by a baseline,
+origin-centering's imposed zero, a constructed quadratic residual with
+winding +2 despite full and affine winding +1, and winding created merely by
+subtracting a nonzero comparator from a zero field. None implies learned or
+model-native structure. The next step remains representation-graph 3-by-3
+reception with exact boundaries and crossed nuisances, followed by fresh
+per-branch sensitivity qualification. Model/Furnace access and all existing
+P4, D7/D8, SCI and 160M authority gates remain unchanged.
+
+### Synthetic field/loop graph cross (2026-09-04)
+
+The [graph-cross prototype](P4_GRAPH_CROSS_PROTOTYPE.md) implements the next
+bounded local step: mutual-kNN, fixed-radius, and shared-neighbor graphs
+crossed independently for field-plane estimation and exact-boundary support.
+Field rows use their actual adjacency to pool centered fit covariances;
+supported columns reuse the same oriented boundary without changing its
+numeric readout. All three baselines precede evaluation, and all 36 same-field
+component seals precede loop readout. Core connectivity remains fixed, so the
+measured design is `3 x 3 x 1`, not full M8 qualification.
+
+The default quadratic construction retains affine-residual winding +2 in
+all nine F2/F4 cells. Warping the sampling representation leaves four
+eligible cells and five insufficient cells, not complete agreement. A noisy
+curved-coherent control has nine eligible geometry cells but disagreement
+between fitted graph rows; its residual winding also warns that graph
+agreement alone cannot distinguish structure from estimator/subtraction
+effects. A separate 16-case crossed panel retains density, warp, graph-noise,
+seed, and locality diagnostics without retuning or dropping failures.
+
+The next measurement target is therefore the sensitivity of these distinct
+failure modes and nominal-null residuals, not a preferred graph chosen after
+seeing the result. Fresh per-branch controls and confirmation, outstanding
+core-adjacency robustness, and qualified sensitivity remain required before
+model observation. Existing protocols, model/Furnace access and authority
+gates remain unchanged; the new implementation is Level-0 development only.
+
+### Furnace scaling preflight (2026-09-04)
+
+The user proposed a larger synthetic run on available Furnace resources.
+The [four-anchor cross-host preflight](P4_FURNACE_SCALE_PREFLIGHT.md) executed
+the unchanged kernel on both hosts. Strict comparison failed only on
+supplementary diagnostics and additional reason tags in an amplitude-ineligible
+pass-through F4 control; admitted observations and eligibility states matched.
+The failed comparison remains evidence, not a gate silently converted to pass.
+
+The next scale decision distinguishes repeated-seed breadth with the existing
+kernel from a larger single domain requiring a new sparse implementation.
+No large campaign, GPU acceleration, new domain size or model run occurred.
+Any portability contract that excludes undefined-direction diagnostics must
+be recorded prospectively and keep this strict comparison's failure visible.
+
+### First large-domain Furnace warmup (2026-09-04)
+
+The user-approved [sparse large-domain successor](P4_LARGE_DOMAIN_WARMUP.md)
+completed all 27 planned synthetic cases on Furnace, increasing the domain
+from 289 to 66,049 vertices and crossing neighbor budgets 8/16/32 at selected
+sizes. A separate sparse boundary/graph implementation and vectorized fit
+replace dense intermediates without changing the predecessor scripts. Small
+predecessor-parity tests passed on both hosts. Analytic zero pass-through F4
+is an explicit new representation, not a retroactive pass for the previous
+strict diagnostic comparison.
+
+The quadratic construction retained affine-residual F2/F4 winding +2 in all
+required cells at every tested size/budget. For the coherent control, finer
+sampling reduced geometry disagreement but also reduced the noiseless
+residual amplitude toward its eligibility floor. With fixed probe noise,
+the earlier residual +1 became disagreement or branch-ambiguity abstention;
+that is not evidence that an underlying phenomenon disappeared. Increasing
+neighbor count at the same size changed physical locality and could restore
+geometry disagreement. No favorable budget was selected after observation.
+
+The next useful comparison separates point count, probes per point and
+noise location, with paired controls where feasible. These measurements
+should inform a later prospectively designed small-model search/confirmation
+split, not a search until a positive result is accepted. This campaign used
+CPU only, reached no hardware/resource failure, and changed no model-access
+or scientific-authority gate.
+
+### Paired probes and a thin CUDA adapter (2026-09-04)
+
+The [separate probe-sensitivity successor](P4_CUDA_PROBE_SENSITIVITY.md)
+completed 28 fixed CPU reference conditions plus two whole-chain CUDA parity
+pairs and a three-point reduction benchmark on Furnace. Probe counts 8/32/128
+share a nested role-specific noise stream within each fixed domain; noise in
+plane fitting, baseline fitting and evaluation is isolated. This is a new
+noise protocol, not a byte-for-byte rerun of the previous eight-probe panel.
+
+The optional adapter accelerates only dense float64 covariance and moment
+reductions. Graphs, eigenvectors, support, baseline/core chronology and loop
+admission stay on CPU. Both complete-chain pairs passed the declared numerical
+comparison and exact discrete-state/reason/core checks. At 66,049 vertices,
+warm transfer-inclusive reduction speed ratios were 5.07/8.16/9.30 for
+8/32/128 probes. These are not whole-application ratios: the single large cold
+pipeline pair took 10.14 seconds on CPU and 8.94 on CUDA, while the small pair
+was slower on CUDA. No automatic backend selection was introduced.
+
+The sensitivity panel provides a specific next question. Baseline-only noise
+can yield nine-cell nonzero affine-residual winding even with clean evaluation
+probes; increasing probe count does not remove that outcome monotonically.
+Evaluation-only noise remained branch-ambiguous at both tested sizes through
+128 probes. A subsequent fixed panel should separate baseline-estimation
+uncertainty from evaluation-direction uncertainty, with independent held-out
+checks and explicit repeat/seed denominators. Profile the remaining CPU
+pipeline before promising faster end-to-end iteration. None of this selects
+a model, discovers model topology/phase, or changes SCI-S1/160M gates.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

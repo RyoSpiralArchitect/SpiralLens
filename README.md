@@ -952,6 +952,55 @@ support at the frozen boundary. Deterministic empty output passed, recall was
 not estimable, and no persistence receipt was issued. This is retrieval
 plumbing evidence only.
 
+## Model-free partial-pattern development
+
+The [partial-pattern prototype](docs/P4_PARTIAL_PATTERN_PROTOTYPE.md) now joins
+synthetic representation probes, fit-only planes, both F2/F4 sections,
+same-field sampled depressions, exact declared boundaries, continuous
+holonomy, and sampled winding in one runnable demo. It distinguishes
+positive constructions, synthetic nulls, and abstentions without requiring
+them to co-occur. This is Level-0 development only: no model-derived order
+parameter, verified core, qualified topology, or P4/D7/SCI gate advancement.
+The [minimum 70M observation plan](docs/P4_70M_MINIMUM_OBSERVATION_PLAN.md)
+is planning-only; model and Furnace access remain outside this slice.
+
+The separate [estimand comparison](docs/P4_ESTIMAND_COMPARISON_PROTOTYPE.md)
+now measures full, pass-through, finite-neighborhood affine, and freshly
+recomputed residual fields. It exposes both input-imposed winding and
+subtraction-induced patterns; neither is evidence of learned structure.
+F2 vector differences and F4 tensor contrasts remain distinct, with all
+amplitudes, sampled components, and loop readouts recomputed per field.
+
+The [graph-cross prototype](docs/P4_GRAPH_CROSS_PROTOTYPE.md) now crosses
+three actual field-estimation graphs with three exact-boundary support
+graphs. It retains all nine cells, including missing support and supported
+disagreement, plus a separate 16-case density/warp/graph-noise panel. Core
+connectivity remains one fixed triangulation: this is a synthetic `3 x 3 x 1`
+development slice, not completed graph qualification. Even nine-cell residual
+winding agreement can arise in a noisy coherent control; no model discovery
+or scientific authority follows from agreement alone.
+
+The separate [Furnace scaling preflight](docs/P4_FURNACE_SCALE_PREFLIGHT.md)
+ran four identical synthetic inputs on Mac and Furnace. Admitted observations
+matched, but strict comparison failed on supplementary diagnostics of an
+amplitude-ineligible F4 control. That failure is retained; that preflight
+did not launch a large campaign or use GPU acceleration.
+
+The subsequent [large-domain Furnace warmup](docs/P4_LARGE_DOMAIN_WARMUP.md)
+completed 27 synthetic cases through 66,049 vertices using a separate sparse
+backend. Quadratic residual winding persisted, while clean low-amplitude and
+noisy branch-ambiguous residuals lost eligibility for different reasons.
+This is measured CPU scaling, not a GPU benchmark, hardware-limit discovery,
+or model result; the prior strict cross-host failure remains unchanged.
+
+The [paired-probe CUDA successor](docs/P4_CUDA_PROBE_SENSITIVITY.md) adds an
+optional float64 dense-moment adapter while leaving graph, support, core and
+loop decisions on CPU. Identical-input checks passed on Furnace; warm
+reduction timings include transfers and synchronization. Reducer speed is
+reported separately from whole-pipeline time. Its fixed 8/32/128 probe-count
+and noise-role panel uses CPU reference measurements, not backend-selected
+scientific outcomes or a model run.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable
