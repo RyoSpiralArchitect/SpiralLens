@@ -309,6 +309,18 @@ jobs:
           p4_perturbation_results="docs/P4_REFERENCE_PERTURBATION_RESULTS.md"
           expected_p4_perturbation_results_sha="aa7d8f660c0e3d5ae996816d35175eb68689cb6bea6f14f74ec7252268de5874"
           test "$(sha256sum "$p4_perturbation_results" | cut -d' ' -f1)" = "$expected_p4_perturbation_results_sha"
+          p4_strength_plan="docs/P4_SIGNAL_STRENGTH_PLAN.md"
+          expected_p4_strength_plan_sha="0b19fde1b97f7a752f30788f36af41428a2ea99a92f6df202a05eb114f463582"
+          test "$(sha256sum "$p4_strength_plan" | cut -d' ' -f1)" = "$expected_p4_strength_plan_sha"
+          p4_strength_kernel="scripts/prototype_p4_signal_strength_v0_1.py"
+          expected_p4_strength_kernel_sha="a9612018d8794e1db80f5ff49e611cc65443929ae76db92523ee8df2df8e1528"
+          test "$(sha256sum "$p4_strength_kernel" | cut -d' ' -f1)" = "$expected_p4_strength_kernel_sha"
+          p4_strength_runner="scripts/run_p4_signal_strength_v0_1.py"
+          expected_p4_strength_runner_sha="24bc400f7beac0724df42096bfba60a5ad54bd5a8efddc6cd0d72e25317fac98"
+          test "$(sha256sum "$p4_strength_runner" | cut -d' ' -f1)" = "$expected_p4_strength_runner_sha"
+          p4_strength_test="tests/test_p4_signal_strength_v0_1.py"
+          expected_p4_strength_test_sha="0ca704199943f8fb4dce67d4fba64c111de5ea771db35a94b08021e144522c7e"
+          test "$(sha256sum "$p4_strength_test" | cut -d' ' -f1)" = "$expected_p4_strength_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -373,7 +385,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_large_domain_test" \
             "$GITHUB_WORKSPACE/$p4_probe_sensitivity_test" \
             "$GITHUB_WORKSPACE/$p4_reference_test" \
-            "$GITHUB_WORKSPACE/$p4_perturbation_test"
+            "$GITHUB_WORKSPACE/$p4_perturbation_test" \
+            "$GITHUB_WORKSPACE/$p4_strength_test"
 
           (
             cd "$neutral"
