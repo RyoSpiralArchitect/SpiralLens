@@ -321,6 +321,9 @@ jobs:
           p4_strength_test="tests/test_p4_signal_strength_v0_1.py"
           expected_p4_strength_test_sha="0ca704199943f8fb4dce67d4fba64c111de5ea771db35a94b08021e144522c7e"
           test "$(sha256sum "$p4_strength_test" | cut -d' ' -f1)" = "$expected_p4_strength_test_sha"
+          p4_strength_results="docs/P4_SIGNAL_STRENGTH_RESULTS.md"
+          expected_p4_strength_results_sha="c2520daaf3853aef6c2edc54f2bb1157b10d0998b7a31051eb3d03243c9d7231"
+          test "$(sha256sum "$p4_strength_results" | cut -d' ' -f1)" = "$expected_p4_strength_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

@@ -1016,6 +1016,15 @@ residuals, while the injected quadratic residual is much larger than the
 reference change and its direction moves much less. This is exploratory
 coefficient-space diagnostics, not a new winding-admission or model claim.
 
+The [33-level signal-strength cross sections](docs/P4_SIGNAL_STRENGTH_RESULTS.md)
+then completed 429 prospectively fixed synthetic reference pairs on a flat
+substrate. Across the four tested noise seeds, persistent sampled +2 recovery
+starts at F2/F4 strengths 0.15/0.35 for P8, 0.08/0.10 for P32, and 0.04/0.08
+for P128, relative to the earlier clean quadratic anchor. At P128 F2 strength
+0.04, recovered winding still coexists with 22.3–34.0-degree median direction
+changes. These are finite-grid sensitivity descriptors, not calibrated
+detection limits, a physical transition, or a model-derived order parameter.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

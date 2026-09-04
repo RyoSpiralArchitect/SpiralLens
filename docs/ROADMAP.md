@@ -836,6 +836,40 @@ as near-zero and partial-pattern cases. The closest approach of individual
 vertex segments is not whole-loop clearance, and equal endpoint winding
 does not guarantee equal directions or a clear interpolation path.
 
+### Fixed signal-strength cross sections (2026-09-04)
+
+The [prospective 33-level protocol](P4_SIGNAL_STRENGTH_PLAN.md) was committed
+before new observations. Its [completed panel](P4_SIGNAL_STRENGTH_RESULTS.md)
+retains all 429 paired units / 858 arms and 77,220 loop/hypothesis records,
+including unavailable outcomes. Only the quadratic component changes on a
+flat substrate; references are refitted separately at each strength.
+Independent A/B/V noise streams are shared across strengths and nested P,
+not counted again as independent draws. Every reference/core seal boundary
+and every original measurement gate remains unchanged.
+
+Across all four noisy seed pairs, the earliest sampled strengths followed
+only by +2 recovery through the remaining ladder are F2/F4 0.15/0.35 at P8,
+0.08/0.10 at P32 and 0.04/0.08 at P128. All 26 hypothesis traces have the
+same first-recovery and suffix-recovery point, with no sampled re-entry;
+continuity or monotonicity between samples is not established. The noiseless
+3e-6 to 1e-5 recovery bracket is consistent with the unchanged amplitude
+floor, not a physical onset.
+
+The key next distinction is now measured: **integer recovery can precede
+small directional sensitivity**. At P128 F2 strength 0.04, every seed pair
+recovers +2 in all nine cells, while row-median relative perturbation spans
+0.612–1.025 and median coefficient-angle change spans 22.3–34.0 degrees.
+The absolute F2 reference difference stays effectively constant across
+strength; the growing residual changes the balance. F4 moment errors can
+also change with the clean covariance despite shared raw noise.
+
+The next bounded question is the region after integer recovery but before
+small directional sensitivity, with any new noise/loop-scale or reference-
+uncertainty comparison fixed before observation. This panel provides no
+calibrated acceptance rule, reference selection, model result, physical
+phase/transition or scientific-authority promotion. No D7/D8, SCI-S1/S2 or
+Pythia-160M gate is loosened by these synthetic results.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

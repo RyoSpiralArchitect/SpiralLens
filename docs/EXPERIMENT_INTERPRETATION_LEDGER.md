@@ -2318,6 +2318,74 @@ scientific-authority promotion occurred. The next signal-to-reference
 detectability question requires a separate prospective panel, not a
 threshold selected from this post-hoc result.
 
+### 3.47 Prospectively fixed signal-strength cross sections (2026-09-04)
+
+**Object:** a new flat-substrate synthetic panel with
+`F2=F4=z+0.25*alpha*z^2`, not a rescaling of old residual arrays.
+The 33-level plan was committed at `2731277` before observations;
+implementation/execution used `ada7e04ece44948267054e487aa3ac0ed1ea7eca`.
+Claim ceiling remains Level 0 / development-only.
+
+All **429 pairs / 858 arms / 77,220 paired loop-hypothesis records** completed
+in 758.909836 seconds on Furnace, with no experimental failure, timeout or
+unrun unit. P8/P32/P128 and four noise seeds span 396 pairs; the remaining
+33 form one noiseless P128 control stripe. All nine graph cells, five loops
+in both directions, six estimands and fixed core adjacency are retained.
+All six baseline seals precede V/evaluation, and each arm's 36 core seals
+precede loop readout. No held-out reference or strength selection occurs.
+
+**Observed, not promoted**
+
+- Across all four seed pairs, persistent sampled +2 recovery begins at
+  F2/F4 strengths 0.15/0.35 for P8, 0.08/0.10 for P32, and 0.04/0.08 for
+  P128. Every individual first-recovery point equals its suffix-recovery
+  point on this finite ladder. No continuous threshold or monotonicity
+  between samples is established.
+- At P128 F2 strength 0.04, all pairs recover +2 across all nine cells,
+  while median relative perturbation remains 0.61170–1.0252 and median
+  coefficient-angle change remains 22.263–33.993 degrees. Integer agreement
+  is not a small-angle or reference-insensitivity certificate.
+- P128 F2 absolute reference-difference medians stay 0.0072954–0.010675
+  across the strength sweep while residual magnitude grows. Identical raw
+  noise does not guarantee invariant F4 errors; its clean covariance changes.
+- Noiseless alpha0 and 1e-6 have no defined outer-loop directions; alpha3e-6
+  has only 108/256 and remains insufficient; alpha1e-5 has 256/256 and admits
+  +2. The analytic residual minimum is alpha/4, locating the existing floor
+  inside that sampled bracket. This is an instrument-floor observation,
+  not a physical transition or the first existence of a quadratic field.
+
+F4 angles remain spin-two coefficient phases, not physical director
+rotations. Reported ranges cover per-row medians across four seeded pairs
+and three correlated field rows; they are not confidence intervals or
+twelve independent trials. The raw A/B/V stream hashes match across every
+strength and P prefix. There are eight baseline streams and four validation
+streams, not 858 independent experiments; noiseless copies consume no draws.
+
+All-loop counts preserve both-equal/different/A-only/B-only/neither:
+F2 `27882/10080/108/162/378`; F4 `27720/10404/72/36/378`, each out of 38610
+correlated records. No graph-cell admission-category mixture appeared in a
+fixed unit/loop/hypothesis, which is not independent graph qualification.
+
+**Validation and receipts**
+
+The 34 new tests passed locally; the all-P4 plus generated-view regression
+passed 789 with eight CUDA-absence skips. The focused Furnace regression
+passed 134. The execution source passed all three GitHub clean-wheel jobs.
+After execution, all 203 source bindings and 1,287 report/NPZ/compact hashes
+were checked on Furnace; the Mac verified the returned archive and every
+compact report (429 in total), fixed denominator, chronology and noise-pairing receipt.
+Raw data remains in the isolated Furnace scratch run; compact local evidence
+is `artifacts/p4-signal-strength-20260904/`. Exact paths/hashes, all 13 trace
+brackets and the complete 33-level cross section are in
+[P4_SIGNAL_STRENGTH_RESULTS.md](P4_SIGNAL_STRENGTH_RESULTS.md).
+
+No model was accessed, no missing value was reconstructed, no reference was
+selected, and no admission gate was retuned. Verified core, model-derived
+order parameter, physical phase/transition, uncertainty calibration and
+scientific authority are not established. The measured next question is
+the region after integer recovery but before small directional sensitivity;
+D7/D8, SCI-S1/S2 and Pythia-160M gates remain unchanged.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
