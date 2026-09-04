@@ -336,6 +336,9 @@ jobs:
           p4_zoom_test="tests/test_p4_one_arm_zoom_v0_1.py"
           expected_p4_zoom_test_sha="0702ac1d4f29e932f2febdba58e29b3ab138968275a5f02df3fce780643bc55e"
           test "$(sha256sum "$p4_zoom_test" | cut -d' ' -f1)" = "$expected_p4_zoom_test_sha"
+          p4_zoom_results="docs/P4_ONE_ARM_ZOOM_RESULTS.md"
+          expected_p4_zoom_results_sha="7cc07d246a48b24d31488e006f20281edb53b2f6a5e53f0f137832b23b2e2341"
+          test "$(sha256sum "$p4_zoom_results" | cut -d' ' -f1)" = "$expected_p4_zoom_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

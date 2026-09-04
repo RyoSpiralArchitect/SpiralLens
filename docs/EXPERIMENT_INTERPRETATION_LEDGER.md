@@ -2386,6 +2386,47 @@ scientific authority are not established. The measured next question is
 the region after integer recovery but before small directional sensitivity;
 D7/D8, SCI-S1/S2 and Pythia-160M gates remain unchanged.
 
+### 3.48 Targeted one-arm strength zoom (2026-09-05)
+
+The [three-window protocol](P4_ONE_ARM_ZOOM_PLAN.md), committed at `f4c05d1`
+before new observations, followed the three observed outer A-only entries.
+Source `8372094bb65a77dff4b845704ec3273233d61f5d` completed99/99 pairs,
+198 arms and17,820 paired loop/hypothesis records in178.137496 seconds.
+Nine old-anchor observations, field/baseline seals and paired reports
+replay exactly; ninety strength conditions are new. The same three P4SS
+seed pairs and original amplitude/branch/core rules are retained.
+
+P8/seed1 F4 has A-only at alpha0.002875,0.0029375,0.003, with A=0 and
+B:-1 → insufficient → 0. P8/seed3 F4 retains A-only at0.1 and reveals
+B-only at0.115625; its F2 companion reveals B-only at0.1046875 and0.1234375.
+P128/seed0 F2 has A-only at0.00825 and0.01, with A=0 throughout and
+B:-1 → insufficient → 0 → insufficient → +1. The intermediate B=0
+region contains13 sampled strengths; the two stops locate different upper
+and left boundary edges. These are sampled changes, not physical charges.
+
+All nine outer one-arm entries fail only the existing angular gate; stopped
+sampled amplitudes are77.6–1,238.9 times the1e-6 floor. All1,188 cyclic
+checks preserve the scalar estimator; the2,376 stride-two controls are
+separately labeled coarsenings. Both offsets preserve every original
+one-arm stop, while some neighboring reliability outcomes change.
+Seventeen thousand eight hundred twenty algebraic label exchanges preserve
+paired categories under A/B exchange; none is an independent observation.
+
+The combined focused suite passes154 tests on Mac and154 on Furnace,
+including20 new zoom tests. Post-run verification checks205 source bindings,
+297 output hashes and all9 old anchors. The first summary-helper attempt
+stopped on a tuple/list representation comparison; JSON normalization
+resolved it without changing or rerunning measurement units. Raw data
+remains on Furnace; compact evidence is under
+`artifacts/p4-one-arm-zoom-20260905/`. The [results document](P4_ONE_ARM_ZOOM_RESULTS.md)
+records exact sample brackets, edge coordinates, all-loop counts and hashes.
+
+This targeted selection is exploratory Level 0. Additional spatial
+resolution is the next question; coarsening checks do not certify it.
+No continuous interval width, phase/transition, model-derived order
+parameter, verified core or scientific authority is established. Existing
+D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

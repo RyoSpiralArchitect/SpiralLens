@@ -1025,6 +1025,14 @@ for P128, relative to the earlier clean quadratic anchor. At P128 F2 strength
 changes. These are finite-grid sensitivity descriptors, not calibrated
 detection limits, a physical transition, or a model-derived order parameter.
 
+The [targeted one-arm zoom](docs/P4_ONE_ARM_ZOOM_RESULTS.md) completed another
+99 paired units around three isolated A-only entries. Finer strength slices
+reveal a three-sample A-only band, nearby B-only outer entries, and two
+distinct P128 stops separated by thirteen sampled B=0 points. Located
+maximum-angle edges and separate coarsening checks identify where a future
+spatial-resolution test can probe the measurement boundary. All nine old
+anchors reproduce exactly; the new results remain synthetic Level 0.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

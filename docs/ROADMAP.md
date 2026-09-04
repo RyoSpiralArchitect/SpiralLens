@@ -870,6 +870,26 @@ calibrated acceptance rule, reference selection, model result, physical
 phase/transition or scientific-authority promotion. No D7/D8, SCI-S1/S2 or
 Pythia-160M gate is loosened by these synthetic results.
 
+### Local one-arm zoom and next spatial question (2026-09-05)
+
+The immediate exploration priority moved to isolated one-arm entries before
+further optimizing +2 recovery. The [registered three-window plan](P4_ONE_ARM_ZOOM_PLAN.md)
+completed [99/99 pairs](P4_ONE_ARM_ZOOM_RESULTS.md), including exact replay
+of all nine old anchors. The P8/seed1 F4 A-only point resolves into three
+consecutive sampled entries. P8/seed3 now contains B-only outer entries in
+both F2 and F4. P128/seed0 F2 resolves the old B:-1 to+1 endpoint difference
+into two stopped entries with thirteen measured B=0 strengths between them.
+
+The two P128 stops implicate different upper/left boundary edges. All
+one-arm stops exceed the branch-angle gate while their sampled amplitudes
+remain above its floor. Removing every second vertex shifts some reliability
+outcomes; cyclic starting-point changes preserve the estimator. The next
+bounded experiment should fix spatial refinement and observation/noise
+pairing around these recorded edges, then compare both reference arms at
+the same physical loops. Coarsening is not convergence, single sampled
+stops do not give continuous interval widths, and graph rows/seeds are not
+new independent evidence. All existing scientific gates remain in place.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.
