@@ -279,6 +279,18 @@ jobs:
           p4_probe_sensitivity_doc="docs/P4_CUDA_PROBE_SENSITIVITY.md"
           expected_p4_probe_sensitivity_doc_sha="c013a411c1e1ab8ac429cce7cc13c42db31baedc32162c180556b05942ec2e20"
           test "$(sha256sum "$p4_probe_sensitivity_doc" | cut -d' ' -f1)" = "$expected_p4_probe_sensitivity_doc_sha"
+          p4_reference_plan="docs/P4_REFERENCE_VALIDATION_PLAN.md"
+          expected_p4_reference_plan_sha="a2b9deb11e338e77a7228a47eb414fbdc4826a8ad6f3310c1beef12d7ab10212"
+          test "$(sha256sum "$p4_reference_plan" | cut -d' ' -f1)" = "$expected_p4_reference_plan_sha"
+          p4_reference_source="scripts/prototype_p4_reference_validation_v0_1.py"
+          expected_p4_reference_source_sha="1b9b0ed52cf3929edc3f66ddcfd760af61bd51a5b564747a87af0476d079805c"
+          test "$(sha256sum "$p4_reference_source" | cut -d' ' -f1)" = "$expected_p4_reference_source_sha"
+          p4_reference_runner="scripts/run_p4_reference_validation_v0_1.py"
+          expected_p4_reference_runner_sha="268c6f3dc69037e60e45a8b28af0dd2eba877c0dd187da58ceb8b09afa8a3c23"
+          test "$(sha256sum "$p4_reference_runner" | cut -d' ' -f1)" = "$expected_p4_reference_runner_sha"
+          p4_reference_test="tests/test_p4_reference_validation_v0_1.py"
+          expected_p4_reference_test_sha="5a0ee59924e443d021d9d8ed0aca860040858e204b356b89966b6eb1c6f0562c"
+          test "$(sha256sum "$p4_reference_test" | cut -d' ' -f1)" = "$expected_p4_reference_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -341,7 +353,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_graph_cross_test" \
             "$GITHUB_WORKSPACE/$p4_furnace_preflight_test" \
             "$GITHUB_WORKSPACE/$p4_large_domain_test" \
-            "$GITHUB_WORKSPACE/$p4_probe_sensitivity_test"
+            "$GITHUB_WORKSPACE/$p4_probe_sensitivity_test" \
+            "$GITHUB_WORKSPACE/$p4_reference_test"
 
           (
             cd "$neutral"
