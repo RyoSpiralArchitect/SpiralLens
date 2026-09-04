@@ -810,6 +810,32 @@ error, baseline sensitivity and geometric transport as separate measurements.
 No reference was selected, no missing value became zero, no model was accessed,
 and the existing scientific/model gates remain unchanged.
 
+### Reference perturbation versus residual scale (2026-09-04)
+
+The [fixed reanalysis recipe](P4_REFERENCE_PERTURBATION_PLAN.md) was committed
+after the A/B winding outcomes were known but before computing its new
+diagnostics. The [completed reanalysis](P4_REFERENCE_PERTURBATION_RESULTS.md)
+retains all 32 pairs / 5,760 loop-hypothesis comparison records. No new
+observations, reference fits or winding readouts were made.
+
+For the primary side65 P128 outer F2 loops, the per-seed/field-row median
+reference-change / smaller-residual ratio spans 1.914–3.368 in the curved
+controls, with median absolute coefficient angles 49.48–144.25 degrees.
+The quadratic construction instead spans 0.01625–0.03907 and 0.633–1.176
+degrees. These are ranges of descriptive medians across four paired seeds
+and three correlated graph rows, not confidence intervals or independent
+failure-rate estimates. F4 shows the same qualitative separation, with its
+spin-two coefficient phase explicitly distinct from a physical director angle.
+
+The next question is now more specific: map detectability as residual signal
+strength changes relative to independently measured reference variability.
+A future panel should fix its signal-strength/noise ladder and independent
+reference repetitions before observation; this reanalysis does not supply
+a calibrated threshold or choose one. Preserve the nonlinear anchor as well
+as near-zero and partial-pattern cases. The closest approach of individual
+vertex segments is not whole-loop clearance, and equal endpoint winding
+does not guarantee equal directions or a clear interpolation path.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

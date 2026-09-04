@@ -306,6 +306,9 @@ jobs:
           p4_perturbation_test="tests/test_p4_reference_perturbation_v0_1.py"
           expected_p4_perturbation_test_sha="d8978fbf512c50fce2d19935e191ef8ff7b39c645b1f4313816458e0fb9f5c39"
           test "$(sha256sum "$p4_perturbation_test" | cut -d' ' -f1)" = "$expected_p4_perturbation_test_sha"
+          p4_perturbation_results="docs/P4_REFERENCE_PERTURBATION_RESULTS.md"
+          expected_p4_perturbation_results_sha="aa7d8f660c0e3d5ae996816d35175eb68689cb6bea6f14f74ec7252268de5874"
+          test "$(sha256sum "$p4_perturbation_results" | cut -d' ' -f1)" = "$expected_p4_perturbation_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

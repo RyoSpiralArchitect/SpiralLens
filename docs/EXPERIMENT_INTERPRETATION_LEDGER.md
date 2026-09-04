@@ -2235,6 +2235,89 @@ scientific-authority promotion occurred. See the immutable
 `docs/P4_REFERENCE_VALIDATION_PLAN.md` and separate
 `docs/P4_REFERENCE_VALIDATION_RESULTS.md` for all units and receipts.
 
+### 3.46 Reference perturbation and residual-direction sensitivity (2026-09-04)
+
+**Question, chronology and scope**
+
+After the independently drawn A/B references yielded the preceding results,
+the user asked how their perturbation compares with residual amplitude and
+direction. The analysis recipe was committed as `616ca47` before computing
+these new diagnostics. This timing does not make the already observed input
+panel confirmatory: the entire exercise is explicitly post-hoc exploratory
+reanalysis. Implementation and tests were committed as
+`b18c2dec5baa67e0783b528559f5c3dd96066891` before its Furnace execution.
+
+The analyzer reads the existing 32 reports and NPZ arrays, validating their
+manifest/report/array identities and retained field seals. Both arms must
+share full evaluation fields, frames, support and loop paths. No probe
+moments, reference fits, held-out V errors, cores or winding readouts are
+recomputed. All nine cells, five loops in both directions, and F2/F4 are
+retained: 5,760 paired loop/hypothesis records with unchanged original
+endpoint states, reasons and values. Missing directions remain null using
+the existing 1e-6 amplitude floor; no epsilon denominator is substituted.
+
+**Observed separation**
+
+All 32 units completed in 11.035 seconds. At the primary side65 P128 outer
+loops, the curved F2 median reference-change magnitude ranges from 0.00672
+to 0.01348 across seeds/field rows. The corresponding pointwise change /
+smaller-residual ratio has medians 1.91374–3.36782 and absolute coefficient
+angle medians 49.480–144.252 degrees. The quadratic F2 change magnitudes
+are of a similar order, 0.00602–0.01266, but its residual amplitudes remain
+approximately 0.312: relative-change medians are 0.01625–0.03907 and angle
+medians are 0.633–1.176 degrees. The ratio medians are computed pointwise,
+not obtained by dividing separate amplitude medians.
+
+Curved F4 P128 relative-change medians are 1.17169–2.31951 and coefficient
+angle medians 24.445–99.786 degrees; quadratic F4 values are 0.01489–0.06234
+and 0.579–1.633 degrees. F4 angles are spin-two coefficient phases, not
+physical director rotations. Every stated range is over four paired noise
+seeds and three reused graph rows, not a confidence interval or 12
+independent trials. More probes reduce absolute reference perturbations in
+this panel without guaranteeing a small perturbation relative to the curved
+residual. The injected quadratic anchor instead remains large relative to
+the perturbation, with substantially smaller direction changes.
+
+**Interpolation and missingness limits**
+
+The additional segment calculation is only the algebraic interpolation
+between the two fixed references at each retained vertex. None of the 24
+noisy side65 units' outer vertex segments reaches the amplitude floor,
+despite many unequal endpoint winding comparisons. Conversely, the
+side257 curved unit24 F4 and unit25 F2 each have one field-row/vertex
+segment at or below the floor, although each hypothesis has equal A/B
+outer winding in all nine cells. No test of continuous spatial or
+reference-path clearance follows from these sampled vertex minima.
+
+The noiseless curved controls have identical A/B arrays: the perturbation
+is zero, and angular changes are zero only where directions are defined.
+Two of their 768 outer field-row/vertex entries per unit have F2 amplitude
+at or below the floor and remain directionally undefined. The earlier
+neither-admitted loop results are not rewritten as agreement. Repeated
+graph rows, vertices, reversed loops and noiseless copies do not expand
+the number of independent observations.
+
+**Validation and receipts**
+
+The 58 new tests passed on Mac and Furnace. A combined related local
+regression passed 268 tests with eight CUDA-dependent skips in 11.86 seconds;
+this is not a full-repository test claim. The run verified all 199 predecessor source
+bindings and used a fresh isolated checkout of the exact pushed analysis
+commit. Each input report and NPZ was hash-checked before analysis; all 32
+returned output report hashes and four new source/plan/test bindings were
+verified on the Mac. Peak reported child RSS was 113,319,936 bytes; output
+size before the manifest write was 144,695,101 bytes. No resource limit was
+hit; no GPU/model access, installation or other-workload modification occurred.
+
+The original raw arrays remain on Furnace. Derived reports and their
+receipts are retained locally at `artifacts/p4-reference-perturbation-20260904/`;
+the separate result document lists exact machine locations and hashes.
+No reference selection, uncertainty calibration, admission-rule change,
+verified core, model-derived order parameter, phase/transition finding or
+scientific-authority promotion occurred. The next signal-to-reference
+detectability question requires a separate prospective panel, not a
+threshold selected from this post-hoc result.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

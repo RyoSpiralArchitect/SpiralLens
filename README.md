@@ -1009,6 +1009,13 @@ references even as held-out prediction error decreased. Neither reference
 was selected after observation; prediction accuracy and residual-direction
 stability remain separate diagnostic questions.
 
+The [fixed-loop reference-perturbation reanalysis](docs/P4_REFERENCE_PERTURBATION_RESULTS.md)
+uses those same 32 pairs without new observations or fits. On the primary
+P128 outer loops, F2 reference changes remain large relative to curved-control
+residuals, while the injected quadratic residual is much larger than the
+reference change and its direction moves much less. This is exploratory
+coefficient-space diagnostics, not a new winding-admission or model claim.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable
