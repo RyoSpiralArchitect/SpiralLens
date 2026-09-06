@@ -952,6 +952,107 @@ support at the frozen boundary. Deterministic empty output passed, recall was
 not estimable, and no persistence receipt was issued. This is retrieval
 plumbing evidence only.
 
+## Model-free partial-pattern development
+
+The [partial-pattern prototype](docs/P4_PARTIAL_PATTERN_PROTOTYPE.md) now joins
+synthetic representation probes, fit-only planes, both F2/F4 sections,
+same-field sampled depressions, exact declared boundaries, continuous
+holonomy, and sampled winding in one runnable demo. It distinguishes
+positive constructions, synthetic nulls, and abstentions without requiring
+them to co-occur. This is Level-0 development only: no model-derived order
+parameter, verified core, qualified topology, or P4/D7/SCI gate advancement.
+The [minimum 70M observation plan](docs/P4_70M_MINIMUM_OBSERVATION_PLAN.md)
+is planning-only; model and Furnace access remain outside this slice.
+
+The separate [estimand comparison](docs/P4_ESTIMAND_COMPARISON_PROTOTYPE.md)
+now measures full, pass-through, finite-neighborhood affine, and freshly
+recomputed residual fields. It exposes both input-imposed winding and
+subtraction-induced patterns; neither is evidence of learned structure.
+F2 vector differences and F4 tensor contrasts remain distinct, with all
+amplitudes, sampled components, and loop readouts recomputed per field.
+
+The [graph-cross prototype](docs/P4_GRAPH_CROSS_PROTOTYPE.md) now crosses
+three actual field-estimation graphs with three exact-boundary support
+graphs. It retains all nine cells, including missing support and supported
+disagreement, plus a separate 16-case density/warp/graph-noise panel. Core
+connectivity remains one fixed triangulation: this is a synthetic `3 x 3 x 1`
+development slice, not completed graph qualification. Even nine-cell residual
+winding agreement can arise in a noisy coherent control; no model discovery
+or scientific authority follows from agreement alone.
+
+The separate [Furnace scaling preflight](docs/P4_FURNACE_SCALE_PREFLIGHT.md)
+ran four identical synthetic inputs on Mac and Furnace. Admitted observations
+matched, but strict comparison failed on supplementary diagnostics of an
+amplitude-ineligible F4 control. That failure is retained; that preflight
+did not launch a large campaign or use GPU acceleration.
+
+The subsequent [large-domain Furnace warmup](docs/P4_LARGE_DOMAIN_WARMUP.md)
+completed 27 synthetic cases through 66,049 vertices using a separate sparse
+backend. Quadratic residual winding persisted, while clean low-amplitude and
+noisy branch-ambiguous residuals lost eligibility for different reasons.
+This is measured CPU scaling, not a GPU benchmark, hardware-limit discovery,
+or model result; the prior strict cross-host failure remains unchanged.
+
+The [paired-probe CUDA successor](docs/P4_CUDA_PROBE_SENSITIVITY.md) adds an
+optional float64 dense-moment adapter while leaving graph, support, core and
+loop decisions on CPU. Identical-input checks passed on Furnace; warm
+reduction timings include transfers and synchronization. Reducer speed is
+reported separately from whole-pipeline time. Its fixed 8/32/128 probe-count
+and noise-role panel uses CPU reference measurements, not backend-selected
+scientific outcomes or a model run.
+
+The [independent reference validation](docs/P4_REFERENCE_VALIDATION_RESULTS.md)
+then compared 32 pre-registered A/B reference pairs against clean shared
+evaluation and a third held-out observation set. All quadratic controls
+retained residual +2, while coherent controls could disagree between
+references even as held-out prediction error decreased. Neither reference
+was selected after observation; prediction accuracy and residual-direction
+stability remain separate diagnostic questions.
+
+The [fixed-loop reference-perturbation reanalysis](docs/P4_REFERENCE_PERTURBATION_RESULTS.md)
+uses those same 32 pairs without new observations or fits. On the primary
+P128 outer loops, F2 reference changes remain large relative to curved-control
+residuals, while the injected quadratic residual is much larger than the
+reference change and its direction moves much less. This is exploratory
+coefficient-space diagnostics, not a new winding-admission or model claim.
+
+The [33-level signal-strength cross sections](docs/P4_SIGNAL_STRENGTH_RESULTS.md)
+then completed 429 prospectively fixed synthetic reference pairs on a flat
+substrate. Across the four tested noise seeds, persistent sampled +2 recovery
+starts at F2/F4 strengths 0.15/0.35 for P8, 0.08/0.10 for P32, and 0.04/0.08
+for P128, relative to the earlier clean quadratic anchor. At P128 F2 strength
+0.04, recovered winding still coexists with 22.3–34.0-degree median direction
+changes. These are finite-grid sensitivity descriptors, not calibrated
+detection limits, a physical transition, or a model-derived order parameter.
+
+The [targeted one-arm zoom](docs/P4_ONE_ARM_ZOOM_RESULTS.md) completed another
+99 paired units around three isolated A-only entries. Finer strength slices
+reveal a three-sample A-only band, nearby B-only outer entries, and two
+distinct P128 stops separated by thirteen sampled B=0 points. Located
+maximum-angle edges and separate coarsening checks identify where a future
+spatial-resolution test can probe the measurement boundary. All nine old
+anchors reproduce exactly; the new results remain synthetic Level 0.
+
+The [frozen-reference spatial fidelity panel](docs/P4_SPATIAL_FIDELITY_RESULTS.md)
+completed102/102 units, separating sampling error from reference-induced
+field distortion. The two P128 angular stops become readable at finer
+spatial sampling, though one point is barely above the amplitude floor.
+In the local synthetic bench, ideal references recover all40 known localized
+structures at256 cells per side; A/B references preserve the correct outer
+charge in80/80 cases but pass the fixed full local-structure score in0/80.
+Correct total winding is therefore not a substitute for faithful positions
+and split/merge structure. These are Level-0 instrument-fidelity results,
+not model geometry, verified cores or a validated model digital twin.
+
+The [registered reference-uncertainty panel](docs/P4_REFERENCE_UNCERTAINTY_RESULTS.md)
+completed72/72 units with16 independent reference cohorts and9,072 correlated
+local reconstructions. Under an explicitly new background-only calibration
+assumption, averaging1 to256 measurements reduces median held-out reference
+error about12–15 times. Single+2-center positions tighten, but their two
+resolved components persist. Coarse pair recovery improves while strict
+position matching and zero-field false positives remain limiting. These
+results quantify synthetic instrument uncertainty, not a model discovery rate.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable
