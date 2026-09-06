@@ -366,6 +366,9 @@ jobs:
           p4_uncertainty_test="tests/test_p4_reference_uncertainty_v0_1.py"
           expected_p4_uncertainty_test_sha="3f4ed447f07a387153391a329bceb83266af80f002166dd50d8e5c52a2c7f4d1"
           test "$(sha256sum "$p4_uncertainty_test" | cut -d' ' -f1)" = "$expected_p4_uncertainty_test_sha"
+          p4_uncertainty_results="docs/P4_REFERENCE_UNCERTAINTY_RESULTS.md"
+          expected_p4_uncertainty_results_sha="fb3765f46a45080038aba3f70bb33a0ea1aca0dfe4385878e909207a69b0992d"
+          test "$(sha256sum "$p4_uncertainty_results" | cut -d' ' -f1)" = "$expected_p4_uncertainty_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

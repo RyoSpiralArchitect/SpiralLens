@@ -1044,6 +1044,15 @@ Correct total winding is therefore not a substitute for faithful positions
 and split/merge structure. These are Level-0 instrument-fidelity results,
 not model geometry, verified cores or a validated model digital twin.
 
+The [registered reference-uncertainty panel](docs/P4_REFERENCE_UNCERTAINTY_RESULTS.md)
+completed72/72 units with16 independent reference cohorts and9,072 correlated
+local reconstructions. Under an explicitly new background-only calibration
+assumption, averaging1 to256 measurements reduces median held-out reference
+error about12–15 times. Single+2-center positions tighten, but their two
+resolved components persist. Coarse pair recovery improves while strict
+position matching and zero-field false positives remain limiting. These
+results quantify synthetic instrument uncertainty, not a model discovery rate.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

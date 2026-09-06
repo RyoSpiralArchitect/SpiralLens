@@ -915,6 +915,31 @@ total-charge stability from positional and split/merge fidelity. Keep this
 panel's failures and scoring unchanged when designing any successor.
 The current bench is synthetic Level 0; no existing scientific gate moves.
 
+### Reference uncertainty and split/merge specificity (2026-09-07)
+
+The [registered averaging panel](P4_REFERENCE_UNCERTAINTY_PLAN.md) completed
+[72/72 units](P4_REFERENCE_UNCERTAINTY_RESULTS.md):16 reference cohorts,
+8,192 per-repeat fits and9,072 correlated local reconstructions. It explicitly
+introduces a separately observed background-only synthetic calibration lane;
+it does not establish a corresponding channel in models or revise the prior
+full-response-fit result.
+
+K1 ->256 reduces median held-out reference RMSE about15.25 times forF2 and
+12.34 times forF4. At alpha0.10, single+2-center centroid errors shrink
+about13.57/12.10 times, while split spans shrink only4.12/4.49 times and
+every final reconstruction still resolves two components. The original
+coarse score improves for separated pairs, but the secondary0.01 score
+remains far lower. The close pair can pass the0.10 score with appreciably
+wrong separation. All missing/overlapping-loop outcomes remain recorded.
+
+The zero-injection control still has charged components in8/16 F2 and11/16
+F4 reference cohorts atK256, with nonmonotone counts overK. The next bounded
+question is uncertainty-aware discrimination of one center region versus
+two genuine nearby centers, together with held-out null specificity. Any
+new abstention or split/merge rule must be fixed before successor evidence;
+do not retroactively merge components or treat repeated averaging as a null
+guarantee. Remain synthetic Level0 with all existing scientific gates intact.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

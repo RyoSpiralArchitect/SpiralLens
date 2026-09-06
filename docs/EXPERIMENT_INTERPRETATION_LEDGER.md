@@ -2472,6 +2472,48 @@ a validated digital twin of model dynamics, physical phase/transition,
 model-derived order parameter, verified core or scientific authority.
 Existing D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
 
+### 3.50 Reference uncertainty propagated to local geometry (2026-09-07)
+
+Plan`2f7d8ba` preceded the new seed200–215 references and seed400–403
+geometry observations. Source`516e1ac875deadf6038fa0e6142aba94ff1205df`
+completed72/72 units on2026-09-06 in236.013022 seconds, with no failed,
+timed-out or rerun measurement units. The16 complete reference cohorts
+seal160 averaged F2/F4 estimates before geometry/held-out observation.
+The explicit background-only calibration estimand differs from the prior
+full-response fit; this is not an unannounced correction of that evidence.
+
+All8,192 per-repeat fits and9,072 local records replay. Across16 cohorts,
+K1 ->256 reduces held-out background RMSE medians15.25/12.34 times forF2/F4.
+At alpha0.10 the single+2-center pooled centroid-error medians shrink
+13.57/12.10 times, but its split spans only4.12/4.49 times. Every final
+single+2 reconstruction has two resolved components while outer+2 remains
+correct. Centroid stability is not single-core recovery.
+
+Separated-pair primary recovery improves; strict0.01 matching is retained
+as a distinct, substantially less successful score. At alpha0.10 the close
+pair reaches64/64 F2 and58/64 F4 primary matches, but0/64 strict matches
+for both. At alpha0.08, seed400/reference211/K256/F2, overlapping component
+loops preserve an unavailable center despite outer+2. Conditional error
+denominators and nonmonotone prefix outcomes are not removed.
+
+The ideal zero field stays below floor with undefined winding. The noisy
+zero-injection control has charged components in8/16 F2 and11/16 F4
+cohorts atK256; identical geometry/strength replicas do not add independent
+trials. Coefficient shrinkage is therefore not null specificity. No
+current component is retroactively merged to improve a score.
+
+Mac/Furnace each pass225 focused tests. Verification checks209 source
+bindings,144 report/array hashes and the raw replays. A367-file compact
+return is byte-checked with all72 attempts/terminals and regenerated
+summary/visual projections; raw arrays remain on Furnace. See the
+[results and artifact bindings](P4_REFERENCE_UNCERTAINTY_RESULTS.md).
+
+Next: prospectively fixed uncertainty-aware center-region versus nearby-pair
+discrimination and null controls, using new held-out cohorts. This remains
+synthetic Level0 instrument diagnosis, not a validated model digital twin,
+verified core, model order parameter, phase/transition or scientific authority.
+D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
