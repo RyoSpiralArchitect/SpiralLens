@@ -1033,6 +1033,17 @@ maximum-angle edges and separate coarsening checks identify where a future
 spatial-resolution test can probe the measurement boundary. All nine old
 anchors reproduce exactly; the new results remain synthetic Level 0.
 
+The [frozen-reference spatial fidelity panel](docs/P4_SPATIAL_FIDELITY_RESULTS.md)
+completed102/102 units, separating sampling error from reference-induced
+field distortion. The two P128 angular stops become readable at finer
+spatial sampling, though one point is barely above the amplitude floor.
+In the local synthetic bench, ideal references recover all40 known localized
+structures at256 cells per side; A/B references preserve the correct outer
+charge in80/80 cases but pass the fixed full local-structure score in0/80.
+Correct total winding is therefore not a substitute for faithful positions
+and split/merge structure. These are Level-0 instrument-fidelity results,
+not model geometry, verified cores or a validated model digital twin.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

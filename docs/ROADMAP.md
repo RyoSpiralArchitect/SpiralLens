@@ -890,6 +890,31 @@ the same physical loops. Coarsening is not convergence, single sampled
 stops do not give continuous interval widths, and graph rows/seeds are not
 new independent evidence. All existing scientific gates remain in place.
 
+### Frozen-reference spatial fidelity (2026-09-06)
+
+The [registered spatial panel](P4_SPATIAL_FIDELITY_PLAN.md) completed
+[102/102 units](P4_SPATIAL_FIDELITY_RESULTS.md):1,296 sampled-loop readouts
+and504 distinct local reconstructions. All216 original256-point field
+comparisons are byte-exact. The two P128 F2/B stops resolve as
+insufficient/insufficient/-1 and insufficient/0/0 at256/512/1,024 points;
+the first refined minimum is only1.04436 times the amplitude floor.
+
+At alpha0.10, finer sampling reduces coefficient reconstruction error by
+about11.7 times, but frozen-reference error remains roughly17,000–18,000
+times larger at the final-grid medians. Local ideal-reference recovery
+improves with spatial resolution. In contrast, all16 noisy-reference
+single +2-center cases resolve into two+1 components while their outer loop
+retains+2. Across five localized fixtures, noisy references have correct
+outer charge in80/80 cases but full local-structure recovery in0/80 under
+the preregistered0.10 position-match rule. The zero-field control also
+exposes reference-induced charged components in10/16 cases.
+
+The next priority is reference-uncertainty control and held-out localization
+in the0.08–0.10 region, not merely a denser grid or a larger model. Distinguish
+total-charge stability from positional and split/merge fidelity. Keep this
+panel's failures and scoring unchanged when designing any successor.
+The current bench is synthetic Level 0; no existing scientific gate moves.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

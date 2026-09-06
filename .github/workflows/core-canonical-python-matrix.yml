@@ -351,6 +351,9 @@ jobs:
           p4_fidelity_test="tests/test_p4_spatial_fidelity_v0_1.py"
           expected_p4_fidelity_test_sha="26abeb35c2cd3a25ee13d4428e9fea069310275abaf5dd86390581257ac56907"
           test "$(sha256sum "$p4_fidelity_test" | cut -d' ' -f1)" = "$expected_p4_fidelity_test_sha"
+          p4_fidelity_results="docs/P4_SPATIAL_FIDELITY_RESULTS.md"
+          expected_p4_fidelity_results_sha="f1c8d78166b70b00a86256e4d28d4532e7b10518b3efa6d77ca92bcf06f19994"
+          test "$(sha256sum "$p4_fidelity_results" | cut -d' ' -f1)" = "$expected_p4_fidelity_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

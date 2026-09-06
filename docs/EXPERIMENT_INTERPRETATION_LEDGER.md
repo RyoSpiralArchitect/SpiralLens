@@ -2427,6 +2427,51 @@ No continuous interval width, phase/transition, model-derived order
 parameter, verified core or scientific authority is established. Existing
 D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
 
+### 3.49 Frozen-reference spatial fidelity (2026-09-06)
+
+The [spatial fidelity protocol](P4_SPATIAL_FIDELITY_PLAN.md) was committed
+at`7bf29bd` before new observations. Execution source
+`e3c1ceef6929d965fff0c794cbcd504b84b39ac3` completed102/102 units in81.779224
+seconds on an isolated Furnace checkout, with no failed/rerun units.
+The1,296 outer readouts and504 distinct local reconstructions retain both
+F2/F4 and fixed references; local three-row aliases total1,512 records,
+not independent measurements. All216 old-anchor field comparisons are exact.
+
+P128/seed0 F2/B at alpha0.00825 is insufficient at256/512 points and-1 at
+1,024, while0.01 is insufficient/0/0. The first refined minimum is only
+1.04436 times the amplitude floor. These finite sampled results preserve
+the earlier insufficient records and do not establish continuous clearance.
+
+The0.08–0.10 region recovers outer+2 across tested references while retaining
+substantial truth-relative phase error. Sampling reconstruction error falls
+with refinement; fixed-reference error remains. At alpha0.10 its final-grid
+median exceeds sampling RMSE by roughly17,000–18,000 times.
+
+Charge-blind local components are sealed before loop readings and truth-side
+scoring. At256 cells per side, ideal references recover40/40 known localized
+structures. A/B references get the outer charge right in80/80 cases but
+recover the full injected local structure in0/80 under the fixed score.
+All16 single +2-center cases resolve as two components instead of one. This
+is measured-residual distortion relative to injected truth, not proof that
+the locator invented zeros. The constant-field null is retained; the zero
+injection yields charged components in10/16 noisy-reference cases, versus
+a globally unresolved, below-floor ideal field with undefined winding.
+
+Mac/Furnace focused suites each pass198 tests. The initial seed7 development
+test's too-early128-cell separation expectation was corrected to preserve
+its actual overlapping-loop stop, without changing the registered gate.
+Verification checks207 source hashes,18 input pairs,204 output hashes and
+1,800 raw-array replays. The returned516-file archive is checked locally
+against exact bytes, attempts/terminals and rebuilt compact projections.
+Raw arrays remain on Furnace; local evidence and all outcomes are under
+`artifacts/p4-spatial-fidelity-20260906/`; see the [results](P4_SPATIAL_FIDELITY_RESULTS.md).
+
+The next bounded question is reference uncertainty and held-out local
+fidelity, not post-hoc scoring relaxation. This is synthetic Level 0, not
+a validated digital twin of model dynamics, physical phase/transition,
+model-derived order parameter, verified core or scientific authority.
+Existing D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
