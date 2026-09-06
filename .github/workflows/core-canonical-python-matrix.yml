@@ -339,6 +339,18 @@ jobs:
           p4_zoom_results="docs/P4_ONE_ARM_ZOOM_RESULTS.md"
           expected_p4_zoom_results_sha="7cc07d246a48b24d31488e006f20281edb53b2f6a5e53f0f137832b23b2e2341"
           test "$(sha256sum "$p4_zoom_results" | cut -d' ' -f1)" = "$expected_p4_zoom_results_sha"
+          p4_fidelity_plan="docs/P4_SPATIAL_FIDELITY_PLAN.md"
+          expected_p4_fidelity_plan_sha="4047e7f318bc5b89a4716667299267eb2171c8862f5ba3d63e3fddaed601e3f4"
+          test "$(sha256sum "$p4_fidelity_plan" | cut -d' ' -f1)" = "$expected_p4_fidelity_plan_sha"
+          p4_fidelity_kernel="scripts/prototype_p4_spatial_fidelity_v0_1.py"
+          expected_p4_fidelity_kernel_sha="2f39e53de2860f78fd59842d33a1a539c46f8432f2abbf82b67c8eff53424ffd"
+          test "$(sha256sum "$p4_fidelity_kernel" | cut -d' ' -f1)" = "$expected_p4_fidelity_kernel_sha"
+          p4_fidelity_runner="scripts/run_p4_spatial_fidelity_v0_1.py"
+          expected_p4_fidelity_runner_sha="086793c75040800b7e0886e88e23424ee5d303e71fa5cd02bf70fc49d5c9b6d2"
+          test "$(sha256sum "$p4_fidelity_runner" | cut -d' ' -f1)" = "$expected_p4_fidelity_runner_sha"
+          p4_fidelity_test="tests/test_p4_spatial_fidelity_v0_1.py"
+          expected_p4_fidelity_test_sha="26abeb35c2cd3a25ee13d4428e9fea069310275abaf5dd86390581257ac56907"
+          test "$(sha256sum "$p4_fidelity_test" | cut -d' ' -f1)" = "$expected_p4_fidelity_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -405,7 +417,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_reference_test" \
             "$GITHUB_WORKSPACE/$p4_perturbation_test" \
             "$GITHUB_WORKSPACE/$p4_strength_test" \
-            "$GITHUB_WORKSPACE/$p4_zoom_test"
+            "$GITHUB_WORKSPACE/$p4_zoom_test" \
+            "$GITHUB_WORKSPACE/$p4_fidelity_test"
 
           (
             cd "$neutral"
