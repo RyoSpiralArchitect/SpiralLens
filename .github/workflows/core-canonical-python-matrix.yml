@@ -369,6 +369,18 @@ jobs:
           p4_uncertainty_results="docs/P4_REFERENCE_UNCERTAINTY_RESULTS.md"
           expected_p4_uncertainty_results_sha="fb3765f46a45080038aba3f70bb33a0ea1aca0dfe4385878e909207a69b0992d"
           test "$(sha256sum "$p4_uncertainty_results" | cut -d' ' -f1)" = "$expected_p4_uncertainty_results_sha"
+          p4_identity_plan="docs/P4_CENTER_IDENTIFIABILITY_PLAN.md"
+          expected_p4_identity_plan_sha="ad65b0facdcf453dbd6e62a57b78e8e0da82bd81204a47eb04e050de8c791072"
+          test "$(sha256sum "$p4_identity_plan" | cut -d' ' -f1)" = "$expected_p4_identity_plan_sha"
+          p4_identity_kernel="scripts/prototype_p4_center_identifiability_v0_1.py"
+          expected_p4_identity_kernel_sha="8c8642c97679d68a263603faa8f41600f3e75d14c03ec2be3e0b34ea84b19b0a"
+          test "$(sha256sum "$p4_identity_kernel" | cut -d' ' -f1)" = "$expected_p4_identity_kernel_sha"
+          p4_identity_runner="scripts/run_p4_center_identifiability_v0_1.py"
+          expected_p4_identity_runner_sha="1168d18adb1bd6e012aa72c5ef3d4827328e35ee47925e0e9653f0868c797180"
+          test "$(sha256sum "$p4_identity_runner" | cut -d' ' -f1)" = "$expected_p4_identity_runner_sha"
+          p4_identity_test="tests/test_p4_center_identifiability_v0_1.py"
+          expected_p4_identity_test_sha="d1e466853bd2259038e304eaf28fe11be0ec205684914496109eb0b22cfbbc47"
+          test "$(sha256sum "$p4_identity_test" | cut -d' ' -f1)" = "$expected_p4_identity_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -437,7 +449,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_strength_test" \
             "$GITHUB_WORKSPACE/$p4_zoom_test" \
             "$GITHUB_WORKSPACE/$p4_fidelity_test" \
-            "$GITHUB_WORKSPACE/$p4_uncertainty_test"
+            "$GITHUB_WORKSPACE/$p4_uncertainty_test" \
+            "$GITHUB_WORKSPACE/$p4_identity_test"
 
           (
             cd "$neutral"
