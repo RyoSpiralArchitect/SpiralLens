@@ -1053,6 +1053,16 @@ resolved components persist. Coarse pair recovery improves while strict
 position matching and zero-field false positives remain limiting. These
 results quantify synthetic instrument uncertainty, not a model discovery rate.
 
+The [registered conditional-separation panel](docs/P4_CENTER_IDENTIFIABILITY_RESULTS.md)
+completed144/144 units,393,216 reference fits and9,408 local records. Under
+empirical reference-error envelopes and a restricted quadratic coefficient-field
+model, K4096 at alpha0.10 excludes a single center for59/64 F2 and20/64 F4
+distance0.16 pairs. Distance0.04 remains ambiguous; every injected single
+center and zero control retains its appropriate alternative. These are
+conditional outer ranges, not calibrated confidence regions or verified
+cores. Legacy components, loop failures and both position scores remain
+unchanged; common calibration bias and noisy evaluation remain untested.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable

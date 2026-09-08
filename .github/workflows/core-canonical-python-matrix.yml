@@ -381,6 +381,9 @@ jobs:
           p4_identity_test="tests/test_p4_center_identifiability_v0_1.py"
           expected_p4_identity_test_sha="d1e466853bd2259038e304eaf28fe11be0ec205684914496109eb0b22cfbbc47"
           test "$(sha256sum "$p4_identity_test" | cut -d' ' -f1)" = "$expected_p4_identity_test_sha"
+          p4_identity_results="docs/P4_CENTER_IDENTIFIABILITY_RESULTS.md"
+          expected_p4_identity_results_sha="09b97ec20e71cb771881c49082c451d4393da0926fb90195e13db76e05028b69"
+          test "$(sha256sum "$p4_identity_results" | cut -d' ' -f1)" = "$expected_p4_identity_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

@@ -940,6 +940,33 @@ new abstention or split/merge rule must be fixed before successor evidence;
 do not retroactively merge components or treat repeated averaging as a null
 guarantee. Remain synthetic Level0 with all existing scientific gates intact.
 
+### Conditional separation sets and null alternatives (2026-09-08)
+
+The [registered identifiability panel](P4_CENTER_IDENTIFIABILITY_PLAN.md)
+completed [144/144 positions](P4_CENTER_IDENTIFIABILITY_RESULTS.md),393,216
+reference fits and9,408 local records. Paired-difference envelopes from32
+cohorts precede16 held-out reference cohorts and the new geometry matrix.
+All16 evaluation cohorts fit each envelope, but these empirical bounds
+are not calibrated confidence regions and cannot exclude shared bias.
+
+At alpha0.10/K4096, distance0.16 excludes the single-center alternative in
+59/64 F2 and20/64 F4 correlated records; nonoverlapping root disks occur
+in52/64 and8/64. Distance0.04 never excludes one; distance0.08 has just
+one F2 geometry/reference condition at both strengths. Every single+2 and
+zero control keeps its corresponding alternative. The old local/loop
+lane remains intact, including overlap stops, wrong positions and4/16
+F4 null charged-component cases atK4096.
+
+This is an explicitly restricted quadratic coefficient-field inference,
+not unrestricted core discovery: linear fields remain unresolved, mixed
+dipoles/cubics unsupported, and global roots are not automatically admitted
+as localized cores. Next, prospectively slice0.08–0.16 using new cohorts,
+decompose constant versus center/linear-reference uncertainty, and test
+common bias/noisy evaluation in a separate stress lane. Do not choose a
+new envelope or retrospective merge to rescue these ambiguous cases.
+No existing scientific gate changes; the background-only channel remains
+a synthetic assumption, not an established real-model instrument.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

@@ -2514,6 +2514,60 @@ synthetic Level0 instrument diagnosis, not a validated model digital twin,
 verified core, model order parameter, phase/transition or scientific authority.
 D7/D8, SCI-S1/S2 and Pythia-160M gates retain their status.
 
+### 3.51 Conditional center separation with held-out null controls (2026-09-08)
+
+Plan`07b7d91` precedes all new seed500–531 envelope,600–615 reference and
+700–703 geometry observations. Execution source
+`fc9123fec91a82b5eee5c2da422d94f98277bf8d` completes144/144 positions in
+1,120.114530 seconds, with no failed, timed-out or rerun measurement units.
+The32 calibration cohorts seal six paired-difference empirical envelopes
+before16 disjoint evaluation-reference cohorts; their96 references seal
+before96 geometry units. All393,216 fits and9,408 local records replay.
+
+This successor retains the separately observed background-only synthetic
+channel. Its new inference is explicitly conditional on an affine error
+envelope and a quadratic coefficient-field family, with nine fit and16
+disjoint held-out observations. It does not provide an unrestricted core
+detector or a model-derived calibration channel. A translated double zero
+and a same-center pair differ only by a constant term; uncertainty in that
+term can prevent discrimination even when outer winding is stable.
+
+All16 evaluation cohorts fall inside each frozen envelope, and all5,376
+quadratic-family estimated records contain their injected center/separation.
+Neither result certifies future coverage or tests common-mode bias. A
+range containing0 preserves the single-center alternative without asserting
+exact equality. No empirical radius is enlarged after evaluation.
+
+At alpha0.10/K4096, distance0.16 requires two in59/64 F2 and20/64 F4
+records; disjoint root disks occur in52/64 and8/64. Distance0.04 never
+excludes one. Distance0.08 has one F2 positive at geometry701/reference608
+at both strengths: one correlated condition, not a robust regime. All768
+estimated single+2 records retain one; all zero-reference cohorts remain
+zero-compatible. Legacy null charged components still occur in0/16 F2
+and4/16 F4 cohorts atK4096, without being relabeled or erased.
+
+Every linear+1 control remains affine-unresolved; mixed dipole and cubic+3
+controls remain outside this family, not absent. Ideal distance0.04 cases
+at geometry702 exclude one while their local loops overlap; conversely,
+two low-K F4 pair decisions coexist with failed0.10 position scores.
+No old component, tolerance, insufficient outcome or score is repaired.
+
+Mac/Furnace each pass270 focused tests; the execution revision's three
+clean-wheel CI jobs pass. Raw verification checks211 source bindings and
+288 output hashes. The728-file compact return retains all attempts,
+terminals and reports; byte-exact summary/visual projection replay is
+verified locally, with raw arrays retained on Furnace. Both hypotheses,
+all96 contexts and explicit interval/alternative statuses are checked in
+the interactive view at736/360/320px in light/dark themes. See the
+[results and exact bindings](P4_CENTER_IDENTIFIABILITY_RESULTS.md).
+
+Next: a prospectively fixed0.08–0.16 resolution slice and a separate common-
+bias/noisy-evaluation stress lane, with new cohorts and unchanged historical
+outcomes. Conditional polynomial roots are not verified in-domain cores.
+Remain synthetic Level0: no model phase/transition, holonomy, order parameter,
+validated model digital twin or scientific authority. D7/D8, SCI-S1/S2 and
+Pythia-160M gates retain their status.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
