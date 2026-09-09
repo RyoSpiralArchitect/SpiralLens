@@ -384,6 +384,21 @@ jobs:
           p4_identity_results="docs/P4_CENTER_IDENTIFIABILITY_RESULTS.md"
           expected_p4_identity_results_sha="09b97ec20e71cb771881c49082c451d4393da0926fb90195e13db76e05028b69"
           test "$(sha256sum "$p4_identity_results" | cut -d' ' -f1)" = "$expected_p4_identity_results_sha"
+          p4_resolution_plan="docs/P4_CENTER_RESOLUTION_PLAN.md"
+          expected_p4_resolution_plan_sha="ac6975ab41369d316797a29c49769f5c1cbf051d4c0f706dd2acb49d7a6e7309"
+          test "$(sha256sum "$p4_resolution_plan" | cut -d' ' -f1)" = "$expected_p4_resolution_plan_sha"
+          p4_resolution_envelope="protocols/p4_center_resolution_envelope_v0_1.json"
+          expected_p4_resolution_envelope_sha="fc42c19e7d561eee00ce14abf4652d24a4b440e3aba1046d1bc82762a37a403b"
+          test "$(sha256sum "$p4_resolution_envelope" | cut -d' ' -f1)" = "$expected_p4_resolution_envelope_sha"
+          p4_resolution_kernel="scripts/prototype_p4_center_resolution_v0_1.py"
+          expected_p4_resolution_kernel_sha="44eec528335bcf8158183b6d60cef792666c0bbec3ba44885395a28c254e97db"
+          test "$(sha256sum "$p4_resolution_kernel" | cut -d' ' -f1)" = "$expected_p4_resolution_kernel_sha"
+          p4_resolution_runner="scripts/run_p4_center_resolution_v0_1.py"
+          expected_p4_resolution_runner_sha="7ca23333e2b03c91d43844b86083186f642c633c45aa24245de65d6a839cc964"
+          test "$(sha256sum "$p4_resolution_runner" | cut -d' ' -f1)" = "$expected_p4_resolution_runner_sha"
+          p4_resolution_test="tests/test_p4_center_resolution_v0_1.py"
+          expected_p4_resolution_test_sha="c3079abae891af4516e2460426ba8173ebea57e031b890d886b6cc6f4b51d36b"
+          test "$(sha256sum "$p4_resolution_test" | cut -d' ' -f1)" = "$expected_p4_resolution_test_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -453,7 +468,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_zoom_test" \
             "$GITHUB_WORKSPACE/$p4_fidelity_test" \
             "$GITHUB_WORKSPACE/$p4_uncertainty_test" \
-            "$GITHUB_WORKSPACE/$p4_identity_test"
+            "$GITHUB_WORKSPACE/$p4_identity_test" \
+            "$GITHUB_WORKSPACE/$p4_resolution_test"
 
           (
             cd "$neutral"
