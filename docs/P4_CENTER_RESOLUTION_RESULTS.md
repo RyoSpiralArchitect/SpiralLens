@@ -282,6 +282,11 @@ not change the full-precision returned records or projections.
 Coarse-pointer legend targets and touch-pinned details also pass. The
 visual deliberately keeps the primary resolution curves and bias contrasts
 in separate plots; no combined discovery or specificity score is reported.
+The final fragment is `center-resolution-v2.html`; final visual/touch and
+document-audit helpers/receipts use the `-v2` suffix. This display-only
+revision caps narrow-view x tick labels at four. The initial fragment and
+its receipts remain unchanged; every measurement and projected value is
+identical between the two display versions.
 
 | Binding | SHA-256 |
 | --- | --- |
@@ -300,10 +305,10 @@ in separate plots; no combined discovery or specificity score is reported.
 | Exact-closure archive helper | `14ade0932ee4c0f1dd96d7417227778390cba5055a70108dd359221d6c6fdcb9` |
 | All-record audit helper | `c2d192f4cbcae138ae6b073f0b4eec1a8ea6be57ae00fd0804c475a9218abb31` |
 | All-record audit | `5c91b2046c684c4e831d4efe21dba9a0e592880c0ccf2d18f8f238c624aaad3d` |
-| Result-table/closure/CI audit helper | `5dd6a3918491c3098e5e178d4a9e30d1649580890f83dde604738db4da8dfefb` |
+| Result-table/closure/CI audit helper | `8e3d97cc1ea597ca7622372e820dae2ae2a67ccf01a21a3f6467feb05b84402c` |
 | Visual projection helper | `73a18a654bed9c89aa73dc50e045c68fef6cd6c145f13890b105d608b4b1c534` |
-| Interactive resolution view | `686ec55e3c1b0a9ba454b3c0419176785a65992b33e4642e00686f49e6de0a27` |
-| Six-layout visual validation | `c54a70c155ba117b953deec72c3d37503d13a3e0139f6669bba5f19ec0fa8123` |
-| Visual-check helper | `83d512379bf592b54a97ff0186eb2f113fc40810f4397dec926f15174bd44ddc` |
-| Touch validation | `aec01753a8d181c2a20cc2d2dbda53dba9f90e9aa019de02a8e7c42520d56f3e` |
-| Touch-check helper | `e72affcf98544f1a4ecd3a9487de56a97c2c933f8cc28a75bad6e7a02e6b7128` |
+| Interactive resolution view | `4123bfc899dd62cc518bf13d66dbe2f0f28133ddeeb234182e6eda322f3e1478` |
+| Six-layout visual validation | `8b04698722da133179ec5ecb936c4eb86a83e27cf20a087afef140e0aeff17a3` |
+| Visual-check helper | `dac67ddf65a7b1e382ea764e5c8dffad2a1744b23ea1b97741eaf59a58d0f0a8` |
+| Touch validation | `2f2bfd16602ad40744a84a3d8b6666a16a9b2226c34919e97d4ff8bf08fe5ee2` |
+| Touch-check helper | `422cce1e60a1e35c6f77cf52abe034aa375fab17abee47a93bf8797ec05e1210` |

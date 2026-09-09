@@ -400,7 +400,7 @@ jobs:
           expected_p4_resolution_test_sha="c3079abae891af4516e2460426ba8173ebea57e031b890d886b6cc6f4b51d36b"
           test "$(sha256sum "$p4_resolution_test" | cut -d' ' -f1)" = "$expected_p4_resolution_test_sha"
           p4_resolution_results="docs/P4_CENTER_RESOLUTION_RESULTS.md"
-          expected_p4_resolution_results_sha="910ee546c992ebdb9097cc2bb7474cd1cc4c6216a061f0ddd29400377d53ac38"
+          expected_p4_resolution_results_sha="611c68999cd11de0bc9aed39e53b9b7476d714523b1d5924ea063c7f28283471"
           test "$(sha256sum "$p4_resolution_results" | cut -d' ' -f1)" = "$expected_p4_resolution_results_sha"
           source_library_tests=()
           neutral_library_tests=()
