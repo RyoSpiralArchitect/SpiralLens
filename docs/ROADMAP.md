@@ -967,6 +967,35 @@ new envelope or retrospective merge to rescue these ambiguous cases.
 No existing scientific gate changes; the background-only channel remains
 a synthetic assumption, not an established real-model instrument.
 
+### Expanded resolution and separate bias/noise stress (2026-09-09)
+
+The [prospectively fixed expansion](P4_CENTER_RESOLUTION_PLAN.md) completed
+[188/188 positions](P4_CENTER_RESOLUTION_RESULTS.md),524,288 reference fits,
+345,856 primary,25,088 stress and1,664 paired full-grid outputs. The64 new
+reference cohorts and16 geometries refine the0.080–0.160 curve at0.005 steps,
+without changing K, the inherited32-cohort empirical envelope or inference.
+All1,664 full-grid numerical rows match their primary counterparts.
+
+At alpha0.10/K4096/distance0.16, F2 requires two in979/1,024 andF4 in285/1,024;
+disjoint disks occur in858/1,024 and75/1,024. The fixed-envelope two-axis
+resampling bands are not calibrated confidence regions or a universal
+resolution threshold. New uncovered tails appear atF4/K16/reference849
+andF2/K256/reference802, and their nulls remain affine-unresolved. No radius
+is enlarged or cohort dropped. All12,288 primary single controls retain one.
+
+Common constant bias at twice the original radius produces196/256 F2 and
+204/256 F4 false-two single decisions in the separate stress subset. Linear
+bias can increase pair counts while center coverage fails; sigma1e-7/1e-4
+evaluation noise is rejected for every registered stress fixture. These are
+failure modes of the assumed calibration/observation model, not discoveries.
+
+Next: register a bias-aware calibration check and noisy-evaluation error
+model before new evaluation cohorts, measuring both center and separation
+coverage with zero/single controls. The bound's roughly60/40 constant versus
+center/linear split motivates measuring both contributions. Do not merely
+increaseN/K, fit away this panel's failures, merge legacy components, or
+relax a model gate. All previous scientific gates and Level0 limits remain.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

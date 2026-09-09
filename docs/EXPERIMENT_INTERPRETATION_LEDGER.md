@@ -2568,6 +2568,60 @@ Remain synthetic Level0: no model phase/transition, holonomy, order parameter,
 validated model digital twin or scientific authority. D7/D8, SCI-S1/S2 and
 Pythia-160M gates retain their status.
 
+### 3.52 Expanded center-resolution curve and separate stress failures (2026-09-09)
+
+The plan at`6a7ba80` precedes every new registered observation; execution
+source`95ea514000270056bbf1b5d412c72d889696abb4` preserves the predecessor
+inference and exact empirical envelope.64 reference cohorts and16 geometry
+groups expand the0.080–0.160 slice at0.005 steps.188/188 positions finish,
+with524,288 reference fits,345,856 primary,25,088 stress and1,664 paired
+full-grid outputs. The1,664 local cross-checks match their primary numerical
+rows with distinct input-footprint seals; they are not extra independent trials.
+
+At alpha0.10/K4096/distance0.16, the primary two-required counts are979/1,024
+F2 and285/1,024 F4, while disjoint root disks occur in858/1,024 and75/1,024.
+The2,000 fixed two-axis resamples describe finite reference/geometry
+variation conditional on one calibration, not formal confidence/coverage
+or a universal resolution threshold. LargerN does not tighten each record.
+
+The larger cohort reveals previously unseen empirical-envelope failures:
+reference849 atF4/K16 and802 atF2/K256 are outside a frozen row radius.
+Both yield affine-unresolved nulls. No cohort is excluded, no bound widened,
+and no new null status replaces an old result. All12,288 primary single
+controls retain one; all282,624 quadratic estimated center/separation
+ranges cover truth, without rescuing the uncovered reference assumptions.
+
+The separate constant-bias stress breaks the single-center safeguard:
+twice-radius common bias falsely requires two in196/256 F2 and204/256 F4
+single records. Its nominal comparator uses the same four geometries, not
+the full primary sample. Linear bias can raise pair decision counts while
+missing true centers in132/256 F2 and100/256 F4 records. Sigma1e-7/1e-4
+probe noise gives3,584 out-of-family records per mode with no separation
+bound; sigma1e-9 keeps nominal statuses. All failures remain explicit.
+
+The original local reader still resolves two components for all16 injected
+single cases per hypothesis at alpha0.10/K4096 in the selected subset.
+Its stricter position failures, overlapping-loop stops, and0/4 F2 versus1/4
+F4 null charged-component cases remain intact. Conditional inference does
+not repair those readings. The registered discriminant-bound decomposition
+is roughly60% constant and40% center/linear at high K, not a physical
+variance attribution or a fitted new decision rule.
+
+Mac/Furnace each pass332 focused tests; all three execution-source
+clean-wheel CI jobs pass. Raw replay checks214 source bindings and376 output
+hashes. The947-file compact return is exact-closure verified with byte-exact
+summary/visual regeneration; raw arrays remain on Furnace. The six-panel
+view retains both hypotheses/strengths, all K, resampling bands, uncovered
+reference counts and a separate common-bias comparison. See
+[results and exact bindings](P4_CENTER_RESOLUTION_RESULTS.md).
+
+Next is a prospectively specified bias-aware calibration/noisy-evaluation
+model, not retrospective widening or component merging. The background-only
+channel remains an unestablished model assumption. No phase, transition,
+holonomy, model winding, order parameter, verified core, digital-twin
+validation or scientific authority is admitted. D7/D8, SCI-S1/S2 and
+Pythia-160M gates are unchanged.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |

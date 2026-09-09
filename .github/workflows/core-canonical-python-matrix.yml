@@ -399,6 +399,9 @@ jobs:
           p4_resolution_test="tests/test_p4_center_resolution_v0_1.py"
           expected_p4_resolution_test_sha="c3079abae891af4516e2460426ba8173ebea57e031b890d886b6cc6f4b51d36b"
           test "$(sha256sum "$p4_resolution_test" | cut -d' ' -f1)" = "$expected_p4_resolution_test_sha"
+          p4_resolution_results="docs/P4_CENTER_RESOLUTION_RESULTS.md"
+          expected_p4_resolution_results_sha="910ee546c992ebdb9097cc2bb7474cd1cc4c6216a061f0ddd29400377d53ac38"
+          test "$(sha256sum "$p4_resolution_results" | cut -d' ' -f1)" = "$expected_p4_resolution_results_sha"
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do

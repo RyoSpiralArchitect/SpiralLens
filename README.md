@@ -1061,7 +1061,20 @@ distance0.16 pairs. Distance0.04 remains ambiguous; every injected single
 center and zero control retains its appropriate alternative. These are
 conditional outer ranges, not calibrated confidence regions or verified
 cores. Legacy components, loop failures and both position scores remain
-unchanged; common calibration bias and noisy evaluation remain untested.
+unchanged; common calibration bias and noisy evaluation were untested in that panel.
+
+The [expanded resolution slice](docs/P4_CENTER_RESOLUTION_RESULTS.md) now
+completes188/188 positions with64 reference cohorts and16 geometry groups,
+sampling distance0.08–0.16 every0.005 under the unchanged error envelope.
+At alpha0.10/K4096/distance0.16, two roots are required in979/1,024 F2 and
+285/1,024 F4 correlated primary records. The larger sample exposes one
+uncovered reference atF4/K16 and one atF2/K256; neither is discarded.
+All12,288 injected-single primary records retain one, but a separate
+twice-radius shared constant bias falsely requires two in196/256 F2 and
+204/256 F4 single records. Stronger evaluation noise is explicitly rejected.
+The345,856 primary,25,088 stress and1,664 paired full-grid records remain
+separate. GreaterN improves the conditional curve estimate, not per-case
+calibration or scientific authority; legacy local-loop limits remain intact.
 
 ## Development install
 
