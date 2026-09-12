@@ -2622,6 +2622,36 @@ holonomy, model winding, order parameter, verified core, digital-twin
 validation or scientific authority is admitted. D7/D8, SCI-S1/S2 and
 Pythia-160M gates are unchanged.
 
+### 3.53 Bounded witness and noisy moment-field development (2026-09-13)
+
+The [successor specification](P4_BOUNDED_OBSERVATION_PLAN.md) was committed
+before its deterministic fixtures. It distinguishes relative channel
+agreement from an independently bounded witness assumption and propagates
+declared moment-space norm errors into polynomial/center/separation disks.
+No truth-derived correction or retrospective enlargement of #122 is used.
+
+The [local controls](P4_BOUNDED_OBSERVATION_RESULTS.md) retain1,152 paired
+readouts using development geometry7, not an independent-cohort campaign.
+Valid-witness cases cover192/192 quadratic center/separation values, with
+zero false-two decisions among48 singles. Deliberately sharing constant bias
+with the witness invalidates all144 witness contracts, produces48/64
+separation misses and12/16 false-two single decisions, while midpoint coverage
+still holds. All576 missing-witness cases have unavailable absolute ranges.
+Missing witness-coverage scores are null, not contract failures.
+
+Both placements use equal point-error budgets. Wider placement halves slope
+row radii but leaves constant error unchanged; this is a propagation-law
+check, not a measured general gain. F2/F4 share bounded post-adapter draws,
+so no comparative hypothesis ranking is inferred. The185 new tests and exact
+report regeneration establish local implementation behavior only.
+
+Qualification for raw-probe Gaussian error, physical witness independence,
+and transfer bias remains pending; new independent coverage evaluation and
+model deployment have not run. Old loop scores and all #122 failures are unchanged. No
+phase, transition, holonomy, model winding, order parameter, verified core,
+digital-twin validation or authority is admitted. D7/D8, SCI-S1/S2 and the
+Pythia-160M gate are unchanged; no automation or Furnace action occurred.
+
 ## 4. Summary reclassification
 
 | Existing object | Retained classification | Explicitly not |
