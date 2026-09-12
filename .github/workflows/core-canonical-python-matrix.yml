@@ -402,6 +402,21 @@ jobs:
           p4_resolution_results="docs/P4_CENTER_RESOLUTION_RESULTS.md"
           expected_p4_resolution_results_sha="611c68999cd11de0bc9aed39e53b9b7476d714523b1d5924ea063c7f28283471"
           test "$(sha256sum "$p4_resolution_results" | cut -d' ' -f1)" = "$expected_p4_resolution_results_sha"
+          p4_bounded_tests=()
+          while read -r bounded_sha bounded_file; do
+            test "$(sha256sum "$bounded_file" | cut -d' ' -f1)" = "$bounded_sha"
+            if [[ "$bounded_file" == tests/* ]]; then
+              p4_bounded_tests+=("$GITHUB_WORKSPACE/$bounded_file")
+            fi
+          done <<'EOF'
+          3a0d0a3dd1b9d7b7a74da21e2ac5e1ffcc9b294c27af97f223b3347412e1bbdb docs/P4_BOUNDED_OBSERVATION_PLAN.md
+          c459cd88076985d969c36407d9b88b45f37feea2e83a8ec0718efa8bfe96dcee scripts/p4_bounded_reference_v0_1.py
+          1a38375f3c21f124fc1ffea5f3f9f92c6aa7f57459cee12b1c6abaec569886ce scripts/prototype_p4_bounded_observation_v0_1.py
+          bd9722b8553dda0dc8887a139a659b28cf200aadfb4cf9a3b756d84a5c78425b scripts/run_p4_bounded_observation_v0_1.py
+          c1c3ff90c70a312d2d9790ea275a9a1842dc84f33c55b45436d82b2041b6138b tests/test_p4_bounded_reference_v0_1.py
+          a6e22a64229b1a5ef1286591e99ff03da3f35367dc72ea27e0621a5ee2bc30ce tests/test_p4_bounded_observation_v0_1.py
+          a4457c805499d8ac5d7da19cfb260ec685c7144f84dfcc961f989e337f123427 tests/test_p4_bounded_observation_runner_v0_1.py
+          EOF
           source_library_tests=()
           neutral_library_tests=()
           while read -r test_sha test_file; do
@@ -472,7 +487,8 @@ jobs:
             "$GITHUB_WORKSPACE/$p4_fidelity_test" \
             "$GITHUB_WORKSPACE/$p4_uncertainty_test" \
             "$GITHUB_WORKSPACE/$p4_identity_test" \
-            "$GITHUB_WORKSPACE/$p4_resolution_test"
+            "$GITHUB_WORKSPACE/$p4_resolution_test" \
+            "${p4_bounded_tests[@]}"
 
           (
             cd "$neutral"

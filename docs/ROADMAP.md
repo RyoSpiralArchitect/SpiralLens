@@ -996,6 +996,29 @@ center/linear split motivates measuring both contributions. Do not merely
 increaseN/K, fit away this panel's failures, merge legacy components, or
 relax a model gate. All previous scientific gates and Level0 limits remain.
 
+### Bounded witness and observation-error prototype (2026-09-13)
+
+The [new specification](P4_BOUNDED_OBSERVATION_PLAN.md) now has a
+[local executable prototype](P4_BOUNDED_OBSERVATION_RESULTS.md). Independent
+repeats or placement changes alone cannot identify a common affine bias.
+The new lane therefore requires an explicitly bounded witness for absolute
+reference-error ranges, propagates post-adapter point-error bounds through
+the quadratic fit, and preserves unavailable support/curvature uncertainty.
+
+The 1,152 paired development readouts are not independent trials. In the
+valid-witness fixtures all192 quadratic center/separation ranges cover truth;
+a shared-bias witness violation retains48/64 separation misses and12/16
+false-two single decisions. All576 absent-witness records remain unidentified.
+Equal-cost wider witness placement halves slope-error bounds, not the constant
+bound. These checks neither validate a physical witness nor quantify real
+F2/F4 performance. Predecessor results and envelopes are unchanged.
+
+Next: raw-probe-to-moment error propagation and witness transfer checks before
+freezing a new independent-cohort campaign. The existing Gaussian probe-noise
+stress is not qualified by the new bounded moment-noise contract. Information
+geometry and known-cycle/readout controls stay in a later model-design lane;
+Fisher cost is not a common-bias correction. No model/scientific gate advances.
+
 ## 4. What “library” means
 
 SpiralLens is not considered a library merely because it is installable.

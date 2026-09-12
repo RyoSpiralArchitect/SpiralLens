@@ -1076,6 +1076,14 @@ The345,856 primary,25,088 stress and1,664 paired full-grid records remain
 separate. GreaterN improves the conditional curve estimate, not per-case
 calibration or scientific authority; legacy local-loop limits remain intact.
 
+The [bounded-observation successor](docs/P4_BOUNDED_OBSERVATION_RESULTS.md)
+adds an explicitly conditional independent-witness budget and post-adapter
+moment-error propagation. Its 1,152 paired local development readouts preserve
+missing witness support and the deliberately shared-bias blind spot; they are
+not independent coverage trials or a new F2/F4 performance comparison. Wider
+witness placement tightens slope budgets, not common affine bias. Raw-probe
+noise qualification and a new independent-cohort campaign remain unrun.
+
 ## Development install
 
 Create one virtual environment inside each worktree. Do not reuse an editable
